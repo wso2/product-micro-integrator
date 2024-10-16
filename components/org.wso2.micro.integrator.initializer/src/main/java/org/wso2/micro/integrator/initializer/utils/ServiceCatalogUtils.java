@@ -300,23 +300,23 @@ public class ServiceCatalogUtils {
 
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
-                BufferedReader in = new BufferedReader(new InputStreamReader(
-                        connection.getInputStream()));
-                String inputLine;
-                StringBuilder response = new StringBuilder();
+                try (BufferedReader in = new BufferedReader(new InputStreamReader(
+                        connection.getInputStream()))) {
+                    String inputLine;
+                    StringBuilder response = new StringBuilder();
 
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
-                in.close();
+                    while ((inputLine = in.readLine()) != null) {
+                        response.append(inputLine);
+                    }
 
-                JsonParser parser = new JsonParser();
-                JsonObject rootObject = parser.parse(response.toString()).getAsJsonObject();
-                JsonArray serviceList = rootObject.getAsJsonArray(LIST_STRING);
-                for (JsonElement service : serviceList) {
-                    String serviceKey = ((JsonObject) service).get(SERVICE_KEY).getAsString();
-                    String md5 = ((JsonObject) service).get(MD5).getAsString();
-                    md5Map.put(serviceKey, md5);
+                    JsonParser parser = new JsonParser();
+                    JsonObject rootObject = parser.parse(response.toString()).getAsJsonObject();
+                    JsonArray serviceList = rootObject.getAsJsonArray(LIST_STRING);
+                    for (JsonElement service : serviceList) {
+                        String serviceKey = ((JsonObject) service).get(SERVICE_KEY).getAsString();
+                        String md5 = ((JsonObject) service).get(MD5).getAsString();
+                        md5Map.put(serviceKey, md5);
+                    }
                 }
                 return md5Map;
             } else {

@@ -51,10 +51,9 @@ public class GRPCResponseSender implements InboundResponseSender {
                 log.debug("Message content type retrieved in the message is: " + contentType);
             }
             if (contentType.equalsIgnoreCase(InboundGRPCConstants.CONTENT_TYPE_JSON_MIME_TYPE)) {
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(JsonUtil.getJsonPayload(msgContext)));
-                StringBuilder stringBuilder = new StringBuilder();
-                String line;
-                try {
+                try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(JsonUtil.getJsonPayload(msgContext)))) {
+                    StringBuilder stringBuilder = new StringBuilder();
+                    String line;
                     while ((line = bufferedReader.readLine()) != null) {
                         stringBuilder.append(line);
                     }
