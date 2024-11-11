@@ -43,10 +43,15 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -58,7 +63,7 @@ public class ApiResource extends APIResource {
 
     private static final String API_NAME = "apiName";
     private static final String URL_VERSION_TYPE = "url";
-    private String serverContext = "";  // base server url
+    private List<String> serverContext = new ArrayList<>();  // base server urls
 
     public ApiResource(String urlTemplate) {
         super(urlTemplate);
@@ -115,8 +120,10 @@ public class ApiResource extends APIResource {
         for (API api: resultList) {
             JSONObject apiObject = new JSONObject();
             String apiUrl = getApiUrl(api, messageContext);
+            JSONArray urlArray = new JSONArray(apiUrl.split(","));
             apiObject.put(Constants.NAME, api.getName());
-            apiObject.put(Constants.URL, apiUrl);
+            apiObject.put(Constants.URL, urlArray.get(0));
+            apiObject.put(Constants.URL_LIST, urlArray);
             apiObject.put(Constants.TRACING,
                     api.getAspectConfiguration().isTracingEnabled() ? Constants.ENABLED : Constants.DISABLED);
             jsonBody.getJSONArray(Constants.LIST).put(apiObject);
@@ -196,7 +203,9 @@ public class ApiResource extends APIResource {
 
         apiObject.put(Constants.NAME, api.getName());
         String apiUrl = getApiUrl(api, messageContext);
-        apiObject.put(Constants.URL, apiUrl);
+        JSONArray urlArray = new JSONArray(apiUrl.split(","));
+        apiObject.put(Constants.URL, urlArray.get(0));
+        apiObject.put(Constants.URL_LIST, urlArray);
 
         String version = api.getVersion().equals("") ? "N/A" : api.getVersion();
 
@@ -244,59 +253,61 @@ public class ApiResource extends APIResource {
     private String getApiUrl(API api, MessageContext msgCtx) {
 
         org.apache.axis2.context.MessageContext axisMsgCtx = ((Axis2MessageContext) msgCtx).getAxis2MessageContext();
-        String serverUrl = getServerContext(axisMsgCtx.getConfigurationContext().getAxisConfiguration());
-        String versionUrl = "";
+        List<String> serverUrls = serverContext.isEmpty() ? getServerContext(axisMsgCtx.getConfigurationContext().getAxisConfiguration()) : serverContext;
+
+        // Build version specific context
+        String versionUrl;
         if (URL_VERSION_TYPE.equals(api.getVersionStrategy().getVersionType())) {
             versionUrl = "/" + api.getVersion();
+        } else {
+            versionUrl = "";
         }
-        return serverUrl.equals("err") ? api.getContext() : serverUrl + api.getContext() + versionUrl;
+
+        return serverUrls.isEmpty() ? api.getContext() : serverUrls.stream()
+                .map(url -> url + api.getContext() + versionUrl)
+                .collect(Collectors.joining(","));
     }
 
-    private String getServerContext(AxisConfiguration configuration) {
+    private List<String> getServerContext(AxisConfiguration configuration) {
 
-        if (!serverContext.isEmpty()) {
-            return serverContext;
-        }
-        String portValue;
-        String protocol;
+        // Capture protocol list
+        List<String> protocols = Arrays.asList("http", "https");
+        Map<String, String> protocolPortMap = protocols.stream()
+                .map(configuration::getTransportIn)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(
+                        TransportInDescription::getName,
+                        transportInDescription -> (String) transportInDescription.getParameter("port").getValue()
+                ));
 
-        TransportInDescription transportInDescription = configuration.getTransportIn("http");
-        if (Objects.isNull(transportInDescription)) {
-            transportInDescription = configuration.getTransportIn("https");
-        }
-
-        if (Objects.nonNull(transportInDescription)) {
-            protocol = transportInDescription.getName();
-            portValue = (String) transportInDescription.getParameter("port").getValue();
-        } else {
-            return "err";
+        if (protocolPortMap.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        String host;
+        String host = Optional.ofNullable(configuration.getParameter("hostname"))
+                .map(Parameter::getValue)
+                .map(String.class::cast)
+                .orElseGet(() -> {
+                    try {
+                        return NetworkUtils.getLocalHostname();
+                    } catch (SocketException e) {
+                        return "localhost";
+                    }
+                });
 
-        Parameter hostParam =  configuration.getParameter("hostname");
-
-        if (Objects.nonNull(hostParam)) {
-            host = (String)hostParam.getValue();
-        } else {
-            try {
-                host = NetworkUtils.getLocalHostname();
-            } catch (SocketException e) {
-                host = "localhost";
-            }
-        }
-        String url;
-        try {
-            int port = Integer.parseInt(portValue);
-            if (("http".equals(protocol) && port == 80) || ("https".equals(protocol) && port == 443)) {
-                port = -1;
-            }
-            URL serverURL = new URL(protocol, host, port, "");
-            url = serverURL.toExternalForm();
-        } catch (MalformedURLException e) {
-            url = "err";
-        }
-        this.serverContext = url;
-        return url;
+        // Build URLs
+        serverContext = protocolPortMap.entrySet().stream()
+                .map(entry -> {
+                    String protocol = entry.getKey();
+                    int port = Integer.parseInt(entry.getValue());
+                    try {
+                        return new URL(protocol, host, port, "").toExternalForm();
+                    } catch (MalformedURLException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull) // Filter out any null URLs
+                .collect(Collectors.toList());
+        return serverContext;
     }
 }
