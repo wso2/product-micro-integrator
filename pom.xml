@@ -1715,7 +1715,7 @@
         <google.guava.version>33.0.0-jre</google.guava.version>
         <ca.uhn.hapi.wso2.version>2.1.0.wso2v1</ca.uhn.hapi.wso2.version>
         <junit.version>4.8.2</junit.version>
-        <netty.version>4.1.108.Final</netty.version>
+        <netty.version>4.1.115.Final</netty.version>
         <netty.tcnative.version>2.0.53.Final</netty.tcnative.version>
         <jacoco.agent.version>0.8.8</jacoco.agent.version>
         <activemq.version>5.2.0</activemq.version>

@@ -809,7 +809,7 @@
         <hawtbuf.version>1.9</hawtbuf.version>
         <geronimo.specs.jms.version>1.1.1</geronimo.specs.jms.version>
         <ibatis-core.version>3.0</ibatis-core.version>
-        <netty.version>4.1.108.Final</netty.version>
+        <netty.version>4.1.115.Final</netty.version>
         <netty.tcnative.version>2.0.53.Final</netty.tcnative.version>
         <org.eclipse.paho.version>1.2.0</org.eclipse.paho.version>
         <activemq.version>5.9.1</activemq.version>
