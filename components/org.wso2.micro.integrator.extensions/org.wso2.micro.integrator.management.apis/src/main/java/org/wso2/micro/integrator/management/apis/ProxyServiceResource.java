@@ -33,6 +33,8 @@ import org.apache.synapse.core.axis2.ProxyService;
 import org.json.JSONObject;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.APIResource;
 import org.wso2.micro.core.util.AuditLogger;
+import org.wso2.micro.integrator.management.apis.security.handler.SecurityUtils;
+import org.wso2.micro.integrator.security.user.api.UserStoreException;
 import org.wso2.micro.service.mgt.ServiceAdmin;
 import org.wso2.micro.service.mgt.ServiceMetaData;
 
@@ -50,6 +52,7 @@ import static org.wso2.micro.integrator.management.apis.Constants.NAME;
 import static org.wso2.micro.integrator.management.apis.Constants.SEARCH_KEY;
 import static org.wso2.micro.integrator.management.apis.Constants.STATUS;
 import static org.wso2.micro.integrator.management.apis.Constants.SYNAPSE_CONFIGURATION;
+import static org.wso2.micro.integrator.management.apis.Constants.USERNAME_PROPERTY;
 
 public class ProxyServiceResource extends APIResource {
 
@@ -101,27 +104,35 @@ public class ProxyServiceResource extends APIResource {
             }
             axis2MessageContext.removeProperty(Constants.NO_ENTITY_BODY);
         } else {
+            String userName = (String) messageContext.getProperty(USERNAME_PROPERTY);
             try {
-                if (!JsonUtil.hasAJsonPayload(axis2MessageContext)) {
-                    Utils.setJsonPayLoad(axis2MessageContext, Utils.createJsonErrorObject("JSON payload is missing"));
-                    return true;
-                }
-                JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
-                String performedBy = Constants.ANONYMOUS_USER;
-                if (messageContext.getProperty(Constants.USERNAME_PROPERTY) !=  null) {
-                    performedBy = messageContext.getProperty(Constants.USERNAME_PROPERTY).toString();
-                }
-                JSONObject info = new JSONObject();
-                String name = payload.get(NAME).getAsString();
-                info.put(PROXY_NAME, name);
-                if (payload.has(NAME) && payload.has(STATUS)) {
-                    changeProxyState(performedBy, info, messageContext, axis2MessageContext, payload);
+                if (SecurityUtils.canUserEdit(userName)) {
+                    if (!JsonUtil.hasAJsonPayload(axis2MessageContext)) {
+                        Utils.setJsonPayLoad(axis2MessageContext, Utils.createJsonErrorObject("JSON payload is missing"));
+                        return true;
+                    }
+                    JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+                    String performedBy = Constants.ANONYMOUS_USER;
+                    if (messageContext.getProperty(Constants.USERNAME_PROPERTY) !=  null) {
+                        performedBy = messageContext.getProperty(Constants.USERNAME_PROPERTY).toString();
+                    }
+                    JSONObject info = new JSONObject();
+                    String name = payload.get(NAME).getAsString();
+                    info.put(PROXY_NAME, name);
+                    if (payload.has(NAME) && payload.has(STATUS)) {
+                        changeProxyState(performedBy, info, messageContext, axis2MessageContext, payload);
+                    } else {
+                        handleTracing(performedBy, info, payload, messageContext, axis2MessageContext);
+                    }
                 } else {
-                    handleTracing(performedBy, info, payload, messageContext, axis2MessageContext);
+                    Utils.sendForbiddenFaultResponse(axis2MessageContext);
                 }
             } catch (IOException e) {
                 LOG.error("Error when parsing JSON payload", e);
                 Utils.setJsonPayLoad(axis2MessageContext, Utils.createJsonErrorObject("Error when parsing JSON payload"));
+            } catch (UserStoreException e) {
+                LOG.error("Error occurred while retrieving the user data", e);
+                Utils.setJsonPayLoad(axis2MessageContext,Utils.createJsonErrorObject("Error occurred while retrieving the user data"));
             }
         }
         return true;

@@ -121,4 +121,30 @@ public class SecurityUtils {
             return MicroIntegratorSecurityUtils.isAdmin(username);
         }
     }
+
+    /**
+     * Checks if non-admin users are treated as read-only users based on the configuration.
+     *
+     * @return {@code true} if non-admin users are read-only according to the config, {@code false} otherwise.
+     */
+    private static boolean isNonAdminUsersReadOnly() {
+        return (Boolean) ConfigParser.getParsedConfigs().getOrDefault(Constants.MAKE_NON_ADMIN_USERS_READ_ONLY, false);
+    }
+
+    /**
+     * Determines if the specified user has permission to edit.
+     *
+     * Admin users always have edit permissions. For non-admin users, the edit permission depends
+     * on the configuration: if make_non_admin_users_read_only == true, they cannot edit; otherwise, they can.
+     *
+     * @param userName the name of the user to check for edit permissions
+     * @return {@code true} if the user has edit permissions, {@code false} otherwise
+     * @throws UserStoreException if there is an error accessing the user store
+     */
+    public static boolean canUserEdit(String userName) throws UserStoreException {
+        if (userName == null) {
+            return true;
+        }
+        return isAdmin(userName) || !isNonAdminUsersReadOnly();
+    }
 }

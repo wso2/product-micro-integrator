@@ -1389,3 +1389,6 @@ phase_name = "Transport"
 
 [[transport.phase_order.phases]]
 phase_name = "MsgOutObservation"
+
+[user_access]
+make_non_admin_users_read_only = false

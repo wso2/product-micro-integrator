@@ -155,6 +155,7 @@ public class Constants {
 
     // toml properties
     public static String FILE_BASED_USER_STORE_ENABLE = "internal_apis.file_user_store.enable";
+    public static String MAKE_NON_ADMIN_USERS_READ_ONLY = "user_access.make_non_admin_users_read_only";
 
     public static final String AUDIT_LOG_TYPE_ENDPOINT = "endpoint";
     public static final String AUDIT_LOG_TYPE_USER = "user";

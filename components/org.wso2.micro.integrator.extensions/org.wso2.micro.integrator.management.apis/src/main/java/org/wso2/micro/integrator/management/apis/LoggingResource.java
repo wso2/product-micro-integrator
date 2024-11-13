@@ -32,6 +32,8 @@ import org.json.JSONObject;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.APIResource;
 import org.wso2.carbon.utils.ServerConstants;
 import org.wso2.micro.core.util.AuditLogger;
+import org.wso2.micro.integrator.management.apis.security.handler.SecurityUtils;
+import org.wso2.micro.integrator.security.user.api.UserStoreException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,6 +52,7 @@ import java.util.Set;
 import static org.wso2.micro.integrator.management.apis.Constants.NO_ENTITY_BODY;
 import static org.wso2.micro.integrator.management.apis.Constants.ROOT_LOGGER;
 import static org.wso2.micro.integrator.management.apis.Constants.SEARCH_KEY;
+import static org.wso2.micro.integrator.management.apis.Constants.USERNAME_PROPERTY;
 
 public class LoggingResource extends APIResource {
 
@@ -127,49 +130,60 @@ public class LoggingResource extends APIResource {
                 return true;
             }
         } else {
-            if (jsonPayload.has(Constants.LOGGING_LEVEL)) {
-                String logLevel = jsonPayload.getString(Constants.LOGGING_LEVEL);
-                if (!isValidLogLevel(logLevel)) {
-                    // 400-Bad Request Invalid loggingLevel
-                    jsonBody = createJsonError("Invalid log level " + logLevel, "", axis2MessageContext);
-                } else {
-                    if (jsonPayload.has(Constants.LOGGER_NAME)) {
-                        String loggerName = jsonPayload.getString(Constants.LOGGER_NAME);
-                        boolean isRootLogger = Constants.ROOT_LOGGER.equals(loggerName);
-                        boolean hasLoggerClass = jsonPayload.has(LOGGER_CLASS);
-                        String performedBy = Constants.ANONYMOUS_USER;
-                        if (messageContext.getProperty(Constants.USERNAME_PROPERTY) !=  null) {
-                            performedBy = messageContext.getProperty(Constants.USERNAME_PROPERTY).toString();
-                        }
-                        JSONObject info = new JSONObject();
-                        info.put(Constants.LOGGER_NAME, loggerName);
-                        info.put(Constants.LOGGING_LEVEL, logLevel);
-                        if (isRootLogger || !hasLoggerClass) {
-                            // update existing logger
-                            jsonBody = updateLoggerData(performedBy, info, axis2MessageContext, loggerName, logLevel);
+            String userName = (String) messageContext.getProperty(USERNAME_PROPERTY);
+            try {
+                if (SecurityUtils.canUserEdit(userName)) {
+                    if (jsonPayload.has(Constants.LOGGING_LEVEL)) {
+                        String logLevel = jsonPayload.getString(Constants.LOGGING_LEVEL);
+                        if (!isValidLogLevel(logLevel)) {
+                            // 400-Bad Request Invalid loggingLevel
+                            jsonBody = createJsonError("Invalid log level " + logLevel, "", axis2MessageContext);
                         } else {
-                            try {
-                                if (isLoggerExist(loggerName)) {
-                                    String errorMsg = "Specified logger name ('" + loggerName
-                                            + "') already exists, try updating the level instead";
-                                    jsonBody = createJsonError(errorMsg, "", axis2MessageContext);
-                                } else {
-                                    String loggerClass = jsonPayload.getString(LOGGER_CLASS);
-                                    jsonBody = updateLoggerData(performedBy, info,
-                                                                axis2MessageContext, loggerName, loggerClass, logLevel);
+                            if (jsonPayload.has(Constants.LOGGER_NAME)) {
+                                String loggerName = jsonPayload.getString(Constants.LOGGER_NAME);
+                                boolean isRootLogger = Constants.ROOT_LOGGER.equals(loggerName);
+                                boolean hasLoggerClass = jsonPayload.has(LOGGER_CLASS);
+                                String performedBy = Constants.ANONYMOUS_USER;
+                                if (messageContext.getProperty(Constants.USERNAME_PROPERTY) !=  null) {
+                                    performedBy = messageContext.getProperty(Constants.USERNAME_PROPERTY).toString();
                                 }
-                            } catch (IOException exception) {
-                                jsonBody = createJsonError(EXCEPTION_MSG, exception, axis2MessageContext);
+                                JSONObject info = new JSONObject();
+                                info.put(Constants.LOGGER_NAME, loggerName);
+                                info.put(Constants.LOGGING_LEVEL, logLevel);
+                                if (isRootLogger || !hasLoggerClass) {
+                                    // update existing logger
+                                    jsonBody = updateLoggerData(performedBy, info, axis2MessageContext, loggerName, logLevel);
+                                } else {
+                                    try {
+                                        if (isLoggerExist(loggerName)) {
+                                            String errorMsg = "Specified logger name ('" + loggerName
+                                                    + "') already exists, try updating the level instead";
+                                            jsonBody = createJsonError(errorMsg, "", axis2MessageContext);
+                                        } else {
+                                            String loggerClass = jsonPayload.getString(LOGGER_CLASS);
+                                            jsonBody = updateLoggerData(performedBy, info,
+                                                    axis2MessageContext, loggerName, loggerClass, logLevel);
+                                        }
+                                    } catch (IOException exception) {
+                                        jsonBody = createJsonError(EXCEPTION_MSG, exception, axis2MessageContext);
+                                    }
+                                }
+                            } else {
+                                // 400-Bad Request logger name is missing
+                                jsonBody = createJsonError("Logger name is missing", "", axis2MessageContext);
                             }
                         }
                     } else {
-                        // 400-Bad Request logger name is missing
-                        jsonBody = createJsonError("Logger name is missing", "", axis2MessageContext);
+                        // 400-Bad Request logLevel is missing
+                        jsonBody = createJsonError("Log level is missing", "", axis2MessageContext);
                     }
+                } else {
+                    Utils.sendForbiddenFaultResponse(axis2MessageContext);
+                    jsonBody = createJsonError("User is not Authorized to edit", "", axis2MessageContext);
                 }
-            } else {
-                // 400-Bad Request logLevel is missing
-                jsonBody = createJsonError("Log level is missing", "", axis2MessageContext);
+            } catch (UserStoreException e) {
+                log.error("Error occurred while retrieving the user data", e);
+                jsonBody = createJsonError("Error occurred while retrieving the user data", e, axis2MessageContext);
             }
         }
         Utils.setJsonPayLoad(axis2MessageContext, jsonBody);

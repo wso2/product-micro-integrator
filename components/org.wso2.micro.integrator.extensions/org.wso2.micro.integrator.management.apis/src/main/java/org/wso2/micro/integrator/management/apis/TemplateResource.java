@@ -31,6 +31,8 @@ import org.apache.synapse.mediators.template.TemplateMediator;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.APIResource;
+import org.wso2.micro.integrator.management.apis.security.handler.SecurityUtils;
+import org.wso2.micro.integrator.security.user.api.UserStoreException;
 
 import java.io.IOException;
 
@@ -42,6 +44,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.wso2.micro.integrator.management.apis.Constants.SEARCH_KEY;
+import static org.wso2.micro.integrator.management.apis.Constants.USERNAME_PROPERTY;
 
 /**
  * Represents template resources defined in the synapse configuration.
@@ -97,21 +100,29 @@ public class TemplateResource extends APIResource {
             }
         } else {
             JSONObject response;
+            String userName = (String) msgCtx.getProperty(USERNAME_PROPERTY);
             try {
-                JsonObject payload = Utils.getJsonPayload(axis2MsgCtx);
-                if (payload.has(TEMPLATE_TYPE_PARAM)) {
-                    templateTypeParam = payload.get(TEMPLATE_TYPE_PARAM).getAsString();
-                }
-                if (payload.has(Constants.NAME) && SEQUENCE_TEMPLATE_TYPE.equals(templateTypeParam)) {
-                    String seqTempName = payload.get(Constants.NAME).getAsString();
-                    response = handleTracing(seqTempName, msgCtx, axis2MsgCtx);
+                if (SecurityUtils.canUserEdit(userName)) {
+                    JsonObject payload = Utils.getJsonPayload(axis2MsgCtx);
+                    if (payload.has(TEMPLATE_TYPE_PARAM)) {
+                        templateTypeParam = payload.get(TEMPLATE_TYPE_PARAM).getAsString();
+                    }
+                    if (payload.has(Constants.NAME) && SEQUENCE_TEMPLATE_TYPE.equals(templateTypeParam)) {
+                        String seqTempName = payload.get(Constants.NAME).getAsString();
+                        response = handleTracing(seqTempName, msgCtx, axis2MsgCtx);
+                    } else {
+                        response = Utils.createJsonError("Unsupported operation", axis2MsgCtx, Constants.BAD_REQUEST);
+                    }
+                    Utils.setJsonPayLoad(axis2MsgCtx, response);
                 } else {
-                    response = Utils.createJsonError("Unsupported operation", axis2MsgCtx, Constants.BAD_REQUEST);
+                    Utils.sendForbiddenFaultResponse(axis2MsgCtx);
                 }
-                Utils.setJsonPayLoad(axis2MsgCtx, response);
             } catch (IOException e) {
                 LOG.error("Error when parsing JSON payload", e);
                 Utils.setJsonPayLoad(axis2MsgCtx, Utils.createJsonErrorObject("Error when parsing JSON payload"));
+            } catch (UserStoreException e) {
+                LOG.error("Error occurred while retrieving the user data", e);
+                Utils.setJsonPayLoad(axis2MsgCtx, Utils.createJsonErrorObject("Error occurred while retrieving the user data"));
             }
         }
         return true;

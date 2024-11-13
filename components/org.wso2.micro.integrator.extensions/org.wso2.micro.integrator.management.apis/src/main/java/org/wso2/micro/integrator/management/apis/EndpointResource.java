@@ -33,6 +33,8 @@ import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.json.JSONObject;
 import org.wso2.micro.core.util.AuditLogger;
+import org.wso2.micro.integrator.management.apis.security.handler.SecurityUtils;
+import org.wso2.micro.integrator.security.user.api.UserStoreException;
 
 import javax.xml.namespace.QName;
 import java.io.IOException;
@@ -50,7 +52,7 @@ import static org.wso2.micro.integrator.management.apis.Constants.INACTIVE_STATU
 import static org.wso2.micro.integrator.management.apis.Constants.SEARCH_KEY;
 import static org.wso2.micro.integrator.management.apis.Constants.STATUS;
 import static org.wso2.micro.integrator.management.apis.Constants.TRACING;
-
+import static org.wso2.micro.integrator.management.apis.Constants.USERNAME_PROPERTY;
 
 public class EndpointResource implements MiApiResource {
 
@@ -93,20 +95,28 @@ public class EndpointResource implements MiApiResource {
                 populateEndpointList(messageContext, synapseConfiguration);
             }
         } else {
+            String userName = (String) messageContext.getProperty(USERNAME_PROPERTY);
             try {
-                if (!JsonUtil.hasAJsonPayload(axis2MessageContext)) {
-                    Utils.setJsonPayLoad(axis2MessageContext, Utils.createJsonErrorObject("JSON payload is missing"));
-                    return true;
-                }
-                JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
-                if (payload.has(Constants.NAME) && payload.has(STATUS)) {
-                    changeEndpointStatus(performedBy, axis2MessageContext, synapseConfiguration, payload);
+                if (SecurityUtils.canUserEdit(userName)) {
+                    if (!JsonUtil.hasAJsonPayload(axis2MessageContext)) {
+                        Utils.setJsonPayLoad(axis2MessageContext, Utils.createJsonErrorObject("JSON payload is missing"));
+                        return true;
+                    }
+                    JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+                    if (payload.has(Constants.NAME) && payload.has(STATUS)) {
+                        changeEndpointStatus(performedBy, axis2MessageContext, synapseConfiguration, payload);
+                    } else {
+                        handleTracing(performedBy, payload, messageContext, axis2MessageContext);
+                    }
                 } else {
-                    handleTracing(performedBy, payload, messageContext, axis2MessageContext);
+                    Utils.sendForbiddenFaultResponse(axis2MessageContext);
                 }
             } catch (IOException e) {
                 LOG.error("Error when parsing JSON payload", e);
                 Utils.setJsonPayLoad(axis2MessageContext, Utils.createJsonErrorObject("Error when parsing JSON payload"));
+            } catch (UserStoreException e) {
+                LOG.error("Error occurred while retrieving the user data", e);
+                Utils.setJsonPayLoad(axis2MessageContext, Utils.createJsonErrorObject("Error occurred while retrieving the user data"));
             }
         }
 

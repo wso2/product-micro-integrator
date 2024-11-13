@@ -43,6 +43,7 @@ import org.wso2.micro.application.deployer.config.Artifact;
 import org.wso2.micro.core.util.AuditLogger;
 import org.wso2.micro.integrator.initializer.deployment.application.deployer.CappDeployer;
 import org.wso2.micro.integrator.management.apis.security.handler.SecurityUtils;
+import org.wso2.micro.integrator.security.user.api.UserStoreException;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -71,6 +72,7 @@ import static org.wso2.micro.integrator.management.apis.Constants.BAD_REQUEST;
 import static org.wso2.micro.integrator.management.apis.Constants.LIST;
 import static org.wso2.micro.integrator.management.apis.Constants.NOT_FOUND;
 import static org.wso2.micro.integrator.management.apis.Constants.SEARCH_KEY;
+import static org.wso2.micro.integrator.management.apis.Constants.USERNAME_PROPERTY;
 
 public class CarbonAppResource extends APIResource {
 
@@ -111,6 +113,7 @@ public class CarbonAppResource extends APIResource {
         if (messageContext.getProperty(Constants.USERNAME_PROPERTY) !=  null) {
             performedBy = messageContext.getProperty(Constants.USERNAME_PROPERTY).toString();
         }
+        String userName = (String) messageContext.getProperty(USERNAME_PROPERTY);
         switch (httpMethod) {
             case Constants.HTTP_GET: {
                 String param = Utils.getQueryParameter(messageContext, "carbonAppName");
@@ -131,11 +134,29 @@ public class CarbonAppResource extends APIResource {
                 break;
             }
             case Constants.HTTP_POST: {
-                handlePost(performedBy, axis2MessageContext);
+                try {
+                    if (SecurityUtils.canUserEdit(userName)) {
+                        handlePost(performedBy, axis2MessageContext);
+                    } else {
+                        Utils.sendForbiddenFaultResponse(axis2MessageContext);
+                    }
+                } catch (UserStoreException e) {
+                    log.error("Error occurred while retrieving the user data", e);
+                    Utils.setJsonPayLoad(axis2MessageContext,Utils.createJsonErrorObject("Error occurred while retrieving the user data"));
+                }
                 break;
             }
             case Constants.HTTP_DELETE: {
-                handleDelete(performedBy, messageContext, axis2MessageContext);
+                try {
+                    if (SecurityUtils.canUserEdit(userName)) {
+                        handleDelete(performedBy, messageContext, axis2MessageContext);
+                    } else {
+                        Utils.sendForbiddenFaultResponse(axis2MessageContext);
+                    }
+                } catch (UserStoreException e) {
+                    log.error("Error occurred while retrieving the user data", e);
+                    Utils.setJsonPayLoad(axis2MessageContext,Utils.createJsonErrorObject("Error occurred while retrieving the user data"));
+                }
                 break;
             }
             default: {
