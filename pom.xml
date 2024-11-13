@@ -1693,7 +1693,7 @@
         <javax.jms-api.version>2.0.1</javax.jms-api.version>
         <maven.dependency.plugin.version>3.1.1</maven.dependency.plugin.version>
         <commons-text.orbit.version>1.10.0.wso2v2</commons-text.orbit.version>
-        <commons-lang3.orbit.version>3.12.0.wso2v1</commons-lang3.orbit.version>
+        <commons-lang3.orbit.version>3.17.0.wso2v1</commons-lang3.orbit.version>
         <joda-time.version>2.9.4.wso2v1</joda-time.version>
         <libthrift.version>0.16.0.wso2v1</libthrift.version>
         <axis2.mar.maven.plugin>1.5.2</axis2.mar.maven.plugin>
@@ -1746,7 +1746,7 @@
 
         <org.apache.bsf.wso2.version>3.0.0.wso2v5</org.apache.bsf.wso2.version>
         <rhino.wso2.js.version>1.7.13.wso2v1</rhino.wso2.js.version>
-        <org.apache.velocity.version>2.3</org.apache.velocity.version>
+        <org.apache.velocity.version>2.4.1</org.apache.velocity.version>
 
         <javax.servlet.version>3.0.0.v201112011016</javax.servlet.version>
         <javax.servlet.api.version>2.5</javax.servlet.api.version>
@@ -1913,7 +1913,7 @@
         <prometheus.version>0.8.1</prometheus.version>
         <version.equinox.platform>3.14.0</version.equinox.platform>
         <!-- OAS3 Versions -->
-        <swagger.parser.orbit.version>2.1.18.wso2v1</swagger.parser.orbit.version>
+        <swagger.parser.orbit.version>2.1.18.wso2v3</swagger.parser.orbit.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <javax.validation.version>1.1.0.Final</javax.validation.version>
         <version.disruptor>3.4.2</version.disruptor>
