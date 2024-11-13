@@ -44,6 +44,7 @@ import org.wso2.micro.integrator.initializer.ServiceBusConstants;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -75,13 +76,14 @@ public abstract class MediationPersistenceTest extends TestCase {
     }
     
     protected SynapseConfiguration getConfigurationFromSynapseXML() {
-        try {
-            FileInputStream fin = new FileInputStream(path + File.separator + "synapse.xml");
+        try (FileInputStream fin = new FileInputStream(path + File.separator + "synapse.xml")) {
             return XMLConfigurationBuilder.getConfiguration(fin, new Properties());
         } catch (FileNotFoundException e) {
-            fail("The synapse.xml file does not exist");
+            fail("The synapse.xml file does not exist at the path: " + path);
         } catch (XMLStreamException e) {
-            fail("Error parsing the synapse.xml");
+            fail("Error parsing the synapse.xml file at the path: " + path);
+        } catch (IOException e) {
+            fail("IO error while reading the synapse.xml file at the path: " + path);
         }
         return null;
     }

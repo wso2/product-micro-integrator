@@ -211,10 +211,10 @@ elif [ "$CMD" = "version" ]; then
 fi
 
 # ---------- Handle the SSL Issue with proper JDK version --------------------
-jdk_17=`$JAVA_HOME/bin/java -version 2>&1 | grep "1.[7|8]"`
-if [ "$jdk_17" = "" ]; then
-   echo " Starting WSO2 Carbon (in unsupported JDK)"
-   echo " [ERROR] CARBON is supported only on JDK 1.7 and 1.8"
+jdk_version=`$JAVA_HOME/bin/java -version 2>&1 | grep -E "1\.(7|8)|21"`
+if [ -z "$jdk_version" ]; then
+   echo "Starting WSO2 Carbon (in unsupported JDK)"
+   echo "[ERROR] CARBON is supported only on JDK 1.7, 1.8, or 21"
 fi
 
 CARBON_XBOOTCLASSPATH=""

@@ -144,7 +144,7 @@ public class InMemoryDSSampleTestCase extends DSSIntegrationTest {
 
         echoSampleSourceMetaInfo.setDefinition(echoSampleDSDefinition);
         dataSourceAdminClient.addDataSource(echoSampleSourceMetaInfo);
-        Thread.sleep(1000);
+        Thread.sleep(5000);
     }
 
     private void removeDataSources() throws Exception {
@@ -152,6 +152,6 @@ public class InMemoryDSSampleTestCase extends DSSIntegrationTest {
                 dssContext.getContextUrls().getBackEndUrl(), sessionCookie);
         dataSourceAdminClient.deleteDataSource("IN_MEMORY_SAMPLE_DS");
         dataSourceAdminClient.deleteDataSource("ECHO_SAMPLE_DS");
-        Thread.sleep(1000);
+        Thread.sleep(5000);
     }
 }

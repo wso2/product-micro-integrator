@@ -24,10 +24,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.ei.dataservice.integration.test.DSSIntegrationTest;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.wso2.ei.dataservice.integration.test.odata.ODataTestUtils.getETag;
@@ -65,7 +62,7 @@ public class ODataETagTestCase extends DSSIntegrationTest {
         headers.put("Accept", "application/json");
         Object[] response = sendPOST(endpoint, content, headers);
         Assert.assertEquals(response[0], ODataTestUtils.CREATED);
-        endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES(\'WSO2PROD')";
+        endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES('WSO2PROD')";
         response = sendGET(endpoint, headers);
         Assert.assertEquals(response[0], ODataTestUtils.OK);
         String etag = getETag(response[1].toString());
@@ -90,11 +87,11 @@ public class ODataETagTestCase extends DSSIntegrationTest {
         headers.put("Accept", "application/json");
         Object[] response = sendPOST(endpoint, content, headers);
         Assert.assertEquals(response[0], ODataTestUtils.CREATED);
-        endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES(\'WSO2\')";
+        endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES('WSO2')";
         response = sendGET(endpoint, headers);
         Assert.assertEquals(response[0], ODataTestUtils.OK);
         String etag = getETag(response[1].toString());
-        endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES(\'WSO2\')";
+        endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES('WSO2')";
         content = "{\"TYPE\" : \"USJP\"}";
         int responseCode = sendPUT(endpoint, content, headers);
         Assert.assertEquals(responseCode, ODataTestUtils.NO_CONTENT);
@@ -106,7 +103,7 @@ public class ODataETagTestCase extends DSSIntegrationTest {
 
     @Test(groups = "wso2.dss", description = "etag concurrent handling with put method test", dependsOnMethods = "validateETagGenerationTestCase")
     public void validateETagConcurrentHandlingTestCaseForPutMethod() throws Exception {
-        String endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES(\'WSO2PROD\')";
+        String endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES('WSO2PROD')";
         Map<String, String> headers = new HashMap<>();
         headers.put("Accept", "application/json");
         Object[] response = sendGET(endpoint, headers);
@@ -166,7 +163,7 @@ public class ODataETagTestCase extends DSSIntegrationTest {
 
     @Test(groups = "wso2.dss", description = "etag concurrent handling with patch method test", dependsOnMethods = "validateETagConcurrentHandlingTestCaseForPutMethod")
     public void validateETagConcurrentHandlingTestCaseForPatchMethod() throws Exception {
-        String endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES(\'WSO2\')";
+        String endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES('WSO2')";
         Map<String, String> headers = new HashMap<>();
         headers.put("Accept", "application/json");
         Object[] response = sendGET(endpoint, headers);
@@ -233,7 +230,7 @@ public class ODataETagTestCase extends DSSIntegrationTest {
             headers.put("Accept", "application/json");
             Object[] response = sendPOST(endpoint, content, headers);
             Assert.assertEquals(response[0], ODataTestUtils.CREATED);
-            endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES(\'WSO2PROD\')";
+            endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES('WSO2PROD')";
             response = sendGET(endpoint, headers);
             Assert.assertEquals(response[0], ODataTestUtils.OK);
             String etag = ODataTestUtils.getETag(response[1].toString());
@@ -334,8 +331,8 @@ public class ODataETagTestCase extends DSSIntegrationTest {
     public void validateETagConcurrentHandlingTestCaseForUpdatePropertyWithPatchMethod() throws Exception {
         if (!Boolean.parseBoolean(System.getenv("CI_BUILD_SKIP"))) {
             System.out.println("This test is temporarily skipped for this workflow");
-            String entityEndpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES(\'WSO2PROD\')";
-            String endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES(\'WSO2PROD\')/TYPE";
+            String entityEndpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES('WSO2PROD')";
+            String endpoint = webAppUrl + "/odata/" + serviceName + "/" + configId + "/FILES('WSO2PROD')/TYPE";
             Map<String, String> headers = new HashMap<>();
             headers.put("Accept", "application/json");
             Object[] response = sendGET(entityEndpoint, headers);

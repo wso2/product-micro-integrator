@@ -160,7 +160,7 @@ goto supportedJdk
 
 :unknownJdk
 echo Starting WSO2 MI (in unsupported JDK %JAVA_VERSION%)
-echo [ERROR] WSO2 MI is supported only between JDK 11 and JDK 17"
+echo [ERROR] WSO2 MI is supported only between JDK 11 and JDK 21"
 goto end
 
 :supportedJdk

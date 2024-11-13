@@ -45,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import javax.xml.xpath.XPathExpressionException;
 
@@ -316,10 +315,10 @@ public class CarbonServerManager {
     }
 
     private void waitTill(BooleanSupplier predicate, int maxWaitTime, String task) throws InterruptedException {
-        long time = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(maxWaitTime);
+        long time = System.currentTimeMillis() + maxWaitTime * 1000L;
         while (predicate.getAsBoolean() && System.currentTimeMillis() < time) {
             log.info("waiting for server " + task);
-            TimeUnit.SECONDS.sleep(1);
+            Thread.sleep(1000);
         }
     }
 

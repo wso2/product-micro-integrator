@@ -24,10 +24,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.ei.dataservice.integration.test.DSSIntegrationTest;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.wso2.ei.dataservice.integration.test.odata.ODataTestUtils.sendDELETE;
@@ -61,6 +58,7 @@ public class ODataReferenceTestCase extends DSSIntegrationTest {
         Map<String, String> headers = new HashMap<>();
         headers.put("Accept", "application/json");
         Object[] response = sendGET(endpoint, headers);
+        Thread.sleep(1000);
         Assert.assertEquals(response[0], ODataTestUtils.OK);
         Assert.assertTrue(
                 response[1].toString().contains("FILERECORDS(1)") && response[1].toString().contains("FILERECORDS(4)"),

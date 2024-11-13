@@ -37,7 +37,7 @@ public class DBConsoleAvailableTest extends DSSIntegrationTest {
     }
 
     @Test(groups = "wso2.dss", description = "dbConsole available test case")
-    public void dbConsoleAvailableTest() throws XPathExpressionException, IOException {
+    public void dbConsoleAvailableTest() throws XPathExpressionException, IOException, InterruptedException {
         String webAppUrl = dssContext.getContextUrls().getWebAppURL();
         String url = webAppUrl + "/" + "dbconsole/login.jsp?region=region5&item=dbconsole";
         Map<String, String> headers = new HashMap<>();

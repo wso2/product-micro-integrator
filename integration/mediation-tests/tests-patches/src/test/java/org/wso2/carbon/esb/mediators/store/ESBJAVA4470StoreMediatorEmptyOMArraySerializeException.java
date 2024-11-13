@@ -24,8 +24,6 @@ import org.wso2.carbon.automation.extensions.servers.httpserver.SimpleHttpClient
 import org.wso2.esb.integration.common.utils.CarbonLogReader;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
 
-import java.util.concurrent.TimeUnit;
-
 import static org.testng.Assert.assertFalse;
 
 public class ESBJAVA4470StoreMediatorEmptyOMArraySerializeException extends ESBIntegrationTest {
@@ -42,7 +40,7 @@ public class ESBJAVA4470StoreMediatorEmptyOMArraySerializeException extends ESBI
         String url = getApiInvocationURL("SerializeProperty") + "/serializeOMArray";
         SimpleHttpClient httpClient = new SimpleHttpClient();
         httpClient.doGet(url, null);
-        TimeUnit.SECONDS.sleep(10);
+        Thread.sleep(10000);
 
         boolean logFound = carbonLogReader.checkForLog("Index: 0, Size: 0", DEFAULT_TIMEOUT) &&
                 carbonLogReader.checkForLog("ERROR", DEFAULT_TIMEOUT);

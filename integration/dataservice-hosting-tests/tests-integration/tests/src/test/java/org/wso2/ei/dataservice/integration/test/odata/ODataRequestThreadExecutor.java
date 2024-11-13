@@ -26,10 +26,10 @@ import java.util.Map;
  */
 public class ODataRequestThreadExecutor extends Thread {
 
-    private String httpMethod;
-    private String content;
-    private Map<String, String> headers;
-    private String endpoint;
+    private final String httpMethod;
+    private final String content;
+    private final Map<String, String> headers;
+    private final String endpoint;
 
     public ODataRequestThreadExecutor(String httpMethod, String content, Map<String, String> headers, String endpoint) {
         this.content = content;
@@ -43,28 +43,28 @@ public class ODataRequestThreadExecutor extends Thread {
         case "POST":
             try {
                 ODataTestUtils.sendPOST(endpoint, content, headers);
-            } catch (IOException e) {
+            } catch (IOException|InterruptedException e) {
                 e.printStackTrace();
             }
             break;
         case "PUT":
             try {
                 ODataTestUtils.sendPUT(endpoint, content, headers);
-            } catch (IOException e) {
+            } catch (IOException|InterruptedException e) {
                 e.printStackTrace();
             }
             break;
         case "PATCH":
             try {
                 ODataTestUtils.sendPATCH(endpoint, content, headers);
-            } catch (IOException e) {
+            } catch (IOException|InterruptedException e) {
                 e.printStackTrace();
             }
             break;
         case "DELETE":
             try {
                 ODataTestUtils.sendDELETE(endpoint, headers);
-            } catch (IOException e) {
+            } catch (IOException|InterruptedException e) {
                 e.printStackTrace();
             }
             break;

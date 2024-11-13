@@ -19,15 +19,15 @@
 package org.wso2.ei.dataservice.integration.test.odata;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.json.JSONException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -37,6 +37,7 @@ import org.json.simple.parser.ParseException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class ODataTestUtils {
@@ -48,99 +49,124 @@ public class ODataTestUtils {
     public static final int PRE_CONDITION_FAILED = 412;
     public static final int NOT_FOUND = 404;
 
-    public static Object[] sendPOST(String endpoint, String content, Map<String, String> headers) throws IOException {
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpPost httpPost = new HttpPost(endpoint);
-        for (String headerType : headers.keySet()) {
-            httpPost.setHeader(headerType, headers.get(headerType));
-        }
-        if (null != content) {
-            HttpEntity httpEntity = new ByteArrayEntity(content.getBytes("UTF-8"));
-            if (headers.get("Content-Type") == null) {
-                httpPost.setHeader("Content-Type", "application/json");
+    public static Object[] sendPOST(String endpoint, String content, Map<String, String> headers) throws IOException, InterruptedException {
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpPost httpPost = new HttpPost(endpoint);
+            for (String headerType : headers.keySet()) {
+                httpPost.setHeader(headerType, headers.get(headerType));
             }
-            httpPost.setEntity(httpEntity);
-        }
-        HttpResponse httpResponse = httpClient.execute(httpPost);
-        if (httpResponse.getEntity() != null) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
+            if (null != content) {
+                HttpEntity httpEntity = new ByteArrayEntity(content.getBytes(StandardCharsets.UTF_8));
+                if (headers.get("Content-Type") == null) {
+                    httpPost.setHeader("Content-Type", "application/json");
+                }
+                httpPost.setEntity(httpEntity);
+            }
+            try (CloseableHttpResponse httpResponse = httpClient.execute(httpPost)) {
+                Thread.sleep(1000);
+                if (httpResponse.getEntity() != null) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent()));
+                    String inputLine;
+                    StringBuilder response = new StringBuilder();
 
-            while ((inputLine = reader.readLine()) != null) {
-                response.append(inputLine);
+                    while ((inputLine = reader.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                    reader.close();
+                    return new Object[] { httpResponse.getStatusLine().getStatusCode(), response.toString() };
+                } else {
+                    return new Object[] { httpResponse.getStatusLine().getStatusCode() };
+                }
             }
-            reader.close();
-            return new Object[] { httpResponse.getStatusLine().getStatusCode(), response.toString() };
-        } else {
-            return new Object[] { httpResponse.getStatusLine().getStatusCode() };
+        } catch (IOException e) {
+            throw new IOException(e.getMessage());
         }
     }
 
-    public static Object[] sendGET(String endpoint, Map<String, String> headers) throws IOException {
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpGet httpGet = new HttpGet(endpoint);
-        for (String headerType : headers.keySet()) {
-            httpGet.setHeader(headerType, headers.get(headerType));
-        }
-        HttpResponse httpResponse = httpClient.execute(httpGet);
-        if (httpResponse.getEntity() != null) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent()));
-            String inputLine;
-            StringBuilder response = new StringBuilder();
-
-            while ((inputLine = reader.readLine()) != null) {
-                response.append(inputLine);
+    public static Object[] sendGET(String endpoint, Map<String, String> headers) throws IOException, InterruptedException {
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpGet httpGet = new HttpGet(endpoint);
+            for (String headerType : headers.keySet()) {
+                httpGet.setHeader(headerType, headers.get(headerType));
             }
-            reader.close();
-            return new Object[] { httpResponse.getStatusLine().getStatusCode(), response.toString() };
-        } else {
-            return new Object[] { httpResponse.getStatusLine().getStatusCode() };
+            try (CloseableHttpResponse httpResponse = httpClient.execute(httpGet)) {
+                Thread.sleep(1000);
+                if (httpResponse.getEntity() != null) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent()));
+                    String inputLine;
+                    StringBuilder response = new StringBuilder();
+
+                    while ((inputLine = reader.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                    reader.close();
+                    return new Object[] { httpResponse.getStatusLine().getStatusCode(), response.toString() };
+                } else {
+                    return new Object[] { httpResponse.getStatusLine().getStatusCode() };
+                }
+            }
+        } catch (IOException e) {
+            throw new IOException(e.getMessage());
         }
     }
 
-    public static int sendPUT(String endpoint, String content, Map<String, String> headers) throws IOException {
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpPut httpPut = new HttpPut(endpoint);
-        for (String headerType : headers.keySet()) {
-            httpPut.setHeader(headerType, headers.get(headerType));
-        }
-        if (null != content) {
-            HttpEntity httpEntity = new ByteArrayEntity(content.getBytes("UTF-8"));
-            if (headers.get("Content-Type") == null) {
-                httpPut.setHeader("Content-Type", "application/json");
+    public static int sendPUT(String endpoint, String content, Map<String, String> headers) throws IOException, InterruptedException {
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpPut httpPut = new HttpPut(endpoint);
+            for (String headerType : headers.keySet()) {
+                httpPut.setHeader(headerType, headers.get(headerType));
             }
-            httpPut.setEntity(httpEntity);
+            if (null != content) {
+                HttpEntity httpEntity = new ByteArrayEntity(content.getBytes(StandardCharsets.UTF_8));
+                if (headers.get("Content-Type") == null) {
+                    httpPut.setHeader("Content-Type", "application/json");
+                }
+                httpPut.setEntity(httpEntity);
+            }
+            try (CloseableHttpResponse response = httpClient.execute(httpPut)) {
+                Thread.sleep(1000);
+                return response.getStatusLine().getStatusCode();
+            }
+        } catch (IOException e) {
+            throw new IOException(e.getMessage());
         }
-        HttpResponse httpResponse = httpClient.execute(httpPut);
-        return httpResponse.getStatusLine().getStatusCode();
     }
 
-    public static int sendPATCH(String endpoint, String content, Map<String, String> headers) throws IOException {
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpPatch httpPatch = new HttpPatch(endpoint);
-        for (String headerType : headers.keySet()) {
-            httpPatch.setHeader(headerType, headers.get(headerType));
-        }
-        if (null != content) {
-            HttpEntity httpEntity = new ByteArrayEntity(content.getBytes("UTF-8"));
-            if (headers.get("Content-Type") == null) {
-                httpPatch.setHeader("Content-Type", "application/json");
+    public static int sendPATCH(String endpoint, String content, Map<String, String> headers) throws IOException, InterruptedException {
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpPatch httpPatch = new HttpPatch(endpoint);
+            for (String headerType : headers.keySet()) {
+                httpPatch.setHeader(headerType, headers.get(headerType));
             }
-            httpPatch.setEntity(httpEntity);
+            if (null != content) {
+                HttpEntity httpEntity = new ByteArrayEntity(content.getBytes(StandardCharsets.UTF_8));
+                if (headers.get("Content-Type") == null) {
+                    httpPatch.setHeader("Content-Type", "application/json");
+                }
+                httpPatch.setEntity(httpEntity);
+            }
+            try (CloseableHttpResponse response = httpClient.execute(httpPatch)) {
+                Thread.sleep(1000);
+                return response.getStatusLine().getStatusCode();
+            }
+        } catch (IOException e) {
+            throw new IOException(e.getMessage());
         }
-        HttpResponse httpResponse = httpClient.execute(httpPatch);
-        return httpResponse.getStatusLine().getStatusCode();
     }
 
-    public static int sendDELETE(String endpoint, Map<String, String> headers) throws IOException {
-        HttpClient httpClient = new DefaultHttpClient();
-        HttpDelete httpDelete = new HttpDelete(endpoint);
-        for (String headerType : headers.keySet()) {
-            httpDelete.setHeader(headerType, headers.get(headerType));
+    public static int sendDELETE(String endpoint, Map<String, String> headers) throws IOException, InterruptedException {
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpDelete httpDelete = new HttpDelete(endpoint);
+            for (String headerType : headers.keySet()) {
+                httpDelete.setHeader(headerType, headers.get(headerType));
+            }
+            try (CloseableHttpResponse response = httpClient.execute(httpDelete)) {
+                Thread.sleep(1000);
+                return response.getStatusLine().getStatusCode();
+            }
+        } catch (IOException e) {
+            throw new IOException(e.getMessage());
         }
-        HttpResponse httpResponse = httpClient.execute(httpDelete);
-        return httpResponse.getStatusLine().getStatusCode();
     }
 
     public static String getETag(String content) throws ParseException, JSONException {
@@ -152,5 +178,4 @@ public class ODataTestUtils {
             return ((JSONObject) ((JSONArray) ((JSONObject) obj).get("value")).get(0)).get("@odata.etag").toString();
         }
     }
-
 }

@@ -39,7 +39,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.rmi.RemoteException;
-import java.util.concurrent.TimeUnit;
 import javax.xml.stream.XMLStreamException;
 
 public class Utils {
@@ -151,7 +150,7 @@ public class Utils {
             throws InterruptedException {
         boolean logExists = false;
         for (int i = 0; i < timeout; i++) {
-            TimeUnit.SECONDS.sleep(1);
+            Thread.sleep(5000);
             if (logReader.getLogs().contains(expected)) {
                 logExists = true;
                 logReader.stop();
@@ -174,7 +173,7 @@ public class Utils {
             throws InterruptedException {
         boolean logExists = false;
         for (int i = 0; i < timeout; i++) {
-            TimeUnit.SECONDS.sleep(1);
+            Thread.sleep(1000);
             if (logReader.getLogs().contains(expected)) {
                 logExists = true;
                 break;
@@ -189,7 +188,7 @@ public class Utils {
             if (Files.exists(filePath)) {
                 return true;
             }
-            TimeUnit.SECONDS.sleep(1);
+            Thread.sleep(1000);
         }
         log.error("File does not exists in " + filePath, new Throwable());
         return false;

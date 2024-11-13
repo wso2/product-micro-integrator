@@ -218,8 +218,8 @@ public class ServiceCatalogTestCase extends ESBIntegrationTest {
 
     @Test(groups = {"wso2.esb"},
             description = "Test the ZIP file created by the service catalog", priority = 7)
-    public void testServiceCatalogZipFile() throws CarbonException, FileNotFoundException {
-        File extracted = chekAndExtractPayloadZip();
+    public void testServiceCatalogZipFile() throws CarbonException, FileNotFoundException, InterruptedException {
+        File extracted = checkAndExtractPayloadZip();
         assertTrue(extracted.exists(), "Error occurred while extracting the ZIP");
         File metadataFile = new File(extracted, "healthcare_v1.0.0-SNAPSHOT");
         File yamlFile = new File(metadataFile, "metadata.yaml");
@@ -244,7 +244,7 @@ public class ServiceCatalogTestCase extends ESBIntegrationTest {
                         File.separator + TOML_FILE));
         assertTrue(Utils.checkForLog(carbonLogReader,
                 "Successfully updated the service catalog", 10), "Did not receive the expected info log");
-        File extracted = chekAndExtractPayloadZip();
+        File extracted = checkAndExtractPayloadZip();
         assertTrue(extracted.exists(), "Error occurred while extracting the ZIP");
         assertFalse(checkMetadataFileExists(extracted, "healthcare_v1.0.0-SNAPSHOT"),
                 "healthcare API should not be uploaded again");
@@ -269,7 +269,7 @@ public class ServiceCatalogTestCase extends ESBIntegrationTest {
                         File.separator + TOML_FILE));
         assertTrue(Utils.checkForLog(carbonLogReader,
                 "Successfully updated the service catalog", 10), "Did not receive the expected info log");
-        File extracted = chekAndExtractPayloadZip();
+        File extracted = checkAndExtractPayloadZip();
         assertTrue(extracted.exists(), "Error occurred while extracting the ZIP");
         assertFalse(checkMetadataFileExists(extracted, "healthcare_v1.0.0-SNAPSHOT"),
                 "healthcare API should not be uploaded again");
@@ -316,7 +316,7 @@ public class ServiceCatalogTestCase extends ESBIntegrationTest {
             serverConfigurationManager.restartMicroIntegrator();
             assertTrue(Utils.checkForLog(carbonLogReader,
                     "Successfully updated the service catalog", 10), "Did not receive the expected info log");
-            File extracted = chekAndExtractPayloadZip();
+            File extracted = checkAndExtractPayloadZip();
             assertTrue(extracted.exists(), "Error occurred while extracting the ZIP");
             File metadataFile = new File(extracted, "SampleProxyService_proxy_v1.0.0");
             File yamlFile = new File(metadataFile, "metadata.yaml");
@@ -326,7 +326,8 @@ public class ServiceCatalogTestCase extends ESBIntegrationTest {
         }
     }
 
-    private static File chekAndExtractPayloadZip() throws CarbonException {
+    private static File checkAndExtractPayloadZip() throws CarbonException, InterruptedException {
+        Thread.sleep(1000);
         String payloadZipPath = CarbonBaseUtils.getCarbonHome() + File.separator + "tmp" + File.separator +
                 SERVICE_CATALOG_FOLDER_NAME + File.separator + ZIP_FILE_NAME;
         File zipFile = new File(payloadZipPath);
@@ -354,7 +355,7 @@ public class ServiceCatalogTestCase extends ESBIntegrationTest {
         serverConfigurationManager.restartGracefully();
     }
 
-    private class FirstController implements HttpHandler {
+    private static class FirstController implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             try (OutputStream responseBody = exchange.getResponseBody()) {
