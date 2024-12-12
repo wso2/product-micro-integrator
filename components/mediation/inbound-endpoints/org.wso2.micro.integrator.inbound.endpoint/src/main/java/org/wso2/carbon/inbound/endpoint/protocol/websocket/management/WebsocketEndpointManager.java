@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.inbound.InboundProcessorParams;
+import org.apache.synapse.transport.passthru.api.PassThroughInboundEndpointHandler;
 import org.wso2.carbon.inbound.endpoint.common.AbstractInboundEndpointManager;
 import org.wso2.carbon.inbound.endpoint.persistence.InboundEndpointInfoDTO;
 import org.wso2.carbon.inbound.endpoint.persistence.PersistenceUtils;
@@ -308,5 +309,14 @@ public class WebsocketEndpointManager extends AbstractInboundEndpointManager {
 
     public void setSourceHandler(InboundWebsocketSourceHandler sourceHandler) {
         this.sourceHandler = sourceHandler;
+    }
+
+    public boolean isEndpointRunning(String name, int port) {
+
+        String epName = dataStore.getListeningEndpointName(port, SUPER_TENANT_DOMAIN_NAME);
+        if (epName != null && epName.equalsIgnoreCase(name)) {
+            return WebsocketEventExecutorManager.getInstance().isRegisteredExecutor(port);
+        }
+        return false;
     }
 }

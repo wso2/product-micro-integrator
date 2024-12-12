@@ -53,6 +53,7 @@ public class JMSPollingConsumer {
     private String name;
     private Properties jmsProperties;
     private boolean isConnected;
+    private boolean destroyedTriggered;
 
     private Long reconnectDuration;
     private long retryDuration;
@@ -402,7 +403,12 @@ public class JMSPollingConsumer {
                        practice the Interrupted flag is set back to TRUE in this thread. */
                 }
             }
-            releaseResources(false);
+            if (destroyedTriggered) {
+                releaseResources(true);
+                destroyedTriggered = false;
+            } else {
+                releaseResources(false);
+            }
         }
         return null;
     }
@@ -425,6 +431,7 @@ public class JMSPollingConsumer {
     }
 
     public void destroy() {
+        destroyedTriggered = true;
         synchronized (jmsConnectionFactory) {
             if (messageConsumer != null) {
                 jmsConnectionFactory.closeConsumer(messageConsumer, true);

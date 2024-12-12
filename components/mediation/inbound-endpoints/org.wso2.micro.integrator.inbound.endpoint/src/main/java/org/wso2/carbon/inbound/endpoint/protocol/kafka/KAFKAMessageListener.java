@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 public class KAFKAMessageListener extends AbstractKafkaMessageListener {
@@ -139,6 +140,17 @@ public class KAFKAMessageListener extends AbstractKafkaMessageListener {
             injectMessageToESB(name, consumerIte.get(0));
         } else {
             log.debug("There are multiple topics to consume from not a single topic");
+        }
+    }
+
+    @Override
+    public void destroy() {
+        if (Objects.nonNull(consumerConnector)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Shutting down the Kafka consumer connect...");
+            }
+            consumerConnector.shutdown();
+            consumerConnector = null;
         }
     }
 

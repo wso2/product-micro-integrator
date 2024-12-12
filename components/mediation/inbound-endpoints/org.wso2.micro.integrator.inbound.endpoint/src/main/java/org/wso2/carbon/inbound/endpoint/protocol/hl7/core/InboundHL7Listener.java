@@ -32,13 +32,29 @@ public class InboundHL7Listener implements InboundRequestProcessor {
 
     private int port;
     private InboundProcessorParams params;
+    private boolean startInPausedMode;
 
     public InboundHL7Listener(InboundProcessorParams params) {
         this.params = params;
+        startInPausedMode = params.startInPausedMode();
     }
 
     @Override
     public void init() {
+        /*
+         * The activate/deactivate functionality for the HL7 protocol is not currently implemented
+         * for Inbound Endpoints.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability for HL7 listener is implemented.
+         */
+        if (startInPausedMode) {
+            log.info("Inbound endpoint [" + params.getName() + "] is currently suspended.");
+            return;
+        }
         if (!InboundHL7IOReactor.isStarted()) {
             log.info("Starting MLLP Transport Reactor");
             try {
@@ -67,4 +83,21 @@ public class InboundHL7Listener implements InboundRequestProcessor {
         HL7EndpointManager.getInstance().closeEndpoint(port);
     }
 
+    @Override
+    public boolean activate() {
+
+        return false;
+    }
+
+    @Override
+    public boolean deactivate() {
+
+        return false;
+    }
+
+    @Override
+    public boolean isDeactivated() {
+
+        return !InboundHL7IOReactor.isStarted();
+    }
 }

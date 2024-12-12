@@ -24,6 +24,7 @@ import org.apache.synapse.SynapseException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 
 public class KAFKAPollingConsumer {
@@ -156,5 +157,11 @@ public class KAFKAPollingConsumer {
 
     public Properties getInboundProperties() {
         return kafkaProperties;
+    }
+
+    public void destroy() {
+        if (Objects.nonNull(messageListener)) {
+            messageListener.destroy();
+        }
     }
 }

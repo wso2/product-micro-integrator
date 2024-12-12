@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 public class SimpleKafkaMessageListener extends AbstractKafkaMessageListener {
@@ -137,6 +138,16 @@ public class SimpleKafkaMessageListener extends AbstractKafkaMessageListener {
 
     @Override
     public void start() throws Exception {
+    }
+
+    public void destroy() {
+        if (Objects.nonNull(consumer)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Shutting down the Kafka consumer connect...");
+            }
+            consumer.close();
+            consumer = null;
+        }
     }
 
     @Override
