@@ -86,6 +86,7 @@
                 <format>{
                     "string": "${xpath('//root/customer_name/text()')}",
                     "escapedObject": "${xpath('//root/pet')}",
+                    "escapedObject2": "${xpath('//root/pet2')}",
                     "object": ${xpath('//root/pet')},
                     "xml": "${var.id}",
                     "json": "${var.special_json}"
