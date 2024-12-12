@@ -77,6 +77,7 @@ public class MqttListener extends InboundOneTimeTriggerRequestProcessor {
         this.synapseEnvironment = params.getSynapseEnvironment();
         this.mqttProperties = params.getProperties();
         this.params = params;
+        this.startInPausedMode = params.startInPausedMode();
 
         //assign default value if sequential mode parameter is not present
         this.sequential = true;
@@ -153,6 +154,20 @@ public class MqttListener extends InboundOneTimeTriggerRequestProcessor {
 
     @Override
     public void init() {
+        /*
+         * The activate/deactivate functionality for the MQTT protocol is not currently implemented
+         * for Inbound Endpoints.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability for MQTT listener is implemented.
+         */
+        if (startInPausedMode) {
+            log.info("Inbound endpoint [" + name + "] is currently suspended.");
+            return;
+        }
         log.info("MQTT inbound endpoint " + name + " initializing ...");
         initAsyncClient();
         start();

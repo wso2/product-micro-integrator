@@ -17,6 +17,7 @@
  */
 package org.wso2.micro.integrator.ntask.core;
 
+import org.apache.synapse.task.TaskManagerObserver;
 import org.wso2.micro.integrator.ntask.common.TaskException;
 import org.wso2.micro.integrator.ntask.core.impl.LocalTaskActionListener;
 
@@ -59,6 +60,8 @@ public interface TaskManager {
      * @throws TaskException Exception
      */
     void handleTask(String taskName) throws TaskException;
+
+    void handleTask(String taskName, boolean scheduledInPausedMode) throws TaskException;
 
     /**
      * Get all the coordinated tasks ( the tasks which need db interaction ) deployed in this node.
@@ -110,6 +113,8 @@ public interface TaskManager {
     TaskState getTaskState(String taskName) throws TaskException;
 
     boolean isDeactivated(String taskName) throws TaskException;
+
+    boolean isTaskRunning(String taskName) throws TaskException;
 
     /**
      * Get task information.

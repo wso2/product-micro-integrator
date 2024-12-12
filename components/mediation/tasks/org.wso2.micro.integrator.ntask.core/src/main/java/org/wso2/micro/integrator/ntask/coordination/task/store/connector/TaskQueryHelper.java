@@ -38,9 +38,13 @@ public class TaskQueryHelper {
                     + CoordinatedTask.States.NONE + "' WHEN '" + CoordinatedTask.States.DEACTIVATED + "'THEN '"
                     + CoordinatedTask.States.PAUSED + "' ELSE " + TASK_STATE + " END )";
 
+//    static final String ADD_TASK =
+//            "INSERT INTO " + TABLE_NAME + " ( " + TASK_NAME + ", " + DESTINED_NODE_ID + ", " + TASK_STATE + ") "
+//                    + "VALUES (?,NULL,'" + CoordinatedTask.States.NONE + "')";
+
     static final String ADD_TASK =
             "INSERT INTO " + TABLE_NAME + " ( " + TASK_NAME + ", " + DESTINED_NODE_ID + ", " + TASK_STATE + ") "
-                    + "VALUES (?,NULL,'" + CoordinatedTask.States.NONE + "')";
+                    + "VALUES (?,NULL,?)";
 
     static final String UPDATE_ASSIGNMENT_AND_STATE =
             "UPDATE  " + TABLE_NAME + " SET  " + DESTINED_NODE_ID + " = ? , " + TASK_STATE + " = " + TASK_STATE_CONST

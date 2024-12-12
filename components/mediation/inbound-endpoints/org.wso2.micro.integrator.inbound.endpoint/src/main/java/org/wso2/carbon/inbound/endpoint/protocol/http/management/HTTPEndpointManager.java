@@ -481,4 +481,13 @@ public class HTTPEndpointManager extends AbstractInboundEndpointManager {
     public boolean isAnyInternalHttpsApiEnabled() {
         return internalHttpsApiEnabled;
     }
+
+    public boolean isEndpointRunning(String name, int port) {
+
+        String epName = dataStore.getListeningEndpointName(port, SUPER_TENANT_DOMAIN_NAME);
+        if (epName != null && epName.equalsIgnoreCase(name)) {
+            return PassThroughInboundEndpointHandler.isEndpointRunning(port);
+        }
+        return false;
+    }
 }

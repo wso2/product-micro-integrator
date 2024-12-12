@@ -77,12 +77,26 @@ public class KAFKAProcessor extends InboundRequestProcessorImpl implements TaskS
         this.injectingSeq = params.getInjectingSeq();
         this.onErrorSeq = params.getOnErrorSeq();
         this.synapseEnvironment = params.getSynapseEnvironment();
+        this.startInPausedMode = params.startInPausedMode();
     }
 
     /**
      * This will be called at the time of synapse artifact deployment.
      */
     public void init() {
+        /*
+         * The activate/deactivate functionality for the Kafka Inbound Endpoint is not currently implemented.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability for Kafka listener is implemented.
+         */
+        if (startInPausedMode) {
+            log.info("Inbound endpoint [" + name + "] is currently suspended.");
+            return;
+        }
         log.info("Initializing inbound KAFKA listener for destination " + name);
         try {
             pollingConsumer = new KAFKAPollingConsumer(kafkaProperties, interval, name);
@@ -111,7 +125,7 @@ public class KAFKAProcessor extends InboundRequestProcessorImpl implements TaskS
     }
 
     public void update() {
-        // This will not be called for inbound endpoints
+        // This is not called for Kafka Inbound Endpoint
     }
 
     public String getName() {
@@ -125,15 +139,24 @@ public class KAFKAProcessor extends InboundRequestProcessorImpl implements TaskS
     @Override
     public void destroy() {
         try {
-            if (pollingConsumer != null && pollingConsumer.messageListener != null
-                    && pollingConsumer.messageListener.consumerConnector != null) {
-                pollingConsumer.messageListener.consumerConnector.shutdown();
-                log.info("Shutdown the kafka consumer connector");
-            }
+            pollingConsumer.destroy();
+            log.info("Shutdown the kafka consumer connector");
         } catch (Exception e) {
             log.error("Error while shutdown the consumer connector" + e.getMessage(), e);
         }
         super.destroy();
+    }
+
+    @Override
+    public boolean activate() {
+
+        return false;
+    }
+
+    @Override
+    public boolean deactivate() {
+
+        return false;
     }
 
     /**

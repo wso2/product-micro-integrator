@@ -208,7 +208,7 @@ public abstract class AbstractQuartzTaskManager implements TaskManager {
         this.scheduleLocalTask(taskName, paused);
     }
 
-    private synchronized void scheduleLocalTask(String taskName, boolean paused) throws TaskException {
+    protected synchronized void scheduleLocalTask(String taskName, boolean paused) throws TaskException {
 
         TaskInfo taskInfo = this.getTaskRepository().getTask(taskName);
         String taskGroup = this.getTenantTaskGroup();

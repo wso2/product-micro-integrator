@@ -163,6 +163,7 @@ public class Constants {
     public static final String AUDIT_LOG_TYPE_LOG_LEVEL = "log_level";
     public static final String AUDIT_LOG_TYPE_ROOT_LOG_LEVEL = "root_log_level";
     public static final String AUDIT_LOG_TYPE_MESSAGE_PROCESSOR = "message_processor";
+    public static final String AUDIT_LOG_TYPE_INBOUND_ENDPOINT = "inbound_endpoint";
     public static final String AUDIT_LOG_TYPE_CARBON_APPLICATION = "carbon_application";
     public static final String AUDIT_LOG_TYPE_CONNECTOR = "connector";
 

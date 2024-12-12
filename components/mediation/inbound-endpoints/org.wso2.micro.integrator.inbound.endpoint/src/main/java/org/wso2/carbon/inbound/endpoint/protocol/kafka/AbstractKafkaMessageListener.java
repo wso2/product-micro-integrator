@@ -65,8 +65,7 @@ public abstract class AbstractKafkaMessageListener {
     /**
      * Destroy consuming the messages
      */
-    public void destroy() {
-    }
+    public abstract void destroy();
 
     /**
      * Poll the messages from the zookeeper and injected to the sequence
