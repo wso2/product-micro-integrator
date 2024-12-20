@@ -174,6 +174,11 @@ public abstract class AbstractQuartzTaskManager implements TaskManager {
         String taskGroup = this.getTenantTaskGroup();
         try {
             this.getScheduler().pauseJob(new JobKey(taskName, taskGroup));
+            //notify the listeners of the task pause
+            LocalTaskActionListener listener = localTaskActionListeners.get(taskName);
+            if (null != listener) {
+                listener.notifyLocalTaskPause(taskName);
+            }
             log.info("Task temporarily paused: [" + this.getTaskType() + "][" + taskName + "]");
         } catch (SchedulerException e) {
             throw new TaskException("Error in temporarily pausing task with name: " + taskName,

@@ -32,4 +32,11 @@ public interface LocalTaskActionListener {
      * @param taskName
      */
     void notifyLocalTaskRemoval(String taskName);
+
+    /**
+     * Method to notify when a local task is paused, it can be only due to pause.
+     *
+     * @param taskName
+     */
+    void notifyLocalTaskPause(String taskName);
 }
