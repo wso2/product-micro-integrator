@@ -233,8 +233,9 @@ public class FileRegistryResourceDeployer implements AppDeploymentHandler {
                 Path subFilePath =subFileInfo.file.toPath();
                 String subFileRelativePath = directoryRegistryPath + File.separator + file.toPath().relativize(subFilePath);
                 String mediaType = subFileInfo.mediaType;
+                String content = readResourceContent(new File(subFilePath.toString()));
                 ((MicroIntegratorRegistry)lightweightRegistry).addNewNonEmptyResource(
-                        subFileRelativePath, false, mediaType, "",
+                        subFileRelativePath, false, mediaType, content,
                         collection.getProperties());
             }
         }
