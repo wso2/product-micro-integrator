@@ -157,4 +157,5 @@ public class KAFKAPollingConsumer {
     public Properties getInboundProperties() {
         return kafkaProperties;
     }
+
 }

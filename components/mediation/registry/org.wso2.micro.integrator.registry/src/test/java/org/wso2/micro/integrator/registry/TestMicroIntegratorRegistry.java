@@ -76,6 +76,14 @@ public class TestMicroIntegratorRegistry {
         String emptyMediaTypeFilePath = "conf:/custom/QueueName";
         String emptyMediaTypeFileContent = "ordersQueue";
         microIntegratorRegistry.newNonEmptyResource(emptyMediaTypeFilePath, false, "", emptyMediaTypeFileContent, "");
+
+        String resourceFilePath = "gov:mi-resources/custom/checkJsScript.js";
+        String resourceContent = "function checkLog(mc) {\n"
+                + "\tvar log = mc.getServiceLog();\n"
+                + "\tlog.info(\"Logging inside Script Mediator\");\n"
+                + "}\n";
+
+        microIntegratorRegistry.newNonEmptyResource(resourceFilePath, false, "application/javascript", resourceContent, "");
     }
 
     @Test
@@ -119,6 +127,14 @@ public class TestMicroIntegratorRegistry {
     public void testRegistryResourceRead() throws IOException {
 
         OMNode omNode = microIntegratorRegistry.lookup("gov:/custom/checkJsScript.js");
+        String mediaType = ((DataHandler) ((OMTextImpl) omNode).getDataHandler()).getContentType();
+        Assert.assertEquals("Media type should be as expected", "application/javascript", mediaType);
+    }
+
+    @Test
+    public void testResourceRead() {
+
+        OMNode omNode = microIntegratorRegistry.lookup("resources:custom/checkJsScript.js");
         String mediaType = ((DataHandler) ((OMTextImpl) omNode).getDataHandler()).getContentType();
         Assert.assertEquals("Media type should be as expected", "application/javascript", mediaType);
     }

@@ -44,6 +44,7 @@ public class InboundHttpListener implements InboundRequestProcessor {
     private String name;
     private int port;
     private InboundProcessorParams processorParams;
+    protected boolean startInPausedMode;
 
     public InboundHttpListener(InboundProcessorParams params) {
         processorParams = params;
@@ -58,10 +59,25 @@ public class InboundHttpListener implements InboundRequestProcessor {
             handleException("Please provide port number as integer  instead of  port  " + portParam, e);
         }
         name = params.getName();
+        startInPausedMode = params.startInPausedMode();
     }
 
     @Override
     public void init() {
+        /*
+         * The activate/deactivate functionality for the HTTP protocol is not currently implemented
+         * for Inbound Endpoints.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability for HTTP listener is implemented.
+         */
+        if (startInPausedMode) {
+            log.info("Inbound endpoint [" + name + "] is currently suspended.");
+            return;
+        }
         if (isPortUsedByAnotherApplication(port)) {
             log.warn("Port " + port + " used by inbound endpoint " + name + " is already used by another application "
                              + "hence undeploying inbound endpoint");
@@ -75,6 +91,24 @@ public class InboundHttpListener implements InboundRequestProcessor {
     @Override
     public void destroy() {
         HTTPEndpointManager.getInstance().closeEndpoint(port);
+    }
+
+    @Override
+    public boolean activate() {
+
+        return false;
+    }
+
+    @Override
+    public boolean deactivate() {
+
+        return false;
+    }
+
+    @Override
+    public boolean isDeactivated() {
+
+        return !HTTPEndpointManager.getInstance().isEndpointRunning(name, port);
     }
 
     protected void handleException(String msg, Exception e) {

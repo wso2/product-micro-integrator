@@ -357,11 +357,12 @@ public class RDMBSConnector {
      *
      * @param taskName - The task which needs to be added.
      */
-    public void addTaskIfNotExist(String taskName) throws TaskCoordinationException {
+    public void addTaskIfNotExist(String taskName, CoordinatedTask.States state) throws TaskCoordinationException {
 
         try (Connection connection = getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(
                 ADD_TASK)) {
             preparedStatement.setString(1, taskName);
+            preparedStatement.setString(2, state.name());
             preparedStatement.executeUpdate();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Successfully added the task [" + taskName + "].");

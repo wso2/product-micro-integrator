@@ -309,4 +309,13 @@ public class WebsocketEndpointManager extends AbstractInboundEndpointManager {
     public void setSourceHandler(InboundWebsocketSourceHandler sourceHandler) {
         this.sourceHandler = sourceHandler;
     }
+
+    public boolean isEndpointRunning(String name, int port) {
+
+        String epName = dataStore.getListeningEndpointName(port, SUPER_TENANT_DOMAIN_NAME);
+        if (epName != null && epName.equalsIgnoreCase(name)) {
+            return WebsocketEventExecutorManager.getInstance().isRegisteredExecutor(port);
+        }
+        return false;
+    }
 }

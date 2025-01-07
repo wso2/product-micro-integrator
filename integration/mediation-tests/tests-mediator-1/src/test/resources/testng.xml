@@ -325,6 +325,11 @@
             <class name="org.wso2.carbon.esb.message.processor.test.DeactivatedCappMPBehaviourOnRestartTestCase"/>
         </classes>
     </test>
+    <test name="V2-Mediator-Tests" preserve-order="true" verbose="2">
+        <packages>
+            <package name="org.wso2.carbon.esb.mediator.test.v2"/>
+        </packages>
+    </test>
 
 </suite>
 

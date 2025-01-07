@@ -1035,6 +1035,10 @@ public class MicroIntegratorRegistry extends AbstractRegistry {
                 registryRoot = localRegistry;
                 resourcePath = key.substring(MicroIntegratorRegistryConstants.LOCAL_REGISTRY_PREFIX.length());
 
+            } else if (key.startsWith(MicroIntegratorRegistryConstants.RESOURCES_PREFIX)) {
+                registryRoot = govRegistry;
+                resourcePath = MicroIntegratorRegistryConstants.MI_RESOURCES_DIRECTORY_NAME + URL_SEPARATOR +
+                        key.substring(MicroIntegratorRegistryConstants.RESOURCES_PREFIX.length());
             } else {
                 registryRoot = govRegistry;
                 resourcePath = key;

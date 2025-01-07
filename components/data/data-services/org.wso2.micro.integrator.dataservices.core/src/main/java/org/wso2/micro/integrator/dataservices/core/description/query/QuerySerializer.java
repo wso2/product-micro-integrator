@@ -198,6 +198,10 @@ public class QuerySerializer {
 			if (elementName != null) {
 				resEl.addAttribute(DBSFields.ELEMENT, elementName, null);
 			}
+			String escapeNonPrintableChar = String.valueOf(result.isEscapeNonPrintableChar());
+			if (!escapeNonPrintableChar.isEmpty()) {
+				resEl.addAttribute(DBSFields.ESCAPE_NON_PRINTABLE_CHAR, escapeNonPrintableChar, null);
+			}
 			String rowName = result.getRowName();
 			if (rowName != null) {
 				resEl.addAttribute(DBSFields.ROW_NAME, rowName, null);

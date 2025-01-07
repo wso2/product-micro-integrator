@@ -46,6 +46,7 @@ public class JMSProcessor extends InboundRequestProcessorImpl implements TaskSta
 
     public JMSProcessor(InboundProcessorParams params) {
         this.name = params.getName();
+        this.startInPausedMode = params.startInPausedMode();
         this.jmsProperties = params.getProperties();
 
         String inboundEndpointInterval = jmsProperties.getProperty(PollingConstants.INBOUND_ENDPOINT_INTERVAL);
@@ -84,6 +85,19 @@ public class JMSProcessor extends InboundRequestProcessorImpl implements TaskSta
      * This will be called at the time of synapse artifact deployment.
      */
     public void init() {
+        /*
+         * The activate/deactivate functionality for the JMS protocol is not currently implemented
+         * for Inbound Endpoints.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability for JMS listener is implemented.
+         */
+        if (startInPausedMode) {
+            return;
+        }
         log.info("Initializing inbound JMS listener for inbound endpoint " + name);
         for (int consumers = 0; consumers < concurrentConsumers; consumers++) {
             JMSPollingConsumer jmsPollingConsumer = new JMSPollingConsumer(jmsProperties, interval, name);
@@ -135,5 +149,17 @@ public class JMSProcessor extends InboundRequestProcessorImpl implements TaskSta
         if (removeTask) {
             destroy();
         }
+    }
+
+    @Override
+    public boolean activate() {
+
+        return false;
+    }
+
+    @Override
+    public boolean deactivate() {
+
+        return false;
     }
 }

@@ -31,6 +31,7 @@ public class InboundHttpWebsocketListener implements InboundRequestProcessor {
     protected final String name;
     protected int port;
     protected InboundProcessorParams processorParams;
+    protected boolean startInPausedMode;
 
     public InboundHttpWebsocketListener(InboundProcessorParams params) {
 
@@ -43,18 +44,51 @@ public class InboundHttpWebsocketListener implements InboundRequestProcessor {
             handleException("Validation failed for the port parameter " + portParam, e);
         }
         name = params.getName();
+        startInPausedMode = params.startInPausedMode();
     }
 
     @Override
     public void init() {
 
-        HttpWebsocketEndpointManager.getInstance().startEndpoint(port, name, processorParams);
+        /*
+         * The activate/deactivate functionality for the HTTP-WS protocol is not currently implemented
+         * for Inbound Endpoints.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability for HTTP-WS listener is implemented.
+         */
+        if (startInPausedMode) {
+            LOGGER.info("Inbound endpoint [" + name + "] is currently suspended.");
+        } else {
+            HttpWebsocketEndpointManager.getInstance().startEndpoint(port, name, processorParams);
+        }
     }
 
     @Override
     public void destroy() {
 
         HttpWebsocketEndpointManager.getInstance().closeEndpoint(port);
+    }
+
+    @Override
+    public boolean activate() {
+
+        return false;
+    }
+
+    @Override
+    public boolean deactivate() {
+
+        return false;
+    }
+
+    @Override
+    public boolean isDeactivated() {
+
+        return !HttpWebsocketEndpointManager.getInstance().isEndpointRunning(name, port);
     }
 
     protected void handleException(String msg, Exception e) {

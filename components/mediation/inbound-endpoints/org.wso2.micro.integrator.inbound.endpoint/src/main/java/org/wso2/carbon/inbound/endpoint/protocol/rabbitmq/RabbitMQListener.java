@@ -26,6 +26,7 @@ import org.apache.synapse.inbound.InboundProcessorParams;
 import org.wso2.carbon.inbound.endpoint.common.InboundOneTimeTriggerRequestProcessor;
 import org.wso2.carbon.inbound.endpoint.protocol.PollingConstants;
 
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -47,6 +48,7 @@ public class RabbitMQListener extends InboundOneTimeTriggerRequestProcessor {
         this.name = params.getName();
         this.injectingSeq = params.getInjectingSeq();
         this.onErrorSeq = params.getOnErrorSeq();
+        this.startInPausedMode = params.startInPausedMode();
         this.synapseEnvironment = params.getSynapseEnvironment();
         this.rabbitmqProperties = params.getProperties();
 
@@ -72,12 +74,27 @@ public class RabbitMQListener extends InboundOneTimeTriggerRequestProcessor {
 
     @Override
     public void destroy(boolean removeTask) {
-        rabbitMQConsumer.close();
+        if (Objects.nonNull(rabbitMQConsumer)) {
+            rabbitMQConsumer.close();
+        }
         super.destroy(removeTask);
     }
 
     @Override
     public void init() {
+        /*
+         * The activate/deactivate functionality for the RabbitMQ Inbound Endpoint is not currently implemented.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability for RabbitMQ listener is implemented.
+         */
+        if (startInPausedMode) {
+            log.info("Inbound endpoint [" + name + "] is currently suspended.");
+            return;
+        }
         log.info("RABBITMQ inbound endpoint " + name + " initializing ...");
         rabbitMQConsumer = new RabbitMQConsumer(rabbitMQConnectionFactory, rabbitmqProperties, injectHandler);
         rabbitMQConsumer.setInboundName(name);

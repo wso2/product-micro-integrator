@@ -1012,7 +1012,15 @@ public class FilePollingConsumer {
 
     void destroy() {
         fsManager.close();
+        this.close();
+    }
+
+    void close() {
         isClosed = true;
+    }
+
+    void start() {
+        isClosed = false;
     }
 
     private String sanitizeFileUriWithSub(String originalFileUri) {

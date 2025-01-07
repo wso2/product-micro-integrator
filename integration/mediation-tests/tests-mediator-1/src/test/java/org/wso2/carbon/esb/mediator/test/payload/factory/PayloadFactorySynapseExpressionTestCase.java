@@ -146,8 +146,8 @@ public class PayloadFactorySynapseExpressionTestCase extends ESBIntegrationTest 
 
         String expectedResponse = "{\n" +
                 "    \"string\": \"John<\",\n" +
-                "    \"escapedObject\": \"<pet><type>cat</type><name>emily\\\\ntini</name></pet>\",\n" +
-                "    \"escapedObject2\": \"<pet2>\\n        <type>dog&lt;</type>\\n        <name>John\\\\nWayne</name>\\n    </pet2>\",\n" +
+                "    \"escapedObject\": \"<pet><type>cat</type><name>emily\\\\\\\\ntini</name></pet>\",\n" +
+                "    \"escapedObject2\": \"<pet2>\\n        <type>dog&lt;</type>\\n        <name>John\\\\\\\\nWayne</name>\\n    </pet2>\",\n" +
                 "    \"object\": {\n" +
                 "        \"pet\": {\n" +
                 "            \"type\": \"cat\",\n" +

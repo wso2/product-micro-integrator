@@ -481,4 +481,23 @@ public class HTTPEndpointManager extends AbstractInboundEndpointManager {
     public boolean isAnyInternalHttpsApiEnabled() {
         return internalHttpsApiEnabled;
     }
+
+    /**
+     * Checks if a specified endpoint is running on a given port.
+     * This method retrieves the name of the endpoint listening on the given port and compares it
+     * with the provided name. If a match is found, it checks if the endpoint is actively running.
+     *
+     * @param name the name of the endpoint to check
+     * @param port the port number where the endpoint is expected to be running
+     * @return {@code true} if the endpoint with the specified name is running on the given port;
+     *         {@code false} otherwise
+     */
+    public boolean isEndpointRunning(String name, int port) {
+
+        String epName = dataStore.getListeningEndpointName(port, SUPER_TENANT_DOMAIN_NAME);
+        if (epName != null && epName.equalsIgnoreCase(name)) {
+            return PassThroughInboundEndpointHandler.isEndpointRunning(port);
+        }
+        return false;
+    }
 }

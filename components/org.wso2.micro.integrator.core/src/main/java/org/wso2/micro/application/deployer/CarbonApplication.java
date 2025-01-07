@@ -32,6 +32,7 @@ public class CarbonApplication {
     private String appVersion;
     private boolean deploymentCompleted;
     private String mainSequence;
+    private ClassLoader classLoader;
 
     private ApplicationConfiguration appConfig;
 
@@ -108,6 +109,14 @@ public class CarbonApplication {
 
     public void setMainSequence(String mainSequence) {
         this.mainSequence = mainSequence;
+    }
+
+    public ClassLoader getClassLoader() {
+        return classLoader;
+    }
+
+    public void setClassLoader(ClassLoader classLoader) {
+        this.classLoader = classLoader;
     }
 }
 

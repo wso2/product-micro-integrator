@@ -98,6 +98,7 @@
   "mediation.flow.statistics.capture_all": "synapse_properties.'mediation.flow.statistics.collect.all'",
   "mediation.stat.tracer.collect_payloads": "synapse_properties.'mediation.flow.statistics.tracer.collect.payloads'",
   "mediation.stat.tracer.collect_mediation_properties": "synapse_properties.'mediation.flow.statistics.tracer.collect.properties'",
+  "mediation.stat.tracer.collect_mediation_variables": "synapse_properties.'mediation.flow.statistics.tracer.collect.variables'",
   "mediation.statistics.enable_clean": "synapse_properties.'statistics.clean.enable'",
   "mediation.statistics.clean_interval" : "synapse_properties.'statistics.clean.interval'",
   "mediation.inbound.core_threads": "synapse_properties.'inbound.threads.core'",

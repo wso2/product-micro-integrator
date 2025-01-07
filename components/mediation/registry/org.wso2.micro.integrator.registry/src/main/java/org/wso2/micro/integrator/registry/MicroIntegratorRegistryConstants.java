@@ -45,11 +45,12 @@ public class MicroIntegratorRegistryConstants {
     public static final String PROTOCOL_HTTPS = "https";
     public static final String FILE_PROTOCOL_PREFIX = "file:";
 
-
+    public static final String RESOURCES_PREFIX = "resources:";
     public static final String CONFIG_REGISTRY_PREFIX = "conf:";
     public static final String GOVERNANCE_REGISTRY_PREFIX = "gov:";
     public static final String LOCAL_REGISTRY_PREFIX = "local:";
 
+    public static final String MI_RESOURCES_DIRECTORY_NAME = "mi-resources";
     public static final String CONFIG_DIRECTORY_NAME = "config";
     public static final String GOVERNANCE_DIRECTORY_NAME = "governance";
     public static final String LOCAL_DIRECTORY_NAME = "local";

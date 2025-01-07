@@ -26,6 +26,7 @@ import org.apache.synapse.task.TaskManagerObserver;
 import org.wso2.micro.core.ServerStartupHandler;
 import org.wso2.micro.integrator.mediation.ntask.internal.NtaskService;
 import org.wso2.micro.integrator.ntask.core.TaskInfo;
+import org.wso2.micro.integrator.ntask.core.TaskUtils;
 import org.wso2.micro.integrator.ntask.core.impl.LocalTaskActionListener;
 import org.wso2.micro.integrator.ntask.core.service.TaskService;
 
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -104,7 +106,10 @@ public class NTaskTaskManager implements TaskManager, TaskServiceObserver, Serve
                     if (logger.isDebugEnabled()) {
                         logger.debug("Submitting task [ " + taskId(taskDescription) + " ] to the task manager.");
                     }
-                    taskManager.handleTask(taskInfo.getName());
+                    boolean scheduledInPausedMode =
+                            Objects.nonNull(taskDescription.getProperty(TaskUtils.START_IN_PAUSED_MODE))
+                            && Boolean.parseBoolean((String) taskDescription.getProperty(TaskUtils.START_IN_PAUSED_MODE));
+                    taskManager.handleTask(taskInfo.getName(), scheduledInPausedMode);
                 }
                 removeTask(taskDescription);
             }
@@ -624,8 +629,7 @@ public class NTaskTaskManager implements TaskManager, TaskServiceObserver, Serve
                 return false;
             }
             try {
-                return taskManager.getTaskState(taskName)
-                                  .equals(org.wso2.micro.integrator.ntask.core.TaskManager.TaskState.NORMAL);
+                return taskManager.isTaskRunning(taskName);
             } catch (Exception e) {
                 logger.error("Cannot return task status [" + taskName + "]. Error: " +
                                      e.getLocalizedMessage(), e);

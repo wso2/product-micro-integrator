@@ -445,6 +445,7 @@ public class DataServiceDocLitWrappedSchemaGenerator {
 			activeElement.setMinOccurs(0);
 			activeElement.setMaxOccurs(Long.MAX_VALUE);
 		}
+
 		/* process the result content */
 		processElementGroup(cparams, activeElement, result.getDefaultElementGroup());
 	}

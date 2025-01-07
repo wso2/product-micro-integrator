@@ -95,4 +95,22 @@ public abstract class GenericInboundListener implements InboundRequestProcessor 
         log.error(msg, e);
         throw new SynapseException(msg, e);
     }
+
+    @Override
+    public boolean activate() {
+
+        return false;
+    }
+
+    @Override
+    public boolean deactivate() {
+
+        return false;
+    }
+
+    @Override
+    public boolean isDeactivated() {
+
+        return false;
+    }
 }

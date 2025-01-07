@@ -76,9 +76,24 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
         this.onErrorSeq = params.getOnErrorSeq();
         this.synapseEnvironment = params.getSynapseEnvironment();
         this.classImpl = params.getClassImpl();
+        this.startInPausedMode = params.startInPausedMode();
     }
 
     public void init() {
+        /*
+         * The activate/deactivate functionality is not currently implemented
+         * for this Inbound Endpoint type.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability is implemented.
+         */
+        if (startInPausedMode) {
+            log.info("Inbound endpoint [" + name + "] is currently suspended.");
+            return;
+        }
         log.info("Inbound listener " + name + " for class " + classImpl + " starting ...");
         try {
             Class c = Class.forName(classImpl);
@@ -138,4 +153,15 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
         start();
     }
 
+    @Override
+    public boolean activate() {
+
+        return false;
+    }
+
+    @Override
+    public boolean deactivate() {
+
+        return false;
+    }
 }

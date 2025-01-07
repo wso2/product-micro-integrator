@@ -141,7 +141,18 @@ public class TaskStore {
      */
     public void addTaskIfNotExist(String task) throws TaskCoordinationException {
 
-        rdmbsConnector.addTaskIfNotExist(task);
+        rdmbsConnector.addTaskIfNotExist(task, CoordinatedTask.States.NONE);
+    }
+
+    /**
+     * Add the task.
+     *
+     * @param task - The coordinated task which needs to be added.
+     * @param state - Initial state of the task.
+     */
+    public void addTaskIfNotExist(String task, CoordinatedTask.States state) throws TaskCoordinationException {
+
+        rdmbsConnector.addTaskIfNotExist(task, state);
     }
 
     /**

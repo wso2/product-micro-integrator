@@ -95,13 +95,28 @@
             <h2>What's new in this release</h2>
             <p>WSO2 MI @product.version@ is shipped with the following new features:</p>
             <ul>
-                <li>Enhanced Script Mediator Performance with GraalJS</li>
-                <li>Runtime Diagnostic tool</li>
-                <li>MI Automation Mode</li>
-                <li>CDC connector</li>
+                <li>New mediators
+                    <ul>
+                        <li>Scatter-Gather: Clones a message into several and aggregates the responses into a single message. Supports parallel or sequential execution, with output to a variable or message body.</li>
+                        <li>Foreach v2: Supports parallel or sequential iteration and allows updating the original array or outputting results to a variable.</li>
+                        <li>ThrowError: Enables throwing an error from the mediation flow.</li>
+                    </ul>
+                </li>
+                <li>Enhanced mediator functionality
+                    <ul>
+                        <li>Inline expression support for PayloadFactory Mediator and Log Mediator.</li>
+                        <li>UI Enhancements for the commonly used mediators.</li>
+                    </ul>
+                </li>
+                <li>Mediator tryout functionality</li>
+                <li>Simplified onboard experience via VSCode Extension</li>
+                <li>Simplified Synapse expression</li>
+                <li>Environment variable injection for all environment-specific parameters</li>
+                <li>JDK 21 support</li>
+                <li>Dependency management for connectors</li>
             </ul>
 
-            <p>View the full list of bug fixes and improvements <a href="https://github.com/wso2/micro-integrator/issues?q=is%3Aissue+closed%3A2021-04-12..2022-03-22+">here</a></p>
+            <p>View the full list of bug fixes and improvements <a href="https://github.com/wso2/product-micro-integrator/issues?q=is%3Aissue+closed%3A2024-07-24..2025-01-31+">here</a></p>
 
             <h2>Known Issues</h2>
             <p>

@@ -58,6 +58,15 @@ public class RegistryEntryXsltTransformationTestCase extends ESBIntegrationTest 
         assertNotNull(response, "Response message null");
         assertTrue(response.toString().contains("Code"), "Response does not contain the key word: Code");
         assertTrue(response.toString().contains("IBM"), "Response does not contain the key word: IBM");
+    }
 
+    @Test(groups = {
+            "wso2.esb" }, description = "Do XSLT transformation by selecting the xslt file from resources.")
+    public void xsltTransformationFromResources() throws Exception {
+        OMElement response = axis2Client
+                .sendCustomQuoteRequest(getProxyServiceURLHttp("xsltInResourcesTestProxy"), null, "IBM");
+        assertNotNull(response, "Response message null");
+        assertTrue(response.toString().contains("Code"), "Response does not contain the key word: Code");
+        assertTrue(response.toString().contains("IBM"), "Response does not contain the key word: IBM");
     }
 }

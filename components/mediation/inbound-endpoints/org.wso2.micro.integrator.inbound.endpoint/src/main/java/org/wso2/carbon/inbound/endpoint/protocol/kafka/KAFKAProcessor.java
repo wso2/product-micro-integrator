@@ -77,12 +77,26 @@ public class KAFKAProcessor extends InboundRequestProcessorImpl implements TaskS
         this.injectingSeq = params.getInjectingSeq();
         this.onErrorSeq = params.getOnErrorSeq();
         this.synapseEnvironment = params.getSynapseEnvironment();
+        this.startInPausedMode = params.startInPausedMode();
     }
 
     /**
      * This will be called at the time of synapse artifact deployment.
      */
     public void init() {
+        /*
+         * The activate/deactivate functionality for the Kafka Inbound Endpoint is not currently implemented.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability for Kafka listener is implemented.
+         */
+        if (startInPausedMode) {
+            log.info("Inbound endpoint [" + name + "] is currently suspended.");
+            return;
+        }
         log.info("Initializing inbound KAFKA listener for destination " + name);
         try {
             pollingConsumer = new KAFKAPollingConsumer(kafkaProperties, interval, name);
@@ -134,6 +148,18 @@ public class KAFKAProcessor extends InboundRequestProcessorImpl implements TaskS
             log.error("Error while shutdown the consumer connector" + e.getMessage(), e);
         }
         super.destroy();
+    }
+
+    @Override
+    public boolean activate() {
+
+        return false;
+    }
+
+    @Override
+    public boolean deactivate() {
+
+        return false;
     }
 
     /**

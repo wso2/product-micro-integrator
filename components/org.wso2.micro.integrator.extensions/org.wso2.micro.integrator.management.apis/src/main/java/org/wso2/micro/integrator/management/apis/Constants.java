@@ -70,6 +70,7 @@ public class Constants {
     public static final String NAME = "name";
     public static final String STATUS = "status";
     public static final String URL = "url";
+    public static final String URL_LIST= "urlList";
     public static final String VERSION = "version";
     public static final String CONTAINER = "container";
     public static final String TYPE = "type";
@@ -163,6 +164,7 @@ public class Constants {
     public static final String AUDIT_LOG_TYPE_LOG_LEVEL = "log_level";
     public static final String AUDIT_LOG_TYPE_ROOT_LOG_LEVEL = "root_log_level";
     public static final String AUDIT_LOG_TYPE_MESSAGE_PROCESSOR = "message_processor";
+    public static final String AUDIT_LOG_TYPE_INBOUND_ENDPOINT = "inbound_endpoint";
     public static final String AUDIT_LOG_TYPE_CARBON_APPLICATION = "carbon_application";
     public static final String AUDIT_LOG_TYPE_CONNECTOR = "connector";
 
