@@ -33,11 +33,6 @@
     <description>WSO2 Data Services Core Bundle</description>
 
     <dependencies>
-
-<!--        <dependency>-->
-<!--            <groupId>org.wso2.orbit.org.jongo.wso2</groupId>-->
-<!--            <artifactId>jongo</artifactId>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>org.apache.xmlbeans</groupId>
             <artifactId>xmlbeans</artifactId>
@@ -254,12 +249,6 @@
             <groupId>de.undercouch</groupId>
             <artifactId>bson4jackson</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.mongodb</groupId>-->
-<!--            <artifactId>mongo-java-driver</artifactId>-->
-<!--            <version>3.12.7</version>-->
-<!--            <scope>compile</scope>-->
-<!--        </dependency>-->
     </dependencies>
 
     <build>
@@ -371,8 +360,6 @@
                             org.apache.poi.ss.usermodel;version="${poi.orbit.imp.pkg.version}",
                             org.apache.commons.collections4;version="${commons-collections4.orbit.imp.pkg.version}",
                             com.mongodb;version="${mongodb-driver-sync.orbit.imp.pkg.version}",
-<!--                            com.mongodb.util;version="${mongodb-driver-sync.orbit.imp.pkg.version}",-->
-<!--                            org.jongo;version="${jongo.orbit.imp.pkg.version}",-->
                             org.wso2.micro.integrator.dataservices.sql.driver;version="${project.version}",
                             org.wso2.micro.integrator.dataservices.sql.driver.parser;version="${project.version}",
                             org.wso2.micro.integrator.dataservices.sql.driver.util;version="${project.version}",

@@ -407,9 +407,9 @@ public class MongoQuery extends Query {
                 opQuery = "{}";
             }
             Document document = (Document) collection.find(Document.parse(opQuery)).first();
-            String json = document.toJson();
+            String value = document.toJson();
             List<String> result = new ArrayList<>();
-            result.add(json);
+            result.add(value);
             return result.iterator();
         }
 

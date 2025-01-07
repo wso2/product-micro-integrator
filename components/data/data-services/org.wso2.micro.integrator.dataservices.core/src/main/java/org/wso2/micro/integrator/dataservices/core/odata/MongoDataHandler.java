@@ -119,14 +119,8 @@ public class MongoDataHandler implements ODataDataHandler {
                     Iterator<?> keys = new JSONObject(tempValue).keys();
                     while (keys.hasNext()) {
                         String columnName = (String) keys.next();
-                        DataColumn dataColumn = new DataColumn(
-                                columnName,
-                                DataColumn.ODataDataType.STRING,
-                                ordinalPosition,
-                                true,
-                                100,
-                                columnName.equals(DOCUMENT_ID)
-                        );
+                        DataColumn dataColumn = new DataColumn(columnName, DataColumn.ODataDataType.STRING,
+                                ordinalPosition, true, 100, columnName.equals(DOCUMENT_ID));
                         column.put(columnName, dataColumn);
                         ordinalPosition++;
                     }
@@ -228,12 +222,7 @@ public class MongoDataHandler implements ODataDataHandler {
         BasicDBObject limit = new BasicDBObject();
         limit.put("$limit", this.chunkSize);
         stages.add(limit);
-
-        List<Bson> pipeline = Arrays.asList(
-                Aggregates.match(new Document("status", "active")),
-                Aggregates.group("$category", Accumulators.sum("count", 1))
-        );
-        MongoCursor<Document> iterator = readResult.aggregate(pipeline).iterator();
+        MongoCursor<Document> iterator = readResult.aggregate(stages).iterator();
         return readStreamResultSet(tableName, iterator);
     }
 
@@ -422,8 +411,8 @@ public class MongoDataHandler implements ODataDataHandler {
         if (result.getMatchedCount() == 1) {
             return result.wasAcknowledged();
         } else {
-            throw new RuntimeException("Document ID: " + newPropertyObjectKeyValue
-                    + " does not exist in the collection.");
+            throw new ODataServiceFault("Document ID: " + newPropertyObjectKeyValue
+                    + " does not exist in the collection " + tableName + ".");
         }
     }
 

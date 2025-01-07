@@ -134,7 +134,7 @@ public class MongoConfig extends Config {
             settingsBuilder.applyToSslSettings(builder -> builder.enabled(true));
         }
         if (!DBUtils.isEmptyString(writeConcern)) {
-            settingsBuilder.writeConcern(WriteConcern.valueOf(writeConcern.toUpperCase()));
+            settingsBuilder.writeConcern(WriteConcern.valueOf(writeConcern));
         }
         if (!DBUtils.isEmptyString(readPref)) {
             settingsBuilder.readPreference(ReadPreference.valueOf(readPref));
