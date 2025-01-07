@@ -17,13 +17,12 @@
  */
 package org.wso2.micro.integrator.dataservices.core.description.query;
 
-import com.mongodb.DBObject;
-import com.mongodb.util.JSON;
-import org.apache.commons.lang.StringUtils;
-import org.jongo.Jongo;
-import org.jongo.MongoCollection;
-import org.jongo.ResultHandler;
-import org.jongo.Update;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
+import java.util.stream.StreamSupport;
+import org.bson.Document;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -52,7 +51,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 import javax.xml.stream.XMLStreamWriter;
 
 /**
@@ -60,9 +58,9 @@ import javax.xml.stream.XMLStreamWriter;
  */
 public class MongoQuery extends Query {
 
-    private MongoConfig config;
+    private final MongoConfig config;
 
-    private String expression;
+    private final String expression;
 
     public MongoQuery(DataService dataService, String queryId, String configId, String expression,
                       List<QueryParam> queryParams, Result result, EventTrigger inputEventTrigger,
@@ -302,26 +300,8 @@ public class MongoQuery extends Query {
         }
     }
 
-    public final static class MongoResultMapper implements ResultHandler<String> {
-
-        private static final MongoResultMapper instance = new MongoResultMapper();
-
-        private MongoResultMapper() {
-        }
-
-        public static MongoResultMapper getInstance() {
-            return instance;
-        }
-
-        @Override
-        public String map(DBObject dbo) {
-            return dbo.toString();
-        }
-
-    }
-
-    private Jongo getJongo() {
-        return this.config.getJongo();
+    private MongoDatabase getMongoDatabase() {
+        return this.config.getMongoDatabase();
     }
 
     public class MongoQueryResult implements QueryResult {
@@ -330,7 +310,7 @@ public class MongoQuery extends Query {
 
         public MongoQueryResult(String query, List<InternalParam> params) throws DataServiceFault {
             Object[] request = decodeQuery(query);
-            MongoCollection collection = getJongo().getCollection((String) request[0]);
+            MongoCollection<Document> collection = getMongoDatabase().getCollection((String) request[0]);
             String opQuery = (String) request[2];
             Object[] mongoParams = DBUtils.convertInputParamValues(params);
             switch ((DBConstants.MongoDB.MongoOperation) request[1]) {
@@ -373,7 +353,6 @@ public class MongoQuery extends Query {
                     }
                     this.doUpdate(collection, opQuery, mongoParams, modifier, upsert, multi);
                     break;
-
             }
         }
 
@@ -381,12 +360,11 @@ public class MongoQuery extends Query {
             long count;
             if (opQuery != null) {
                 if (parameters.length > 0) {
-                    count = collection.count(opQuery, parameters);
-                } else {
-                    count = collection.count(opQuery);
+                    opQuery = replacePlaceholders(opQuery, parameters);
                 }
+                count = collection.countDocuments(Document.parse(opQuery.toString()));
             } else {
-                count = collection.count();
+                count = collection.countDocuments();
             }
             List<Long> countResult = new ArrayList<>();
             countResult.add(count);
@@ -396,65 +374,92 @@ public class MongoQuery extends Query {
         private Iterator<String> doFind(MongoCollection collection, String opQuery, Object[] parameters) {
             if (opQuery != null) {
                 if (parameters.length > 0) {
-                    return collection.find(opQuery, parameters).map(MongoResultMapper.getInstance()).iterator();
-                } else {
-                    return collection.find(opQuery).map(MongoResultMapper.getInstance()).iterator();
+                    opQuery = replacePlaceholders(opQuery, parameters);
                 }
             } else {
-                return collection.find().map(MongoResultMapper.getInstance()).iterator();
+                opQuery = "{}";
             }
+            FindIterable<Document> dbResult = collection.find(Document.parse(opQuery));
+            return StreamSupport.stream(dbResult.spliterator(), false)
+                    .map(Document::toJson)
+                    .iterator();
         }
 
         private Iterator<String> isExist(MongoCollection collection) {
-            Boolean isExists = getJongo().getDatabase().collectionExists(collection.getName());
+            List<String> collectionNames = getMongoDatabase().listCollectionNames().into(new ArrayList<>());
+            // Check if the collection name exists in the list
+            Boolean isExists = collectionNames.contains(collection.getNamespace().getCollectionName());
             List<String> result = new ArrayList<>();
             result.add(isExists.toString());
             return result.iterator();
         }
 
         private void createCollection(MongoCollection collection) {
-            getJongo().getDatabase().createCollection(collection.getName(), null);
+            getMongoDatabase().createCollection(String.valueOf(collection.getNamespace()));
         }
 
         private Iterator<String> doFindOne(MongoCollection collection, String opQuery, Object[] parameters) {
-            String value;
             if (opQuery != null) {
                 if (parameters.length > 0) {
-                    value = collection.findOne(opQuery, parameters).map(MongoResultMapper.getInstance());
-                } else {
-                    value = collection.findOne(opQuery).map(MongoResultMapper.getInstance());
+                    opQuery = replacePlaceholders(opQuery, parameters);
                 }
             } else {
-                value = collection.findOne().map(MongoResultMapper.getInstance());
+                opQuery = "{}";
             }
+            Document document = (Document) collection.find(Document.parse(opQuery)).first();
+            String json = document.toJson();
             List<String> result = new ArrayList<>();
-            result.add(value);
+            result.add(json);
             return result.iterator();
         }
 
         private void doInsert(MongoCollection collection, String opQuery, Object[] parameters) throws DataServiceFault {
             if (opQuery != null) {
                 if (parameters.length > 0) {
-                    if (opQuery.equals("#")) {
-                        collection.save(JSON.parse(parameters[0].toString()));
-                    } else {
-                        collection.insert(opQuery, parameters);
-                    }
-                } else {
-                    collection.insert(opQuery);
+                    opQuery = replacePlaceholders(opQuery, parameters);
                 }
+                collection.insertOne(Document.parse(opQuery));
             } else {
                 throw new DataServiceFault("Mongo insert statements must contain a query");
             }
         }
 
+        public String replacePlaceholders(String query, Object[] parameters) {
+            List<Object> remainingParameters = new ArrayList<>();
+            StringBuilder updatedQuery = new StringBuilder();
+            int paramIndex = 0;
+            String[] parts = query.split("#");
+            for (int i = 0; i < parts.length; i++) {
+                updatedQuery.append(parts[i]);
+                if (i < parts.length - 1) {
+                    if (paramIndex < parameters.length) {
+                        Object param = parameters[paramIndex];
+                        if (param instanceof String) {
+                            updatedQuery.append("\"").append(param).append("\"");
+                        } else {
+                            updatedQuery.append(param);
+                        }
+                        paramIndex++;
+                    } else {
+                        updatedQuery.append("#");
+                    }
+                }
+            }
+
+            for (int i = paramIndex; i < parameters.length; i++) {
+                remainingParameters.add(parameters[i]);
+            }
+            Object[] updatedParameters = remainingParameters.toArray(new Object[0]);
+            System.arraycopy(updatedParameters, 0, parameters, 0, updatedParameters.length);
+            return updatedQuery.toString();
+        }
+
         private void doRemove(MongoCollection collection, String opQuery, Object[] parameters) throws DataServiceFault {
             if (opQuery != null) {
                 if (parameters.length > 0) {
-                    collection.remove(opQuery, parameters);
-                } else {
-                    collection.remove(opQuery);
+                    opQuery = replacePlaceholders(opQuery, parameters);
                 }
+                collection.deleteMany(Document.parse(opQuery));
             } else {
                 throw new DataServiceFault("Mongo remove statements must contain a query");
             }
@@ -462,62 +467,21 @@ public class MongoQuery extends Query {
 
         private void doUpdate(MongoCollection collection, String opQuery, Object[] parameters, String modifier,
                               boolean upsert, boolean multi) throws DataServiceFault {
+            UpdateOptions options = null;
             if (opQuery != null) {
                 if (parameters.length > 0) {
-                    Stack<Object> parameterStack = putParametersToStack(parameters);
-                    Update update = null;
-                    if (!opQuery.contains("#")) {
-                        update = collection.update(opQuery);
-                    } else {
-                        Object[] opQueryParameters = getParameters(opQuery, parameterStack).toArray();
-                        update = collection.update(opQuery, opQueryParameters);
-                    }
-
-                    if (upsert) {
-                        update = update.upsert();
-                    }
-                    if (multi) {
-                        update = update.multi();
-                    }
-                    Object[] modifierParameters = getParameters(modifier, parameterStack).toArray();
-                    update.with(modifier, modifierParameters);
+                    opQuery = replacePlaceholders(opQuery, parameters);
+                    modifier = replacePlaceholders(modifier, parameters);
+                    options = new UpdateOptions().upsert(upsert);
+                }
+                if (multi) {
+                    collection.updateMany(Document.parse(opQuery), Document.parse(modifier), options);
                 } else {
-                    Update update = collection.update(opQuery);
-                    if (upsert) {
-                        update = update.upsert();
-                    }
-                    if (multi) {
-                        update = update.multi();
-                    }
-                    update.with(modifier);
+                    collection.updateOne(Document.parse(opQuery), Document.parse(modifier), options);
                 }
             } else {
                 throw new DataServiceFault("Mongo update statements must contain a query");
             }
-        }
-
-        /**
-         * This method takes the full parameter list and pushes it into a stack in descending order.
-         * */
-        private Stack<Object> putParametersToStack(Object[] parameters) {
-            Stack<Object> parameterStack = new Stack<>();
-            for (int index = (parameters.length - 1); index >= 0; index--) {
-                parameterStack.push(parameters[index]);
-            }
-            return parameterStack;
-        }
-
-        /**
-         * This method returns an Arraylist with relevant parameters popped from the stack based
-         * on the number of parameters defined the String value.
-         * */
-        private ArrayList getParameters(String value, Stack<Object> parameterStack) {
-            ArrayList parameters = new ArrayList();
-            int noOfParameters = StringUtils.countMatches(value, "#");
-            for (int i = 0; i < noOfParameters; i++) {
-                parameters.add(parameterStack.pop());
-            }
-            return parameters;
         }
 
         private void doDrop(MongoCollection collection) {
