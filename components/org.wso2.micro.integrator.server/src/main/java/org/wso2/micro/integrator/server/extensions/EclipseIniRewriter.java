@@ -29,6 +29,8 @@ import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.wso2.micro.integrator.server.util.PatchUtils.logSafeMessage;
+
 /**
  * A bug in p2 libs(https://bugs.eclipse.org/bugs/show_bug.cgi?id=344153) prevent us from using bundle pooling with
  * -roaming option. A absolute path get written to eclipse.ini/null.ini file found under p2 profile. Here we are rewriting
@@ -56,12 +58,12 @@ public class EclipseIniRewriter implements MicroIntegratorLaunchExtension {
             // when accessing canonical path, the method actually checks the file in the FS.
             profileLocation = new File(profileLocation).getCanonicalPath();
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "The directory : " + profileName + "does not exist..", e);
+            logger.log(Level.SEVERE, logSafeMessage("The directory : " + profileName + "does not exist.."), e);
         }
         // getting the file null.ini
         eclipseIni = new File(profileLocation + File.separator + "null.ini");
         if (eclipseIni.exists()) {
-            logger.log(Level.FINE, "processing the null.ini file found in " + profileLocation);
+            logger.log(Level.FINE, logSafeMessage("processing the null.ini file found in " + profileLocation));
 
             rewriteFile(eclipseIni, profileLocation);
             return;
@@ -69,7 +71,7 @@ public class EclipseIniRewriter implements MicroIntegratorLaunchExtension {
         // null.ini does not exist. trying with eclipse.ini
         eclipseIni = new File(profileLocation + File.separator + "eclipse.ini");
         if (eclipseIni.exists()) {
-            logger.log(Level.FINE, "processing the eclispe.ini file found in " + profileLocation);
+            logger.log(Level.FINE, logSafeMessage("processing the eclispe.ini file found in " + profileLocation));
             rewriteFile(eclipseIni, profileLocation);
             return;
         }
@@ -84,7 +86,7 @@ public class EclipseIniRewriter implements MicroIntegratorLaunchExtension {
             pw.write(profileLocation);
             pw.flush();
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error while writing to file " + file.getName(), e);
+            logger.log(Level.SEVERE, logSafeMessage("Error while writing to file " + file.getName()), e);
         }
     }
 }

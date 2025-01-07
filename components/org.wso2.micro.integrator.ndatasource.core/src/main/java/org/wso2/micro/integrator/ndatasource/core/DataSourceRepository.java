@@ -43,7 +43,7 @@ import javax.xml.bind.Unmarshaller;
  */
 public class DataSourceRepository {
 	
-	private static Log log = LogFactory.getLog(DataSourceRepository.class);
+	private static final Log log = LogFactory.getLog(DataSourceRepository.class);
 	
 	private int tenantId;
 	
@@ -140,8 +140,9 @@ public class DataSourceRepository {
 	 */
 	public void refreshUserDataSource(String dsName) throws DataSourceException {
 		if (log.isDebugEnabled()) {
-			log.debug("Refreshing data source: " + dsName);
+			log.debug(DataSourceUtils.logSafeMessage("Refreshing data source: " + dsName));
 		}
+
 //		this.updateDataSource(dsName, false);
 	}
 
@@ -267,8 +268,8 @@ public class DataSourceRepository {
 				InitialContext context = new InitialContext(jndiConfig.extractHashtableEnv());
 				context.unbind(jndiConfig.getName());
 		    } catch (NamingException e) {
-			    log.error("Error in unregistering JNDI name: " +
-		                jndiConfig.getName() + " - " + e.getMessage(), e);
+				log.error(DataSourceUtils.logSafeMessage("Error in unregistering JNDI name: " +
+						jndiConfig.getName() + " - " + e.getMessage()), e);
 		    }
 		} finally {
 //			PrivilegedCarbonContext.endTenantFlow();
@@ -317,7 +318,7 @@ public class DataSourceRepository {
 			return;
 		}
 		if (log.isDebugEnabled()) {
-			log.debug("Unregistering data source: " + dsName);
+			log.debug(DataSourceUtils.logSafeMessage("Unregistering data source: " + dsName));
 		}
 		this.unregisterJNDI(cds.getDSMInfo());
 		this.dataSources.remove(dsName);
@@ -334,7 +335,7 @@ public class DataSourceRepository {
 			this.unregisterDataSource(currentCDS.getDSMInfo().getName());
 		}
 		if (log.isDebugEnabled()) {
-			log.debug("Registering data source: " + dsmInfo.getName());
+			log.debug(DataSourceUtils.logSafeMessage("Registering data source: " + dsmInfo.getName()));
 		}
 		Object dsObject = null;
 		boolean isDataSourceFactoryReference = false;
@@ -362,7 +363,7 @@ public class DataSourceRepository {
 
 	private void notifyClusterDSChange(String dsName) throws DataSourceException {
 		if (log.isDebugEnabled()) {
-			log.debug("Notifying cluster DS change: " + dsName);
+			log.debug(DataSourceUtils.logSafeMessage("Notifying cluster DS change: " + dsName));
 		}
 		ConfigurationContextService configCtxService = DataSourceServiceComponent.
 		        getConfigContextService();
@@ -373,7 +374,7 @@ public class DataSourceRepository {
 		ConfigurationContext configCtx = configCtxService.getServerConfigContext();
 		ClusteringAgent agent = configCtx.getAxisConfiguration().getClusteringAgent();
 		if (log.isDebugEnabled()) {
-			log.debug("Clustering Agent: " + agent);
+			log.debug(DataSourceUtils.logSafeMessage("Clustering Agent: " + agent));
 		}
 		if (agent != null) {
 			DataSourceStatMessage msg = new DataSourceStatMessage();
@@ -453,7 +454,7 @@ public class DataSourceRepository {
 	 */
 	public void addDataSource(DataSourceMetaInfo dsmInfo) throws DataSourceException {
 		if (log.isDebugEnabled()) {
-			log.debug("Adding data source: " + dsmInfo.getName());
+			log.debug(DataSourceUtils.logSafeMessage("Adding data source: " + dsmInfo.getName()));
 		}
 //        if (dsmInfo.isPersistable()) {
 //		    this.persistDataSource(dsmInfo);
@@ -470,7 +471,7 @@ public class DataSourceRepository {
 	 */
 	public void deleteDataSource(String dsName) throws DataSourceException {
 		if (log.isDebugEnabled()) {
-			log.debug("Deleting data source: " + dsName);
+			log.debug(DataSourceUtils.logSafeMessage("Deleting data source: " + dsName));
 		}
 		CarbonDataSource cds = this.getDataSource(dsName);
 		if (cds == null) {
@@ -492,7 +493,7 @@ public class DataSourceRepository {
 	 */
 	public boolean testDataSourceConnection(DataSourceMetaInfo dsmInfo) throws DataSourceException {
 		if (log.isDebugEnabled()) {
-			log.debug("Testing connection of data source: " + dsmInfo.getName());
+			log.debug(DataSourceUtils.logSafeMessage("Testing connection of data source: " + dsmInfo.getName()));
 		}
 		DataSourceReader dsReader = DataSourceManager.getInstance().getDataSourceReader(
 				dsmInfo.getDefinition().getType());

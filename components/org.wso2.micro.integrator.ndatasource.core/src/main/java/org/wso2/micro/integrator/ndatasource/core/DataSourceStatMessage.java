@@ -21,7 +21,10 @@ import org.apache.axis2.clustering.ClusteringMessage;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.owasp.esapi.ESAPI;
+import org.wso2.micro.core.util.StringUtils;
 import org.wso2.micro.integrator.ndatasource.common.DataSourceException;
+import org.wso2.micro.integrator.ndatasource.core.utils.DataSourceUtils;
 
 /**
  * This class represents the cluster message used to notify the cluster nodes of
@@ -63,8 +66,8 @@ public class DataSourceStatMessage extends ClusteringMessage {
 		try {
 
 		    if (log.isDebugEnabled()) {
-		    	log.debug("Cluster message arrived for tenant: " + 
-		    			this.getTenantId() + " datasource: " + this.getDsName());
+				log.debug(DataSourceUtils.logSafeMessage("Cluster message arrived for tenant: " +
+						this.getTenantId() + " datasource: " + this.getDsName()));
 		    }
 		    DataSourceManager.getInstance().getDataSourceRepository().refreshUserDataSource(
 		    		this.getDsName());
