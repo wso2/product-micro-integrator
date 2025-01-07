@@ -281,7 +281,10 @@ org.eclipse.core.runtime_3.9.0.v20130326-1255.jar                               
 com.google.guava.failureaccess_1.0.2.jar                                                            bundle         apache2
 asn-one_0.6.0.wso2v1.jar                                                                            bundle         apache2
 poi_5.3.0.wso2v1.jar                                                                                bundle         apache2
-org.mongodb.mongo-java-driver_3.5.0.jar                                                             bundle         apache2
+org.wso2.micro.integrator.dataservices.core_4.3.0.jar                                               bundle         apache2
+org.mongodb.mongodb-driver-sync_4.9.1.jar                                                           bundle         apache2
+org.mongodb.mongodb-driver-core_4.9.1.jar                                                           bundle         apache2
+org.mongodb.bson_4.9.1.jar                                                                          bundle         apache2
 org.sat4j.pb_2.3.5.v201308161310.jar                                                                bundle         epl1 + lgpl2
 neethi_2.0.4.wso2v5.jar                                                                             bundle         apache2
 org.wso2.carbon.crypto.api_1.1.3.jar                                                                bundle         apache2

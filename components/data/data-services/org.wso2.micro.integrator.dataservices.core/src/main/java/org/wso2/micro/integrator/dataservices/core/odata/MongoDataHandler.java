@@ -56,12 +56,12 @@ public class MongoDataHandler implements ODataDataHandler {
     /**
      * DocumentId/ObjectId s of the Collections
      */
-    private Map<String, List<String>> primaryKeys;
+    private final Map<String, List<String>> primaryKeys;
 
     /**
      * List of Collections in the Database.
      */
-    private List<String> tableList;
+    private final List<String> tableList;
 
     /**
      * Metadata of the Collections

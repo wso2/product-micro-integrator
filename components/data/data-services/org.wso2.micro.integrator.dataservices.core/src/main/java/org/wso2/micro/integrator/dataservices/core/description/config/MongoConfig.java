@@ -17,11 +17,9 @@
  */
 package org.wso2.micro.integrator.dataservices.core.description.config;
 
-//import com.mongodb.Mongo;
 import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoClient;
-//import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
@@ -30,7 +28,6 @@ import com.mongodb.client.MongoDatabase;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-//import org.jongo.Jongo;
 import org.wso2.micro.integrator.dataservices.common.DBConstants;
 import org.wso2.micro.integrator.dataservices.core.DBUtils;import org.wso2.micro.integrator.dataservices.core.DataServiceFault;import org.wso2.micro.integrator.dataservices.core.engine.DataService;import org.wso2.micro.integrator.dataservices.core.odata.MongoDataHandler;import org.wso2.micro.integrator.dataservices.core.odata.ODataDataHandler;
 
@@ -48,13 +45,10 @@ public class MongoConfig extends Config {
     private static final Log log = LogFactory.getLog(
             MongoConfig.class);
 
-    private MongoClient mongoClient;
+    private final MongoClient mongoClient;
 
-    private String [] servers;
-
-    private MongoClientSettings mongoClientSettings;
-    private MongoDatabase mongoDatabase;
-//    private Jongo jongo;
+    private final MongoClientSettings mongoClientSettings;
+    private final MongoDatabase mongoDatabase;
 
     public MongoConfig(DataService dataService, String configId, Map<String, String> properties, boolean odataEnable)
             throws DataServiceFault {
@@ -63,7 +57,7 @@ public class MongoConfig extends Config {
         if (DBUtils.isEmptyString(serversParam)) {
             throw new DataServiceFault("The data source param '" + DBConstants.MongoDB.SERVERS + "' is required");
         }
-        this.servers = serversParam.split(",");
+        String[] servers = serversParam.split(",");
         String database = properties.get(DBConstants.MongoDB.DATABASE);
         if (DBUtils.isEmptyString(database)) {
             throw new DataServiceFault("The data source param '" + DBConstants.MongoDB.DATABASE + "' is required");
@@ -71,19 +65,12 @@ public class MongoConfig extends Config {
         try {
             String writeConcern = properties.get(DBConstants.MongoDB.WRITE_CONCERN);
             String readPref = properties.get(DBConstants.MongoDB.READ_PREFERENCE);
-            List<ServerAddress> serverAddresses = createServerAddresses(this.servers);
+            List<ServerAddress> serverAddresses = createServerAddresses(servers);
             MongoCredential mongoCredentials = createCredential(properties);
             this.mongoClientSettings = extractMongoOptions(properties, writeConcern, readPref, serverAddresses,
                     mongoCredentials);
             this.mongoClient = createNewMongo(this.mongoClientSettings);
-//            if (!DBUtils.isEmptyString(writeConcern)) {
-//                this.getMongoClient().setWriteConcern(WriteConcern.valueOf(writeConcern));
-//            }
-//            if (!DBUtils.isEmptyString(readPref)) {
-//                this.getMongoClient().setReadPreference(ReadPreference.valueOf(readPref));
-//            }
             this.mongoDatabase = this.getMongoClient().getDatabase(database);
-//            this.jongo = new Jongo(this.getMongoClient().getDB(database));
         } catch (Exception e) {
             throw new DataServiceFault(e, DBConstants.FaultCodes.CONNECTION_UNAVAILABLE_ERROR, e.getMessage());
         }
@@ -93,13 +80,6 @@ public class MongoConfig extends Config {
     public MongoClient createNewMongo(MongoClientSettings mongoClientSettings) throws DataServiceFault {
         try {
             return MongoClients.create(mongoClientSettings);
-//            MongoCredential credential = createCredential(properties);
-//            if (credential != null) {
-//                return new MongoClient(this.createServerAddresses(this.getServers()),
-//                                       Collections.singletonList(credential), getMongoClientSettings());
-//            } else {
-//                return new MongoClient(this.createServerAddresses(this.getServers()), getMongoClientSettings());
-//            }
         } catch (Exception e) {
             throw new DataServiceFault(e);
         }
@@ -122,11 +102,9 @@ public class MongoConfig extends Config {
          /* nothing to close */
     }
 
-    // TODO: Check this.
     @Override
     public ODataDataHandler createODataHandler() {
         return new MongoDataHandler(getConfigId(), this.mongoDatabase);
-//        return new MongoDataHandler(getConfigId(), getJongo());
     }
 
     private MongoClientSettings extractMongoOptions(Map<String, String> properties, String writeConcern,
@@ -135,40 +113,28 @@ public class MongoConfig extends Config {
         String connectionsPerHost = properties.get(DBConstants.MongoDB.CONNECTIONS_PER_HOST);
         if (!DBUtils.isEmptyString(connectionsPerHost)) {
             settingsBuilder.applyToConnectionPoolSettings(builder -> builder.maxSize(Integer.parseInt(connectionsPerHost)));
-//            builder.connectionsPerHost(Integer.parseInt(connectionsPerHost));
         }
         String maxWaitTime = properties.get(DBConstants.MongoDB.MAX_WAIT_TIME);
         if (!DBUtils.isEmptyString(maxWaitTime)) {
             settingsBuilder.applyToConnectionPoolSettings(builder -> builder.maxWaitTime(Integer.parseInt(maxWaitTime),
                     TimeUnit.MILLISECONDS));
-//            settingsBuilder.maxWaitTime(Integer.parseInt(maxWaitTime));
         }
         String connectTimeout = properties.get(DBConstants.MongoDB.CONNECT_TIMEOUT);
         if (!DBUtils.isEmptyString(connectTimeout)) {
             settingsBuilder.applyToSocketSettings(builder -> builder.connectTimeout(Integer.parseInt(connectTimeout),
                     TimeUnit.MILLISECONDS));
-//            settingsBuilder.connectTimeout(Integer.parseInt(connectTimeout));
         }
         String socketTimeout = properties.get(DBConstants.MongoDB.SOCKET_TIMEOUT);
         if (!DBUtils.isEmptyString(socketTimeout)) {
-            settingsBuilder.applyToSocketSettings(builder -> builder.connectTimeout(Integer.parseInt(socketTimeout),
+            settingsBuilder.applyToSocketSettings(builder -> builder.readTimeout(Integer.parseInt(socketTimeout),
                     TimeUnit.MILLISECONDS));
-//            settingsBuilder.socketTimeout(Integer.parseInt(socketTimeout));
         }
-        String threadsAllowedToBlockForConnectionMultiplier = properties.get(
-                DBConstants.MongoDB.THREADS_ALLOWED_TO_BLOCK_CONN_MULTIPLIER);
-        if (!DBUtils.isEmptyString(threadsAllowedToBlockForConnectionMultiplier)) {
-//            settingsBuilder.threadsAllowedToBlockForConnectionMultiplier(
-//                    Integer.parseInt(threadsAllowedToBlockForConnectionMultiplier));
-        }
-
         String sslEnabled = (properties.get(DBConstants.MongoDB.SSL_ENABLED));
         if (Boolean.parseBoolean(sslEnabled)) {
             settingsBuilder.applyToSslSettings(builder -> builder.enabled(true));
-//            settingsBuilder.sslEnabled(true);
         }
         if (!DBUtils.isEmptyString(writeConcern)) {
-            settingsBuilder.writeConcern(new WriteConcern(writeConcern));
+            settingsBuilder.writeConcern(WriteConcern.valueOf(writeConcern.toUpperCase()));
         }
         if (!DBUtils.isEmptyString(readPref)) {
             settingsBuilder.readPreference(ReadPreference.valueOf(readPref));
@@ -218,11 +184,6 @@ public class MongoConfig extends Config {
                 case DBConstants.MongoDB.MongoAuthenticationTypes.SCRAM_SHA_1:
                     credential = MongoCredential.createScramSha1Credential(username, authSource, password.toCharArray());
                     break;
-
-                // TODO: This has been removed from 4.x onwards. Discuss this.
-//                case DBConstants.MongoDB.MongoAuthenticationTypes.MONGODB_CR:
-//                    credential = MongoCredential.createMongoCRCredential(username, authSource, password.toCharArray());
-//                    break;
                 case DBConstants.MongoDB.MongoAuthenticationTypes.GSSAPI:
                     credential = MongoCredential.createGSSAPICredential(username);
                     break;
@@ -237,18 +198,6 @@ public class MongoConfig extends Config {
             return null;
         }
     }
-
-    public String[] getServers() {
-        return servers;
-    }
-
-    public  MongoClientSettings getMongoClientSettings() {
-        return mongoClientSettings;
-    }
-
-//    public Jongo getJongo() {
-//        return jongo;
-//    }
 
     public MongoDatabase getMongoDatabase() {
         return mongoDatabase;
