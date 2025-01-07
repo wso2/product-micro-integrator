@@ -31,6 +31,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import static org.wso2.micro.integrator.coordination.util.StringUtil.logSafeMessage;
+
 /**
  * This class adds the event listener tasks for each group and executes them.
  */
@@ -89,7 +91,7 @@ public class RDBMSMemberEventProcessor {
         this.clusterMembershipReaderTaskScheduler.scheduleWithFixedDelay(membershipListenerTask,
                                                                          scheduledPeriod, scheduledPeriod, TimeUnit.MILLISECONDS);
         if (log.isDebugEnabled()) {
-            log.debug("RDBMS cluster event listener started for node " + nodeId);
+            log.debug(logSafeMessage("RDBMS cluster event listener started for node " + nodeId));
         }
     }
 

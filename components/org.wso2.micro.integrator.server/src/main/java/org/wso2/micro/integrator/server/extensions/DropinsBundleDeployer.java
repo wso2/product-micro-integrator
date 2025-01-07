@@ -39,6 +39,8 @@ import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.wso2.micro.integrator.server.util.PatchUtils.logSafeMessage;
+
 /**
  * Deploy bundles found inside the dropins directory.
  * 1) Loop through all the bundles in the dropins directory
@@ -135,7 +137,8 @@ public class DropinsBundleDeployer implements MicroIntegratorLaunchExtension {
         for (File file : bundleFileList) {
             try (JarFile jarFile = new JarFile(file.getAbsoluteFile())) {
                 if (jarFile.getManifest() == null || jarFile.getManifest().getMainAttributes() == null) {
-                    logger.log(Level.SEVERE, "Invalid Bundle found in the dropins directory: " + file.getName());
+                    logger.log(Level.SEVERE, logSafeMessage("Invalid Bundle found in the dropins directory: " +
+                            file.getName()));
                     continue;
                 }
 
@@ -145,8 +148,8 @@ public class DropinsBundleDeployer implements MicroIntegratorLaunchExtension {
                         getValue(LauncherConstants.BUNDLE_VERSION);
 
                 if (bundleSymbolicName == null || bundleVersion == null) {
-                    logger.log(Level.SEVERE,
-                               "Required Bundle manifest headers do not exists: " + file.getAbsoluteFile());
+                    logger.log(Level.SEVERE, logSafeMessage("Required Bundle manifest headers do not exists: " +
+                            file.getAbsoluteFile()));
                     continue;
                 } else {
                     //BSN can have values like, Bundle-SymbolicName: com.example.acme;singleton:=true
@@ -251,7 +254,8 @@ public class DropinsBundleDeployer implements MicroIntegratorLaunchExtension {
                 try {
                     reader.close();
                 } catch (IOException e) {
-                    logger.log(Level.WARNING, "Unable to close the InputStream " + e.getMessage(), e);
+                    logger.log(Level.WARNING, logSafeMessage("Unable to close the InputStream " + e.getMessage()),
+                            e);
                 }
             }
         }
@@ -279,7 +283,7 @@ public class DropinsBundleDeployer implements MicroIntegratorLaunchExtension {
                 bundleInfoLineList = new ArrayList<BundleInfoLine>();
                 bundleInfoLineList.add(newBundleInfoLine);
                 existingBundleInfoLineMap.put(symbolicName, bundleInfoLineList);
-                logger.log(Level.FINE, "Deploying bundle: " + newBundleInfoLine.getBundlePath());
+                logger.log(Level.FINE, logSafeMessage("Deploying bundle: " + newBundleInfoLine.getBundlePath()));
 
             } else {
                 //Bundle symbolic names exists. Now we need to check whether their versions are equal.
@@ -293,10 +297,11 @@ public class DropinsBundleDeployer implements MicroIntegratorLaunchExtension {
                             //This means fragment-ness property is not equal.
                             if (!existingBundleInfoLIne.getBundlePath().equals(newBundleInfoLine.getBundlePath())) {
                                 logger.log(Level.WARNING,
-                                           "Ignoring the deployment of bundle: " + newBundleInfoLine.getBundlePath()
-                                                   + ", because it is already available in the system: "
-                                                   + existingBundleInfoLIne.getBundlePath()
-                                                   + ". Bundle-SymbolicName and Bundle-Version headers are identical ");
+                                        logSafeMessage("Ignoring the deployment of bundle: " +
+                                                newBundleInfoLine.getBundlePath()
+                                                + ", because it is already available in the system: "
+                                                + existingBundleInfoLIne.getBundlePath()
+                                                + ". Bundle-SymbolicName and Bundle-Version headers are identical "));
                                 found = true;
                                 break;
                             }
@@ -313,10 +318,11 @@ public class DropinsBundleDeployer implements MicroIntegratorLaunchExtension {
                             } else {
                                 //We have an exact match, but their locations are different.
                                 logger.log(Level.WARNING,
-                                           "Ignoring the deployment of bundle: " + newBundleInfoLine.getBundlePath()
-                                                   + ", because it is already available in the system: "
-                                                   + existingBundleInfoLIne.getBundlePath()
-                                                   + ". Bundle-SymbolicName and Bundle-Version headers are identical ");
+                                        logSafeMessage("Ignoring the deployment of bundle: "
+                                                + newBundleInfoLine.getBundlePath()
+                                                + ", because it is already available in the system: "
+                                                + existingBundleInfoLIne.getBundlePath()
+                                                + ". Bundle-SymbolicName and Bundle-Version headers are identical "));
                                 found = true;
                                 break;
 
@@ -331,7 +337,8 @@ public class DropinsBundleDeployer implements MicroIntegratorLaunchExtension {
                 if (!found) {
                     //Dropins bundle is not available in the system. Lets add it.
                     bundleInfoLineList.add(newBundleInfoLine);
-                    logger.log(Level.FINE, "Deploying bundle: " + newBundleInfoLine.getBundlePath());
+                    logger.log(Level.FINE, logSafeMessage("Deploying bundle: " +
+                            newBundleInfoLine.getBundlePath()));
                 }
             }
         }
@@ -394,7 +401,7 @@ public class DropinsBundleDeployer implements MicroIntegratorLaunchExtension {
                     writer.close();
                 }
             } catch (IOException e) {
-                logger.log(Level.WARNING, "Unable to close the OutputStream " + e.getMessage(), e);
+                logger.log(Level.WARNING, logSafeMessage("Unable to close the OutputStream " + e.getMessage()), e);
             }
         }
     }

@@ -47,6 +47,7 @@ import static org.wso2.micro.integrator.coordination.util.RDBMSConstantUtils.CLU
 import static org.wso2.micro.integrator.coordination.util.RDBMSConstantUtils.NODE_ID;
 import static org.wso2.micro.integrator.coordination.util.RDBMSConstantUtils.NODE_ID_CONFIG_NAME;
 import static org.wso2.micro.integrator.coordination.util.RDBMSConstantUtils.NODE_ID_SYSTEM_PROPERTY;
+import static org.wso2.micro.integrator.coordination.util.StringUtil.logSafeMessage;
 
 /**
  * This class controls the overall process of RDBMS coordination.
@@ -261,7 +262,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                     isCoordinatorTasksRunning = true;
                     retryClusterJoin = false;
                     this.threadExecutor.execute(new HeartBeatExecutionTask(false));
-                    log.info("Successfully joined the cluster with id [" + localNodeId + "]");
+                    log.info(logSafeMessage("Successfully joined the cluster with id [" + localNodeId + "]"));
                 } catch (ClusterCoordinationException e) {
                     inactivityTime = System.currentTimeMillis();
                     log.error("Node with ID " + localNodeId + " in group " + localGroupId + " could not join to the " +
@@ -346,7 +347,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                     if (lastHeartbeatFinishedTime != 0 &&
                         ((taskEndedTime - (lastHeartbeatFinishedTime + heartBeatInterval))
                          >= heartbeatWarningMargin)) {
-                        log.warn("The heartBeatInterval is in " + heartBeatInterval +
+                        log.warn(logSafeMessage("The heartBeatInterval is in " + heartBeatInterval +
                                  " millis with a retry count of " + heartbeatMaxRetry + ". " +
                                  "But current heartbeat has happened after " +
                                  (currentHeartbeatStartedTime - lastHeartbeatFinishedTime) +
@@ -354,7 +355,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                                  (taskEndedTime - currentHeartbeatStartedTime) +
                                  " millis to run CoordinationElection on the database at " +
                                  currentHeartbeatStartedTime +
-                                 ". Please increase the heartBeat interval or the retry count.");
+                                 ". Please increase the heartBeat interval or the retry count."));
                     }
                     lastHeartbeatFinishedTime = currentHeartbeatStartedTime;
                     if (lastHeartbeatFinishedTime + heartBeatInterval - taskEndedTime > 5) {
@@ -420,7 +421,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         public void runCoordinationElectionTask(long currentHeartbeatTime) {
             try {
                 if (!previousNodeState.equals(currentNodeState)) {
-                    log.info("Current node state changed from: " + previousNodeState + " to: " + currentNodeState);
+                    log.info(logSafeMessage("Current node state changed from: " + previousNodeState + " to: " +
+                            currentNodeState));
                     previousNodeState = currentNodeState;
                 }
                 long timeTakenForMemberTasks[] = new long[4];
@@ -434,35 +436,36 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                         break;
                 }
                 if (rdbmsMemberEventProcessor.isMemberUnresponsive()) {
-                    log.info("Initiating unresponsive member recovery process for node " + localNodeId);
+                    log.info(logSafeMessage("Initiating unresponsive member recovery process for node " +
+                            localNodeId));
                     rdbmsMemberEventProcessor.setMemberUnresponsiveIfNeeded(localNodeId, localGroupId
                             , false);
                     rdbmsMemberEventProcessor.setMemberRejoined(localNodeId, localGroupId);
                 }
                 long clusterTaskEndingTime = System.currentTimeMillis();
                 if (log.isDebugEnabled() && clusterTaskEndingTime - currentHeartbeatTime > 1000) {
-                    log.debug("Cluster task took " +
+                    log.debug(logSafeMessage("Cluster task took " +
                               (clusterTaskEndingTime - currentHeartbeatTime) + " millis to complete on " +
-                              currentNodeState + " node at " + clusterTaskEndingTime);
+                              currentNodeState + " node at " + clusterTaskEndingTime));
                     switch (currentNodeState) {
                         case MEMBER:
-                            log.debug("The time taken to execute tasks in milliseconds at timestamp: " +
-                                      clusterTaskEndingTime +
-                                      "\nupdateNodeHeartBeat(): " + timeTakenForMemberTasks[0] +
-                                      "\ncheckIfCoordinatorValid(): " + timeTakenForMemberTasks[1] +
-                                      "\nremoveCoordinator() if coordinator invalid: " + timeTakenForMemberTasks[2] +
-                                      "\nperformElectionTask() if coordinator invalid: " + timeTakenForMemberTasks[3]);
+                            log.debug(logSafeMessage("The time taken to execute tasks in milliseconds at " +
+                                    "timestamp: " + clusterTaskEndingTime +
+                                    "\nupdateNodeHeartBeat(): " + timeTakenForMemberTasks[0] +
+                                    "\ncheckIfCoordinatorValid(): " + timeTakenForMemberTasks[1] +
+                                    "\nremoveCoordinator() if coordinator invalid: " + timeTakenForMemberTasks[2] +
+                                    "\nperformElectionTask() if coordinator invalid: " + timeTakenForMemberTasks[3]));
                             break;
                         case COORDINATOR:
-                            log.debug("The time taken to execute tasks in milliseconds at timestamp:" +
-                                      clusterTaskEndingTime +
-                                      "\nupdateCoordinatorHeartbeat(): " + timeTakenForCoordinatorTasks[0] +
-                                      "\nupdateNodeHeartBeat() if still coordinator: " + timeTakenForCoordinatorTasks[1] +
-                                      "\ngetAllNodeData() if still coordinator: " + timeTakenForCoordinatorTasks[2] +
-                                      "\nfindAddedRemovedMembers() if still coordinator: " +
-                                      timeTakenForCoordinatorTasks[3] +
-                                      "\nperformElectionTask() if NOT still coordinator: " +
-                                      timeTakenForCoordinatorTasks[4]);
+                            log.debug(logSafeMessage("The time taken to execute tasks in milliseconds at " +
+                                    "timestamp:" + clusterTaskEndingTime +
+                                    "\nupdateCoordinatorHeartbeat(): " + timeTakenForCoordinatorTasks[0] +
+                                    "\nupdateNodeHeartBeat() if still coordinator: " + timeTakenForCoordinatorTasks[1] +
+                                    "\ngetAllNodeData() if still coordinator: " + timeTakenForCoordinatorTasks[2] +
+                                    "\nfindAddedRemovedMembers() if still coordinator: " +
+                                    timeTakenForCoordinatorTasks[3] +
+                                    "\nperformElectionTask() if NOT still coordinator: " +
+                                    timeTakenForCoordinatorTasks[4]));
                             break;
                         default:
                             log.error("No valid coordinator state found");
@@ -636,8 +639,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                 taskEndTime = System.currentTimeMillis();
                 timeTakenForCoordinatorTasks[3] = taskEndTime - taskStartTime;
             } else {
-                log.info("Found current node (nodeId: " + localNodeId + ") being removed from coordinator for " +
-                         "the group " + localGroupId);
+                log.info(logSafeMessage("Found current node (nodeId: " + localNodeId +
+                        ") being removed from coordinator for " + "the group " + localGroupId));
                 performElectionTask(currentHeartbeatTime);
                 taskEndTime = System.currentTimeMillis();
                 timeTakenForCoordinatorTasks[4] = taskEndTime - taskStartTime;
@@ -702,7 +705,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
          * @param logMessage  log message
          */
         private void handleDatabaseDelay(String nodeId, String groupId, Exception e, String logMessage) {
-            log.warn(logMessage + " Make task Sleep for the duration of : " + inactiveIntervalAfterUnresponsive , e);
+            log.warn(logSafeMessage(logMessage + " Make task Sleep for the duration of : " +
+                    inactiveIntervalAfterUnresponsive) , e);
             setUnresponsiveness(nodeId, groupId);
         }
 
@@ -715,8 +719,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         private void notifyAddedMembers(List<String> newNodes, List<String> allActiveNodeIds) {
             for (String newNode : newNodes) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Member added " + StringUtil.removeCRLFCharacters(newNode) + "to group " +
-                              StringUtil.removeCRLFCharacters(localGroupId));
+                    log.debug(logSafeMessage("Member added " + StringUtil.removeCRLFCharacters(newNode) +
+                            "to group " + StringUtil.removeCRLFCharacters(localGroupId)));
                 }
                 try {
                     performDBOperationsWithTimeout(() -> {
@@ -765,8 +769,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
             storeRemovedMemberDetails(allActiveNodeIds, removedNodeDetails);
             for (String removedNode : removedNodes) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Member removed " + StringUtil.removeCRLFCharacters(removedNode) + "from group "
-                              + StringUtil.removeCRLFCharacters(localGroupId));
+                    log.debug(logSafeMessage("Member removed " + StringUtil.removeCRLFCharacters(removedNode) +
+                            "from group " + StringUtil.removeCRLFCharacters(localGroupId)));
                 }
                 try {
                     performDBOperationsWithTimeout(() -> {
@@ -814,8 +818,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                 throw e;
             }
             if (electedAsCoordinator) {
-                log.info("Elected current node (nodeID: " + localNodeId + ") as the coordinator for the group " +
-                         localGroupId);
+                log.info(logSafeMessage("Elected current node (nodeID: " + localNodeId +
+                        ") as the coordinator for the group " + localGroupId));
                 List<NodeDetail> allNodeInformation;
                 try {
                     allNodeInformation = performDBOperationsWithTimeout(()
@@ -845,8 +849,8 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
                }
             } else {
                 if (log.isDebugEnabled()) {
-                    log.debug("Election resulted in current node becoming a " + NodeState.MEMBER
-                              + " node in group " + localGroupId);
+                    log.debug(logSafeMessage("Election resulted in current node becoming a " + NodeState.MEMBER
+                              + " node in group " + localGroupId));
                 }
                 nodeState = NodeState.MEMBER;
             }
