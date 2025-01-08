@@ -167,16 +167,16 @@ public class PassThroughNHttpGetProcessor extends AbstractHttpGetRequestProcesso
         boolean loadBalancer = Boolean.parseBoolean(System.getProperty("wso2.loadbalancer", "false"));
         // Handle browser request to get favicon while requesting for wsdl
         if (uri.equals(FAVICON_ICO)) {
-            response.setStatusCode(HttpStatus.SC_MOVED_PERMANENTLY);
-            response.addHeader("Location", FAVICON_ICO_URL);
+            response.setStatusCode(HttpStatus.SC_NOT_FOUND);
             SourceContext.updateState(conn, ProtocolState.WSDL_RESPONSE_DONE);
             try {
                 outputStream.flush();
                 outputStream.close();
             } catch (Exception ignore) {
+            } finally {
+                sourceHandler.commitResponseHideExceptions(conn, response);
+                isRequestHandled = true ;
             }
-            sourceHandler.commitResponseHideExceptions(conn, response);
-            isRequestHandled = true ;
         } else if(uri.startsWith(servicePath) &&
                 (serviceName == null || serviceName.length() == 0)){
             //check if service listing request is blocked
