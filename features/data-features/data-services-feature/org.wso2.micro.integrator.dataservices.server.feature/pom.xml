@@ -86,7 +86,6 @@
                                 <bundleDef>org.mongodb:mongodb-driver-sync</bundleDef>
                                 <bundleDef>org.mongodb:mongodb-driver-core</bundleDef>
                                 <bundleDef>org.mongodb:bson</bundleDef>
-                                <bundleDef>org.wso2.orbit.org.jongo.wso2:jongo</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.webharvest:webharvest-core</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.google.api-client:google-api-client</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.google.oauth-client:google-oauth-client</bundleDef>

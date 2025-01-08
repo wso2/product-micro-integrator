@@ -268,7 +268,6 @@ org.wso2.carbon.databridge.agent_5.2.52.jar                                     
 httpcore-nio_4.4.16.wso2v4.jar                                                                      bundle         apache2
 org.eclipse.equinox.p2.transport.ecf_1.0.100.v20110902-0807.jar                                     bundle         epl1
 org.apache.felix.gogo.runtime_0.10.0.v201209301036.jar                                              bundle         apache2
-jongo_1.4.0.wso2v1.jar                                                                              bundle         apache2
 org.wso2.micro.integrator.inbound.endpoint.persistence_4.4.0.alpha.jar                              bundle         apache2
 org.apache.aries.util_1.1.0.jar                                                                     bundle         apache2
 org.wso2.micro.integrator.identity.entitlement.mediator_4.4.0.alpha.jar                             bundle         apache2
