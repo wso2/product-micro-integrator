@@ -88,7 +88,6 @@ public class MongoConfig extends Config {
     @Override
     public boolean isActive() {
         try {
-            // TODO: Need to check the connection availability properly.
             MongoClient mongo = this.createNewMongo(this.mongoClientSettings);
             return mongo != null;
         } catch (Exception e) {
@@ -108,7 +107,8 @@ public class MongoConfig extends Config {
     }
 
     private MongoClientSettings extractMongoOptions(Map<String, String> properties, String writeConcern,
-                                                    String readPref, List<ServerAddress> serverAddresses, MongoCredential mongoCredentials) {
+                                                    String readPref, List<ServerAddress> serverAddresses,
+                                                    MongoCredential mongoCredentials) {
         MongoClientSettings.Builder settingsBuilder = MongoClientSettings.builder();
         String connectionsPerHost = properties.get(DBConstants.MongoDB.CONNECTIONS_PER_HOST);
         if (!DBUtils.isEmptyString(connectionsPerHost)) {
