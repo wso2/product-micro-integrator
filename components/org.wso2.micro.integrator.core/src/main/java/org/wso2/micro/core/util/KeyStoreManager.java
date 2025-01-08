@@ -19,20 +19,32 @@ package org.wso2.micro.core.util;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.config.mapper.ConfigParser;
 import org.wso2.micro.core.Constants;
 import org.wso2.micro.integrator.core.internal.CarbonCoreDataHolder;
 import org.wso2.micro.integrator.core.services.CarbonServerConfigurationService;
 import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The purpose of this class is to centrally manage the key stores.
@@ -44,6 +56,8 @@ public class KeyStoreManager {
     private KeyStore primaryKeyStore = null;
     private KeyStore registryKeyStore = null;
     private KeyStore internalKeyStore = null;
+    private static final ConcurrentMap<String, KeyStore> keyStoreMap = new ConcurrentHashMap<>();
+    private static final Lock lock = new ReentrantLock();
 
     private static ConcurrentHashMap<String, KeyStoreManager> mtKeyStoreManagers = new ConcurrentHashMap<>();
     private static Log log = LogFactory.getLog(KeyStoreManager.class);
@@ -90,7 +104,34 @@ public class KeyStoreManager {
      * @throws Exception If there is not a key store with the given name
      */
     public KeyStore getKeyStore(String keyStoreName) throws Exception {
+        List<Map<String, String>> configList = (ArrayList) ConfigParser.getParsedConfigs().get(
+                Constants.SERVER_PRIVATE_STORE_CONFIG);
+        Map<String, String> keyStoreDetails = getPrivateKeyStoreDetails(keyStoreName, configList);
+        if (keyStoreDetails == null) {
             return getPrimaryKeyStore();
+        }
+        CarbonServerConfigurationService config = this.getServerConfigService();
+        String primaryKeyStorePath = config.getFirstProperty(Constants.SERVER_PRIMARY_KEYSTORE_FILE);
+        String privateKeyStorePath = keyStoreDetails.get(Constants.SERVER_PRIVATE_KEYSTORE_FILE);
+        if (areSameKeyStore(primaryKeyStorePath, privateKeyStorePath)) {
+            return getPrimaryKeyStore();
+        }
+        return getPrivateKeyStore(keyStoreName, keyStoreDetails, config);
+    }
+
+    /**
+     * Get the key store name for the given file path
+     * @param path File path of the key store
+     * @return key store name
+     */
+    public static String getKeyStoreNameFromPath(String path) {
+        if (path == null || path.isEmpty()) {
+            return null;
+        }
+
+        // Normalize the path to handle different path separators
+        Path normalizedPath = Paths.get(path).normalize();
+        return normalizedPath.getFileName().toString();
     }
 
     /**
@@ -163,6 +204,108 @@ public class KeyStoreManager {
                     "available only for the super tenant.");
         }
     }
+
+    /**
+     * Checks if two relative file paths point to the same key store.
+     *
+     * @param relativePath1 The first relative file path.
+     * @param relativePath2 The second relative file path.
+     * @return true if both paths point to the same key store, false otherwise.
+     * @throws IOException If an I/O error occurs while resolving paths.
+     */
+    public static boolean areSameKeyStore(String relativePath1, String relativePath2) throws IOException {
+        if (relativePath1 == null || relativePath2 == null) {
+            throw new IllegalArgumentException("File paths cannot be null");
+        }
+
+        // Resolve the relative paths to absolute paths
+        Path path1 = Paths.get(relativePath1).toRealPath();
+        Path path2 = Paths.get(relativePath2).toRealPath();
+
+        // Compare the absolute paths
+        return Files.isSameFile(path1, path2);
+    }
+
+    /**
+     * Get the key store object for the given key store name
+     *
+     * @param keyStoreName key store name
+     * @return KeyStore object
+     * @throws Exception If there is not a key store with the given name
+     */
+    public static KeyStore getPrivateKeyStore(String keyStoreName,
+                                              Map<String, String> keyStoreDetails,
+                                               CarbonServerConfigurationService configurationService) throws Exception {
+        if (keyStoreName == null || keyStoreName.isEmpty()) {
+            throw new IllegalArgumentException("KeyStore name cannot be null or empty");
+        }
+
+        KeyStore keyStore = keyStoreMap.get(keyStoreName);
+
+        if (keyStore == null) {
+            lock.lock();
+            try {
+                // Double-check to prevent race condition
+                keyStore = keyStoreMap.get(keyStoreName);
+                if (keyStore == null) {
+                    String file =
+                            new File(keyStoreDetails.get(Constants.SERVER_PRIVATE_KEYSTORE_FILE))
+                                    .getAbsolutePath();
+                    KeyStore store = KeyStore
+                            .getInstance(keyStoreDetails.get(Constants.SERVER_PRIVATE_KEYSTORE_TYPE));
+                    String password = keyStoreDetails.get(Constants.SERVER_PRIVATE_KEYSTORE_PASSWORD);
+                    String alias = MiscellaneousUtil.getProtectedToken(password);
+                    if (!StringUtils.isEmpty(alias)) {
+                        password = configurationService.getResolvedValue(alias);
+                    }
+                    FileInputStream in = null;
+                    try {
+                        in = new FileInputStream(file);
+                        store.load(in, password.toCharArray());
+                        keyStoreMap.put(keyStoreName, store);
+                        keyStore = store;
+                    } finally {
+                        if (in != null) {
+                            in.close();
+                        }
+                    }
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        return keyStore;
+    }
+
+
+    /**
+     * Retrieves details of a private key store based on the provided input file name.
+     *
+     * @param keyStoreName The file name to search for.
+     * @param configList    The list of maps containing key-value pairs.
+     * @return The map containing details of the private key store if found, or null otherwise.
+     */
+    public static Map<String, String> getPrivateKeyStoreDetails(String keyStoreName,
+                                                                List<Map<String, String>> configList) {
+        if (keyStoreName == null || keyStoreName.isEmpty() || configList == null) {
+            return null;
+        }
+
+        for (Map<String, String> map : configList) {
+            // Extract the file name from the file path
+            String filePath = map.get(Constants.SERVER_PRIVATE_KEYSTORE_FILE);
+            String fileName = getKeyStoreNameFromPath(filePath);
+
+            // Compare the extracted file name with the input file name
+            if (keyStoreName.equals(fileName)) {
+                return map;
+            }
+        }
+
+        return null; // If no match is found
+    }
+
 
     /**
      * Load the internal key store, this is allowed only for the super tenant

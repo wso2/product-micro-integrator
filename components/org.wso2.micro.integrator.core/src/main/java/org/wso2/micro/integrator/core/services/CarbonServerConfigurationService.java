@@ -528,6 +528,10 @@ public class CarbonServerConfigurationService {
 		return secretResolver.resolve("Carbon." + key);
 	}
 
+	public String getResolvedValue(String key) {
+		return secretResolver.resolve(key);
+	}
+
 	/**
 	 * Take the WSO2 server version from the carbon.xml file.
 	 *
