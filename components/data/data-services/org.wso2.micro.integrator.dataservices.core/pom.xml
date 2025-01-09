@@ -359,7 +359,7 @@
                             org.apache.poi.openxml4j.exceptions;version="${poi-ooxml.orbit.imp.pkg.version}",
                             org.apache.poi.ss.usermodel;version="${poi.orbit.imp.pkg.version}",
                             org.apache.commons.collections4;version="${commons-collections4.orbit.imp.pkg.version}",
-                            com.mongodb;version="${mongodb-driver-sync.orbit.imp.pkg.version}",
+                            com.mongodb;version="${mongodb-driver-sync.imp.pkg.version}",
                             org.wso2.micro.integrator.dataservices.sql.driver;version="${project.version}",
                             org.wso2.micro.integrator.dataservices.sql.driver.parser;version="${project.version}",
                             org.wso2.micro.integrator.dataservices.sql.driver.util;version="${project.version}",
