@@ -152,6 +152,16 @@
             <artifactId>org.wso2.micro.integrator.dataservices.sql.driver</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.ei</groupId>
+            <artifactId>org.wso2.micro.integrator.security</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId> org.apache.synapse</groupId>
+                    <artifactId>synapse-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>org.wso2.orbit.org.webharvest</groupId>
             <artifactId>webharvest-core</artifactId>
         </dependency>

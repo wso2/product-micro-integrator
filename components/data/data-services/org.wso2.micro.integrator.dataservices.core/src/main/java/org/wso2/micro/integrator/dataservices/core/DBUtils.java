@@ -61,6 +61,8 @@ import org.wso2.micro.integrator.dataservices.core.engine.InternalParam;
 import org.wso2.micro.integrator.dataservices.core.engine.ParamValue;
 import org.wso2.micro.integrator.dataservices.core.internal.DataServicesDSComponent;
 import org.wso2.micro.integrator.ndatasource.core.utils.DataSourceUtils;
+import org.wso2.micro.integrator.security.MicroIntegratorSecurityUtils;
+import org.wso2.micro.integrator.security.user.api.UserStoreException;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecretResolverFactory;
 
@@ -326,37 +328,11 @@ public class DBUtils {
      * @throws DataServiceFault
      */
     public static String[] getUserRoles(String username) throws DataServiceFault {
-//    	RealmService realmService = DataServicesDSComponent.getRealmService();
-//        RegistryService registryService = DataServicesDSComponent.getRegistryService();
-//        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-//        int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
-//        try {
-//            if (tenantId < MultitenantConstants.SUPER_TENANT_ID) {
-//                tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
-//            }
-//            if (tenantId < MultitenantConstants.SUPER_TENANT_ID) {
-//                /* the tenant doesn't exist. */
-//                log.error("The tenant doesn't exist. Tenant domain:" + tenantDomain);
-//                throw new DataServiceFault("Access Denied. You are not authorized.");
-//            }
-//            if (tenantId != MultitenantConstants.SUPER_TENANT_ID){ //tenant space users can't access super tenant
-//                username = MultitenantUtils.getTenantAwareUsername(username);
-//            }
-//            if (!realmService.getTenantManager().isTenantActive(tenantId)) {
-//                /* the tenant is not active. */
-//                log.error("The tenant is not active. Tenant domain:" + tenantDomain);
-//                throw new DataServiceFault("The tenant is not active. Tenant domain:"
-//                        + tenantDomain);
-//            }
-//            UserRealm realm = registryService.getUserRealm(tenantId);
-//            String roles[] = realm.getUserStoreManager().getRoleListOfUser(username);
-//            return roles;
-//        } catch (Exception e) {
-//            String msg = "Error in retrieving the realm for the tenant id: " + tenantId
-//                    + ", username: " + username + ". " + e.getMessage();
-//            throw new DataServiceFault(msg);
-//        }
-        return new String[0];
+        try {
+            return MicroIntegratorSecurityUtils.getUserStoreManager().getRoleListOfUser(username);
+        } catch (UserStoreException e) {
+            throw new DataServiceFault(e, "Error while getting the user role");
+        }
     }
 
 
