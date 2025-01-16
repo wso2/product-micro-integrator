@@ -36,7 +36,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.xerces.impl.Constants;
 import org.apache.xerces.util.SecurityManager;
-import org.owasp.esapi.ESAPI;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -340,10 +339,5 @@ public class DataSourceUtils {
 
 		final Matcher pwdMatcher = PASSWORD_PATTERN.matcher(url);
 		return pwdMatcher.replaceFirst(":***@");
-	}
-
-	public static String logSafeMessage(String msg) {
-		return ESAPI.encoder().encodeForHTML(msg).replace("\n", "_").
-				replace("\r", "_");
 	}
 }

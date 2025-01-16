@@ -18,7 +18,6 @@
 
 package org.wso2.micro.integrator.server.util;
 
-import org.owasp.esapi.ESAPI;
 import org.wso2.micro.integrator.server.LauncherConstants;
 
 import java.io.BufferedReader;
@@ -72,7 +71,7 @@ public class PatchUtils {
             //We need to backup the plugins in the components/repository/plugins folder.
             FileUtils.copyDirectory(pluginsDir, bundleBackupDir);
 
-            patchLog.log(Level.INFO, logSafeMessage("Backed up plugins to " + LauncherConstants.BUNDLE_BACKUP_DIR));
+            patchLog.log(Level.INFO, "Backed up plugins to " + LauncherConstants.BUNDLE_BACKUP_DIR);
         }
         //Now lets apply latest servicepack and patches.
         patchLog.log(Level.FINE, "Applying patches ...");
@@ -118,19 +117,18 @@ public class PatchUtils {
                         } else {
                             // verify bundleFileName before copying the files to plugins
                             File[] patchFiles = file.listFiles();
-                            patchLog.log(Level.FINE, logSafeMessage("Applying - " + file.getName()));
+                            patchLog.log(Level.FINE, "Applying - " + file.getName());
                             for (File patch : patchFiles) {
                                 String patchFileName = verifyBundleFileName(patch);
                                 File copiedFile = new File(target, patchFileName);
                                 FileUtils.copyFile(patch, copiedFile, true);
                                 try {
-                                    patchLog.log(Level.FINE, logSafeMessage("Patched " + patch.getName() +
-                                            "(MD5:" + PatchUtils.getMD5ChecksumHexString(patch) + ")"));
+                                    patchLog.log(Level.FINE, "Patched " + patch.getName() + "(MD5:" + PatchUtils
+                                            .getMD5ChecksumHexString(patch) + ")");
                                 } catch (Exception e) {
                                     // handle this exception, this shouldn't interrupt the patch applying process
                                     patchLog.log(Level.SEVERE,
-                                            logSafeMessage("Error occurred while generating md5 checksum for " +
-                                                    patch.getName()));
+                                                 "Error occurred while generating md5 checksum for " + patch.getName());
                                 }
                             }
                         }
@@ -140,8 +138,8 @@ public class PatchUtils {
                             bufWriter.newLine();
                         } catch (IOException e) {
                             patchLog.log(Level.SEVERE,
-                                    logSafeMessage("Error occurred while writing " + file.getName() +
-                                            " directory name to " + patchDirLogFile.getName()));
+                                         "Error occurred while writing " + file.getName() + " directory name to "
+                                                 + patchDirLogFile.getName());
                         }
                     }
                 }
@@ -172,7 +170,7 @@ public class PatchUtils {
 
             if (latestServicepack.isDirectory()) {
                 File servicepackLibs = FileUtils.getFile(latestServicepack, LauncherConstants.SERVICEPACK_LIB_DIR);
-                patchLog.log(Level.FINE, logSafeMessage("Start applying - " + latestServicepack.getName()));
+                patchLog.log(Level.FINE, "Start applying - " + latestServicepack.getName());
                 File[] patchFiles = servicepackLibs.listFiles();
                 if (patchFiles != null) {
                     for (File patch : patchFiles) {
@@ -187,16 +185,16 @@ public class PatchUtils {
                                 FileUtils.copyDirectory(patch, copiedFile, true);
                             }
                             try {
-                                patchLog.log(Level.FINE, logSafeMessage("Patched " + patch.getName() + "(MD5:" +
-                                        PatchUtils.getMD5ChecksumHexString(patch) + ")"));
+                                patchLog.log(Level.FINE, "Patched " + patch.getName() + "(MD5:" + PatchUtils
+                                        .getMD5ChecksumHexString(patch) + ")");
                             } catch (Exception e) {
                                 // handle this exception, this shouldn't interrupt the patch applying process
-                                patchLog.log(Level.SEVERE, logSafeMessage("Error occurred while generating " +
-                                        "md5 checksum for " + patch.getName()));
+                                patchLog.log(Level.SEVERE,
+                                             "Error occurred while generating md5 checksum for " + patch.getName());
                             }
                         } catch (IOException e) {
-                            patchLog.log(Level.SEVERE, logSafeMessage("Error occurred while applying " +
-                                    "service pack " + latestServicepack));
+                            patchLog.log(Level.SEVERE,
+                                         "Error occurred while applying servicepack " + latestServicepack);
                         }
                     }
                 }
@@ -205,8 +203,8 @@ public class PatchUtils {
                     bufWriter.write(latestServicepack.getName());
                     bufWriter.newLine();
                 } catch (IOException e) {
-                    patchLog.log(Level.SEVERE, logSafeMessage("Error occurred while writing " +
-                            latestServicepack.getName() + " to " + LauncherConstants.PRE_PATCHED_DIR_FILE));
+                    patchLog.log(Level.SEVERE, "Error occurred while writing " + latestServicepack.getName() + " to "
+                            + LauncherConstants.PRE_PATCHED_DIR_FILE);
                 }
             }
         }
@@ -237,24 +235,22 @@ public class PatchUtils {
                         if (!patchFile.equals(LauncherConstants.BUNDLE_BACKUP_DIR)) {
                             patchInfo.addNewPatches(patchFile);
                             if (patchFile.startsWith("servicepack")) {
-                                patchLog.log(Level.FINE, logSafeMessage("New service pack available - " +
-                                        patchFile));
+                                patchLog.log(Level.FINE, "New service pack available - " + patchFile);
                             } else {
-                                patchLog.log(Level.FINE, logSafeMessage("New patch available - " + patchFile));
+                                patchLog.log(Level.FINE, "New patch available - " + patchFile);
                             }
                         }
                     }
                 }
                 if (!patchDirLogFile.createNewFile()) {
                     patchLog.log(Level.SEVERE,
-                            logSafeMessage("Error occurred while creating patch directory log file " +
-                                    patchDirLogFile.getAbsolutePath()));
+                                 "Error occurred while creating patch directory log file " + patchDirLogFile
+                                         .getAbsolutePath());
                 }
             }
             if (!patchInfo.isPatchesChanged()) {
                 patchLog.log(Level.FINE,
-                        logSafeMessage("No new patch or service pack detected, " +
-                                "server will start without applying patches "));
+                             "No new patch or service pack detected, server will start without applying patches ");
             }
             return patchInfo;
         } finally {
@@ -263,8 +259,7 @@ public class PatchUtils {
                 try {
                     bufReader.close();
                 } catch (IOException e) {
-                    patchLog.log(Level.SEVERE,
-                            logSafeMessage("Error occurred while closing patch directory log file Buffered Reader"));
+                    patchLog.log(Level.SEVERE, "Error occurred while closing patch directory log file Buffered Reader");
                 }
             }
         }
@@ -379,14 +374,13 @@ public class PatchUtils {
                 }
             }
             if (warningList.size() > 0) {
-                patchLog.log(Level.WARNING,
-                        logSafeMessage("Problems found during patch verification. See below for details:"));
+                patchLog.log(Level.WARNING, "Problems found during patch verification. See below for details:");
                 for (String warningMessage : warningList) {
-                    patchLog.log(Level.WARNING, logSafeMessage(warningMessage));
+                    patchLog.log(Level.WARNING, warningMessage);
                 }
                 patchLog.log(Level.WARNING,
-                        logSafeMessage("Patch verification completed with warnings. Please see  " +
-                                getPatchesLogsFile().getAbsolutePath() + " for more details"));
+                             "Patch verification completed with warnings. Please see  " + getPatchesLogsFile()
+                                     .getAbsolutePath() + " for more details");
             } else {
                 if (applyPatches) {
                     patchLog.log(Level.INFO, "Patch verification successfully completed");
@@ -473,31 +467,30 @@ public class PatchUtils {
                 } else {
                     patchLog.log(Level.FINE, prePatchedDirNames.get(0) + " has been reverted");
                     patchInfo.addRemovedPatches(patchApplyOrder.get(0));
-                    patchLog.log(Level.FINE, logSafeMessage("New service pack available - " +
-                            patchApplyOrder.get(0)));
+                    patchLog.log(Level.FINE, "New service pack available - " + patchApplyOrder.get(0));
                     patchInfo.addNewPatches(patchApplyOrder.get(0));
                 }
                 // remove both service patch entries
                 prePatchedDirNames.remove(0);
                 patchApplyOrder.remove(0);
             } else if (patchApplyOrder.get(0).startsWith("s")) {
-                patchLog.log(Level.FINE, logSafeMessage("New service pack available - " + patchApplyOrder.get(0)));
+                patchLog.log(Level.FINE, "New service pack available - " + patchApplyOrder.get(0));
                 patchInfo.addNewPatches(patchApplyOrder.get(0));
                 patchApplyOrder.remove(0);
             } else if (prePatchedDirNames.get(0).startsWith("s")) {
-                patchLog.log(Level.FINE, logSafeMessage(prePatchedDirNames.get(0) + " has been reverted"));
+                patchLog.log(Level.FINE, prePatchedDirNames.get(0) + " has been reverted");
                 patchInfo.addRemovedPatches(patchApplyOrder.get(0));
                 prePatchedDirNames.remove(0);
             }
         } else if (checkPrePatch) {
             if (prePatchedDirNames.get(0).startsWith("s")) {
-                patchLog.log(Level.FINE, (prePatchedDirNames.get(0) + " has been reverted"));
+                patchLog.log(Level.FINE, prePatchedDirNames.get(0) + " has been reverted");
                 patchInfo.addRemovedPatches(patchApplyOrder.get(0));
                 prePatchedDirNames.remove(0);
             }
         } else if (patchApplyOrder.size() > 0) {
             if (patchApplyOrder.get(0).startsWith("s")) {
-                patchLog.log(Level.FINE, logSafeMessage("New service pack available - " + patchApplyOrder.get(0)));
+                patchLog.log(Level.FINE, "New service pack available - " + patchApplyOrder.get(0));
                 patchInfo.addNewPatches(patchApplyOrder.get(0));
                 patchApplyOrder.remove(0);
             }
@@ -510,24 +503,24 @@ public class PatchUtils {
                 i++;
                 j++;
             } else if (diff > 0) {
-                patchLog.log(Level.FINE, logSafeMessage(prePatchedDirNames.get(j) + " has been reverted"));
+                patchLog.log(Level.FINE, prePatchedDirNames.get(j) + " has been reverted");
                 patchInfo.addRemovedPatches(prePatchedDirNames.get(j));
                 j++;
             } else {
-                patchLog.log(Level.FINE, logSafeMessage("New patch available - " + patchApplyOrder.get(i)));
+                patchLog.log(Level.FINE, "New patch available - " + patchApplyOrder.get(i));
                 patchInfo.addNewPatches(patchApplyOrder.get(i));
                 i++;
             }
         }
 
         while (i < patchApplyOrder.size()) {
-            patchLog.log(Level.FINE, logSafeMessage("New patch available - " + patchApplyOrder.get(i)));
+            patchLog.log(Level.FINE, "New patch available - " + patchApplyOrder.get(i));
             patchInfo.addNewPatches(patchApplyOrder.get(i));
             i++;
         }
 
         while (j < prePatchedDirNames.size()) {
-            patchLog.log(Level.FINE, logSafeMessage(prePatchedDirNames.get(j) + " has been reverted"));
+            patchLog.log(Level.FINE, prePatchedDirNames.get(j) + " has been reverted");
             patchInfo.addRemovedPatches(prePatchedDirNames.get(j));
             j++;
         }
@@ -576,8 +569,8 @@ public class PatchUtils {
                     List<String> patchesInServicepack = FileUtils.readLinesToList(bufReader);
                     servicepackPatchedList.addAll(patchesInServicepack);
                 } catch (IOException e) {
-                    patchLog.log(Level.SEVERE, logSafeMessage("Error occurred while reading " +
-                            latestServicepack + " patch file : " + LauncherConstants.SERVICEPACK_PATCHES_FILE), e);
+                    patchLog.log(Level.SEVERE, "Error occurred while reading " + latestServicepack + " patch file : "
+                            + LauncherConstants.SERVICEPACK_PATCHES_FILE, e);
                 }
 
             }
@@ -631,11 +624,11 @@ public class PatchUtils {
                     String md5ofJar = getMD5ChecksumHexString(jarInfoEntry.getValue().getPath());
                     jarInfoEntry.getValue().setMd5SumValue(md5ofJar);
                     if (!md5ofJar.equals(prePatchedJarsWithMD5.get(jarInfoEntry.getKey()))) {
-                        patchLog.log(Level.FINE, logSafeMessage(jarInfoEntry.getKey() + " has been updated"));
+                        patchLog.log(Level.FINE, jarInfoEntry.getKey() + " has been updated");
                         return true;
                     }
                 } else {
-                    patchLog.log(Level.FINE, logSafeMessage(jarInfoEntry.getKey() + " has been added"));
+                    patchLog.log(Level.FINE, jarInfoEntry.getKey() + " has been added");
                     return true;
                 }
             }
@@ -659,8 +652,7 @@ public class PatchUtils {
         }
 
         if (!metaDir.exists() && !metaDir.mkdirs()) {
-            patchLog.log(Level.WARNING,
-                    logSafeMessage("Error while creating meta data directory in " + metaDir.getAbsolutePath()));
+            patchLog.log(Level.WARNING, "Error while creating meta data directory in " + metaDir.getAbsolutePath());
         }
         return metaDir;
     }
@@ -672,10 +664,5 @@ public class PatchUtils {
                 return name.startsWith("patch") || name.startsWith("servicepack");
             }
         };
-    }
-
-    public static String logSafeMessage(String msg) {
-        return ESAPI.encoder().encodeForHTML(msg).replace("\n", "_").
-                replace("\r", "_");
     }
 }

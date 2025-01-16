@@ -46,10 +46,6 @@
             <groupId>org.wso2.config.mapper</groupId>
             <artifactId>config-mapper</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.owasp.esapi</groupId>
-            <artifactId>esapi</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
