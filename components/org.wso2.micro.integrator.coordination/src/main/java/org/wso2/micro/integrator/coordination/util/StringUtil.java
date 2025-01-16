@@ -18,8 +18,6 @@
 
 package org.wso2.micro.integrator.coordination.util;
 
-import org.owasp.esapi.ESAPI;
-
 /**
  * Class used to encode strings before logging.
  */
@@ -28,10 +26,5 @@ public class StringUtil {
 
     public static String removeCRLFCharacters(String str) {
         return str.replace('\n', '_').replace('\r', '_');
-    }
-
-    public static String logSafeMessage(String msg) {
-        return ESAPI.encoder().encodeForHTML(msg).replace("\n", "_").
-                replace("\r", "_");
     }
 }

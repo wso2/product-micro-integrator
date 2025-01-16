@@ -49,8 +49,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
-import static org.wso2.micro.integrator.server.util.PatchUtils.logSafeMessage;
-
 public class Main {
 
     protected static final String FRAMEWORK_BUNDLE_NAME = "org.eclipse.osgi";
@@ -159,7 +157,7 @@ public class Main {
         String jvmName = ManagementFactory.getRuntimeMXBean().getName();
         int indexOfAt = jvmName.indexOf('@');
         if (indexOfAt < 1) {
-            logger.warn(logSafeMessage("Cannot extract current process ID from JVM name '" + jvmName + "'."));
+            logger.warn("Cannot extract current process ID from JVM name '" + jvmName + "'.");
             return;
         }
         String pid = jvmName.substring(0, indexOfAt);
@@ -168,8 +166,7 @@ public class Main {
         try {
             Files.write(runtimePidFile, pid.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            logger.warn(logSafeMessage("Cannot write process ID '" + pid + "' to '" + runtimePidFile + "' file."),
-                    e);
+            logger.warn("Cannot write process ID '" + pid + "' to '" + runtimePidFile.toString() + "' file.", e);
         }
     }
 

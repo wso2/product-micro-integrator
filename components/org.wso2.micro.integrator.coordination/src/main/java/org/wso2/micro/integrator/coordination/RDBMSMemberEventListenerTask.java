@@ -36,8 +36,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.wso2.micro.integrator.coordination.util.StringUtil.logSafeMessage;
-
 /**
  * The task that runs periodically to detect membership change events.
  */
@@ -142,8 +140,7 @@ public class RDBMSMemberEventListenerTask implements Runnable {
         try {
             if (setUnresponsive) {
                 if (!wasMemberUnresponsive) {
-                    log.warn(logSafeMessage("Node [" + nodeID + "] in group [" + localGroupId +
-                            "] has become unresponsive."));
+                    log.warn("Node [" + nodeID + "] in group [" + localGroupId + "] has become unresponsive.");
                     notifyUnresponsiveness(nodeID, localGroupId);
                     wasMemberUnresponsive = true;
                 }
@@ -223,8 +220,7 @@ public class RDBMSMemberEventListenerTask implements Runnable {
             if (listener.getGroupId().equals(groupId)) {
                 listener.reJoined(member, (nodeId, e) -> {
                     if (nodeId.equals(RDBMSMemberEventListenerTask.this.nodeID)) {
-                        log.warn(logSafeMessage("Node [" + nodeId + "] became unresponsive due to an exception."),
-                                e);
+                        log.warn("Node [" + nodeId + "] became unresponsive due to an exception.", e);
                         setMemberUnresponsiveIfNeeded(nodeId, localGroupId, true);
                     }
                 });
