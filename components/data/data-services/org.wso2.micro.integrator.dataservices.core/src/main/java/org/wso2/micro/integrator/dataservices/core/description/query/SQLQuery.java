@@ -1683,16 +1683,22 @@ public class SQLQuery extends ExpressionQuery implements BatchRequestParticipant
              if (value == null) {
                  sqlQuery.setNull(i + 1, Types.CLOB);
              } else {
-                 sqlQuery.setClob(i + 1, new BufferedReader(new StringReader(value)),
-                                        value.length());
+                 try (BufferedReader reader = new BufferedReader(new StringReader(value))) {
+                     sqlQuery.setClob(i + 1, reader, value.length());
+                 } catch (IOException e) {
+                     sqlQuery.setNull(i + 1, Types.CLOB);
+                 }
              }
          } else if ("INOUT".equals(paramType)) {
              if (value == null) {
                  ((CallableStatement) sqlQuery).setNull(i + 1,
                                         Types.CLOB);
              } else {
-                 ((CallableStatement) sqlQuery).setClob(i + 1,
-                                        new BufferedReader(new StringReader(value)), value.length());
+                 try (BufferedReader reader = new BufferedReader(new StringReader(value))) {
+                     sqlQuery.setClob(i + 1, reader, value.length());
+                 } catch (IOException e) {
+                     sqlQuery.setNull(i + 1, Types.CLOB);
+                 }
              }
              ((CallableStatement) sqlQuery).registerOutParameter(i + 1,
                                 Types.CLOB);

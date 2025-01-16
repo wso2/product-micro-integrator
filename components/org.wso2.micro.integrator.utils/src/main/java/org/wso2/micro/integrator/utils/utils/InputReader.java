@@ -43,11 +43,14 @@ public class InputReader {
     }
 
     public static String readPassword(String prompt) throws IOException {
-        PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out), true);
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         String password = null;
-        while (password == null || password.length() == 0) {
-            password = new PasswordPrompt(prompt, out).getPassword(in);
+        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out), true);
+             BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+            while (password == null || password.length() == 0) {
+                password = new PasswordPrompt(prompt, out).getPassword(in);
+            }
+        } catch (IOException e) {
+            throw new IOException(e.getMessage());
         }
         return password;
     }
