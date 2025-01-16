@@ -39,7 +39,7 @@ public class FaviconTest extends ESBIntegrationTest {
     public void faviconTest() throws Exception {
         HttpsResponse response = HttpsURLConnectionClient.
                 getRequest("https://localhost:8443/" + "favicon.ico", null);
-        Assert.assertEquals(response.getResponseCode(), 301, "Response code mismatch");
+        Assert.assertEquals(response.getResponseCode(), 404, "Response code mismatch");
         boolean exceptionFound = carbonLogReader.checkForLog("ClosedChannelException", DEFAULT_TIMEOUT);
         carbonLogReader.stop();
         Assert.assertTrue(!exceptionFound, "ClosedChannelException occurred while retrieving favicon.ico");

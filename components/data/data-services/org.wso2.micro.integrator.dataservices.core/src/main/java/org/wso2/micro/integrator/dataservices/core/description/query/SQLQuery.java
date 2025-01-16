@@ -1686,7 +1686,8 @@ public class SQLQuery extends ExpressionQuery implements BatchRequestParticipant
                  try (BufferedReader reader = new BufferedReader(new StringReader(value))) {
                      sqlQuery.setClob(i + 1, reader, value.length());
                  } catch (IOException e) {
-                     sqlQuery.setNull(i + 1, Types.CLOB);
+                     throw new DataServiceFault(e, "Error processing parameter: " + paramName
+                             + ", Error: " + e.getMessage());
                  }
              }
          } else if ("INOUT".equals(paramType)) {
@@ -1695,9 +1696,10 @@ public class SQLQuery extends ExpressionQuery implements BatchRequestParticipant
                                         Types.CLOB);
              } else {
                  try (BufferedReader reader = new BufferedReader(new StringReader(value))) {
-                     sqlQuery.setClob(i + 1, reader, value.length());
+                     ((CallableStatement) sqlQuery).setClob(i + 1, reader, value.length());
                  } catch (IOException e) {
-                     sqlQuery.setNull(i + 1, Types.CLOB);
+                     throw new DataServiceFault(e, "Error processing parameter: " + paramName + ", Error: "
+                             + e.getMessage());
                  }
              }
              ((CallableStatement) sqlQuery).registerOutParameter(i + 1,
