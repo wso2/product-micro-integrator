@@ -180,7 +180,7 @@ public class CappDeployer extends AbstractDeployer {
         }
 
         String targetCAppPath = cAppDirectory + File.separator + cAppName;
-        String extractedPath = extractCarbonApplication(targetCAppPath, cAppName, axisConfig);
+        String extractedPath = extractCarbonApplication(targetCAppPath);
         deployCarbonApplications(cAppName, targetCAppPath, extractedPath);
     }
 
@@ -194,12 +194,7 @@ public class CappDeployer extends AbstractDeployer {
 
         String archPathToProcess = AppDeployerUtils.formatPath(artifactPath);
         String cAppName = archPathToProcess.substring(archPathToProcess.lastIndexOf('/') + 1);
-        String targetCAppPath;
-        if (!artifactPath.endsWith(File.separator)) {
-            targetCAppPath = artifactPath + File.separator;
-        } else {
-            targetCAppPath = artifactPath;
-        }
+        String targetCAppPath = artifactPath.endsWith(File.separator) ? artifactPath : artifactPath + File.separator;
         deployCarbonApplications(cAppName, targetCAppPath, targetCAppPath);
     }
 
@@ -256,7 +251,7 @@ public class CappDeployer extends AbstractDeployer {
 
         File cAppDirectory = new File(this.appsDir);
         File[] cAppFiles = cAppDirectory.listFiles();
-        if (cAppFiles == null) {
+        if (cAppFiles.length == 0) {
             return;
         }
         for (File cAppFile : cAppFiles) {
@@ -270,8 +265,14 @@ public class CappDeployer extends AbstractDeployer {
         }
     }
 
-    private String extractCarbonApplication(String targetCAppPath, String cAppName,
-                                                               AxisConfiguration axisConfig) throws CarbonException {
+    /**
+     * Extracts the carbon application to the tmp/carbonapps directory.
+     *
+     * @param targetCAppPath - path of the carbon application
+     * @return - path to the extracted carbon application
+     * @throws CarbonException - error while extracting
+     */
+    private String extractCarbonApplication(String targetCAppPath) throws CarbonException {
 
         return AppDeployerUtils.extractCarbonApp(targetCAppPath);
     }
