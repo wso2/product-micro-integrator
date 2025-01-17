@@ -43,7 +43,6 @@ public class InputReader {
     }
 
     public static String readPassword(String prompt) throws IOException {
-        String password = null;
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out), true);
              BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
             String password = null;
