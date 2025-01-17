@@ -166,6 +166,7 @@ public class AppDeployerServiceComponent {
         // Initialize CApp deployer here
         CappDeployer cappDeployer = new CappDeployer();
         cappDeployer.setDirectory(artifactRepoPath + DeploymentConstants.CAPP_DIR_NAME);
+        cappDeployer.setAppsDirectory(artifactRepoPath + DeploymentConstants.APPS_DIR_NAME);
         cappDeployer.setSecretCallbackHandlerService(secretCallbackHandlerService);
         cappDeployer.init(configCtx);
 
@@ -176,6 +177,8 @@ public class AppDeployerServiceComponent {
         cappDeployer.registerDeploymentHandler(new DataSourceCappDeployer());
         cappDeployer.registerDeploymentHandler(new DefaultAppDeployer());
         cappDeployer.registerDeploymentHandler(new SynapseAppDeployer());
+        // deploy capps in the apps directory during the server startup
+        cappDeployer.deployCarbonAppsDirectory();
 
         //Add the deployer to deployment engine. This should be done after registering the deployment handlers.
         deploymentEngine.addDeployer(cappDeployer, artifactRepoPath + DeploymentConstants.CAPP_DIR_NAME,

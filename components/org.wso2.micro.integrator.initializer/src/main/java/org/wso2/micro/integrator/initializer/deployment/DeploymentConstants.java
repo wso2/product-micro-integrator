@@ -21,6 +21,7 @@ package org.wso2.micro.integrator.initializer.deployment;
 public class DeploymentConstants {
 
     public static final String CAPP_DIR_NAME = "carbonapps";
+    public static final String APPS_DIR_NAME = "apps";
     public static final String DSS_DIR_NAME = "dataservices";
     public static final String USER_STORE_DIR_NAME = "userstores";
     public static final String EVENT_STREAMS_DIR_NAME = "eventstreams";

@@ -334,6 +334,13 @@
                 <exclude>empty.txt</exclude>
             </excludes>
         </fileSet>
+        <fileSet>
+            <directory>src/resources/capps</directory>
+            <outputDirectory>wso2mi-${pom.version}/repository/deployment/server/apps</outputDirectory>
+            <excludes>
+                <exclude>empty.txt</exclude>
+            </excludes>
+        </fileSet>
 
         <fileSet>
             <directory>src/resources/security</directory>
