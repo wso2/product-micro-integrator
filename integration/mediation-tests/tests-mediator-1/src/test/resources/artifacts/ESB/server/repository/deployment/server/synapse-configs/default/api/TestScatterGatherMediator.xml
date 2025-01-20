@@ -92,13 +92,13 @@
                 </sequence>
             </scatter-gather>
             <log>
-                <message>Scatter Gather output = ${var.output_var}</message>
+                <message>Scatter Gather output = ${vars.output_var}</message>
             </log>
             <payloadFactory media-type="json" template-type="default">
                 <format>{
                     "response": {
                     "requestData": ${payload},
-                    "scatterGatherOutput": ${var.output_var}
+                    "scatterGatherOutput": ${vars.output_var}
                     }
                     }
                 </format>
@@ -108,7 +108,6 @@
     </resource>
     <resource methods="POST" uri-template="/xml-body-replace">
         <inSequence>
-            <!-- <variable name="result" expression="${xpath('//result/pet')}" type="OM"/> -->
             <scatter-gather parallel-execution="true" result-target="body" root-element="scatter_response"
                             content-type="XML">
                 <aggregation expression="${xpath('$body/node()')}"/>
@@ -171,7 +170,7 @@
                 </sequence>
             </scatter-gather>
             <log>
-                <message>Scatter Gather XML output = ${var.output_var}</message>
+                <message>Scatter Gather XML output = ${vars.output_var}</message>
             </log>
             <respond/>
         </inSequence>
@@ -289,6 +288,46 @@
                     </pet>
                 </format>
             </payloadFactory>
+            <respond/>
+        </inSequence>
+        <faultSequence>
+        </faultSequence>
+    </resource>
+    <resource methods="POST" uri-template="/nested-sequential">
+        <inSequence>
+            <filter xpath="${payload.requestId &gt; 10}">
+                <then>
+                    <sequence key="scatter_gather_seq"/>
+                </then>
+                <else>
+                    <log category="INFO">
+                        <message>Processing else branch</message>
+                    </log>
+                </else>
+            </filter>
+            <log category="INFO">
+                <message>Nested scatter gather done ${payload}</message>
+            </log>
+            <respond/>
+        </inSequence>
+        <faultSequence>
+        </faultSequence>
+    </resource>
+    <resource methods="POST" uri-template="/nested-parallel">
+        <inSequence>
+            <filter xpath="${payload.requestId &gt; 10}">
+                <then>
+                    <sequence key="parallel_scatter_gather_seq"/>
+                </then>
+                <else>
+                    <log category="INFO">
+                        <message>Processing else branch</message>
+                    </log>
+                </else>
+            </filter>
+            <log category="INFO">
+                <message>Nested scatter gather done ${payload}</message>
+            </log>
             <respond/>
         </inSequence>
         <faultSequence>
