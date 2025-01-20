@@ -17,7 +17,6 @@
  */
 package org.wso2.micro.integrator.initializer.deployment.application.deployer;
 
-import com.google.gson.JsonObject;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
@@ -85,6 +84,8 @@ public class CappDeployer extends AbstractDeployer {
      */
     private String cAppDir;
 
+    private String appsDir;
+
     /**
      * Carbon application file directory (i.e. 'car').
      */
@@ -106,6 +107,7 @@ public class CappDeployer extends AbstractDeployer {
     private SecretCallbackHandlerService secretCallbackHandlerService;
 
     public void init(ConfigurationContext configurationContext) {
+
         if (log.isDebugEnabled()) {
             log.debug("Initializing Capp Deployer..");
         }
@@ -124,10 +126,17 @@ public class CappDeployer extends AbstractDeployer {
     }
 
     public void setDirectory(String cAppDir) {
+
         this.cAppDir = cAppDir;
     }
 
+    public void setAppsDirectory(String appsDir) {
+
+        this.appsDir = appsDir;
+    }
+
     public void setExtension(String extension) {
+
         this.extension = extension;
     }
 
@@ -150,7 +159,7 @@ public class CappDeployer extends AbstractDeployer {
     }
 
     /**
-     * Deploy synapse artifacts in a carbon application.
+     * Deploy synapse artifacts in a .car file.
      *
      * @param artifactPath - file path to be processed
      * @throws CarbonException - error while building
@@ -171,11 +180,29 @@ public class CappDeployer extends AbstractDeployer {
         }
 
         String targetCAppPath = cAppDirectory + File.separator + cAppName;
+        String extractedPath = extractCarbonApplication(targetCAppPath);
+        deployCarbonApplications(cAppName, targetCAppPath, extractedPath);
+    }
+
+    /**
+     * Deploy synapse artifacts in a carbon application under apps directory.
+     *
+     * @param artifactPath - file path to be processed
+     * @throws CarbonException - error while building
+     */
+    public void deployApps(String artifactPath) throws CarbonException {
+
+        String archPathToProcess = AppDeployerUtils.formatPath(artifactPath);
+        String cAppName = archPathToProcess.substring(archPathToProcess.lastIndexOf('/') + 1);
+        String targetCAppPath = artifactPath.endsWith(File.separator) ? artifactPath : artifactPath + File.separator;
+        deployCarbonApplications(cAppName, targetCAppPath, targetCAppPath);
+    }
+
+    private void deployCarbonApplications(String cAppName, String cAppPath, String targetCAppPath) throws CarbonException {
+
         CarbonApplication currentApp = null;
-
         try {
-            currentApp = buildCarbonApplication(targetCAppPath, cAppName, axisConfig);
-
+            currentApp = buildCarbonApplication(cAppPath, targetCAppPath, cAppName, axisConfig);
             if (currentApp != null) {
                 // deploy sub artifacts of this cApp
                 this.searchArtifacts(currentApp.getExtractedPath(), currentApp);
@@ -188,8 +215,8 @@ public class CappDeployer extends AbstractDeployer {
                     }
                 } else {
                     log.error("Some dependencies were not satisfied in cApp:" + currentApp.getAppNameWithVersion() +
-                                      "Check whether all dependent artifacts are included in cApp file: " +
-                                      targetCAppPath);
+                            "Check whether all dependent artifacts are included in cApp file: " +
+                            targetCAppPath);
 
                     deleteExtractedCApp(currentApp.getExtractedPath());
                     // Validate synapse config to remove half added swagger definitions in the case of a faulty CAPP.
@@ -201,7 +228,7 @@ public class CappDeployer extends AbstractDeployer {
                 currentApp.setDeploymentCompleted(true);
                 this.addCarbonApp(currentApp);
                 log.info("Successfully Deployed Carbon Application : " + currentApp.getAppNameWithVersion() +
-                                 AppDeployerUtils.getTenantIdLogString(AppDeployerUtils.getTenantId()));
+                        AppDeployerUtils.getTenantIdLogString(AppDeployerUtils.getTenantId()));
             }
         } catch (DeploymentException e) {
             log.error("Error occurred while deploying the Carbon application: " + cAppName
@@ -220,39 +247,69 @@ public class CappDeployer extends AbstractDeployer {
         }
     }
 
+    public void deployCarbonAppsDirectory() {
+
+        File cAppDirectory = new File(this.appsDir);
+        File[] cAppFiles = cAppDirectory.listFiles();
+        if (cAppFiles.length == 0) {
+            return;
+        }
+        for (File cAppFile : cAppFiles) {
+            if (cAppFile.isDirectory()) {
+                try {
+                    deployApps(cAppFile.getAbsolutePath());
+                } catch (CarbonException e) {
+                    log.error("Error while deploying carbon application " + cAppFile.getAbsolutePath(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Extracts the carbon application to the tmp/carbonapps directory.
+     *
+     * @param targetCAppPath - path of the carbon application
+     * @return - path to the extracted carbon application
+     * @throws CarbonException - error while extracting
+     */
+    private String extractCarbonApplication(String targetCAppPath) throws CarbonException {
+
+        return AppDeployerUtils.extractCarbonApp(targetCAppPath);
+    }
+
     /**
      * Builds the carbon application from app configuration created using the artifacts.xml path.
      *
-     * @param targetCAppPath - path to target carbon application
-     * @param cAppName       - name of the carbon application
-     * @param axisConfig     - AxisConfiguration instance
+     * @param cappPath             - path of the carbon application
+     * @param extractedCAppDirectory - path to extracted carbon application
+     * @param cAppName             - name of the carbon application
+     * @param axisConfig           - AxisConfiguration instance
      * @return - CarbonApplication instance if successfull. otherwise null..
      * @throws CarbonException - error while building
      */
-    private CarbonApplication buildCarbonApplication(String targetCAppPath, String cAppName,
+    private CarbonApplication buildCarbonApplication(String cappPath, String extractedCAppDirectory, String cAppName,
                                                      AxisConfiguration axisConfig) throws CarbonException {
-        String tempExtractedDirPath = AppDeployerUtils.extractCarbonApp(targetCAppPath);
 
         // Build the app configuration by providing the artifacts.xml path
-        ApplicationConfiguration appConfig = new ApplicationConfiguration(tempExtractedDirPath);
+        ApplicationConfiguration appConfig = new ApplicationConfiguration(extractedCAppDirectory);
 
         // If we don't have features (artifacts) for this server, ignore
         if (appConfig.getApplicationArtifact().getDependencies().isEmpty()) {
             log.warn("No artifacts found to be deployed in this server. " +
-                             "Ignoring Carbon Application : " + cAppName);
+                    "Ignoring Carbon Application : " + cAppName);
             return null;
         }
 
         CarbonApplication carbonApplication = new CarbonApplication();
-        carbonApplication.setAppFilePath(targetCAppPath);
-        carbonApplication.setExtractedPath(tempExtractedDirPath);
+        carbonApplication.setAppFilePath(cappPath);
+        carbonApplication.setExtractedPath(extractedCAppDirectory);
         carbonApplication.setAppConfig(appConfig);
 
         // Set App Name
         String appName = appConfig.getAppName();
         if (appName == null) {
             log.warn("No application name found in Carbon Application : " + cAppName + ". Using " +
-                             "the file name as the application name");
+                    "the file name as the application name");
             appName = cAppName.substring(0, cAppName.lastIndexOf('.'));
         }
         // to support multiple capp versions, we check app name with version

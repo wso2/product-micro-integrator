@@ -28,6 +28,7 @@ import org.apache.axis2.deployment.Deployer;
 import org.apache.axis2.deployment.DeploymentEngine;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.deployment.repository.util.DeploymentFileData;
+import org.apache.axis2.deployment.util.Utils;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.io.FileUtils;
@@ -60,6 +61,7 @@ import org.apache.synapse.deployers.TemplateDeployer;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.Template;
 import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.libraries.LibClassLoader;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
@@ -89,6 +91,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -129,6 +132,10 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
         List<Artifact.Dependency> artifacts = carbonApp.getAppConfig().getApplicationArtifact()
                 .getDependencies();
 
+        if (carbonApp.getClassLoader() == null) {
+            carbonApp.setClassLoader(new LibClassLoader(new URL[0], Utils.getClassLoader
+                    (LibDeployerUtils.class.getClassLoader(), carbonApp.getExtractedPath(), false)));
+        }
         deployClassMediators(artifacts, axisConfig, carbonApp);
         deploySynapseLibrary(artifacts, axisConfig, carbonApp);
         Map<String, List<Artifact.Dependency>> artifactTypeMap = getOrderedArtifactsMap(artifacts);
