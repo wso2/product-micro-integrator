@@ -562,9 +562,8 @@ public class KeyStoreBasedExternalCryptoProvider implements ExternalCryptoProvid
         }
         if ((hybridEncryptionOutput.getAuthData() != null) && (hybridEncryptionOutput.getAuthTag() != null)) {
             cipher.updateAAD(hybridEncryptionOutput.getAuthData());
-            byte[] encryptedDataWithTag = concatByteArrays(
-                    new byte[][] { hybridEncryptionOutput.getCipherData(), hybridEncryptionOutput.getAuthTag() });
-            return cipher.doFinal(encryptedDataWithTag);
+            return cipher.doFinal(concatByteArrays(
+                    new byte[][] { hybridEncryptionOutput.getCipherData(), hybridEncryptionOutput.getAuthTag() }));
         } else {
             return cipher.doFinal(hybridEncryptionOutput.getCipherData());
         }

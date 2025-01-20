@@ -219,10 +219,6 @@ public class ODataServiceHandler {
 
             @Override
             public HttpSession getSession() {
-                HttpSession oldSession = getSession(false);
-                if (oldSession != null) {
-                    oldSession.invalidate();
-                }
                 return req.getSession();
             }
 

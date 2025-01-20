@@ -34,7 +34,6 @@ import javax.sql.DataSource;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -832,11 +831,8 @@ public class RDBMSDataHandler implements ODataDataHandler {
                     if (value == null) {
                         sqlStatement.setNull(ordinalPosition, type);
                     } else {
-                        try (BufferedReader reader = new BufferedReader(new StringReader(value))) {
-                            sqlStatement.setClob(ordinalPosition, reader, value.length());
-                        } catch (IOException e) {
-                            sqlStatement.setNull(ordinalPosition, type);
-                        }
+                        sqlStatement.setClob(ordinalPosition, new BufferedReader(new StringReader(value)),
+                                             value.length());
                     }
                     break;
                 case Types.BOOLEAN:
@@ -915,11 +911,8 @@ public class RDBMSDataHandler implements ODataDataHandler {
                     if (value == null) {
                         sqlStatement.setNull(ordinalPosition, type);
                     } else {
-                        try (BufferedReader reader = new BufferedReader(new StringReader(value))) {
-                            sqlStatement.setNClob(ordinalPosition, reader, value.length());
-                        } catch (IOException e) {
-                            sqlStatement.setNull(ordinalPosition, type);
-                        }
+                        sqlStatement.setNClob(ordinalPosition, new BufferedReader(new StringReader(value)),
+                                              value.length());
                     }
                     break;
                 case Types.BIGINT:

@@ -123,10 +123,6 @@ public class MeteredServletRequest implements HttpServletRequest {
 	}
 
 	public HttpSession getSession() {
-		HttpSession oldSession = getSession(false);
-		if (oldSession != null) {
-			oldSession.invalidate();
-		}
 	    return wrappedHttpServletRequest.getSession();
 	}
 
