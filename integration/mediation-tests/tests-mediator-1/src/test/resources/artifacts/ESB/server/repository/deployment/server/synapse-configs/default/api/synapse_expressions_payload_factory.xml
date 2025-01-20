@@ -23,9 +23,9 @@
             <variable name="id" value="123" type="INTEGER"/>
             <payloadFactory media-type="json">
                 <format><![CDATA[{
-                    "variable": ${var.id},
+                    "variable": ${vars.id},
                     "username": "${payload.customer_name}",
-                    "escapedVariable": "${var.id}",
+                    "escapedVariable": "${vars.id}",
                     "bool": ${payload.path},
                     "escapedBool": "${payload.path}",
                     "escapedObject": "${payload.pet}",
@@ -41,15 +41,15 @@
         <inSequence>
             <variable name="user_name" value="123&lt;456"/>
             <variable name="special_json_str" value="123\n456"/>
-            <variable name="xml_data" value="&lt;fruit&gt;apple&lt;/fruit&gt;" type="OM"/>
+            <variable name="xml_data" value="&lt;fruit&gt;apple&lt;/fruit&gt;" type="XML"/>
             <payloadFactory media-type="xml">
                 <format>
                     <sleepOperation xmlns="">
-                        <username>${var.user_name}</username>
+                        <username>${vars.user_name}</username>
                         <name>${payload.pet.name}</name>
-                        <load>${var.xml_data}</load>
+                        <load>${vars.xml_data}</load>
                         <data>${payload.pet}</data>
-                        <special_json_str>${var.special_json_str}</special_json_str>
+                        <special_json_str>${vars.special_json_str}</special_json_str>
                     </sleepOperation>
                 </format>
             </payloadFactory>
@@ -67,8 +67,8 @@
                 <format>
                     <sleepOperation xmlns="">
                         <username>${xpath('//root/customer_name/text()')}</username>
-                        <load>${var.id}</load>
-                        <json>${var.special_json}</json>
+                        <load>${vars.id}</load>
+                        <json>${vars.special_json}</json>
                         <data>${xpath('//root/pet')}</data>
                     </sleepOperation>
                 </format>
@@ -88,8 +88,8 @@
                     "escapedObject": "${xpath('//root/pet')}",
                     "escapedObject2": "${xpath('//root/pet2')}",
                     "object": ${xpath('//root/pet')},
-                    "xml": "${var.id}",
-                    "json": "${var.special_json}"
+                    "xml": "${vars.id}",
+                    "json": "${vars.special_json}"
                     }
                 </format>
             </payloadFactory>
@@ -105,7 +105,7 @@
             <payloadFactory media-type="json" template-type="freemarker">
                 <format><![CDATA[{
                     "name": "${payload.firstname} ${payload.lastname}",
-                    "id": ${var.userID}
+                    "id": ${vars.userID}
                     }]]>
                 </format>
             </payloadFactory>

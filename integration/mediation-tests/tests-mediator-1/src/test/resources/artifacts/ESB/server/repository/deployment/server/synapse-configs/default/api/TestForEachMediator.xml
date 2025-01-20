@@ -27,7 +27,7 @@
                         <format><![CDATA[{
                             "_name": ${payload.name},
                             "age": 5,
-                            "status": ${var.status}
+                            "status": ${vars.status}
                             }]]>
                         </format>
                     </payloadFactory>
@@ -70,7 +70,7 @@
             </foreach>
             <payloadFactory media-type="json">
                 <format><![CDATA[{
-                            "foreachResult": ${var.result}
+                            "foreachResult": ${vars.result}
                             }]]>
                 </format>
             </payloadFactory>
@@ -83,7 +83,7 @@
         <inSequence>
             <variable name="list" type="JSON"
                       value="[{&quot;name&quot;: &quot;guava&quot;,&quot;type&quot;: &quot;fruit&quot;},{&quot;name&quot;: &quot;beet&quot;,&quot;type&quot;: &quot;vegetable&quot;}]"/>
-            <foreach collection="${var.list}" parallel-execution="false">
+            <foreach collection="${vars.list}" parallel-execution="false">
                 <sequence>
                     <payloadFactory media-type="json">
                         <format><![CDATA[{
@@ -95,7 +95,7 @@
                 </sequence>
             </foreach>
             <log category="INFO">
-                <message>Processed message : ${var.list}</message>
+                <message>Processed message : ${vars.list}</message>
             </log>
             <respond/>
         </inSequence>
@@ -106,7 +106,7 @@
         <inSequence>
             <variable name="var_1" type="JSON"
                       value="{&quot;data&quot;: {&quot;list&quot;: [{&quot;name&quot;: &quot;apple&quot;,&quot;type&quot;: &quot;fruit&quot;},{&quot;name&quot;: &quot;carrot&quot;,&quot;type&quot;: &quot;vegetable&quot;}]}}"/>
-            <foreach version="v2" collection="${var.var_1.data.list}" result-target="result" result-type="JSON"
+            <foreach version="v2" collection="${vars.var_1.data.list}" result-target="result" result-type="JSON"
                      parallel-execution="true">
                 <sequence>
                     <payloadFactory media-type="json">
@@ -119,10 +119,10 @@
                 </sequence>
             </foreach>
             <log category="INFO">
-                <message>Original list : ${var.var_1}</message>
+                <message>Original list : ${vars.var_1}</message>
             </log>
             <log category="INFO">
-                <message>Foreach output : ${var.result}</message>
+                <message>Foreach output : ${vars.result}</message>
             </log>
             <log category="INFO">
                 <message>Request Body : ${payload}</message>
@@ -172,7 +172,7 @@
                 <message>Processed message body : ${xpath('/')}</message>
             </log>
             <log category="INFO">
-                <message>Processed result : ${var.foreach_result}</message>
+                <message>Processed result : ${vars.foreach_result}</message>
             </log>
             <respond/>
         </inSequence>
@@ -181,7 +181,7 @@
     </resource>
     <resource methods="POST" uri-template="/xml-var-variable-output">
         <inSequence>
-            <variable name="xml_collection" expression="${xpath('//data')}" type="OM"/>
+            <variable name="xml_collection" expression="${xpath('//data')}" type="XML"/>
             <foreach collection="${xpath('//list', 'xml_collection')}" parallel-execution="false" result-target="foreach_result" result-type="XML">
                 <sequence>
                     <call>
@@ -192,10 +192,10 @@
                 </sequence>
             </foreach>
             <log category="INFO">
-                <message>Original collection : ${var.xml_collection}</message>
+                <message>Original collection : ${vars.xml_collection}</message>
             </log>
             <log category="INFO">
-                <message>Processed collection : ${var.foreach_result}</message>
+                <message>Processed collection : ${vars.foreach_result}</message>
             </log>
             <respond/>
         </inSequence>
@@ -209,7 +209,7 @@
                 <format><![CDATA[{
                             "_name": ${payload.name},
                             "age": 5,
-                            "status": ${var.status}
+                            "status": ${vars.status}
                             }]]>
                 </format>
             </payloadFactory>

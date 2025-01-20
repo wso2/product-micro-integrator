@@ -23,7 +23,7 @@
             <variable name="requestID" expression="${payload.data.name + '_123123'}"/>
             <variable name="endpoint" value="http://localhost:8480/log-mediator-template/mock-backend-json"/>
             <log category="INFO">
-                <message>Processing info message: ${payload.data} using endpoint ${var.endpoint}</message>
+                <message>Processing info message: ${payload.data} using endpoint ${vars.endpoint}</message>
             </log>
             <call>
                 <endpoint>
@@ -32,7 +32,7 @@
             </call>
             <log category="INFO" separator="|">
                 <message>Backend result = ${payload}</message>
-                <property name="requestID" expression="${var.requestID}"/>
+                <property name="requestID" expression="${vars.requestID}"/>
                 <property name="test" value="abc123"/>
             </log>
             <respond/>
@@ -41,7 +41,7 @@
     <resource methods="POST" url-mapping="/warn">
         <inSequence>
             <log category="WARN">
-                <message>Processing message: ${payload.data} using endpoint ${var.undefined}</message>
+                <message>Processing message: ${payload.data} using endpoint ${vars.undefined}</message>
             </log>
             <call>
                 <endpoint>
