@@ -17,6 +17,7 @@
  */
 package org.wso2.micro.integrator.ntask.core.impl;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.micro.integrator.ntask.common.TaskException;
@@ -39,6 +40,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,11 +57,9 @@ public class FileBasedTaskRepository implements TaskRepository {
     private static final Log log = LogFactory.getLog(FileBasedTaskRepository.class);
 
     private static final String REG_TASK_BASE_PATH = "/repository/components/org.wso2.carbon.tasks";
-
     private static final String REG_TASK_REPO_BASE_PATH = REG_TASK_BASE_PATH + "/" + "definitions";
     private static final char URL_SEPARATOR_CHAR = '/';
-    private static String resourcePath =
-            getHome() + File.separator + "registry" + File.separator + "governance" + File.separator;
+    private static String resourcePath = getGovernanceRegistryPath();
     private static Marshaller taskMarshaller;
     private static Unmarshaller taskUnmarshaller;
     private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();
@@ -84,12 +85,21 @@ public class FileBasedTaskRepository implements TaskRepository {
         this.taskType = taskType;
     }
 
-    private static String getHome() {
-        String carbonHome = System.getProperty("carbon.home");
-        if (carbonHome == null || "".equals(carbonHome) || ".".equals(carbonHome)) {
-            carbonHome = getSystemDependentPath(new File(".").getAbsolutePath());
+    private static String getGovernanceRegistryPath() {
+
+        String systemStoredGovRegistryPath = System.getProperty("mi.registry.gov");
+        try {
+            URI govRegistryUri = new URI(systemStoredGovRegistryPath);
+            String governanceRegistryPath = govRegistryUri.getPath();
+            if (governanceRegistryPath == null || "".equals(governanceRegistryPath) || ".".equals(governanceRegistryPath)) {
+                governanceRegistryPath = getSystemDependentPath(new File(".").getAbsolutePath()) +
+                        File.separator + "registry" + File.separator + "governance" + File.separator;
+            }
+            return governanceRegistryPath;
+        } catch (URISyntaxException e) {
+            log.error("The governance registry path: '" + systemStoredGovRegistryPath + "' is not valid.");
+            return StringUtils.EMPTY;
         }
-        return carbonHome;
     }
 
     private static String getSystemDependentPath(String path) {

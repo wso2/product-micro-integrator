@@ -206,6 +206,7 @@ public class MicroIntegratorRegistry extends AbstractRegistry {
                 addConfigProperty(name, value);
             }
         }
+        System.setProperty("mi.registry.gov", govRegistry);
         log.debug("MI lightweight registry is initialized.");
 
         initSecurityRepo();
