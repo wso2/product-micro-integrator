@@ -234,6 +234,72 @@ public class ScatterGatherTestCase extends ESBIntegrationTest {
         assertTrue(areJsonElementsEquivalent(expectedJSON, responseJSON), "Response payload mismatched");
     }
 
+    @Test(groups = {"wso2.esb"}, description = "Testing Scatter-Gather mediator nested sequential calls")
+    public void testScatterGatherNestedInSequentialMode() throws IOException {
+
+        String expectedResponse = "[\n" +
+                "    {\n" +
+                "        \"pet\": {\n" +
+                "            \"name\": \"pet1\",\n" +
+                "            \"type\": \"dog\",\n" +
+                "            \"requestId\": 123\n" +
+                "        }\n" +
+                "    },\n" +
+                "    {\n" +
+                "        \"pet\": {\n" +
+                "            \"name\": \"pet2\",\n" +
+                "            \"type\": \"cat\",\n" +
+                "            \"requestId\": 123\n" +
+                "        }\n" +
+                "    }\n" +
+                "]";
+
+        String requestPayload = "{\n" +
+                "    \"requestId\": 123\n" +
+                "}";
+
+        String serviceURL = getMainSequenceURL() + "scatter-gather/nested-sequential";
+        HttpResponse httpResponse = httpClient.doPost(serviceURL, null, requestPayload, "application/json");
+        String responsePayload = httpClient.getResponsePayload(httpResponse);
+
+        JsonElement responseJSON = JsonParser.parseString(responsePayload);
+        JsonElement expectedJSON = JsonParser.parseString(expectedResponse);
+        assertTrue(areJsonElementsEquivalent(expectedJSON, responseJSON), "Response payload mismatched");
+    }
+
+    @Test(groups = {"wso2.esb"}, description = "Testing Scatter-Gather mediator nested parallele calls")
+    public void testScatterGatherNestedInParallelMode() throws IOException {
+
+        String expectedResponse = "[\n" +
+                "    {\n" +
+                "        \"pet\": {\n" +
+                "            \"name\": \"pet1\",\n" +
+                "            \"type\": \"dog\",\n" +
+                "            \"requestId\": 123\n" +
+                "        }\n" +
+                "    },\n" +
+                "    {\n" +
+                "        \"pet\": {\n" +
+                "            \"name\": \"pet2\",\n" +
+                "            \"type\": \"cat\",\n" +
+                "            \"requestId\": 123\n" +
+                "        }\n" +
+                "    }\n" +
+                "]";
+
+        String requestPayload = "{\n" +
+                "    \"requestId\": 123\n" +
+                "}";
+
+        String serviceURL = getMainSequenceURL() + "scatter-gather/nested-parallel";
+        HttpResponse httpResponse = httpClient.doPost(serviceURL, null, requestPayload, "application/json");
+        String responsePayload = httpClient.getResponsePayload(httpResponse);
+
+        JsonElement responseJSON = JsonParser.parseString(responsePayload);
+        JsonElement expectedJSON = JsonParser.parseString(expectedResponse);
+        assertTrue(areJsonElementsEquivalent(expectedJSON, responseJSON), "Response payload mismatched");
+    }
+
     private static boolean areJsonElementsEquivalent(JsonElement e1, JsonElement e2) {
 
         if (e1.isJsonObject() && e2.isJsonObject()) {

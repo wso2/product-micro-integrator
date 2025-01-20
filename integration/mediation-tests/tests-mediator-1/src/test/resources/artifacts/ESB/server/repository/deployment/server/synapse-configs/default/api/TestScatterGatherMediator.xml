@@ -293,4 +293,44 @@
         <faultSequence>
         </faultSequence>
     </resource>
+    <resource methods="POST" uri-template="/nested-sequential">
+        <inSequence>
+            <filter xpath="${payload.requestId &gt; 10}">
+                <then>
+                    <sequence key="scatter_gather_seq"/>
+                </then>
+                <else>
+                    <log category="INFO">
+                        <message>Processing else branch</message>
+                    </log>
+                </else>
+            </filter>
+            <log category="INFO">
+                <message>Nested scatter gather done ${payload}</message>
+            </log>
+            <respond/>
+        </inSequence>
+        <faultSequence>
+        </faultSequence>
+    </resource>
+    <resource methods="POST" uri-template="/nested-parallel">
+        <inSequence>
+            <filter xpath="${payload.requestId &gt; 10}">
+                <then>
+                    <sequence key="parallel_scatter_gather_seq"/>
+                </then>
+                <else>
+                    <log category="INFO">
+                        <message>Processing else branch</message>
+                    </log>
+                </else>
+            </filter>
+            <log category="INFO">
+                <message>Nested scatter gather done ${payload}</message>
+            </log>
+            <respond/>
+        </inSequence>
+        <faultSequence>
+        </faultSequence>
+    </resource>
 </api>
