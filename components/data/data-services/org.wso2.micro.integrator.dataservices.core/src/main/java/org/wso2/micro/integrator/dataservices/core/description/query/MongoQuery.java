@@ -362,7 +362,7 @@ public class MongoQuery extends Query {
                 if (parameters.length > 0) {
                     opQuery = replacePlaceholders(opQuery, parameters);
                 }
-                count = collection.countDocuments(Document.parse(opQuery.toString()));
+                count = collection.countDocuments(Document.parse(opQuery));
             } else {
                 count = collection.countDocuments();
             }
