@@ -21,7 +21,7 @@
     <resource methods="GET">
         <inSequence>
             <variable name="ERROR_MSG" value="Error message from expression"/>
-            <throwError type="ERROR_TYPE" errorMessage="{${var.ERROR_MSG}}"/>
+            <throwError type="ERROR_TYPE" errorMessage="{${vars.ERROR_MSG}}"/>
         </inSequence>
         <faultSequence>
             <log level="full">
