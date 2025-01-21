@@ -55,8 +55,7 @@ public class ConfigDeployer implements AppDeploymentHandler {
     private static final String PROPERTY_TYPE = "config/property";
 
     private static final String LOCAL_CONFIG_FILE_NAME = "config.properties";
-    private static final String GLOBAL_CONFIG_FILE_NAME = "file.properties";
-    private Properties globalProperties;
+    private static final String FILE_PROPERTIES_NAME = "file.properties";
 
     public static final char URL_SEPARATOR_CHAR = '/';
 
@@ -101,7 +100,7 @@ public class ConfigDeployer implements AppDeploymentHandler {
         List<CappFile> files = artifact.getFiles();
         if (files.size() == 1) {
             Path confFolder = Paths.get(getHome(), "conf");
-            Path globalPropertiesFilePath = confFolder.resolve(GLOBAL_CONFIG_FILE_NAME) ;
+            Path globalPropertiesFilePath = confFolder.resolve(FILE_PROPERTIES_NAME) ;
             String configFilePath = artifact.getExtractedPath() + File.separator + LOCAL_CONFIG_FILE_NAME;
             processConfFile(artifact.getName(), configFilePath, globalPropertiesFilePath.toString());
         } else {
@@ -114,8 +113,8 @@ public class ConfigDeployer implements AppDeploymentHandler {
         File configFile = new File(configFilePath);
         // Load capp conf property file
         Properties configProperties = loadPropertiesFromFile(configFile);
-        // Load global conf property file
-        this.globalProperties = loadPropertiesFromFile(new File(globalPropertiesFilePath));
+        // Load file property file
+        Properties fileProperties = loadPropertiesFromFile(new File(globalPropertiesFilePath));
         if (configProperties.isEmpty() ) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("No configuration is used in the integration[%s]", integrationName));
@@ -124,13 +123,13 @@ public class ConfigDeployer implements AppDeploymentHandler {
             for (Map.Entry<Object, Object> entry : configProperties.entrySet()) {
                 String key = entry.getKey().toString();
                 String type = entry.getValue().toString();
-                processConfigProperties(key, type);
+                processConfigProperties(key, type, fileProperties);
             }
         }
     }
 
-    private void processConfigProperties(String key, String type) {
-        String value = getValueOfKey(key);
+    private void processConfigProperties(String key, String type, Properties fileProperties) {
+        String value = getValueOfKey(key, fileProperties);
         if (value != null) {
             if (Objects.equals(type, "cert")) {
                 deployCert(key, value);
@@ -199,12 +198,12 @@ public class ConfigDeployer implements AppDeploymentHandler {
         return properties;
     }
 
-    private String getValueOfKey(String key) {
+    private String getValueOfKey(String key, Properties fileProperties) {
         String value = System.getenv(key);
         if (value == null) {
             value = System.getProperty(key);
             if (value == null) {
-                value = this.globalProperties.getProperty(key);
+                value = fileProperties.getProperty(key);
             }
         }
         return value;
