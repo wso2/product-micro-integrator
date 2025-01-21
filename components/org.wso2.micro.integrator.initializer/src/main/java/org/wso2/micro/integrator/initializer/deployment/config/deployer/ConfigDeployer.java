@@ -33,7 +33,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,7 +43,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -57,8 +55,7 @@ public class ConfigDeployer implements AppDeploymentHandler {
     private static final String PROPERTY_TYPE = "config/property";
 
     private static final String LOCAL_CONFIG_FILE_NAME = "config.properties";
-    private static final String GLOBAL_CONFIG_FILE_NAME = "file.properties";
-    private Properties globalProperties;
+    private static final String FILE_PROPERTIES_NAME = "file.properties";
 
     public static final char URL_SEPARATOR_CHAR = '/';
 
@@ -103,55 +100,36 @@ public class ConfigDeployer implements AppDeploymentHandler {
         List<CappFile> files = artifact.getFiles();
         if (files.size() == 1) {
             Path confFolder = Paths.get(getHome(), "conf");
-            Path globalPropertiesFilePath = confFolder.resolve(GLOBAL_CONFIG_FILE_NAME) ;
-            Path serverConfPropertyPath = confFolder.resolve(LOCAL_CONFIG_FILE_NAME);
+            Path globalPropertiesFilePath = confFolder.resolve(FILE_PROPERTIES_NAME) ;
             String configFilePath = artifact.getExtractedPath() + File.separator + LOCAL_CONFIG_FILE_NAME;
-            processConfFile(artifact.getName(), configFilePath, globalPropertiesFilePath.toString(),
-                    serverConfPropertyPath.toString());
+            processConfFile(artifact.getName(), configFilePath, globalPropertiesFilePath.toString());
         } else {
             log.error("config/property type must have a single file which declares " +
                     "config. But " + files.size() + " files found.");
         }
     }
 
-    private void processConfFile(String integrationName, String configFilePath, String globalPropertiesFilePath,
-                                 String serverConfPropertyPath) {
+    private void processConfFile(String integrationName, String configFilePath, String globalPropertiesFilePath) {
         File configFile = new File(configFilePath);
         // Load capp conf property file
         Properties configProperties = loadPropertiesFromFile(configFile);
-        // Load global conf property file
-        this.globalProperties = loadPropertiesFromFile(new File(globalPropertiesFilePath));
-        // Load sever conf property file
-        Properties serverConfigProperties = loadPropertiesFromFile(new File(serverConfPropertyPath));
-
-        Properties newServerConfigProperties = new Properties();
-        if (serverConfigProperties.isEmpty() && configProperties.isEmpty() ) {
+        // Load file property file
+        Properties fileProperties = loadPropertiesFromFile(new File(globalPropertiesFilePath));
+        if (configProperties.isEmpty() ) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("No configuration is used in the integration[%s]", integrationName));
             }
         } else {
-            for (Map.Entry<Object, Object> entry : serverConfigProperties.entrySet()) {
-                String key = entry.getKey().toString();
-                String type = entry.getValue().toString();
-                if (configProperties.containsKey(key)) {
-                    type = configProperties.getProperty(key);
-                    configProperties.remove(key);
-                }
-                newServerConfigProperties.setProperty(key, type);
-                processConfigProperties(key, type);
-            }
             for (Map.Entry<Object, Object> entry : configProperties.entrySet()) {
                 String key = entry.getKey().toString();
                 String type = entry.getValue().toString();
-                newServerConfigProperties.setProperty(key, type);
-                processConfigProperties(key, type);
+                processConfigProperties(key, type, fileProperties);
             }
-            writeServerConfFile(serverConfPropertyPath, newServerConfigProperties);
         }
     }
 
-    private void processConfigProperties(String key, String type) {
-        String value = getValueOfKey(key);
+    private void processConfigProperties(String key, String type, Properties fileProperties) {
+        String value = getValueOfKey(key, fileProperties);
         if (value != null) {
             if (Objects.equals(type, "cert")) {
                 deployCert(key, value);
@@ -208,20 +186,6 @@ public class ConfigDeployer implements AppDeploymentHandler {
         }
     }
 
-    private void writeServerConfFile(String file, Properties newServerConfigProperties) {
-        try (FileWriter writer = new FileWriter(file)) {
-            Enumeration<?> propertyNames = newServerConfigProperties.propertyNames();
-            while (propertyNames.hasMoreElements()) {
-                String key = (String) propertyNames.nextElement();
-                String value = newServerConfigProperties.getProperty(key);
-                writer.write(key + ":" + value + "\n");
-            }
-        } catch (IOException e) {
-            log.error("Failed to add the config.properties file to the server conf folder: "
-                    + e.getMessage());
-        }
-    }
-
     private Properties loadPropertiesFromFile(File file) {
         Properties properties = new Properties();
         if (file.exists()) {
@@ -234,12 +198,12 @@ public class ConfigDeployer implements AppDeploymentHandler {
         return properties;
     }
 
-    private String getValueOfKey(String key) {
+    private String getValueOfKey(String key, Properties fileProperties) {
         String value = System.getenv(key);
         if (value == null) {
             value = System.getProperty(key);
             if (value == null) {
-                value = this.globalProperties.getProperty(key);
+                value = fileProperties.getProperty(key);
             }
         }
         return value;
