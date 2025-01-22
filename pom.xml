@@ -976,13 +976,24 @@
             </dependency>
             <dependency>
                 <groupId>org.mongodb</groupId>
-                <artifactId>mongo-java-driver</artifactId>
-                <version>${mongo-java-driver.orbit.version}</version>
+                <artifactId>mongodb-driver-sync</artifactId>
+                <version>${mongodb-driver-sync.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.graalvm.nativeimage</groupId>
+                        <artifactId>svm</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.wso2.orbit.org.jongo.wso2</groupId>
-                <artifactId>jongo</artifactId>
-                <version>${jongo.orbit.version}</version>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongodb-driver-core</artifactId>
+                <version>${mongodb-driver-sync.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>bson</artifactId>
+                <version>${mongodb-driver-sync.version}</version>
             </dependency>
             <dependency>
                 <groupId>de.undercouch</groupId>
@@ -1797,11 +1808,8 @@
 
         <carbon.registry.imp.pkg.version>0.0.0</carbon.registry.imp.pkg.version> <!-- todo remove this and use {carbon.kernel.imp.pkg.version} after registry bundles are corrected to export correct versions-->
 
-        <mongo-java-driver.orbit.version>3.5.0</mongo-java-driver.orbit.version>
-        <mongo-java-driver.orbit.imp.pkg.version>[3.4.1,4.0.0)</mongo-java-driver.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([2.11.4.wso2v1,2.12.0)) after osgi bundle is corrected - rajith-->
-
-        <jongo.orbit.version>1.4.0.wso2v1</jongo.orbit.version>
-        <jongo.orbit.imp.pkg.version>[1.4,1.5)</jongo.orbit.imp.pkg.version>
+        <mongodb-driver-sync.version>4.9.1</mongodb-driver-sync.version>
+        <mongodb-driver-sync.imp.pkg.version>[4.0.0,6.0.0)</mongodb-driver-sync.imp.pkg.version>
 
         <dataservices.version>4.4.107</dataservices.version>
         <dataservices.imp.pkg.version>[4.3.0,5.0.0)</dataservices.imp.pkg.version>

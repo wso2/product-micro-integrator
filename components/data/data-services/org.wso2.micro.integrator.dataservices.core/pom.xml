@@ -33,11 +33,6 @@
     <description>WSO2 Data Services Core Bundle</description>
 
     <dependencies>
-
-        <dependency>
-            <groupId>org.wso2.orbit.org.jongo.wso2</groupId>
-            <artifactId>jongo</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.apache.xmlbeans</groupId>
             <artifactId>xmlbeans</artifactId>
@@ -183,7 +178,15 @@
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
-            <artifactId>mongo-java-driver</artifactId>
+            <artifactId>mongodb-driver-sync</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>bson</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
@@ -366,9 +369,7 @@
                             org.apache.poi.openxml4j.exceptions;version="${poi-ooxml.orbit.imp.pkg.version}",
                             org.apache.poi.ss.usermodel;version="${poi.orbit.imp.pkg.version}",
                             org.apache.commons.collections4;version="${commons-collections4.orbit.imp.pkg.version}",
-                            com.mongodb;version="${mongo-java-driver.orbit.imp.pkg.version}",
-                            com.mongodb.util;version="${mongo-java-driver.orbit.imp.pkg.version}",
-                            org.jongo;version="${jongo.orbit.imp.pkg.version}",
+                            com.mongodb;version="${mongodb-driver-sync.imp.pkg.version}",
                             org.wso2.micro.integrator.dataservices.sql.driver;version="${project.version}",
                             org.wso2.micro.integrator.dataservices.sql.driver.parser;version="${project.version}",
                             org.wso2.micro.integrator.dataservices.sql.driver.util;version="${project.version}",
