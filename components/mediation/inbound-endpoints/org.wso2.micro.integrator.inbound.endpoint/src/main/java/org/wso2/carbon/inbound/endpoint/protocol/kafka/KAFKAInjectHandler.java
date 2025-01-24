@@ -29,13 +29,18 @@ import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.wso2.carbon.inbound.endpoint.inboundfactory.InboundRequestProcessorFactoryImpl;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * KafkaInjectHandler uses to mediate the received Kafka message
@@ -63,12 +68,15 @@ public class KAFKAInjectHandler implements InjectHandler {
      * inject the message to the sequence
      */
     public boolean invoke(Object object, String name) {
-        byte[] msg = (byte[]) object;
+        KafkaMessageContext kafkaMessageContext = (KafkaMessageContext) object;
 
         org.apache.synapse.MessageContext msgCtx = createMessageContext();
         msgCtx.setProperty(SynapseConstants.INBOUND_ENDPOINT_NAME, name);
         msgCtx.setProperty(SynapseConstants.ARTIFACT_NAME, SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT + name);
         msgCtx.setProperty(SynapseConstants.IS_INBOUND, true);
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            populateStatisticsMetadata(msgCtx, kafkaMessageContext);
+        }
         InboundEndpoint inboundEndpoint = msgCtx.getConfiguration().getInboundEndpoint(name);
         CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
         log.debug("Processed Kafka Message ");
@@ -97,7 +105,7 @@ public class KAFKAInjectHandler implements InjectHandler {
         }
         OMElement documentElement = null;
         // set the message payload to the message context
-        InputStream in = new AutoCloseInputStream(new ByteArrayInputStream(msg));
+        InputStream in = new AutoCloseInputStream(new ByteArrayInputStream(kafkaMessageContext.getMsg()));
         try {
             documentElement = builder.processDocument(in, contentType, axis2MsgCtx);
         } catch (AxisFault axisFault) {
@@ -147,4 +155,12 @@ public class KAFKAInjectHandler implements InjectHandler {
         return msgCtx;
     }
 
+    private void populateStatisticsMetadata(org.apache.synapse.MessageContext synCtx, KafkaMessageContext kafkaMessageContext) {
+        Map<String, Object> statisticsDetails = new HashMap<String, Object>();
+        statisticsDetails.put(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL,
+                InboundRequestProcessorFactoryImpl.Protocols.kafka.toString());
+        statisticsDetails.put(SynapseConstants.CONNECTION, kafkaMessageContext.getConnection());
+        statisticsDetails.put(SynapseConstants.TOPIC, kafkaMessageContext.getTopic());
+        synCtx.setProperty(SynapseConstants.STATISTICS_METADATA, statisticsDetails);
+    }
 }

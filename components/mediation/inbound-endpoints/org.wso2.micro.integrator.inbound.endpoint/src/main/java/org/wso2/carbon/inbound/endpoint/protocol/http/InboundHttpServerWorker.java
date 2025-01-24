@@ -33,6 +33,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.api.ApiConstants;
 import org.apache.synapse.api.inbound.InboundApiHandler;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.core.axis2.MessageContextCreatorForAxis2;
@@ -51,6 +52,8 @@ import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.wso2.carbon.inbound.endpoint.protocol.http.management.HTTPEndpointManager;
 
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -275,7 +278,17 @@ public class InboundHttpServerWorker extends ServerWorker {
         synCtx.setProperty(SynapseConstants.INBOUND_ENDPOINT_NAME, endpoint.getName());
         synCtx.setProperty(SynapseConstants.ARTIFACT_NAME,
                            SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT + endpoint.getName());
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            populateStatisticsMetadata(synCtx, endpoint);
+        }
         synCtx.getEnvironment().injectMessage(synCtx, injectingSequence);
+    }
+
+    private void populateStatisticsMetadata(org.apache.synapse.MessageContext synCtx, InboundEndpoint endpoint) {
+        Map<String, Object> statisticsDetails = new HashMap<String, Object>();
+        statisticsDetails.put(SynapseConstants.INBOUND_PORT, port);
+        statisticsDetails.put(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL, endpoint.getProtocol());
+        synCtx.setProperty(SynapseConstants.STATISTICS_METADATA, statisticsDetails);
     }
 
     private SequenceMediator getFaultSequence(org.apache.synapse.MessageContext synCtx, InboundEndpoint endpoint) {

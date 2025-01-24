@@ -34,6 +34,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.commons.vfs.VFSConstants;
+import org.apache.synapse.commons.vfs.VFSUtils;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.inbound.InboundEndpoint;
@@ -41,12 +44,15 @@ import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.wso2.carbon.inbound.endpoint.inboundfactory.InboundRequestProcessorFactoryImpl;
 import org.wso2.carbon.inbound.endpoint.protocol.generic.GenericConstants;
+import org.wso2.carbon.inbound.endpoint.protocol.hl7.core.MLLPConstants;
 import org.wso2.carbon.inbound.endpoint.protocol.jms.factory.CachedJMSConnectionFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import javax.jms.BytesMessage;
@@ -94,6 +100,9 @@ public class JMSInjectHandler {
             msgCtx.setProperty(SynapseConstants.INBOUND_ENDPOINT_NAME, name);
             msgCtx.setProperty(SynapseConstants.ARTIFACT_NAME, SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT + name);
             msgCtx.setProperty(SynapseConstants.IS_INBOUND, true);
+            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                populateStatisticsMetadata(msgCtx);
+            }
             InboundEndpoint inboundEndpoint = msgCtx.getConfiguration().getInboundEndpoint(name);
 
             // Adding inbound endpoint parameters as synapse properties
@@ -288,6 +297,13 @@ public class JMSInjectHandler {
             throw new SynapseException("Error while processing the JMS Message", e);
         }
         return true;
+    }
+
+    private void populateStatisticsMetadata(org.apache.synapse.MessageContext synCtx) {
+        Map<String, Object> statisticsDetails = new HashMap<String, Object>();
+        statisticsDetails.put(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL,
+                InboundRequestProcessorFactoryImpl.Protocols.jms.toString());
+        synCtx.setProperty(SynapseConstants.STATISTICS_METADATA, statisticsDetails);
     }
 
     /**

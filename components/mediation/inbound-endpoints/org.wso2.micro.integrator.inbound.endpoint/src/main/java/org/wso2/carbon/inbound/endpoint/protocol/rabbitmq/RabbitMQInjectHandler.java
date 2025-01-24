@@ -26,9 +26,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.wso2.carbon.inbound.endpoint.inboundfactory.InboundRequestProcessorFactoryImpl;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -69,16 +74,29 @@ public class RabbitMQInjectHandler {
      *
      * @param properties  the AMQP basic properties
      * @param body        the message body
-     * @param inboundName Inbound Name
+     * @param inboundName Inbound Endpoint Name
      * @return delivery status of the message
      */
     public AcknowledgementMode onMessage(AMQP.BasicProperties properties, byte[] body, String inboundName) {
+        return onMessage(new RabbitMQMessageContext(properties, body, null, null, null), inboundName);
+    }
+
+    /**
+     * Determine the message builder to use, set the message payload to the message context and
+     * inject the message.
+     *
+     * @param rabbitMQMessageContext  RabbitMQ message context
+     * @param inboundName Inbound Endpoint Name
+     * @return delivery status of the message
+     */
+    public AcknowledgementMode onMessage(RabbitMQMessageContext rabbitMQMessageContext, String inboundName) {
         org.apache.synapse.MessageContext msgCtx = createMessageContext();
         try {
             MessageContext axis2MsgCtx = ((org.apache.synapse.core.axis2.Axis2MessageContext) msgCtx)
                     .getAxis2MessageContext();
-            RabbitMQUtils.buildMessage(properties, body, axis2MsgCtx);
-            axis2MsgCtx.setProperty(MessageContext.TRANSPORT_HEADERS, RabbitMQUtils.getTransportHeaders(properties));
+            RabbitMQUtils.buildMessage(rabbitMQMessageContext.getProperties(), rabbitMQMessageContext.getBody(), axis2MsgCtx);
+            axis2MsgCtx.setProperty(MessageContext.TRANSPORT_HEADERS,
+                    RabbitMQUtils.getTransportHeaders(rabbitMQMessageContext.getProperties()));
 
             if (seq != null) {
                 if (log.isDebugEnabled()) {
@@ -89,6 +107,9 @@ public class RabbitMQInjectHandler {
                 msgCtx.setProperty(SynapseConstants.INBOUND_ENDPOINT_NAME, inboundName);
                 msgCtx.setProperty(SynapseConstants.ARTIFACT_NAME,
                         SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT + inboundName);
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    populateStatisticsMetadata(msgCtx, rabbitMQMessageContext);
+                }
                 synapseEnvironment.injectInbound(msgCtx, seq, sequential);
             } else {
                 log.error("Sequence: " + injectingSeq + " not found");
@@ -124,6 +145,16 @@ public class RabbitMQInjectHandler {
         axis2MsgCtx.setMessageID(UUID.randomUUID().toString());
         msgCtx.setProperty(MessageContext.CLIENT_API_NON_BLOCKING, true);
         return msgCtx;
+    }
+
+    private void populateStatisticsMetadata(org.apache.synapse.MessageContext synCtx, RabbitMQMessageContext rabbitMQMessageContext) {
+        Map<String, Object> statisticsDetails = new HashMap<String, Object>();
+        statisticsDetails.put(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL,
+                InboundRequestProcessorFactoryImpl.Protocols.rabbitmq.toString());
+        statisticsDetails.put(SynapseConstants.HOSTNAME, rabbitMQMessageContext.getHost());
+        statisticsDetails.put(SynapseConstants.PORT, rabbitMQMessageContext.getPort());
+        statisticsDetails.put(SynapseConstants.QUEUE, rabbitMQMessageContext.getQueue());
+        synCtx.setProperty(SynapseConstants.STATISTICS_METADATA, statisticsDetails);
     }
 
 }

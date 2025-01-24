@@ -30,14 +30,19 @@ import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.wso2.carbon.inbound.endpoint.inboundfactory.InboundRequestProcessorFactoryImpl;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Inject mqtt message into the sequence
@@ -69,25 +74,42 @@ public class MqttInjectHandler {
     }
 
     /**
-     * inject mqtt message into esb sequence
+     * Inject MQTT message into esb sequence.
      *
-     * @param mqttMessage
-     * @return
+     * @param mqttMessage MQTT message
+     * @param name name of the inbound endpoint
+     * @param topicName MQTT topic from which the message was received
+     * @return true if the MQTT message was processed and injected to mediation successfully.
      */
     public boolean invoke(MqttMessage mqttMessage, String name, String topicName) {
+        return invoke(new MqttMessageContext(mqttMessage, topicName, null, null), name);
+    }
+    /**
+     * Inject MQTT message into esb sequence.
+     *
+     * @param mqttMessageContext MQTT message context
+     * @param name name of the inbound endpoint
+     * @return true if the MQTT message was processed and injected to mediation successfully.
+     */
+    public boolean invoke(MqttMessageContext mqttMessageContext, String name) {
 
         try {
             org.apache.synapse.MessageContext msgCtx = createMessageContext();
 
-            msgCtx.setProperty(MqttConstants.MQTT_TOPIC_NAME, topicName);
+            msgCtx.setProperty(MqttConstants.MQTT_TOPIC_NAME, mqttMessageContext.getTopic());
             msgCtx.setProperty(SynapseConstants.IS_INBOUND, true);
+            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                populateStatisticsMetadata(msgCtx, mqttMessageContext);
+            }
 
             if (name != null) {
+                msgCtx.setProperty(SynapseConstants.INBOUND_ENDPOINT_NAME, name);
+                msgCtx.setProperty(SynapseConstants.ARTIFACT_NAME, SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT + name);
                 InboundEndpoint inboundEndpoint = msgCtx.getConfiguration().getInboundEndpoint(name);
                 CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
             }
 
-            String message = mqttMessage.toString();
+            String message = mqttMessageContext.getMqttMessage().toString();
 
             if (log.isDebugEnabled()) {
                 log.debug("Processed MQTT Message of Content-type : " + contentType);
@@ -164,5 +186,15 @@ public class MqttInjectHandler {
         axis2MsgCtx.setMessageID(UUIDGenerator.getUUID());
         msgCtx.setProperty(MessageContext.CLIENT_API_NON_BLOCKING, true);
         return msgCtx;
+    }
+
+    private void populateStatisticsMetadata(org.apache.synapse.MessageContext synCtx, MqttMessageContext mqttMessageContext) {
+        Map<String, Object> statisticsDetails = new HashMap<String, Object>();
+        statisticsDetails.put(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL,
+                InboundRequestProcessorFactoryImpl.Protocols.mqtt.toString());
+        statisticsDetails.put(SynapseConstants.HOSTNAME, mqttMessageContext.getHost());
+        statisticsDetails.put(SynapseConstants.PORT, mqttMessageContext.getPort());
+        statisticsDetails.put(SynapseConstants.TOPIC, mqttMessageContext.getTopic());
+        synCtx.setProperty(SynapseConstants.STATISTICS_METADATA, statisticsDetails);
     }
 }

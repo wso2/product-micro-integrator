@@ -210,6 +210,9 @@ public class RabbitMQConsumer implements Consumer {
     @Override
     public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
             throws IOException {
+        new RabbitMQMessageContext(properties, body,
+                connection.getAddress() != null ? connection.getAddress().getHostName() : null,
+                String.valueOf(connection.getPort()), queueName);
         AcknowledgementMode acknowledgementMode = injectHandler.onMessage(properties, body, inboundName);
         switch (acknowledgementMode) {
             case REQUEUE_TRUE:

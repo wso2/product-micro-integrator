@@ -24,6 +24,7 @@ import kafka.consumer.ConsumerIterator;
 import kafka.consumer.ConsumerTimeoutException;
 import kafka.consumer.KafkaStream;
 import kafka.consumer.Whitelist;
+import kafka.message.MessageAndMetadata;
 import org.I0Itec.zkclient.exception.ZkTimeoutException;
 import org.apache.synapse.SynapseException;
 
@@ -143,8 +144,11 @@ public class KAFKAMessageListener extends AbstractKafkaMessageListener {
     }
 
     public void injectMessageToESB(String sequenceName, ConsumerIterator<byte[], byte[]> consumerIterator) {
-        byte[] msg = consumerIterator.next().message();
-        injectHandler.invoke(msg, sequenceName);
+        MessageAndMetadata<byte[], byte[]> messageAndMetadata = consumerIterator.next();
+        KafkaMessageContext kafkaMessageContext = new KafkaMessageContext(
+                kafkaProperties.getProperty(KAFKAConstants.ZOOKEEPER_CONNECT),
+                messageAndMetadata.topic(), messageAndMetadata.message());
+        injectHandler.invoke(kafkaMessageContext, sequenceName);
     }
 
     @Override

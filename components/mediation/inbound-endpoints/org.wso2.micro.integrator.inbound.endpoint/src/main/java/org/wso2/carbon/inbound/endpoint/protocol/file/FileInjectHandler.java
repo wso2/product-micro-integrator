@@ -34,15 +34,20 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.commons.vfs.FileObjectDataSource;
 import org.apache.synapse.commons.vfs.VFSConstants;
+import org.apache.synapse.commons.vfs.VFSUtils;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.wso2.carbon.inbound.endpoint.inboundfactory.InboundRequestProcessorFactoryImpl;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import javax.mail.internet.ContentType;
@@ -58,6 +63,7 @@ public class FileInjectHandler {
     private Properties vfsProperties;
     private SynapseEnvironment synapseEnvironment;
     private Map<String, Object> transportHeaders;
+    private String fileURI;
 
     public FileInjectHandler(String injectingSeq, String onErrorSeq, boolean sequential,
                              SynapseEnvironment synapseEnvironment, Properties vfsProperties) {
@@ -82,6 +88,9 @@ public class FileInjectHandler {
             msgCtx.setProperty(SynapseConstants.INBOUND_ENDPOINT_NAME, name);
             msgCtx.setProperty(SynapseConstants.ARTIFACT_NAME, SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT + name);
             msgCtx.setProperty(SynapseConstants.IS_INBOUND, true);
+            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                populateStatisticsMetadata(msgCtx);
+            }
             InboundEndpoint inboundEndpoint = msgCtx.getConfiguration().getInboundEndpoint(name);
             CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
             String contentType = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_CONTENT_TYPE);
@@ -198,6 +207,11 @@ public class FileInjectHandler {
         this.transportHeaders = transportHeaders;
     }
 
+    public void setFileURI(String fileURI) {
+
+        this.fileURI = fileURI;
+    }
+
     /**
      * Create the initial message context for the file
      */
@@ -211,6 +225,14 @@ public class FileInjectHandler {
         axis2MsgCtx.setProperty(MessageContext.TRANSPORT_HEADERS, transportHeaders);
         msgCtx.setProperty(MessageContext.CLIENT_API_NON_BLOCKING, true);
         return msgCtx;
+    }
+
+    private void populateStatisticsMetadata(org.apache.synapse.MessageContext msgCtx) {
+        Map<String, Object> statisticsDetails = new HashMap<String, Object>();
+        statisticsDetails.put(SynapseConstants.FILE_URI, VFSUtils.maskURLPassword(fileURI));
+        statisticsDetails.put(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL,
+                InboundRequestProcessorFactoryImpl.Protocols.file.toString());
+        msgCtx.setProperty(SynapseConstants.STATISTICS_METADATA, statisticsDetails);
     }
 
 }

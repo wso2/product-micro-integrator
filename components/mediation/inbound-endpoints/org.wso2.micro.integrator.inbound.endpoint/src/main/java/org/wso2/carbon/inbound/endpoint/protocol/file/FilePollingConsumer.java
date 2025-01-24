@@ -797,6 +797,7 @@ public class FilePollingConsumer {
                 }
 
                 injectHandler.setTransportHeaders(transportHeaders);
+                injectHandler.setFileURI(this.fileURI);
                 // injectHandler
                 if (!injectHandler.invoke(file, name)) {
                     if (log.isDebugEnabled()) {
