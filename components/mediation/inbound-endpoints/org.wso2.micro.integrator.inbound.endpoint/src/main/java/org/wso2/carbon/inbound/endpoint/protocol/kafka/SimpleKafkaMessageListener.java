@@ -183,7 +183,9 @@ public class SimpleKafkaMessageListener extends AbstractKafkaMessageListener {
                         if (log.isDebugEnabled()) {
                             log.debug("Start : Add to injectHandler to invoke");
                         }
-                        injectHandler.invoke(bytes, name);
+                        KafkaMessageContext kafkaMessageContext = new KafkaMessageContext(consumer.host(), port, topic,
+                                bytes);
+                        injectHandler.invoke(kafkaMessageContext, name);
                         if (log.isDebugEnabled()) {
                             log.debug("End : Add the injectHandler to invoke");
                         }

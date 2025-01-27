@@ -205,6 +205,16 @@ public class ElasticStatisticsPublisher implements StatisticsPublisher {
         ElasticDataSchemaElement inboundEndpointDetails = new ElasticDataSchemaElement();
         inboundEndpointDetails.setAttribute(
                 ElasticConstants.EnvelopDef.INBOUND_ENDPOINT_NAME, event.getComponentName());
+
+        Object obj = event.getElasticMetadata().getProperty(SynapseConstants.STATISTICS_METADATA);
+        if (obj instanceof Map<?, ?>) {
+            //noinspection unchecked
+            Map<String, Object> statisticsDetails = (Map<String, Object>) obj;
+            for (Map.Entry<String, Object> entry : statisticsDetails.entrySet()) {
+                inboundEndpointDetails.setAttribute(entry.getKey(), entry.getValue());
+            }
+        }
+
         analyticsPayload.setAttribute(
                 ElasticConstants.EnvelopDef.INBOUND_ENDPOINT_DETAILS, inboundEndpointDetails);
         attachHttpProperties(analyticsPayload, event.getElasticMetadata());

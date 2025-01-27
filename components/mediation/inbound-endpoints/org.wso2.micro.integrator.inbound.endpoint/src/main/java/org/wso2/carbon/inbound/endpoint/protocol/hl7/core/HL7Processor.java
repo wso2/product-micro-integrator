@@ -24,18 +24,21 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.inbound.InboundProcessorParams;
 import org.apache.synapse.inbound.InboundResponseSender;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.wso2.carbon.inbound.endpoint.inboundfactory.InboundRequestProcessorFactoryImpl;
 import org.wso2.carbon.inbound.endpoint.protocol.hl7.context.MLLPContext;
 import org.wso2.carbon.inbound.endpoint.protocol.hl7.util.Axis2HL7Constants;
 import org.wso2.carbon.inbound.endpoint.protocol.hl7.util.HL7ExecutorServiceFactory;
 import org.wso2.carbon.inbound.endpoint.protocol.hl7.util.HL7MessageUtils;
 
 import java.nio.charset.CharsetDecoder;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -95,6 +98,9 @@ public class HL7Processor implements InboundResponseSender {
         synCtx.setProperty(SynapseConstants.ARTIFACT_NAME,
                            SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT + params.getName());
         synCtx.setProperty(SynapseConstants.IS_INBOUND, true);
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            populateStatisticsMetadata(synCtx);
+        }
         InboundEndpoint inboundEndpoint = synCtx.getConfiguration().getInboundEndpoint(params.getName());
         CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
         synCtx.setProperty(MLLPConstants.HL7_INBOUND_MSG_ID, synCtx.getMessageID());
@@ -155,6 +161,9 @@ public class HL7Processor implements InboundResponseSender {
         synCtx.setProperty(SynapseConstants.ARTIFACT_NAME,
                            SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT + params.getName());
         synCtx.setProperty(SynapseConstants.IS_INBOUND, true);
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            populateStatisticsMetadata(synCtx);
+        }
         InboundEndpoint inboundEndpoint = synCtx.getConfiguration().getInboundEndpoint(params.getName());
         CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
         synCtx.setProperty(MLLPConstants.HL7_INBOUND_MSG_ID, synCtx.getMessageID());
@@ -222,6 +231,15 @@ public class HL7Processor implements InboundResponseSender {
 
     public Map<String, Object> getInboundParameterMap() {
         return parameters;
+    }
+
+    private void populateStatisticsMetadata(MessageContext synCtx) {
+        Map<String, Object> statisticsDetails = new HashMap<String, Object>();
+        statisticsDetails.put(SynapseConstants.INBOUND_PORT,
+                params.getProperties().getProperty(MLLPConstants.PARAM_HL7_PORT));
+        statisticsDetails.put(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL,
+                InboundRequestProcessorFactoryImpl.Protocols.hl7.toString());
+        synCtx.setProperty(SynapseConstants.STATISTICS_METADATA, statisticsDetails);
     }
 
     @Override

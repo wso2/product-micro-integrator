@@ -62,6 +62,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.api.ApiConstants;
 import org.apache.synapse.api.inbound.InboundApiHandler;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.MessageContextCreatorForAxis2;
 import org.apache.synapse.inbound.InboundEndpoint;
@@ -79,6 +80,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -641,6 +643,10 @@ public class InboundWebsocketSourceHandler extends ChannelInboundHandlerAdapter 
         synCtx.setProperty("inbound.endpoint.name", endpoint.getName());
         synCtx.setProperty(ApiConstants.API_CALLER, endpoint.getName());
 
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            populateStatisticsMetadata(synCtx, endpoint);
+        }
+
         boolean isProcessed;
         try {
             org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext)synCtx).getAxis2MessageContext();
@@ -695,6 +701,13 @@ public class InboundWebsocketSourceHandler extends ChannelInboundHandlerAdapter 
 
     public void setPortOffset(int portOffset) {
         this.portOffset = portOffset;
+    }
+
+    private void populateStatisticsMetadata(org.apache.synapse.MessageContext synCtx, InboundEndpoint endpoint) {
+        Map<String, Object> statisticsDetails = new HashMap<String, Object>();
+        statisticsDetails.put(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL, endpoint.getProtocol());
+        statisticsDetails.put(SynapseConstants.INBOUND_PORT, port);
+        synCtx.setProperty(SynapseConstants.STATISTICS_METADATA, statisticsDetails);
     }
 
 }

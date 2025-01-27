@@ -115,9 +115,11 @@ public class MqttAsyncCallback extends OneTimeTriggerAbstractCallback implements
             //un-register tenant loading flag for inbound identifier
             clientManager.unRegisterInboundTenantLoadingFlag(inboundIdentifier);
 
-            injectHandler.invoke(mqttMessage, name, topic);
+            injectHandler.invoke(new MqttMessageContext(mqttMessage, topic, confac.getServerHost(),
+                    confac.getServerPort()), name);
         } else {
-            injectHandler.invoke(mqttMessage, name, topic);
+            injectHandler.invoke(new MqttMessageContext(mqttMessage, topic, confac.getServerHost(),
+                    confac.getServerPort()), name);
         }
     }
 
