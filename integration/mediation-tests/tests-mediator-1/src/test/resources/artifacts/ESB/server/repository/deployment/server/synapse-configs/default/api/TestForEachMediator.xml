@@ -56,7 +56,7 @@
     </resource>
     <resource methods="POST" uri-template="/json-body-variable-output">
         <inSequence>
-            <foreach collection="${payload.data.list}" result-target="result" result-type="JSON"
+            <foreach collection="${payload.data.list}" update-original="false" target-variable="result" result-content-type="JSON"
                      parallel-execution="false">
                 <sequence>
                     <payloadFactory media-type="json">
@@ -106,7 +106,7 @@
         <inSequence>
             <variable name="var_1" type="JSON"
                       value="{&quot;data&quot;: {&quot;list&quot;: [{&quot;name&quot;: &quot;apple&quot;,&quot;type&quot;: &quot;fruit&quot;},{&quot;name&quot;: &quot;carrot&quot;,&quot;type&quot;: &quot;vegetable&quot;}]}}"/>
-            <foreach version="v2" collection="${vars.var_1.data.list}" result-target="result" result-type="JSON"
+            <foreach version="v2" collection="${vars.var_1.data.list}" update-original="false" target-variable="result" result-content-type="JSON"
                      parallel-execution="true">
                 <sequence>
                     <payloadFactory media-type="json">
@@ -156,7 +156,8 @@
     </resource>
     <resource methods="POST" uri-template="/xml-body-variable-output">
         <inSequence>
-            <foreach collection="${xpath('//data/list')}" result-target="foreach_result" result-type="XML" parallel-execution="false">
+            <foreach collection="${xpath('//data/list')}" update-original="false" target-variable="foreach_result"
+                     result-content-type="XML" result-enclosing-element="foreach_result" parallel-execution="false">
                 <sequence>
                     <log category="INFO">
                         <message>Processing message : ${xpath('/')}</message>
@@ -182,7 +183,9 @@
     <resource methods="POST" uri-template="/xml-var-variable-output">
         <inSequence>
             <variable name="xml_collection" expression="${xpath('//data')}" type="XML"/>
-            <foreach collection="${xpath('//list', 'xml_collection')}" parallel-execution="false" result-target="foreach_result" result-type="XML">
+            <foreach collection="${xpath('//list', 'xml_collection')}" parallel-execution="false"
+                     update-original="false" target-variable="foreach_result" result-enclosing-element="foreach_result"
+                     result-content-type="XML">
                 <sequence>
                     <call>
                         <endpoint>
