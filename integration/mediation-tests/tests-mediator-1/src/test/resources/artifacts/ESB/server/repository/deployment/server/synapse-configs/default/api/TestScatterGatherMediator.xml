@@ -20,7 +20,7 @@
 <api xmlns="http://ws.apache.org/ns/synapse" name="ScatterGatherPI" context="/scatter-gather">
     <resource methods="POST" url-mapping="/json-body-replace">
         <inSequence>
-            <scatter-gather parallel-execution="false" result-target="body" content-type="JSON">
+            <scatter-gather parallel-execution="false" target="body" result-content-type="JSON">
                 <aggregation expression="${payload.pet}"/>
                 <sequence>
                     <payloadFactory media-type="json" template-type="default">
@@ -58,7 +58,7 @@
     </resource>
     <resource methods="POST" url-mapping="/json-variable-output">
         <inSequence>
-            <scatter-gather parallel-execution="true" result-target="output_var" content-type="JSON">
+            <scatter-gather parallel-execution="true" target="variable" target-variable="output_var" result-content-type="JSON">
                 <aggregation expression="${payload.pet}"/>
                 <sequence>
                     <payloadFactory media-type="json" template-type="default">
@@ -108,8 +108,8 @@
     </resource>
     <resource methods="POST" uri-template="/xml-body-replace">
         <inSequence>
-            <scatter-gather parallel-execution="true" result-target="body" root-element="scatter_response"
-                            content-type="XML">
+            <scatter-gather parallel-execution="true" target="body" result-enclosing-element="scatter_response"
+                            result-content-type="XML">
                 <aggregation expression="${xpath('$body/node()')}"/>
                 <sequence>
                     <payloadFactory media-type="xml" template-type="default">
@@ -139,8 +139,8 @@
     </resource>
     <resource methods="POST" uri-template="/xml-variable-output">
         <inSequence>
-            <scatter-gather parallel-execution="false" result-target="output_var" root-element="scatter_response"
-                            content-type="XML">
+            <scatter-gather parallel-execution="false" target="variable" target-variable="output_var" result-enclosing-element="scatter_response"
+                            result-content-type="XML">
                 <aggregation expression="${xpath('$body/node()')}"/>
                 <sequence>
                     <payloadFactory media-type="xml" template-type="default">
@@ -179,7 +179,7 @@
     </resource>
     <resource methods="POST" url-mapping="/aggregate-condition">
         <inSequence>
-            <scatter-gather parallel-execution="true" result-target="body" content-type="JSON">
+            <scatter-gather parallel-execution="true" target="body" result-content-type="JSON">
                 <aggregation expression="${payload.pet}" condition="${payload.pet.type == 'dog'}" timeout="1000"/>
                 <sequence>
                     <payloadFactory media-type="json" template-type="default">
@@ -223,7 +223,7 @@
     </resource>
     <resource methods="POST" url-mapping="/not-found-ep">
         <inSequence>
-            <scatter-gather parallel-execution="false" result-target="body" content-type="JSON">
+            <scatter-gather parallel-execution="false" target="body" result-content-type="JSON">
                 <aggregation expression="${payload.pet}" timeout="1000"/>
                 <sequence>
                     <payloadFactory media-type="json" template-type="default">

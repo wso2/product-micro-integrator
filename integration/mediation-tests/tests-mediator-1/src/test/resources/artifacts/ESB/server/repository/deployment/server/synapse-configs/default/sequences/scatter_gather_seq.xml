@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sequence name="scatter_gather_seq" trace="disable" xmlns="http://ws.apache.org/ns/synapse">
-    <scatter-gather parallel-execution="false" result-target="Body" content-type="JSON">
+    <scatter-gather parallel-execution="false" target="Body" result-content-type="JSON">
         <aggregation expression="${payload}"/>
         <sequence>
             <payloadFactory media-type="json" template-type="default">
