@@ -22,7 +22,7 @@
         <inSequence>
             <call-template target="readweather">
                 <with-param name="responseVariable" value="read_weather_1" />
-                <with-param name="overwriteBody" value="{${params.uriParams.flag}}" />
+                <with-param name="overwriteBody" value="{${params.pathParams.flag}}" />
             </call-template>
             <log category="INFO">
                 <message>The weather template returned city in header as ${vars.read_weather_1.headers.city}. Status code : ${vars.read_weather_1.attributes.statusCode}.</message>
