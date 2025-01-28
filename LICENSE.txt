@@ -56,7 +56,7 @@ log4j-core-2.17.1.jar                                                           
 Saxon-HE-10.8.jar                                                                                   jar            mpl20
 woodstox-core-asl-4.4.1.jar                                                                         bundle         apache2
 jackson-databind-2.16.1.jar                                                                         bundle         apache2
-runtime-diagnostics-tool-1.1.0.jar                                                                  jar            apache2
+runtime-diagnostics-tool-1.1.1.jar                                                                  jar            apache2
 netty-tcnative-boringssl-static-2.0.53.Final-linux-x86_64.jar                                       bundle         apache2
 netty-tcnative-boringssl-static-2.0.53.Final-linux-aarch_64.jar                                     bundle         apache2
 js-scriptengine-22.3.4.jar                                                                          jar            upl1.0

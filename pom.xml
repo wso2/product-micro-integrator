@@ -1753,7 +1753,7 @@
         <!-- Diagnostic Tool -->
         <commons.math.version>3.6.1</commons.math.version>
         <commons.net.version>3.10.0</commons.net.version>
-        <diagnostics.tool.version>1.1.0</diagnostics.tool.version>
+        <diagnostics.tool.version>1.1.1</diagnostics.tool.version>
         <jsch.version>0.2.16</jsch.version>
 
         <config.mapper.version>1.0.20</config.mapper.version>
