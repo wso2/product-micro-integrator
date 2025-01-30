@@ -66,7 +66,7 @@
         <automation.framework.utils.version>4.5.0</automation.framework.utils.version>
         <carbon.p2.plugin.version>1.5.8</carbon.p2.plugin.version>
         <httpclient.version>4.3.2</httpclient.version>
-        <org.wso2.json.version>3.0.0.wso2v1</org.wso2.json.version>
+        <org.wso2.json.version>3.0.0.wso2v5</org.wso2.json.version>
         <awaitility.version>3.1.2</awaitility.version>
         <commons.lang.version>2.6.0.wso2v1</commons.lang.version>
         <maven.surefire.version>2.12.4</maven.surefire.version>
