@@ -1182,7 +1182,7 @@
             <dependency>
                 <groupId>org.json.wso2</groupId>
                 <artifactId>json</artifactId>
-                <version>${json.orbit.version}</version>
+                <version>${org.wso2.json.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.orbit.org.apache.tomcat</groupId>
@@ -1654,7 +1654,7 @@
         <wss4j.version>1.6.0-wso2v6</wss4j.version>
         <rampart.wso2.version>1.7.0-wso2v1</rampart.wso2.version>
         <siddhi.version>3.2.3</siddhi.version>
-        <opensaml.orbit.version>3.3.1.wso2v11</opensaml.orbit.version>
+        <opensaml.orbit.version>3.3.1.wso2v14</opensaml.orbit.version>
         <saml.common.util.version>1.0.10</saml.common.util.version>
         <imp.pkg.version.xmlsec>[1.4.2, 2.3.0)</imp.pkg.version.xmlsec>
         <xmlsec.version>1.5.6-wso2v2</xmlsec.version>
@@ -1662,7 +1662,7 @@
         <saml.common.util.version.range>[1.0.0,2.0.0)</saml.common.util.version.range>
         <bouncycastle.orbit.version>1.78.1.wso2v1</bouncycastle.orbit.version>
         <orbit.version.poi.ooxml>5.3.0.wso2v1</orbit.version.poi.ooxml>
-        <org.wso2.json.version>3.0.0.wso2v1</org.wso2.json.version>
+        <org.wso2.json.version>3.0.0.wso2v5</org.wso2.json.version>
         <version.equinox.http.servlet>1.1.400.v20130418-1354</version.equinox.http.servlet>
         <version.tomcat>9.0.98</version.tomcat>
         <orbit.version.tomcat.jsp.api>${version.tomcat}.wso2v1</orbit.version.tomcat.jsp.api>
@@ -1690,7 +1690,7 @@
         <version.commons.codec>1.17.1</version.commons.codec>
         <version.annogen>0.1.0.wso2v1</version.annogen>
         <version.backport.util.concurrent>3.1.0.wso2v1</version.backport.util.concurrent>
-        <version.commons.fileupload>1.5.0.wso2v1</version.commons.fileupload>
+        <version.commons.fileupload>1.5.0.wso2v2</version.commons.fileupload>
         <orbit.version.commons.httpclient>3.1.0.wso2v6</orbit.version.commons.httpclient>
         <orbit.version.commons.collection>3.2.2.wso2v1</orbit.version.commons.collection>
         <version.compass>2.0.1.wso2v2</version.compass>
@@ -1814,7 +1814,6 @@
         <dataservices.version>4.4.107</dataservices.version>
         <dataservices.imp.pkg.version>[4.3.0,5.0.0)</dataservices.imp.pkg.version>
 
-        <json.orbit.version>3.0.0.wso2v1</json.orbit.version>
         <json.orbit.imp.pkg.version>0.0.0</json.orbit.imp.pkg.version> <!-- This comes from carbon-multitenancy, tenant.common.server feature -->
 
         <webharvest-core.orbit.version>2.0.0.wso2v5</webharvest-core.orbit.version>
