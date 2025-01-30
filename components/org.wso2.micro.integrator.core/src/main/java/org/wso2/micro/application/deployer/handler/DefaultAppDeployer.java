@@ -50,6 +50,7 @@ public class DefaultAppDeployer implements AppDeploymentHandler {
     public static final String DS_TYPE = "service/dataservice";
     public static final String BUNDLE_TYPE = "bundle";
     public static final String MEDIATOR_TYPE = "lib/synapse/mediator";
+    public static final String CONNECTOR_DEPENDENCY_TYPE = "lib/connector/dependency";
 
     public static final String DS_DIR = "dataservices";
 
@@ -172,7 +173,9 @@ public class DefaultAppDeployer implements AppDeploymentHandler {
                     artifact.setDeploymentStatus(org.wso2.micro.application.deployer.AppDeployerConstants.DEPLOYMENT_STATUS_FAILED);
                     throw e;
                 }
-            } else if (MEDIATOR_TYPE.equals(artifact.getType())) { // skip bundle installation for mediators
+            } else if (MEDIATOR_TYPE.equals(artifact.getType()) ||
+                    CONNECTOR_DEPENDENCY_TYPE.equals(artifact.getType())) {
+                // skip bundle installation for mediators & connector dependencies
                 continue;
             } else if ((artifact.getType().startsWith("lib/") || BUNDLE_TYPE.
                     equals(artifact.getType()))
@@ -236,7 +239,8 @@ public class DefaultAppDeployer implements AppDeploymentHandler {
                     artifact.setDeploymentStatus(org.wso2.micro.application.deployer.AppDeployerConstants.DEPLOYMENT_STATUS_FAILED);
                     log.error("Error while undeploying artifact : " + artifactPath, e);
                 }
-            } else if (MEDIATOR_TYPE.equals(artifact.getType())) {
+            } else if (MEDIATOR_TYPE.equals(artifact.getType()) ||
+                       CONNECTOR_DEPENDENCY_TYPE.equals(artifact.getType())) {
                 continue;
             } else if (artifact.getType() != null && (artifact.getType().startsWith("lib/") ||
                                                       BUNDLE_TYPE.equals(artifact.getType()))

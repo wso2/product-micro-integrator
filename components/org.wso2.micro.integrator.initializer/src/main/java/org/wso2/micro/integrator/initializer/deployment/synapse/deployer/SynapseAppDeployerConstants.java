@@ -29,6 +29,7 @@ public class SynapseAppDeployerConstants {
     public static final String MESSAGE_STORE_TYPE = "synapse/message-store";
     public static final String MESSAGE_PROCESSOR_TYPE="synapse/message-processors";
     public static final String MEDIATOR_TYPE = "lib/synapse/mediator";
+    public static final String CONNECTOR_DEPENDENCY_TYPE = "lib/connector/dependency";
     public static final String API_TYPE = "synapse/api";
     public static final String TEMPLATE_TYPE = "synapse/template";
     public static final String INBOUND_ENDPOINT_TYPE = "synapse/inbound-endpoint";
