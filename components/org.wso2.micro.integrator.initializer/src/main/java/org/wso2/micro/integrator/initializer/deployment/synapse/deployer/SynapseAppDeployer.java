@@ -132,12 +132,8 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
         List<Artifact.Dependency> artifacts = carbonApp.getAppConfig().getApplicationArtifact()
                 .getDependencies();
 
-        if (carbonApp.getClassLoader() == null) {
-            carbonApp.setClassLoader(new LibClassLoader(new URL[0], Utils.getClassLoader
-                    (LibDeployerUtils.class.getClassLoader(), carbonApp.getExtractedPath(), false)));
-        }
-        deployClassMediators(artifacts, axisConfig, carbonApp);
-        deploySynapseLibrary(artifacts, axisConfig, carbonApp);
+        deployClassMediators(artifacts, axisConfig);
+        deploySynapseLibrary(artifacts, axisConfig);
         Map<String, List<Artifact.Dependency>> artifactTypeMap = getOrderedArtifactsMap(artifacts);
 
         //deploy artifacts
@@ -361,9 +357,7 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                     String artifactPath = artifact.getExtractedPath() + File.separator + fileName;
 
                     try {
-                        DeploymentFileData deploymentFileData = new DeploymentFileData(new File(artifactPath), deployer);
-                        deploymentFileData.setClassLoader(carbonApplication.getClassLoader());
-                        deployer.deploy(deploymentFileData);
+                        deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer));
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                     } catch (DeploymentException e) {
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_FAILED);
@@ -381,8 +375,8 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
      * @param axisConfig AxisConfiguration of the current tenant
      * @throws DeploymentException if something goes wrong while deployment
      */
-    private void deploySynapseLibrary(List<Artifact.Dependency> artifacts, AxisConfiguration axisConfig,
-                                      CarbonApplication carbonApplication) throws DeploymentException {
+    private void deploySynapseLibrary(List<Artifact.Dependency> artifacts, AxisConfiguration axisConfig)
+            throws DeploymentException {
         for (Artifact.Dependency dependency : artifacts) {
 
             Artifact artifact = dependency.getArtifact();
@@ -406,9 +400,7 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                     } else {
                         try {
-                            DeploymentFileData deploymentFileData = new DeploymentFileData(new File(artifactPath), deployer);
-                            deploymentFileData.setClassLoader(carbonApplication.getClassLoader());
-                            deployer.deploy(deploymentFileData);
+                            deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer));
                             artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                             try {
                                 String artifactName = getArtifactName(artifactPath, axisConfig);
@@ -1133,9 +1125,7 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                 } else {
                     try {
                         setCustomLogContent(deployer, carbonApp);
-                        DeploymentFileData deploymentFileData = new DeploymentFileData(new File(artifactPath), deployer);
-                        deploymentFileData.setClassLoader(carbonApp.getClassLoader());
-                        deployer.deploy(deploymentFileData);
+                        deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer));
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                     } catch (DeploymentException e) {
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_FAILED);

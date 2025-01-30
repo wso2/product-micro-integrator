@@ -111,12 +111,5 @@ public class CarbonApplication {
         this.mainSequence = mainSequence;
     }
 
-    public ClassLoader getClassLoader() {
-        return classLoader;
-    }
-
-    public void setClassLoader(ClassLoader classLoader) {
-        this.classLoader = classLoader;
-    }
 }
 
