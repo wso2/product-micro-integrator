@@ -75,6 +75,7 @@
                                 <bundleDef>com.datastax.cassandra:cassandra-driver-core</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.poi:poi</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.poi:poi-ooxml</bundleDef>
+                                <bundleDef>org.wso2.orbit.org.apache.poi:poi-scratchpad:${orbit.version.poi.scratchpad}</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.commons:commons-collections4</bundleDef>
                                 <bundleDef>io.dropwizard.metrics:metrics-core</bundleDef>
                                 <bundleDef>io.netty:netty-handler</bundleDef>
