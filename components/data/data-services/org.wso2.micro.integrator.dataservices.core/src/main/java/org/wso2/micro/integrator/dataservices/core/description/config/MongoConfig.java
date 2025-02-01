@@ -68,13 +68,12 @@ public class MongoConfig extends Config {
             List<ServerAddress> serverAddresses = createServerAddresses(servers);
             MongoCredential mongoCredentials = createCredential(properties);
             this.mongoClientSettings = extractMongoOptions(properties, writeConcern, readPref, serverAddresses,
-                    mongoCredentials);
+                    mongoCredentials, serversParam);
             this.mongoClient = createNewMongo(this.mongoClientSettings);
             this.mongoDatabase = this.getMongoClient().getDatabase(database);
         } catch (Exception e) {
             throw new DataServiceFault(e, DBConstants.FaultCodes.CONNECTION_UNAVAILABLE_ERROR, e.getMessage());
         }
-
     }
 
     public MongoClient createNewMongo(MongoClientSettings mongoClientSettings) throws DataServiceFault {
@@ -108,7 +107,7 @@ public class MongoConfig extends Config {
 
     private MongoClientSettings extractMongoOptions(Map<String, String> properties, String writeConcern,
                                                     String readPref, List<ServerAddress> serverAddresses,
-                                                    MongoCredential mongoCredentials) {
+                                                    MongoCredential mongoCredentials, String serversParam) {
         MongoClientSettings.Builder settingsBuilder = MongoClientSettings.builder();
         String connectionsPerHost = properties.get(DBConstants.MongoDB.CONNECTIONS_PER_HOST);
         if (!DBUtils.isEmptyString(connectionsPerHost)) {
@@ -139,7 +138,11 @@ public class MongoConfig extends Config {
         if (!DBUtils.isEmptyString(readPref)) {
             settingsBuilder.readPreference(ReadPreference.valueOf(readPref));
         }
-        settingsBuilder.applyToClusterSettings(builder -> builder.hosts(serverAddresses));
+        if (serversParam.trim().startsWith("mongodb+srv")) {
+            settingsBuilder.applyConnectionString(new com.mongodb.ConnectionString(serversParam.trim()));
+        } else {
+            settingsBuilder.applyToClusterSettings(builder -> builder.hosts(serverAddresses));
+        }
         if (mongoCredentials != null) {
             settingsBuilder.credential(mongoCredentials);
         }
