@@ -28,7 +28,6 @@ import org.apache.axis2.deployment.Deployer;
 import org.apache.axis2.deployment.DeploymentEngine;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.deployment.repository.util.DeploymentFileData;
-import org.apache.axis2.deployment.util.Utils;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.io.FileUtils;
@@ -61,7 +60,6 @@ import org.apache.synapse.deployers.TemplateDeployer;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.Template;
 import org.apache.synapse.inbound.InboundEndpoint;
-import org.apache.synapse.libraries.LibClassLoader;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
@@ -91,7 +89,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -132,12 +129,9 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
         List<Artifact.Dependency> artifacts = carbonApp.getAppConfig().getApplicationArtifact()
                 .getDependencies();
 
-        if (carbonApp.getClassLoader() == null) {
-            carbonApp.setClassLoader(new LibClassLoader(new URL[0], Utils.getClassLoader
-                    (LibDeployerUtils.class.getClassLoader(), carbonApp.getExtractedPath(), false)));
-        }
-        deployClassMediators(artifacts, axisConfig, carbonApp);
-        deploySynapseLibrary(artifacts, axisConfig, carbonApp);
+        deployClassMediators(artifacts, axisConfig);
+        deployConnectorDependencies(artifacts, axisConfig);
+        deploySynapseLibrary(artifacts, axisConfig);
         Map<String, List<Artifact.Dependency>> artifactTypeMap = getOrderedArtifactsMap(artifacts);
 
         //deploy artifacts
@@ -342,8 +336,8 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
      * @param axisConfig AxisConfiguration of the current tenant
      * @throws DeploymentException if something goes wrong while deployment
      */
-    private void deployClassMediators(List<Artifact.Dependency> artifacts, AxisConfiguration axisConfig,
-                                      CarbonApplication carbonApplication) throws DeploymentException {
+    private void deployClassMediators(List<Artifact.Dependency> artifacts, AxisConfiguration axisConfig)
+            throws DeploymentException {
         for (Artifact.Dependency dependency : artifacts) {
 
             Artifact artifact = dependency.getArtifact();
@@ -361,9 +355,45 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                     String artifactPath = artifact.getExtractedPath() + File.separator + fileName;
 
                     try {
-                        DeploymentFileData deploymentFileData = new DeploymentFileData(new File(artifactPath), deployer);
-                        deploymentFileData.setClassLoader(carbonApplication.getClassLoader());
-                        deployer.deploy(deploymentFileData);
+                        deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer));
+                        artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
+                    } catch (DeploymentException e) {
+                        artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_FAILED);
+                        throw e;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Deploy the connector dependencies contains in the CApp
+     *
+     * @param artifacts List of Artifacts contains in the capp
+     * @param axisConfig  AxisConfiguration of the current tenant
+     * @throws DeploymentException
+     */
+    private void deployConnectorDependencies(List<Artifact.Dependency> artifacts, AxisConfiguration axisConfig)
+            throws DeploymentException {
+
+        for (Artifact.Dependency dependency : artifacts) {
+
+            Artifact artifact = dependency.getArtifact();
+            if (!validateArtifact(artifact)) {
+                continue;
+            }
+            if (SynapseAppDeployerConstants.CONNECTOR_DEPENDENCY_TYPE.equals(artifact.getType())) {
+                Deployer deployer = getSynapseLibraryDeployer(axisConfig);
+                if (deployer != null) {
+                    artifact.setRuntimeObjectName(artifact.getName());
+                    String fileName = artifact.getFiles().get(0).getName();
+                    String artifactPath = artifact.getExtractedPath() + File.separator + fileName;
+
+                    try {
+                        if (deployer instanceof LibraryArtifactDeployer) {
+                            ((LibraryArtifactDeployer) deployer).deployLibraryDependency(
+                                    new DeploymentFileData(new File(artifactPath), deployer), artifact.getConnector());
+                        }
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                     } catch (DeploymentException e) {
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_FAILED);
@@ -381,8 +411,8 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
      * @param axisConfig AxisConfiguration of the current tenant
      * @throws DeploymentException if something goes wrong while deployment
      */
-    private void deploySynapseLibrary(List<Artifact.Dependency> artifacts, AxisConfiguration axisConfig,
-                                      CarbonApplication carbonApplication) throws DeploymentException {
+    private void deploySynapseLibrary(List<Artifact.Dependency> artifacts, AxisConfiguration axisConfig)
+            throws DeploymentException {
         for (Artifact.Dependency dependency : artifacts) {
 
             Artifact artifact = dependency.getArtifact();
@@ -406,9 +436,7 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                     } else {
                         try {
-                            DeploymentFileData deploymentFileData = new DeploymentFileData(new File(artifactPath), deployer);
-                            deploymentFileData.setClassLoader(carbonApplication.getClassLoader());
-                            deployer.deploy(deploymentFileData);
+                            deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer));
                             artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                             try {
                                 String artifactName = getArtifactName(artifactPath, axisConfig);
@@ -1133,9 +1161,7 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                 } else {
                     try {
                         setCustomLogContent(deployer, carbonApp);
-                        DeploymentFileData deploymentFileData = new DeploymentFileData(new File(artifactPath), deployer);
-                        deploymentFileData.setClassLoader(carbonApp.getClassLoader());
-                        deployer.deploy(deploymentFileData);
+                        deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer));
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                     } catch (DeploymentException e) {
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_FAILED);

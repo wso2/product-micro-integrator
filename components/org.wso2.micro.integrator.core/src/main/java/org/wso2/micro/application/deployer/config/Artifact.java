@@ -36,6 +36,7 @@ public class Artifact {
     public static final String ARTIFACT = "artifact";
     public static final String DEPENDENCY = "dependency";
     public static final String SERVER_ROLE = "serverRole";
+    public static final String CONNECTOR = "connector";
 
     public static final String SUB_ARTIFACTS = "subArtifacts";
     public static final String FILE = "file";
@@ -50,6 +51,7 @@ public class Artifact {
     private String runtimeObjectName;
     private String deploymentStatus;
     private String mainSequence;
+    private String connector;
 
     private List<Dependency> dependencies;
     private List<Artifact> subArtifacts;
@@ -164,6 +166,14 @@ public class Artifact {
 
     public void setMainSequence(String mainSequence) {
         this.mainSequence = mainSequence;
+    }
+
+    public String getConnector() {
+        return connector;
+    }
+
+    public void setConnector(String connector) {
+        this.connector = connector;
     }
 
     public static class Dependency {
