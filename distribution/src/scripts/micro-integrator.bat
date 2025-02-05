@@ -201,10 +201,12 @@ cd %CARBON_HOME%
 
 rem ------------------ Remove tmp folder on startup -----------------------------
 set TMP_DIR=%CARBON_HOME%\tmp
-cd "%TMP_DIR%"
-del *.* /s /q > nul
-FOR /d %%G in ("*.*") DO rmdir %%G /s /q
-cd ..
+if exist "%TMP_DIR%" (
+    cd "%TMP_DIR%"
+    del *.* /s /q > nul
+    FOR /d %%G in ("*.*") DO rmdir %%G /s /q
+    cd ..
+)
 
 rem ---------- Add jars to classpath --c _CLASSPATH%
 
