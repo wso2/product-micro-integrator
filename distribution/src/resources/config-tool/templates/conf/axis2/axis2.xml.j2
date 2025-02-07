@@ -178,6 +178,21 @@
                           class="{{message_formatters.octet_stream}}"/>
         <messageFormatter contentType="application/binary"
                           class="{{message_formatters.application_binary}}"/>
+        <!-- AI module related message formatters -->
+        <messageFormatter contentType="application/pdf"
+                        class="{{message_formatters.application_pdf}}"/>
+        <messageFormatter contentType="application/msword"
+                        class="{{message_formatters.application_msword}}"/>
+        <messageFormatter contentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        class="{{message_formatters.application_docx}}"/>
+        <messageFormatter contentType="application/vnd.ms-powerpoint"
+                        class="{{message_formatters.application_ppt}}"/>
+        <messageFormatter contentType="application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                        class="{{message_formatters.application_pptx}}"/>
+        <messageFormatter contentType="application/vnd.ms-excel"
+                        class="{{message_formatters.application_xls}}"/>
+        <messageFormatter contentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        class="{{message_formatters.application_xlsx}}"/>
         {% for message_formatter in custom_message_formatters %}
         <messageFormatter contentType="{{message_formatter.content_type}}"
                           class="{{message_formatter.class}}"/>
@@ -210,6 +225,22 @@
                         class="{{message_builders.octet_stream}}"/>
         <messageBuilder contentType="application/binary"
                         class="{{message_builders.application_binary}}"/>
+
+        <!-- AI module related message formatters -->
+        <messageBuilder contentType="application/pdf"
+                    class="{{message_builders.application_pdf}}"/>
+        <messageBuilder contentType="application/msword"
+                        class="{{message_builders.application_msword}}"/>
+        <messageBuilder contentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        class="{{message_builders.application_docx}}"/>
+        <messageBuilder contentType="application/vnd.ms-powerpoint"
+                        class="{{message_builders.application_ppt}}"/>
+        <messageBuilder contentType="application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                        class="{{message_builders.application_pptx}}"/>
+        <messageBuilder contentType="application/vnd.ms-excel"
+                        class="{{message_builders.application_xls}}"/>
+        <messageBuilder contentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        class="{{message_builders.application_xlsx}}"/>
         {% for message_builder in custom_message_builders %}
         <messageBuilder contentType="{{message_builder.content_type}}"
                         class="{{message_builder.class}}"/>
