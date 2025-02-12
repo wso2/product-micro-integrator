@@ -1736,7 +1736,7 @@
         <org.wso2.orbit.sun.xml.ws.version>2.3.2.wso2v1</org.wso2.orbit.sun.xml.ws.version>
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <org.wso2.carbon.caching.core.version>4.2.0</org.wso2.carbon.caching.core.version>
-        <json.smart.version>2.5.0</json.smart.version>
+        <json.smart.version>2.5.2</json.smart.version>
         <google.guava.version>33.0.0-jre</google.guava.version>
         <ca.uhn.hapi.wso2.version>2.4.0.wso2v2</ca.uhn.hapi.wso2.version>
         <junit.version>4.8.2</junit.version>
