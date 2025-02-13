@@ -20,10 +20,14 @@ package org.wso2.carbon.inbound.endpoint.protocol.generic;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.inbound.InboundProcessorParams;
 import org.apache.synapse.inbound.InboundRequestProcessor;
+import org.apache.synapse.libraries.LibClassLoader;
 
 import java.lang.reflect.Constructor;
+import java.util.Iterator;
+import java.util.Map;
 
 public abstract class GenericInboundListener implements InboundRequestProcessor {
 
@@ -62,14 +66,34 @@ public abstract class GenericInboundListener implements InboundRequestProcessor 
         GenericInboundListener instance = null;
 
         log.info("Inbound listener " + name + " for class " + classImpl + " starting ...");
+        Map<String, ClassLoader> libClassLoaders = SynapseConfiguration.getLibraryClassLoaders();
+        Class c = null;
+        if (libClassLoaders != null) {
+            for (Map.Entry<String, ClassLoader> entry : libClassLoaders.entrySet()) {
+                try {
+                    if (entry.getValue() instanceof LibClassLoader) {
+                        c = entry.getValue().loadClass(classImpl);
+                        break;
+                    }
+                } catch (ClassNotFoundException e) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Class " + classImpl + " not found in the classloader of the library " + entry.getKey());
+                    }
+                }
+            }
+        }
+        if (c == null) {
+            try {
+                // Dynamically load GenericEndpointManager from given classpath
+                c = Class.forName(classImpl);
+            } catch (ClassNotFoundException e) {
+                handleException(
+                        "Class " + classImpl + " not found. Please check the required class is added to the classpath.", e);
+            }
+        }
         try {
-            // Dynamically load GenericEndpointManager from given classpath
-            Class c = Class.forName(classImpl);
             Constructor cons = c.getConstructor(InboundProcessorParams.class);
             instance = (GenericInboundListener) cons.newInstance(inboundParams);
-        } catch (ClassNotFoundException e) {
-            handleException(
-                    "Class " + classImpl + " not found. Please check the required class is added to the classpath.", e);
         } catch (Exception e) {
             handleException("Unable to create the consumer", e);
         }
