@@ -69,9 +69,7 @@ public abstract class GenericInboundListener implements InboundRequestProcessor 
         Map<String, ClassLoader> libClassLoaders = SynapseConfiguration.getLibraryClassLoaders();
         Class c = null;
         if (libClassLoaders != null) {
-            Iterator<Map.Entry<String, ClassLoader>> it = libClassLoaders.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry<String, ClassLoader> entry = it.next();
+            for (Map.Entry<String, ClassLoader> entry : libClassLoaders.entrySet()) {
                 try {
                     if (entry.getValue() instanceof LibClassLoader) {
                         c = entry.getValue().loadClass(classImpl);
@@ -96,7 +94,7 @@ public abstract class GenericInboundListener implements InboundRequestProcessor 
         try {
             Constructor cons = c.getConstructor(InboundProcessorParams.class);
             instance = (GenericInboundListener) cons.newInstance(inboundParams);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             handleException("Unable to create the consumer", e);
         }
 

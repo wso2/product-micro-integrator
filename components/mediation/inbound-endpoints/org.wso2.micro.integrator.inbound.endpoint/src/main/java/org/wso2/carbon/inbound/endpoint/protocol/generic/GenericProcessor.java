@@ -102,9 +102,7 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
         Map<String, ClassLoader> libClassLoaders = SynapseConfiguration.getLibraryClassLoaders();
         Class c = null;
         if (libClassLoaders != null) {
-            Iterator<Map.Entry<String, ClassLoader>> it = libClassLoaders.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry<String, ClassLoader> entry = it.next();
+            for (Map.Entry<String, ClassLoader> entry : libClassLoaders.entrySet()) {
                 try {
                     if (entry.getValue() instanceof LibClassLoader) {
                         c = entry.getValue().loadClass(classImpl);
