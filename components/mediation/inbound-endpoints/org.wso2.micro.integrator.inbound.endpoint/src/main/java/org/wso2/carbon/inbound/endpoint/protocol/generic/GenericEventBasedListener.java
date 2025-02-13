@@ -20,14 +20,18 @@ package org.wso2.carbon.inbound.endpoint.protocol.generic;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.InboundProcessorParams;
+import org.apache.synapse.libraries.LibClassLoader;
 import org.apache.synapse.task.TaskStartupObserver;
 import org.wso2.carbon.inbound.endpoint.common.InboundOneTimeTriggerEventBasedProcessor;
 import org.wso2.carbon.inbound.endpoint.protocol.PollingConstants;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 
 public class GenericEventBasedListener extends InboundOneTimeTriggerEventBasedProcessor implements TaskStartupObserver {
@@ -91,16 +95,38 @@ public class GenericEventBasedListener extends InboundOneTimeTriggerEventBasedPr
             return;
         }
         log.info("Inbound event based listener " + name + " for class " + classImpl + " starting ...");
+        Map<String, ClassLoader> libClassLoaders = SynapseConfiguration.getLibraryClassLoaders();
+        Class c = null;
+        if (libClassLoaders != null) {
+            Iterator<Map.Entry<String, ClassLoader>> it = libClassLoaders.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<String, ClassLoader> entry = it.next();
+                try {
+                    if (entry.getValue() instanceof LibClassLoader) {
+                        c = entry.getValue().loadClass(classImpl);
+                        break;
+                    }
+                } catch (ClassNotFoundException e) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Class " + classImpl + " not found in the classloader of the library " + entry.getKey());
+                    }
+                }
+            }
+        }
+        if (c == null) {
+            try {
+                c = Class.forName(classImpl);
+            } catch (ClassNotFoundException e) {
+                handleException(
+                        "Class " + classImpl + " not found. Please check the required class is added to the classpath.", e);
+            }
+        }
         try {
-            Class c = Class.forName(classImpl);
             Constructor cons = c.getConstructor(Properties.class, String.class, SynapseEnvironment.class, String.class,
                                                 String.class, boolean.class, boolean.class);
             eventConsumer = (GenericEventBasedConsumer) cons
                     .newInstance(properties, name, synapseEnvironment, injectingSeq, onErrorSeq, coordination,
                                  sequential);
-        } catch (ClassNotFoundException e) {
-            handleException(
-                    "Class " + classImpl + " not found. Please check the required class is added to the classpath.", e);
         } catch (NoSuchMethodException e) {
             handleException("Required constructor is not implemented.", e);
         } catch (InvocationTargetException e) {
