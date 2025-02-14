@@ -21,7 +21,7 @@
     <parent>
         <artifactId>registry</artifactId>
         <groupId>org.wso2.ei</groupId>
-        <version>4.4.1-SNAPSHOT</version>
+        <version>4.4.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
