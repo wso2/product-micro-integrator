@@ -19,6 +19,7 @@ package org.wso2.micro.integrator.initializer.deployment.config.deployer;
 
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.property.PropertyHolder;
@@ -53,7 +54,8 @@ public class ConfigDeployer implements AppDeploymentHandler {
     private static final Log log = LogFactory.getLog(ConfigDeployer.class);
 
     private static final String PROPERTY_TYPE = "config/property";
-
+    private static final String FILE_PROPERTY_PATH = "properties.file.path";
+    private static final String DEFAULT = "default";
     private static final String LOCAL_CONFIG_FILE_NAME = "config.properties";
     private static final String FILE_PROPERTIES_NAME = "file.properties";
 
@@ -100,21 +102,27 @@ public class ConfigDeployer implements AppDeploymentHandler {
         List<CappFile> files = artifact.getFiles();
         if (files.size() == 1) {
             Path confFolder = Paths.get(getHome(), "conf");
-            Path globalPropertiesFilePath = confFolder.resolve(FILE_PROPERTIES_NAME) ;
+            Path serverPropertiesFilePath = confFolder.resolve(FILE_PROPERTIES_NAME);
             String configFilePath = artifact.getExtractedPath() + File.separator + LOCAL_CONFIG_FILE_NAME;
-            processConfFile(artifact.getName(), configFilePath, globalPropertiesFilePath.toString());
+            processConfFile(artifact.getName(), configFilePath, serverPropertiesFilePath.toString());
         } else {
             log.error("config/property type must have a single file which declares " +
                     "config. But " + files.size() + " files found.");
         }
     }
 
-    private void processConfFile(String integrationName, String configFilePath, String globalPropertiesFilePath) {
+    private void processConfFile(String integrationName, String configFilePath, String serverPropertiesFilePath) {
         File configFile = new File(configFilePath);
         // Load capp conf property file
         Properties configProperties = loadPropertiesFromFile(configFile);
         // Load file property file
-        Properties fileProperties = loadPropertiesFromFile(new File(globalPropertiesFilePath));
+        String filePath = System.getProperty(FILE_PROPERTY_PATH);
+        Properties fileProperties;
+        if(StringUtils.isNotBlank(filePath) && !filePath.equalsIgnoreCase(DEFAULT)) {
+            fileProperties = loadPropertiesFromFile(new File(filePath));
+        } else {
+            fileProperties = loadPropertiesFromFile(new File(serverPropertiesFilePath));
+        }
         if (configProperties.isEmpty() ) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("No configuration is used in the integration[%s]", integrationName));
