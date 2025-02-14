@@ -265,6 +265,7 @@ public final class AppDeployerUtils {
         artifact.setMainSequence(readAttribute(artifactEle, Artifact.MAIN_SEQUENCE));
         artifact.setType(readAttribute(artifactEle, Artifact.TYPE));
         artifact.setServerRole(readAttribute(artifactEle, Artifact.SERVER_ROLE));
+        artifact.setConnector(readAttribute(artifactEle, Artifact.CONNECTOR));
 
         // read the dependencies
         Iterator itr = artifactEle.getChildrenWithLocalName(Artifact.DEPENDENCY);

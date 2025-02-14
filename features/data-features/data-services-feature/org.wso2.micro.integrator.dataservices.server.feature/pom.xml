@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.wso2.ei</groupId>
         <artifactId>data-services-feature</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>4.4.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -75,6 +75,7 @@
                                 <bundleDef>com.datastax.cassandra:cassandra-driver-core</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.poi:poi</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.poi:poi-ooxml</bundleDef>
+                                <bundleDef>org.wso2.orbit.org.apache.poi:poi-scratchpad:${orbit.version.poi.scratchpad}</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.commons:commons-collections4</bundleDef>
                                 <bundleDef>io.dropwizard.metrics:metrics-core</bundleDef>
                                 <bundleDef>io.netty:netty-handler</bundleDef>
@@ -92,6 +93,8 @@
                                 <bundleDef>org.wso2.orbit.com.google.http-client:google-http-client</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.olingo:odata-server</bundleDef>
                                 <bundleDef>de.undercouch:bson4jackson:${bson4jackson.orbit.version}</bundleDef>
+                                <bundleDef>org.wso2.orbit.org.apache.commons:commons-compress:${commons-compress.orbit.version}</bundleDef>
+                                <bundleDef>org.wso2.orbit.org.apache.xmlbeans:xmlbeans:${xmlbeans.orbit.version}</bundleDef>
                             </bundles>
                             <importFeatures />
                         </configuration>

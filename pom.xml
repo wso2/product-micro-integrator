@@ -28,7 +28,7 @@
     <groupId>org.wso2.ei</groupId>
     <artifactId>wso2-micro-integrator-parent</artifactId>
     <packaging>pom</packaging>
-    <version>4.4.0-SNAPSHOT</version>
+    <version>4.4.1-SNAPSHOT</version>
     <name>WSO2 Micro Integrator</name>
     <url>http://wso2.com/products/enterprise-integrator/</url>
     <description>WSO2 Micro Integrator</description>
@@ -1293,6 +1293,11 @@
                 <version>${version.xmlbeans}</version>
             </dependency>
             <dependency>
+                <groupId>org.wso2.orbit.org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.orbit.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wso2.orbit.org.opensaml</groupId>
                 <artifactId>opensaml</artifactId>
                 <version>${opensaml.orbit.version}</version>
@@ -1300,7 +1305,7 @@
             <dependency>
                 <groupId>org.wso2.ei</groupId>
                 <artifactId>org.wso2.micro.integrator.coordination</artifactId>
-                <version>4.4.0-SNAPSHOT</version>
+                <version>4.4.1-SNAPSHOT</version>
             </dependency>
             <!--SAP feature dependency-->
             <dependency>
@@ -1617,9 +1622,9 @@
         <version.jaxb.api>2.4.0-b180830.0359</version.jaxb.api>
         <com.sun.jaxb.version>2.3.0</com.sun.jaxb.version>
         <com.sun.jaxb.impl.version>2.3.1</com.sun.jaxb.impl.version>
-        <synapse.version>4.0.0-wso2v196</synapse.version>
+        <synapse.version>4.0.0-wso2v214</synapse.version>
         <imp.pkg.version.synapse>[4.0.0, 4.0.1)</imp.pkg.version.synapse>
-        <carbon.mediation.version>4.7.232</carbon.mediation.version>
+        <carbon.mediation.version>4.7.241</carbon.mediation.version>
         <carbon.crypto.version>1.1.3</carbon.crypto.version>
         <carbon.crypto.api.imp.pkg.version.range>[1.1.0,1.2.0)</carbon.crypto.api.imp.pkg.version.range>
         <carbon.data.version>4.5.2</carbon.data.version>
@@ -1633,7 +1638,7 @@
 
         <cipher.tool.version>1.1.26</cipher.tool.version>
         <axis2.transport.version>2.0.0-wso2v71</axis2.transport.version>
-        <transport.http.netty.version>6.3.52</transport.http.netty.version>
+        <transport.http.netty.version>6.3.53</transport.http.netty.version>
 
         <esotericsoftware.kryo.version>3.0.3</esotericsoftware.kryo.version>
         <esotericsoftware.minlog.version>1.3.0</esotericsoftware.minlog.version>
@@ -1662,9 +1667,9 @@
         <saml.common.util.version.range>[1.0.0,2.0.0)</saml.common.util.version.range>
         <bouncycastle.orbit.version>1.78.1.wso2v1</bouncycastle.orbit.version>
         <orbit.version.poi.ooxml>5.3.0.wso2v1</orbit.version.poi.ooxml>
-        <org.wso2.json.version>3.0.0.wso2v5</org.wso2.json.version>
+        <org.wso2.json.version>3.0.0.wso2v4</org.wso2.json.version>
         <version.equinox.http.servlet>1.1.400.v20130418-1354</version.equinox.http.servlet>
-        <version.tomcat>9.0.85</version.tomcat>
+        <version.tomcat>9.0.98</version.tomcat>
         <orbit.version.tomcat.jsp.api>${version.tomcat}.wso2v1</orbit.version.tomcat.jsp.api>
         <orbit.version.tomcat.el.api>${version.tomcat}.wso2v1</orbit.version.tomcat.el.api>
         <orbit.version.tomcat.servlet.api>${version.tomcat}.wso2v1</orbit.version.tomcat.servlet.api>
@@ -1731,11 +1736,11 @@
         <org.wso2.orbit.sun.xml.ws.version>2.3.2.wso2v1</org.wso2.orbit.sun.xml.ws.version>
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <org.wso2.carbon.caching.core.version>4.2.0</org.wso2.carbon.caching.core.version>
-        <json.smart.version>2.5.0</json.smart.version>
+        <json.smart.version>2.5.2</json.smart.version>
         <google.guava.version>33.0.0-jre</google.guava.version>
         <ca.uhn.hapi.wso2.version>2.4.0.wso2v2</ca.uhn.hapi.wso2.version>
         <junit.version>4.8.2</junit.version>
-        <netty.version>4.1.117.Final</netty.version>
+        <netty.version>4.1.118.Final</netty.version>
         <netty.tcnative.version>2.0.53.Final</netty.tcnative.version>
         <jacoco.agent.version>0.8.8</jacoco.agent.version>
         <activemq.version>5.2.0</activemq.version>
@@ -1764,7 +1769,7 @@
         <axiom.osgi.version.range>[1.2.11, 1.3.0)</axiom.osgi.version.range>
         <imp.package.version.osgi.services>[1.2.0,2.0.0)</imp.package.version.osgi.services>
 
-        <org.apache.bsf.wso2.version>3.0.0.wso2v5</org.apache.bsf.wso2.version>
+        <org.apache.bsf.wso2.version>3.0.0.wso2v6</org.apache.bsf.wso2.version>
         <rhino.wso2.js.version>1.7.13.wso2v1</rhino.wso2.js.version>
         <org.apache.velocity.version>2.4.1</org.apache.velocity.version>
 
@@ -1802,6 +1807,9 @@
 
         <poi-ooxml.version>5.3.0</poi-ooxml.version>
         <poi.version>5.3.0</poi.version>
+        <xmlbeans.orbit.version>5.3.0.wso2v1</xmlbeans.orbit.version>
+        <commons-compress.orbit.version>1.25.0.wso2v1</commons-compress.orbit.version>
+        <xmlbeans.orbit.imp.pkg.version>[5.3.0.wso2v1,6.0.0.wso2v1)</xmlbeans.orbit.imp.pkg.version>
 
         <commons-collections4.orbit.version>4.4.wso2v1</commons-collections4.orbit.version>
         <commons-collections4.orbit.imp.pkg.version>0.0.0</commons-collections4.orbit.imp.pkg.version>

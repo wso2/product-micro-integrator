@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.wso2.ei</groupId>
         <artifactId>data-services</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>4.4.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -368,6 +368,7 @@
                             org.apache.poi.hssf.usermodel;version="${poi.orbit.imp.pkg.version}",
                             org.apache.poi.openxml4j.exceptions;version="${poi-ooxml.orbit.imp.pkg.version}",
                             org.apache.poi.ss.usermodel;version="${poi.orbit.imp.pkg.version}",
+                            org.apache.xmlbeans;version="${xmlbeans.orbit.imp.pkg.version}",
                             org.apache.commons.collections4;version="${commons-collections4.orbit.imp.pkg.version}",
                             com.mongodb;version="${mongodb-driver-sync.imp.pkg.version}",
                             org.wso2.micro.integrator.dataservices.sql.driver;version="${project.version}",
