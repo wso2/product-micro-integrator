@@ -1636,7 +1636,7 @@
         <!-- SAP adapter - sap transport feature version -->
         <sap-adapter.feature.version>4.7.36</sap-adapter.feature.version>
 
-        <cipher.tool.version>1.1.26</cipher.tool.version>
+        <cipher.tool.version>1.2.5</cipher.tool.version>
         <axis2.transport.version>2.0.0-wso2v71</axis2.transport.version>
         <transport.http.netty.version>6.3.53</transport.http.netty.version>
 
