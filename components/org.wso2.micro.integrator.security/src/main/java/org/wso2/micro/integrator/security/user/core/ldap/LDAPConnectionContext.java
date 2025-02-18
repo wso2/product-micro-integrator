@@ -77,7 +77,6 @@ public class LDAPConnectionContext {
     private static final int CORRELATION_LOG_INITIALIZATION_ARGS_LENGTH = 0;
     private static final String CORRELATION_LOG_SEPARATOR = "|";
     private static final String CORRELATION_LOG_SYSTEM_PROPERTY = "enableCorrelationLogs";
-    private static boolean correlationLoggingEnabled = false;
     public static final String CIRCUIT_STATE_OPEN = "open";
     public static final String CIRCUIT_STATE_CLOSE = "close";
 
@@ -626,7 +625,7 @@ public class LDAPConnectionContext {
      */
     private DirContext getDirContext(Hashtable<?, ?> environment) throws NamingException {
 
-        if (Boolean.parseBoolean(System.getProperty(CORRELATION_LOG_SYSTEM_PROPERTY)) || correlationLoggingEnabled) {
+        if (Boolean.parseBoolean(System.getProperty(CORRELATION_LOG_SYSTEM_PROPERTY))) {
             final Class[] proxyInterfaces = new Class[]{DirContext.class};
             long start = System.currentTimeMillis();
 
@@ -663,7 +662,7 @@ public class LDAPConnectionContext {
     private LdapContext getLdapContext(Hashtable<?, ?> environment, Control[] connectionControls)
             throws NamingException, UserStoreException {
 
-        if (Boolean.parseBoolean(System.getProperty(CORRELATION_LOG_SYSTEM_PROPERTY)) || correlationLoggingEnabled) {
+        if (Boolean.parseBoolean(System.getProperty(CORRELATION_LOG_SYSTEM_PROPERTY))) {
             final Class[] proxyInterfaces = new Class[]{LdapContext.class};
             long start = System.currentTimeMillis();
 
@@ -840,9 +839,5 @@ public class LDAPConnectionContext {
             throw new UserStoreException("Error occurred while parsing ConnectionRetryDelay property value. value: "
                     + UserStoreConfigConstants.CONNECTION_RETRY_DELAY);
         }
-    }
-    public static void setCorrelationLoggingEnabled(boolean correlationLoggingEnabled) {
-
-        LDAPConnectionContext.correlationLoggingEnabled = correlationLoggingEnabled;
     }
 }
