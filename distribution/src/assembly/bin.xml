@@ -704,6 +704,7 @@
                 <!-- poi jars are needed in classpath form the latest version -->
                 <include>org.apache.poi:poi:jar</include>
                 <include>org.apache.poi:poi-ooxml:jar</include>
+                <include>com.zaxxer:SparseBitSet:jar</include>
             </includes>
         </dependencySet>
         <dependencySet>
