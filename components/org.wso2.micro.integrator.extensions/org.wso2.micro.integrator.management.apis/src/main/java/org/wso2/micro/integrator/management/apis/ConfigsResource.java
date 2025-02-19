@@ -21,11 +21,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.commons.logger.ContextAwareLogger;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.transport.passthru.config.PassThroughCorrelationConfigDataHolder;
 import org.json.JSONObject;
 import org.wso2.micro.integrator.management.apis.security.handler.SecurityUtils;
+import org.wso2.micro.integrator.ndatasource.rdbms.CorrelationLogInterceptor;
 import org.wso2.micro.integrator.security.user.api.UserStoreException;
+import org.wso2.micro.integrator.security.user.core.ldap.LDAPConnectionContext;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -127,6 +130,10 @@ public class ConfigsResource implements MiApiResource {
                 }
                 boolean enabled = Boolean.parseBoolean(configs.get(ENABLED).getAsString());
                 PassThroughCorrelationConfigDataHolder.setEnable(enabled);
+                ContextAwareLogger.setCorrelationLoggingEnabled(enabled);
+                LDAPConnectionContext.setCorrelationLoggingEnabled(enabled);
+                CorrelationLogInterceptor.setCorrelationLoggingEnabled(enabled);
+
                 JSONObject response = new JSONObject();
                 response.put(Constants.MESSAGE, "Successfully Updated Correlation Logs Status");
                 return response;
