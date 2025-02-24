@@ -30,6 +30,7 @@ import org.wso2.micro.integrator.security.user.core.dto.CorrelationLogDTO;
 import org.wso2.micro.integrator.security.util.Secret;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -723,7 +724,18 @@ public class LDAPConnectionContext {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
             long start = System.currentTimeMillis();
-            Object result = method.invoke(this.previousContext, args);
+            Object result;
+            try {
+                result = method.invoke(this.previousContext, args);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+
+                if (cause instanceof NamingException) {
+                    throw (NamingException) cause;  // Properly declared exception
+                }
+
+                throw new RuntimeException("Exception in LDAP proxy method: " + method.getName(), cause);
+            }
             long delta = System.currentTimeMillis() - start;
             String methodName = method.getName();
             int argsLength = 0;
