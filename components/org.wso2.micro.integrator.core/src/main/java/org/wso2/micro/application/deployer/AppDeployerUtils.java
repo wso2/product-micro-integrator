@@ -74,6 +74,7 @@ public final class AppDeployerUtils {
 	private static final String CONFIG_REGISTRY_PREFIX = "conf:";
 	private static final String LOCAL_REGISTRY_PATH = "/_system/local";
 	private static final String LOCAL_REGISTRY_PREFIX = "local:";
+	private static final String RESOURCES_PREFIX = "resources:";
 
 	private AppDeployerUtils() {
 		// hide utility class
@@ -736,7 +737,8 @@ public final class AppDeployerUtils {
     public static String createRegistryPath(String path) {
         if (path.startsWith(GOV_REGISTRY_PREFIX) ||
                 path.startsWith(CONFIG_REGISTRY_PREFIX) ||
-                path.startsWith(LOCAL_REGISTRY_PREFIX)) {
+                path.startsWith(LOCAL_REGISTRY_PREFIX) ||
+                path.startsWith(RESOURCES_PREFIX)) {
             return path;
         }
 
