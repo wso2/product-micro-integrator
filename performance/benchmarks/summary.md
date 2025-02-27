@@ -42,7 +42,7 @@ The measurement results are collected after the warm-up period.
 The performance tests were executed on 1 AWS CloudFormation stack.
 
 
-System information for WSO2 Micro Integrator wso2mi-4.4.0-alpha in 1st AWS CloudFormation stack.
+System information for WSO2 Micro Integrator wso2mi-4.4.0 in 1st AWS CloudFormation stack.
 
 | Class | Subclass | Description | Value |
 | --- | --- | --- | --- |
@@ -74,7 +74,7 @@ test parameters.
 
 The following is the summary of performance test results collected for the measurement period.
 
-|  Scenario Name | Heap Size | Concurrent Users | Message Size (Bytes) | Back-end Service Delay (ms) | Error % | Throughput (Requests/sec) | Average Response Time (ms) | Standard Deviation of Response Time (ms) | 99th Percentile of Response Time (ms) | WSO2 Micro Integrator wso2mi-4.4.0-alpha GC Throughput (%) | Average WSO2 Micro Integrator wso2mi-4.4.0-alpha Memory Footprint After Full GC (M) |
+|  Scenario Name | Heap Size | Concurrent Users | Message Size (Bytes) | Back-end Service Delay (ms) | Error % | Throughput (Requests/sec) | Average Response Time (ms) | Standard Deviation of Response Time (ms) | 99th Percentile of Response Time (ms) | WSO2 Micro Integrator wso2mi-4.4.0 GC Throughput (%) | Average WSO2 Micro Integrator wso2mi-4.4.0 Memory Footprint After Full GC (M) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 |  CBR Proxy | 2G | 100 | 500 | 0 | 0 | 6644.93 | 14.97 | 19.59 | 123 | N/A | N/A |
 |  CBR Proxy | 2G | 100 | 1000 | 0 | 0 | 5646.16 | 17.63 | 21.84 | 134 | N/A | N/A |
