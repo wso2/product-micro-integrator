@@ -56,4 +56,10 @@ public class RabbitMQTask extends OneTimeTriggerInboundTask implements LocalTask
         setReTrigger();
         rabbitMQConsumer.requestShutdown();
     }
+
+    @Override
+    public void notifyLocalTaskPause(String taskName) {
+        setReTrigger();
+        rabbitMQConsumer.requestShutdown();
+    }
 }
