@@ -25,6 +25,7 @@ import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
 import org.wso2.carbon.inbound.endpoint.persistence.InboundEndpointsDataStore;
+import org.wso2.carbon.inbound.endpoint.protocol.generic.GenericTask;
 import org.wso2.carbon.inbound.endpoint.protocol.jms.JMSTask;
 import org.wso2.micro.integrator.mediation.ntask.NTaskTaskManager;
 import org.wso2.micro.integrator.ntask.core.TaskUtils;
@@ -88,12 +89,16 @@ public abstract class InboundRequestProcessorImpl implements InboundRequestProce
                 startUpController.setTaskDescription(taskDescription);
                 startUpController.init(synapseEnvironment);
                 startUpControllersList.add(startUpController);
-                //register a listener to be notified when the local jms task is deleted
-                if (task instanceof JMSTask) {
+                // Register a listener to be notified when the local JMS/Generic task is deleted/paused
+                if (task instanceof JMSTask || task instanceof GenericTask) {
                     TaskManager taskManagerImpl = synapseEnvironment.getTaskManager().getTaskManagerImpl();
                     if (taskManagerImpl instanceof NTaskTaskManager) {
-                        ((NTaskTaskManager) taskManagerImpl)
-                                .registerListener((JMSTask) task, taskDescription.getName());
+                        NTaskTaskManager ntaskManager = (NTaskTaskManager) taskManagerImpl;
+                        if (task instanceof JMSTask) {
+                            ntaskManager.registerListener((JMSTask) task, taskDescription.getName());
+                        } else if (task instanceof GenericTask) {
+                            ntaskManager.registerListener((GenericTask) task, taskDescription.getName());
+                        }
                     }
                 }
             } catch (Exception e) {

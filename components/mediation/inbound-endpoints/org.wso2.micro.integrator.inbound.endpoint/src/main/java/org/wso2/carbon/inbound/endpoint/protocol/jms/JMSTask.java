@@ -93,4 +93,9 @@ public class JMSTask extends InboundTask implements LocalTaskActionListener {
         logger.info("Close connections of the JMS task upon pause of task: " + taskName);
         jmsPollingConsumer.destroy();
     }
+
+    @Override
+    public void notifyLocalTaskResume(String taskName) {
+        //ignore
+    }
 }

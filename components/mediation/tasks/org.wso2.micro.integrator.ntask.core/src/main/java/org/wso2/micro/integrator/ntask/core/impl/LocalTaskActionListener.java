@@ -39,4 +39,6 @@ public interface LocalTaskActionListener {
      * @param taskName
      */
     void notifyLocalTaskPause(String taskName);
+
+    void notifyLocalTaskResume(String taskName);
 }
