@@ -298,6 +298,10 @@ public abstract class AbstractQuartzTaskManager implements TaskManager {
             }
             this.getScheduler().resumeJob(new JobKey(taskName, taskGroup));
             log.info("Task resumed: [" + this.getTaskType() + "][" + taskName + "]");
+            LocalTaskActionListener listener = localTaskActionListeners.get(taskName);
+            if (null != listener) {
+                listener.notifyLocalTaskResume(taskName);
+            }
         } catch (SchedulerException e) {
             throw new TaskException("Error in resuming task with name: " + taskName, TaskException.Code.UNKNOWN, e);
         }
