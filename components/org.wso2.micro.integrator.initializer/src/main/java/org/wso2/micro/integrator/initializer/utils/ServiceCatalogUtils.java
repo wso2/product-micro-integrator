@@ -17,13 +17,32 @@
  */
 package org.wso2.micro.integrator.initializer.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.MalformedJsonException;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.XML;
+import io.swagger.v3.oas.models.parameters.HeaderParameter;
+import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
+import io.swagger.v3.parser.OpenAPIV3Parser;
+import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.description.AxisOperation;
+import org.apache.axis2.description.AxisResource;
+import org.apache.axis2.description.AxisResources;
+import org.apache.axis2.description.AxisService;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,6 +56,8 @@ import org.wso2.micro.application.deployer.AppDeployerUtils;
 import org.wso2.micro.application.deployer.CarbonApplication;
 import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.core.util.StringUtils;
+import org.wso2.micro.integrator.dataservices.common.DBConstants;
+import org.wso2.micro.integrator.dataservices.core.DataHolder;
 import org.wso2.micro.integrator.initializer.deployment.application.deployer.CappDeployer;
 import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecretResolverFactory;
@@ -61,6 +82,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -465,11 +487,16 @@ public class ServiceCatalogUtils {
                                            Map<String, String> md5MapOfAllService) throws IOException
             , ResolverException, NoSuchAlgorithmException {
         String metaFileName = metadataYamlFolder.getName();
-        // check metadata is relevant to proxy-service, if so process as a proxy else process as an api
-        return  (metaFileName.contains(PROXY_SERVICE_SUFFIX) && !(new File(metadataFolder,
-                metaFileName.replaceAll(METADATA_FOLDER_STRING, SWAGGER_FOLDER_STRING))).exists()) ?
-                processProxyServiceMetadata(tempDir, metadataYamlFolder, md5MapOfAllService) :
-                processAPIMetadata(metadataFolder, metaFileName, tempDir, metadataYamlFolder, md5MapOfAllService);
+        if  (metaFileName.contains(PROXY_SERVICE_SUFFIX) && !(new File(metadataFolder,
+                metaFileName.replaceAll(METADATA_FOLDER_STRING, SWAGGER_FOLDER_STRING))).exists()) {
+            return processProxyServiceMetadata(tempDir, metadataYamlFolder, md5MapOfAllService);
+        } else if (metaFileName.contains(DATA_SERVICE_SUFFIX)) {
+            return processAPIMetadata(metadataFolder, metaFileName, tempDir, metadataYamlFolder,
+                    md5MapOfAllService, true);
+        } else {
+            return processAPIMetadata(metadataFolder, metaFileName, tempDir, metadataYamlFolder,
+                    md5MapOfAllService, false);
+        }
     }
 
     /**
@@ -486,7 +513,8 @@ public class ServiceCatalogUtils {
      * @throws NoSuchAlgorithmException could not find the MD% algorithm.
      */
     private static boolean processAPIMetadata(File metadataFolder, String metaFileName, File tempDir,
-                                              File metadataYamlFolder, Map<String, String> md5MapOfAllService)
+                                              File metadataYamlFolder, Map<String, String> md5MapOfAllService,
+                                              boolean isDataService)
             throws IOException, ResolverException, NoSuchAlgorithmException {
         String APIName = metaFileName.substring(0, metaFileName.indexOf(METADATA_FOLDER_STRING));
         String APIVersion =
@@ -498,16 +526,26 @@ public class ServiceCatalogUtils {
         File newYamlFile = new File(newMetaFile, METADATA_FILE_NAME);
         File metadataYamlFile =
                 new File(metadataYamlFolder, APIName + METADATA_FILE_STRING + APIVersion + YAML_FILE_EXTENSION);
-
-        File swaggerFolder = new File(metadataFolder, APIName + SWAGGER_FOLDER_STRING + APIVersion);
-        File swaggerFile =
-                new File(swaggerFolder, APIName + SWAGGER_FILE_STRING + APIVersion + YAML_FILE_EXTENSION);
-        File newSwaggerFile = new File(newMetaFile, SWAGGER_FILE_NAME);
-
+        File swaggerFile;
+        File newSwaggerFile = new File(newMetaFile, SWAGGER_FILE_NAME);;
+        if (isDataService) {
+            swaggerFile = new File(metadataYamlFolder, SWAGGER_FILE_NAME);
+        } else {
+            File swaggerFolder = new File(metadataFolder, APIName + SWAGGER_FOLDER_STRING + APIVersion);
+            swaggerFile =
+                    new File(swaggerFolder, APIName + SWAGGER_FILE_STRING + APIVersion + YAML_FILE_EXTENSION);
+        }
 
         // Edit metadata yaml and add host details
         String key = updateMetadataWithServiceUrl(metadataYamlFile);
         String md5FromServer = md5MapOfAllService.get(key);
+        if (isDataService) {
+            if (!readServiceWsdlOrYaml(metadataYamlFile, metadataYamlFolder, false)) {
+                log.error("Could not find WSDL definition of data service: " + metaFileName.substring(0,
+                        metaFileName.indexOf(DATA_SERVICE_SUFFIX + METADATA_FOLDER_STRING)));
+                return false;
+            }
+        }
 
         // generate md5 values for verifier
         String md5SumOfMetadata = getFileChecksum(metadataYamlFile);
@@ -571,7 +609,7 @@ public class ServiceCatalogUtils {
         String md5FromServer = md5MapOfAllService.get(key);
 
         // Check WSDL file is fetched
-        if (!readProxyServiceWSDL(metadataYamlFile, metadataYamlFolder)) {
+        if (!readServiceWsdlOrYaml(metadataYamlFile, metadataYamlFolder, true)) {
             log.error("Could not find WSDL definition of proxy service: " + proxyServiceName);
             return false;
         }
@@ -713,9 +751,11 @@ public class ServiceCatalogUtils {
         Collection proxyTable =
                 SynapseConfigUtils.getSynapseConfiguration(
                         org.wso2.micro.core.Constants.SUPER_TENANT_DOMAIN_NAME).getProxyServices();
-        if (APITable.isEmpty() && proxyTable.isEmpty()) {
+        ConfigurationContext configurationContext = DataHolder.getInstance().getConfigurationContext();
+        HashMap<String, AxisService> services = configurationContext.getAxisConfiguration().getServices();
+        if (APITable.isEmpty() && proxyTable.isEmpty() && services.isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug("Cannot find APIs or Proxy Services - aborting the service-catalog uploader");
+                log.debug("Cannot find APIs, Proxy Services, or Data Services - aborting the service-catalog uploader");
             }
             return false;
         }
@@ -853,46 +893,64 @@ public class ServiceCatalogUtils {
      * @param storeLocation read wsdl file store location.
      * @return WSDL file creation result.
      */
-    private static boolean readProxyServiceWSDL(File metadataYamlFile, File storeLocation) {
-        Collection proxyTable =
-                SynapseConfigUtils.getSynapseConfiguration(
-                        org.wso2.micro.core.Constants.SUPER_TENANT_DOMAIN_NAME).getProxyServices();
+    private static boolean readServiceWsdlOrYaml(File metadataYamlFile, File storeLocation, boolean readWsdl) {
+        String queryParam;
+        String fileName;
+        ConfigurationContext configurationContext;
+        HashMap<String, AxisService> dataServiceTable = null;
+        if (readWsdl) {
+            queryParam = WSDL_URL_PATH;
+            fileName = WSDL_FILE_NAME;
+        } else {
+            queryParam = SWAGGER_URL_PATH;
+            fileName = SWAGGER_FILE_NAME;
+            configurationContext = DataHolder.getInstance().getConfigurationContext();
+            dataServiceTable = configurationContext.getAxisConfiguration().getServices();
+        }
         BufferedReader bufferedReader = null;
         try {
-            String proxyServiceUrl = getProxyServiceUrlFromMetadata(metadataYamlFile);
-            if (proxyServiceUrl == null) {
+            String serviceUrl = getServiceUrlFromMetadata(metadataYamlFile);
+            if (serviceUrl == null) {
                 return false;
             }
-            if (proxyServiceUrl.endsWith(PATH_SEPARATOR)) {
-                proxyServiceUrl = proxyServiceUrl.substring(proxyServiceUrl.length() - 1);
+            if (serviceUrl.endsWith(PATH_SEPARATOR)) {
+                serviceUrl = serviceUrl.substring(serviceUrl.length() - 1);
             }
-            proxyServiceUrl = proxyServiceUrl + WSDL_URL_PATH;
-            URL website = new URL(proxyServiceUrl);
+            serviceUrl = serviceUrl + queryParam;
+            URL website = new URL(serviceUrl);
             URLConnection connection = website.openConnection();
             bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            StringBuilder responseWSDL = new StringBuilder();
+            StringBuilder responseWsdlOrYaml = new StringBuilder();
             if (lineSeparator == null) {
                 lineSeparator = System.getProperty("line.separator");
             }
             String inputLine;
             while ((inputLine = bufferedReader.readLine()) != null) {
-                responseWSDL.append(inputLine).append(lineSeparator);
+                responseWsdlOrYaml.append(inputLine).append(lineSeparator);
             }
-            if (responseWSDL.length() == 0) {
+            if (responseWsdlOrYaml.length() == 0) {
                 return false;
             }
+            if (!readWsdl) {
+                responseWsdlOrYaml = updateYamlWithSoapResource(storeLocation, responseWsdlOrYaml);
+            }
             if (storeLocation.exists()) {
-                String wsdlString = responseWSDL.toString();
-                boolean shouldSchemaLocationBeChanged = shouldSchemaLocationBeChanged(storeLocation, proxyTable);
+                String wsdlString = responseWsdlOrYaml.toString();
+                boolean shouldSchemaLocationBeChanged = false;
+                if (readWsdl) {
+                    Collection<ProxyService> proxyTable =
+                            SynapseConfigUtils.getSynapseConfiguration(
+                                    org.wso2.micro.core.Constants.SUPER_TENANT_DOMAIN_NAME).getProxyServices();
+                    shouldSchemaLocationBeChanged = shouldSchemaLocationBeChanged(storeLocation, proxyTable);
+                }
                 if (shouldSchemaLocationBeChanged) {
                     // Replace schemaLocation values ending with .xsd and change everything up to ? to xyz using regex
                     String regexPattern = "(schemaLocation=\")[^\"?]*\\?(.*\\.xsd\")";
-                    String baseUrl = proxyServiceUrl.replace(WSDL_URL_PATH, "?");
+                    String baseUrl = serviceUrl.replace(queryParam, "?");
                     String replacement = "$1" + baseUrl + "$2";
                     wsdlString = wsdlString.replaceAll(regexPattern, replacement);
                 }
-                Files.write(Paths.get(storeLocation.getAbsolutePath(), WSDL_FILE_NAME),
-                        wsdlString.getBytes());
+                Files.write(Paths.get(storeLocation.getAbsolutePath(), fileName), wsdlString.getBytes());
                 return true;
             }
         } catch (IOException e) {
@@ -910,21 +968,198 @@ public class ServiceCatalogUtils {
         return false;
     }
 
-    private static boolean shouldSchemaLocationBeChanged(File storeLocation, Collection proxyTable) {
+    private static boolean shouldSchemaLocationBeChanged(File storeLocation, Collection<ProxyService> proxyTable) {
         String metaFileName = storeLocation.getName();
         String proxyServiceName = metaFileName.substring(0,
                 metaFileName.indexOf(PROXY_SERVICE_SUFFIX + METADATA_FOLDER_STRING));
         if (proxyTable != null && !proxyTable.isEmpty()) {
-            for (Object proxy : proxyTable) {
-                if (proxy instanceof ProxyService) {
-                    ProxyService proxyService = (ProxyService) proxy;
-                    if (proxyService.getName().equals(proxyServiceName) && proxyService.getResourceMap() != null) {
-                        return true;
-                    }
+            for (ProxyService proxyService : proxyTable) {
+                if (proxyService.getName().equals(proxyServiceName) && proxyService.getResourceMap() != null) {
+                    return true;
                 }
             }
         }
         return false;
+    }
+
+    private static StringBuilder updateYamlWithSoapResource(File storeLocation, StringBuilder responseWsdlOrYaml)
+            throws JsonProcessingException {
+        String metaFileName = storeLocation.getName();
+        String dataServiceName = metaFileName.substring(0,
+                metaFileName.indexOf(DATA_SERVICE_SUFFIX + METADATA_FOLDER_STRING));
+        ConfigurationContext configurationContext = DataHolder.getInstance().getConfigurationContext();
+        HashMap<String, AxisService> dataServiceTable = configurationContext.
+                getAxisConfiguration().getServices();
+        if (dataServiceTable == null || dataServiceTable.isEmpty()) {
+            return responseWsdlOrYaml;
+        }
+        AxisService dataService = dataServiceTable.get(dataServiceName);
+        if (dataService == null) {
+            return responseWsdlOrYaml;
+        }
+        if (hasSoapRequest(dataService, getTotalNoOfResources(dataService))) {
+            return updateYamlContent(responseWsdlOrYaml, isRequestBoxElement(dataService));
+        }
+        return responseWsdlOrYaml;
+    }
+
+    private static StringBuilder updateYamlContent(StringBuilder responseWsdlOrYaml, boolean isRequestBoxElement)
+            throws JsonProcessingException {
+        SwaggerParseResult result = new OpenAPIV3Parser().readContents(responseWsdlOrYaml.toString());
+        OpenAPI openAPI = result.getOpenAPI();
+        if (openAPI == null) {
+            return responseWsdlOrYaml;
+        }
+        io.swagger.v3.oas.models.Paths paths = openAPI.getPaths();
+        PathItem pathItem = new PathItem();
+
+        // Create a new POST operation
+        Operation postOperation = new Operation();
+        if (isRequestBoxElement) {
+            postOperation.setSummary("Request Box");
+        } else {
+            postOperation.setSummary("SOAP Request");
+        }
+        postOperation.setOperationId("createSoapRequest");
+
+        // Add a SOAP action header
+        HeaderParameter headerParameter = new HeaderParameter();
+        headerParameter.setName("SOAPAction");
+        headerParameter.setRequired(true);
+        headerParameter.setSchema(new io.swagger.v3.oas.models.media.StringSchema());
+        RequestBody requestBody = new RequestBody().description("Request Body");
+        Content content = new Content();
+        if (isRequestBoxElement) {
+            headerParameter.setExample("urn:request_box");
+            addRequestBoxSamplePayload(content, Constants.SOAP_11_NAME_SPACE, Constants.TEXT_XML);
+            addRequestBoxSamplePayload(content, Constants.SOAP_12_NAME_SPACE, Constants.APPLICATION_SOAP);
+        } else {
+            headerParameter.setExample("urn:operation_name");
+            addSoapRequestSamplePayload(content, Constants.SOAP_11_NAME_SPACE, Constants.TEXT_XML);
+            addSoapRequestSamplePayload(content, Constants.SOAP_12_NAME_SPACE, Constants.APPLICATION_SOAP);
+        }
+        requestBody.content(content).required(true);
+        postOperation.addParametersItem(headerParameter);
+        postOperation.setRequestBody(requestBody);
+
+        // Set the response for the operation
+        ApiResponses responses = new ApiResponses();
+        ApiResponse response = new ApiResponse();
+        response.setDescription("SOAP Response");
+        Content responseContent = new Content();
+        MediaType responseMediaType = new MediaType();
+        responseContent.addMediaType(Constants.APPLICATION_XML, responseMediaType);
+        response.setContent(responseContent);
+        responses.addApiResponse("200", response);
+        postOperation.setResponses(responses);
+
+        pathItem.setPost(postOperation);
+        openAPI.path("/*", pathItem);
+        openAPI.setPaths(paths);
+
+        return new StringBuilder(io.swagger.v3.core.util.Yaml.mapper().writeValueAsString(openAPI));
+    }
+
+    private static void addSoapRequestSamplePayload(Content content, String namespace, String requestType) {
+        Schema operation = new Schema<>().type("object").properties(
+                        new HashMap<String, Schema>() {{
+                            put("dat:param_name_2", new Schema<String>().type("string").example("?"));
+                            put("dat:param_name_1", new Schema<String>().type("string").example("?"));
+                            ;
+                        }})
+                .xml(new XML().name("dat:operation_name"));
+        Schema<?> bodySchema = new Schema()
+                .type("object")
+                .properties(new HashMap<String, Schema>() {{
+                    put("request_box", operation);
+                }})
+                .xml(new XML().name("soapenv:Body"));
+        Schema<?> headerSchema = new Schema<>()
+                .type("object")
+                .xml(new XML().name("soapenv:Header"));
+        Schema<?> envelopeSchema = new Schema<Object>()
+                .type("object")
+                .properties(new HashMap<String, Schema<?>>() {{
+                    put("Header", headerSchema);
+                    put("Body", bodySchema);
+                    put("xmlns:dat", new Schema<String>().type("string").
+                            example("http://ws.wso2.org/dataservice").xml(new XML().attribute(true)));
+                }}).xml(new XML()
+                        .name("Envelope")
+                        .namespace(namespace)
+                        .prefix("soapenv"));
+        MediaType mediaType = new MediaType().schema(envelopeSchema);
+        content.addMediaType(requestType, mediaType);
+    }
+
+    private static void addRequestBoxSamplePayload(Content content, String namespace, String requestType) {
+        Schema operation1 = new Schema<>().type("object").properties(
+                new HashMap<String, Schema>() {{
+                    put("dat:param_name_2", new Schema<String>().type("string").example("?"));
+                    put("dat:param_name_1", new Schema<String>().type("string").example("?"));
+                    ;
+                }})
+                .xml(new XML().name("dat:operation_name_1"));
+        Schema<?> operation2 = new Schema().type("object").properties(
+                new HashMap<String, Schema>() {{
+                    put("dat:param_name_1", new Schema().type("string").example("?"));
+                }})
+                .xml(new XML().name("dat:operation_name_2"));
+        Schema<?> requestBox = new Schema()
+                .type("object")
+                .properties(new HashMap<String, Schema>() {{
+                    put("operation_1", operation2);
+                    put("operation_2", operation1);
+                }})
+                .xml(new XML().name("dat:request_box"));
+        Schema<?> bodySchema = new Schema()
+                .type("object")
+                .properties(new HashMap<String, Schema>() {{
+                    put("request_box", requestBox);
+                }})
+                .xml(new XML().name("soapenv:Body"));
+        Schema<?> headerSchema = new Schema<>()
+                .type("object")
+                .xml(new XML().name("soapenv:Header"));
+        Schema<?> envelopeSchema = new Schema<>()
+                .type("object")
+                .properties(new HashMap<String, Schema>() {{
+                    put("Header", headerSchema);
+                    put("Body", bodySchema);
+                    put("xmlns:dat", new Schema().type("string").
+                            example("http://ws.wso2.org/dataservice").xml(new XML().attribute(true)));
+                }}).xml(new XML()
+                        .name("Envelope")
+                        .namespace(namespace)
+                        .prefix("soapenv"));
+        MediaType mediaType = new MediaType().schema(envelopeSchema);
+        content.addMediaType(requestType, mediaType);
+    }
+
+    private static int getTotalNoOfResources(AxisService dataService) {
+        Object dataServiceObject =
+                dataService.getParameter(SWAGGER_RESOURCE_OBJECT).getValue();
+        int noOfRestResource = 0;
+        for (Map.Entry<String, AxisResource> entry : ((AxisResources) dataServiceObject).getAxisResourceMap().getResources().entrySet()) {
+            noOfRestResource = noOfRestResource + entry.getValue().getMethods().size();
+        }
+        return noOfRestResource;
+    }
+
+    private static boolean isRequestBoxElement(AxisService dataService) {
+        for (Iterator<AxisOperation> it = dataService.getOperations(); it.hasNext(); ) {
+            AxisOperation opName = it.next();
+            AxisOperation tmpOp = dataService.getOperation(opName.getName());
+            if (tmpOp.getName().toString().trim().equals(DBConstants.REQUEST_BOX_ELEMENT)) {
+                return  true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasSoapRequest(AxisService dataService, int noOfRestResource) {
+        return (noOfRestResource > 0 && dataService.getPublishedOperations().size() > noOfRestResource) ||
+                (noOfRestResource == 0 && dataService.getPublishedOperations().size() > 0);
     }
 
     /**
@@ -933,7 +1168,7 @@ public class ServiceCatalogUtils {
      * @param yamlFile location of the yamlFile.
      * @return URL of the metadata service.
      */
-    private static String getProxyServiceUrlFromMetadata(File yamlFile) {
+    private static String getServiceUrlFromMetadata(File yamlFile) {
         Yaml yaml = new Yaml();
         String currentServiceUrl = null;
         try (InputStream yamlStream = new FileInputStream(yamlFile)) {
