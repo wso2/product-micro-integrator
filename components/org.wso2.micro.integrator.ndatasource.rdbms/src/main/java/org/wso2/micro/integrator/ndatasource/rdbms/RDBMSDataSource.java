@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import javax.management.InstanceAlreadyExistsException;
+import javax.management.InstanceNotFoundException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -101,6 +102,9 @@ public class RDBMSDataSource {
                         String [] dataSourceId = DataSourceUtils.getCurrentDataSourceId().split(":");
                         mBean = dataSourceId[1] + "," + dataSourceId[0];
                         ObjectName objectName = new ObjectName(mBean + ":type=DataSource");
+                        if (mBeanServer.isRegistered(objectName)) {
+                            mBeanServer.unregisterMBean(objectName);
+                        }
                         mBeanServer.registerMBean(this.dataSource.createPool().getJmxPool(),objectName);
                 } catch (InstanceAlreadyExistsException e) {
                         //ignore as the mbean for the same datasource name is already exist
@@ -116,6 +120,8 @@ public class RDBMSDataSource {
                 } catch (MBeanRegistrationException e) {
                        log.error("Error while registering the MBean for dataSource '"
                                + mBean + " " + e.getMessage(), e);
+                } catch (InstanceNotFoundException e) {
+                       //ignore as the mbean for the same datasource name is already exist
                 }
        }
 
