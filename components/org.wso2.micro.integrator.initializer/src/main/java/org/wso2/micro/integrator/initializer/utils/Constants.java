@@ -69,8 +69,11 @@ public class Constants {
     public static final String WSDL_FILE_NAME = "definition.wsdl";
     public static final String YAML_FILE_EXTENSION = ".yaml";
     public static final String PROXY_SERVICE_SUFFIX = "_proxy";
+    public static final String DATA_SERVICE_SUFFIX = "_data_service";
+    public static final String SWAGGER_RESOURCE_OBJECT= "org.wso2.ws.dataservice.dataservice.obj";
     public static final String PATH_SEPARATOR = "/";
     public static final String WSDL_URL_PATH = "?wsdl";
+    public static final String SWAGGER_URL_PATH = "?swagger.yaml";
 
     // constants related to retry mechanism
     public static final int INTERVAL_BETWEEN_RETRIES = 2000;
@@ -83,5 +86,10 @@ public class Constants {
     public static final String HTTPS_LISTENER_PORT = "transport.https.listener.parameter.port";
     public static final String HTTP_LISTENER_PORT = "transport.http.listener.parameter.port";
     public static final String SERVER_PORT_OFFSET = "portOffset";
+    public static final String SOAP_11_NAME_SPACE = "http://schemas.xmlsoap.org/soap/envelope/";
+    public static final String SOAP_12_NAME_SPACE = "http://www.w3.org/2003/05/soap-envelope";
+    public static final String TEXT_XML = "text/xml";
+    public static final String APPLICATION_SOAP = "application/soap+xml";
+    public static final String APPLICATION_XML = "application/xml";
 
 }

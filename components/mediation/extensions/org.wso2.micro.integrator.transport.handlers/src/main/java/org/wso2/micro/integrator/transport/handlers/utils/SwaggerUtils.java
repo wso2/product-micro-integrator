@@ -30,6 +30,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.BooleanSchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.IntegerSchema;
@@ -159,7 +160,7 @@ public final class SwaggerUtils {
                 List<AxisResourceParameter> parameterList = entry.getValue().getResourceParameterList(method);
                 addPathAndQueryParameters(method, operation, parameterList);
                 // Adding a sample request payload for methods except GET and DELETE ( OAS3 onwards )
-                addSampleRequestBody(method, operation, parameterList);
+                addSampleRequestBody(method, operation, parameterList, entry.getKey().endsWith("_batch_req"));
                 addDefaultResponseAndPathItem(pathItem, method, operation);
             }
             // adding the resource. all the paths should starts with "/"
@@ -177,7 +178,7 @@ public final class SwaggerUtils {
 
     // Add request body schema for methods except GET and DELETE.
     private static void addSampleRequestBody(String method, Operation operation,
-                                             List<AxisResourceParameter> parameterList) {
+                                             List<AxisResourceParameter> parameterList, boolean isBatchRequest) {
 
         if (!method.equals("GET") && !method.equals("DELETE")) {
             RequestBody requestBody = new RequestBody();
@@ -208,7 +209,14 @@ public final class SwaggerUtils {
             }
             objectSchema.setProperties(payloadProperties);
             bodySchema.setProperties(inputProperties);
-            inputProperties.put("payload", objectSchema);
+            if (isBatchRequest) {
+                // Create the outer structure schema
+                Schema outerSchema = new ObjectSchema().
+                        addProperty(Constants.PAYLOAD, new ArraySchema().items(objectSchema));
+                inputProperties.put(Constants.PAYLOAD, outerSchema);
+            } else {
+                inputProperties.put(Constants.PAYLOAD, objectSchema);
+            }
             mediaType.setSchema(bodySchema);
             Content content = new Content();
             content.addMediaType("application/json", mediaType);
