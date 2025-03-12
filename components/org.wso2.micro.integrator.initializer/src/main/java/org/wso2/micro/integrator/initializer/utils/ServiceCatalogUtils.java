@@ -896,16 +896,12 @@ public class ServiceCatalogUtils {
     private static boolean readServiceWsdlOrYaml(File metadataYamlFile, File storeLocation, boolean readWsdl) {
         String queryParam;
         String fileName;
-        ConfigurationContext configurationContext;
-        HashMap<String, AxisService> dataServiceTable = null;
         if (readWsdl) {
             queryParam = WSDL_URL_PATH;
             fileName = WSDL_FILE_NAME;
         } else {
             queryParam = SWAGGER_URL_PATH;
             fileName = SWAGGER_FILE_NAME;
-            configurationContext = DataHolder.getInstance().getConfigurationContext();
-            dataServiceTable = configurationContext.getAxisConfiguration().getServices();
         }
         BufferedReader bufferedReader = null;
         try {
