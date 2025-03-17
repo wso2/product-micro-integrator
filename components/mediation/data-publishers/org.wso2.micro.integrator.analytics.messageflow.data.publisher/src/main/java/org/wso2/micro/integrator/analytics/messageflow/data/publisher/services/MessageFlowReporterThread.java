@@ -275,6 +275,10 @@ public class MessageFlowReporterThread extends Thread {
 
     private void setElasticMetaData(BasicStatisticDataUnit dataUnit, StatisticsLog statisticsLog) {
         if (dataUnit.getElasticMetadata() == null) {
+            if (dataUnit.getMessageContext() == null) {
+                log.warn("Cannot generate elastic metadata. Message context is null.");
+                return;
+            }
             dataUnit.generateElasticMetadata(dataUnit.getMessageContext());
         }
         ElasticMetadata elasticMetadata = dataUnit.getElasticMetadata();
