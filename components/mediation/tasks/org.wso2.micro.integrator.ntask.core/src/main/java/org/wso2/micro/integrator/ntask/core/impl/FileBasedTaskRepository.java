@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,6 +60,7 @@ public class FileBasedTaskRepository implements TaskRepository {
     private static final String REG_TASK_BASE_PATH = "/repository/components/org.wso2.carbon.tasks";
     private static final String REG_TASK_REPO_BASE_PATH = REG_TASK_BASE_PATH + "/" + "definitions";
     private static final char URL_SEPARATOR_CHAR = '/';
+    private static final String SYS_GOV_REGISTRY_PROPERTY_NAME = "mi.registry.gov";
     private static String resourcePath = getGovernanceRegistryPath();
     private static Marshaller taskMarshaller;
     private static Unmarshaller taskUnmarshaller;
@@ -87,19 +89,19 @@ public class FileBasedTaskRepository implements TaskRepository {
 
     private static String getGovernanceRegistryPath() {
 
-        String systemStoredGovRegistryPath = System.getProperty("mi.registry.gov");
-        try {
-            URI govRegistryUri = new URI(systemStoredGovRegistryPath);
-            String governanceRegistryPath = govRegistryUri.getPath();
-            if (governanceRegistryPath == null || "".equals(governanceRegistryPath) || ".".equals(governanceRegistryPath)) {
-                governanceRegistryPath = getSystemDependentPath(new File(".").getAbsolutePath()) +
-                        File.separator + "registry" + File.separator + "governance" + File.separator;
+        String defaultGovernanceRegistryPath = getSystemDependentPath(new File(".").getAbsolutePath()) +
+                File.separator + "registry" + File.separator + "governance" + File.separator;
+        String sysGovernanceRegistryPath = System.getProperty(SYS_GOV_REGISTRY_PROPERTY_NAME);
+        if (StringUtils.isNotEmpty(sysGovernanceRegistryPath) && !".".equals(sysGovernanceRegistryPath)) {
+            try {
+                URI govRegistryUri = new URI(sysGovernanceRegistryPath);
+                return Paths.get(govRegistryUri).toString() + File.separator;
+            } catch (URISyntaxException e) {
+                log.error("The governance registry path: '" + sysGovernanceRegistryPath + "' is not valid. Hence the " +
+                        "default governance registry path: '" + defaultGovernanceRegistryPath + "' will be used.");
             }
-            return governanceRegistryPath;
-        } catch (URISyntaxException e) {
-            log.error("The governance registry path: '" + systemStoredGovRegistryPath + "' is not valid.");
-            return StringUtils.EMPTY;
         }
+        return defaultGovernanceRegistryPath;
     }
 
     private static String getSystemDependentPath(String path) {
