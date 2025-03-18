@@ -74,6 +74,27 @@ public class Constants {
     public static final String PATH_SEPARATOR = "/";
     public static final String WSDL_URL_PATH = "?wsdl";
     public static final String SWAGGER_URL_PATH = "?swagger.yaml";
+    public static final String URN_REQUEST_BOX = "urn:request_box";
+    public static final String REQUEST_BOX = "request_box";
+    public static final String STRING = "string";
+    public static final String URN = "urn:";
+    public static final String OBJECT = "object";
+    public static final String QUESTION_MARK = "?";
+    public static final String EMPTY_STRING = "";
+    public static final String UNDERSCORE = "_";
+    public static final String SOAP_ENV_BODY = "soapenv:Body";
+    public static final String SOAP_ENV_HEADER = "soapenv:Header";
+    public static final String ENVELOPE = "Envelope";
+    public static final String SOAP_ENV = "soapenv";
+    public static final String PARAM_NAME_1 = "dat:param_name_1";
+    public static final String PARAM_NAME_2 = "dat:param_name_2";
+    public static final String OPERATION_NAME = "dat:operation_name";
+    public static final String OPERATION_NAME_1 = "dat:operation_name_1";
+    public static final String OPERATION_NAME_2 = "dat:operation_name_2";
+    public static final String DAT_REQUEST_BOX = "dat:request_box";
+    public static final String CURLY_OPEN_BRACKET = "\\{";
+    public static final String CURLY_CLOSE_BRACKET = "}";
+    public static final String SLASH = "/";
 
     // constants related to retry mechanism
     public static final int INTERVAL_BETWEEN_RETRIES = 2000;

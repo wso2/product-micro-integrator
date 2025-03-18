@@ -82,7 +82,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -981,6 +980,8 @@ public class ServiceCatalogUtils {
     private static StringBuilder updateYamlWithSoapResource(File storeLocation, StringBuilder responseWsdlOrYaml)
             throws JsonProcessingException {
         String metaFileName = storeLocation.getName();
+        List<String> restResource = new ArrayList<>();
+        List<String> soapResource = new ArrayList<>();
         String dataServiceName = metaFileName.substring(0,
                 metaFileName.indexOf(DATA_SERVICE_SUFFIX + METADATA_FOLDER_STRING));
         ConfigurationContext configurationContext = DataHolder.getInstance().getConfigurationContext();
@@ -993,47 +994,45 @@ public class ServiceCatalogUtils {
         if (dataService == null) {
             return responseWsdlOrYaml;
         }
-        if (hasSoapRequest(dataService, getTotalNoOfResources(dataService))) {
-            return updateYamlContent(responseWsdlOrYaml, isRequestBoxElement(dataService));
+        if (hasSoapRequest(dataService, getTotalNoOfResources(dataService, restResource),
+                soapResource, restResource)) {
+            SwaggerParseResult result = new OpenAPIV3Parser().readContents(responseWsdlOrYaml.toString());
+            OpenAPI openAPI = result.getOpenAPI();
+            if (openAPI == null) {
+                return responseWsdlOrYaml;
+            }
+            io.swagger.v3.oas.models.Paths paths = openAPI.getPaths();
+            if (soapResource.size() > 0) {
+                PathItem pathItem = updateYamlContentWithSoapRequestResource(soapResource);
+                openAPI.path("/*", pathItem);
+            }
+            openAPI.setPaths(paths);
+            responseWsdlOrYaml = new StringBuilder(io.swagger.v3.core.util.Yaml.mapper().writeValueAsString(openAPI));
         }
         return responseWsdlOrYaml;
     }
 
-    private static StringBuilder updateYamlContent(StringBuilder responseWsdlOrYaml, boolean isRequestBoxElement)
-            throws JsonProcessingException {
-        SwaggerParseResult result = new OpenAPIV3Parser().readContents(responseWsdlOrYaml.toString());
-        OpenAPI openAPI = result.getOpenAPI();
-        if (openAPI == null) {
-            return responseWsdlOrYaml;
-        }
-        io.swagger.v3.oas.models.Paths paths = openAPI.getPaths();
+    private static PathItem updateYamlContentWithSoapRequestResource(List<String> soapOperation) {
         PathItem pathItem = new PathItem();
-
         // Create a new POST operation
         Operation postOperation = new Operation();
-        if (isRequestBoxElement) {
-            postOperation.setSummary("Request Box");
-        } else {
-            postOperation.setSummary("SOAP Request");
-        }
+        postOperation.setSummary("SOAP Request");
         postOperation.setOperationId("createSoapRequest");
 
         // Add a SOAP action header
         HeaderParameter headerParameter = new HeaderParameter();
         headerParameter.setName("SOAPAction");
         headerParameter.setRequired(true);
-        headerParameter.setSchema(new io.swagger.v3.oas.models.media.StringSchema());
-        RequestBody requestBody = new RequestBody().description("Request Body");
-        Content content = new Content();
-        if (isRequestBoxElement) {
-            headerParameter.setExample("urn:request_box");
-            addRequestBoxSamplePayload(content, Constants.SOAP_11_NAME_SPACE, Constants.TEXT_XML);
-            addRequestBoxSamplePayload(content, Constants.SOAP_12_NAME_SPACE, Constants.APPLICATION_SOAP);
-        } else {
-            headerParameter.setExample("urn:operation_name");
-            addSoapRequestSamplePayload(content, Constants.SOAP_11_NAME_SPACE, Constants.TEXT_XML);
-            addSoapRequestSamplePayload(content, Constants.SOAP_12_NAME_SPACE, Constants.APPLICATION_SOAP);
+        RequestBody requestBody = new RequestBody();
+        if (soapOperation.contains(REQUEST_BOX) && soapOperation.size() > 1) {
+            requestBody.description("This example accommodates both single and request box operations. " +
+                    "Populate `dat:operation_name` for single requests or `dat:request_box` " +
+                    "for invoking multiple operations. Include only the relevant sections for your operation.");
         }
+        Content content = new Content();
+        headerParameter.setSchema(new io.swagger.v3.oas.models.media.StringSchema()._enum(soapOperation));
+        addSoapRequestSamplePayload(content, Constants.SOAP_11_NAME_SPACE, Constants.TEXT_XML, soapOperation);
+        addSoapRequestSamplePayload(content, Constants.SOAP_12_NAME_SPACE, Constants.APPLICATION_SOAP, soapOperation);
         requestBody.content(content).required(true);
         postOperation.addParametersItem(headerParameter);
         postOperation.setRequestBody(requestBody);
@@ -1050,112 +1049,99 @@ public class ServiceCatalogUtils {
         postOperation.setResponses(responses);
 
         pathItem.setPost(postOperation);
-        openAPI.path("/*", pathItem);
-        openAPI.setPaths(paths);
-
-        return new StringBuilder(io.swagger.v3.core.util.Yaml.mapper().writeValueAsString(openAPI));
+        return pathItem;
     }
 
-    private static void addSoapRequestSamplePayload(Content content, String namespace, String requestType) {
-        Schema operation = new Schema<>().type("object").properties(
-                        new HashMap<String, Schema>() {{
-                            put("dat:param_name_2", new Schema<String>().type("string").example("?"));
-                            put("dat:param_name_1", new Schema<String>().type("string").example("?"));
-                            ;
-                        }})
-                .xml(new XML().name("dat:operation_name"));
-        Schema<?> bodySchema = new Schema()
-                .type("object")
-                .properties(new HashMap<String, Schema>() {{
-                    put("request_box", operation);
-                }})
-                .xml(new XML().name("soapenv:Body"));
+    private static void addSoapRequestSamplePayload(Content content, String namespace,
+                                                    String requestType, List<String> soapOperation) {
+        Schema<?> bodySchema = new Schema().type(OBJECT).xml(new XML().name(SOAP_ENV_BODY));
+        HashMap<String, Schema> bodyProperties = new HashMap<>();
+        if ((soapOperation.size() > 0 && !soapOperation.contains(URN_REQUEST_BOX)) ||
+                (soapOperation.contains(URN_REQUEST_BOX) && soapOperation.size() > 1)) {
+            bodyProperties.put("soap", createSoapOperation());
+        }
+        if (soapOperation.contains(URN_REQUEST_BOX)) {
+            bodyProperties.put(REQUEST_BOX, createRequestBoxOperation());
+        }
+        bodySchema.properties(bodyProperties);
         Schema<?> headerSchema = new Schema<>()
-                .type("object")
-                .xml(new XML().name("soapenv:Header"));
+                .type(OBJECT)
+                .xml(new XML().name(SOAP_ENV_HEADER));
         Schema<?> envelopeSchema = new Schema<Object>()
-                .type("object")
+                .type(OBJECT)
                 .properties(new HashMap<String, Schema<?>>() {{
                     put("Header", headerSchema);
                     put("Body", bodySchema);
-                    put("xmlns:dat", new Schema<String>().type("string").
+                    put("xmlns:dat", new Schema<String>().type(STRING).
                             example("http://ws.wso2.org/dataservice").xml(new XML().attribute(true)));
                 }}).xml(new XML()
-                        .name("Envelope")
+                        .name(ENVELOPE)
                         .namespace(namespace)
-                        .prefix("soapenv"));
+                        .prefix(SOAP_ENV));
         MediaType mediaType = new MediaType().schema(envelopeSchema);
         content.addMediaType(requestType, mediaType);
     }
 
-    private static void addRequestBoxSamplePayload(Content content, String namespace, String requestType) {
-        Schema operation1 = new Schema<>().type("object").properties(
+    private static Schema createSoapOperation() {
+        return new Schema<>().type(OBJECT).properties(
                 new HashMap<String, Schema>() {{
-                    put("dat:param_name_2", new Schema<String>().type("string").example("?"));
-                    put("dat:param_name_1", new Schema<String>().type("string").example("?"));
+                    put(PARAM_NAME_2, new Schema<String>().type(STRING).example(QUESTION_MARK));
+                    put(PARAM_NAME_1, new Schema<String>().type(STRING).example(QUESTION_MARK));
                     ;
-                }})
-                .xml(new XML().name("dat:operation_name_1"));
-        Schema<?> operation2 = new Schema().type("object").properties(
-                new HashMap<String, Schema>() {{
-                    put("dat:param_name_1", new Schema().type("string").example("?"));
-                }})
-                .xml(new XML().name("dat:operation_name_2"));
-        Schema<?> requestBox = new Schema()
-                .type("object")
+                }}).xml(new XML().name(OPERATION_NAME));
+    }
+
+    private static Schema createRequestBoxOperation() {
+        Schema operation1 = new Schema<>().type(OBJECT).properties(
+                        new HashMap<String, Schema>() {{
+                            put(PARAM_NAME_2, new Schema<String>().type(STRING).example(QUESTION_MARK));
+                            put(PARAM_NAME_1, new Schema<String>().type(STRING).example(QUESTION_MARK));
+                            ;
+                        }})
+                .xml(new XML().name(OPERATION_NAME_1));
+        Schema<?> operation2 = new Schema().type(OBJECT).properties(
+                        new HashMap<String, Schema>() {{
+                            put(PARAM_NAME_1, new Schema().type(STRING).example(QUESTION_MARK));
+                        }})
+                .xml(new XML().name(OPERATION_NAME_2));
+        return new Schema()
+                .type(OBJECT)
                 .properties(new HashMap<String, Schema>() {{
                     put("operation_1", operation2);
                     put("operation_2", operation1);
                 }})
-                .xml(new XML().name("dat:request_box"));
-        Schema<?> bodySchema = new Schema()
-                .type("object")
-                .properties(new HashMap<String, Schema>() {{
-                    put("request_box", requestBox);
-                }})
-                .xml(new XML().name("soapenv:Body"));
-        Schema<?> headerSchema = new Schema<>()
-                .type("object")
-                .xml(new XML().name("soapenv:Header"));
-        Schema<?> envelopeSchema = new Schema<>()
-                .type("object")
-                .properties(new HashMap<String, Schema>() {{
-                    put("Header", headerSchema);
-                    put("Body", bodySchema);
-                    put("xmlns:dat", new Schema().type("string").
-                            example("http://ws.wso2.org/dataservice").xml(new XML().attribute(true)));
-                }}).xml(new XML()
-                        .name("Envelope")
-                        .namespace(namespace)
-                        .prefix("soapenv"));
-        MediaType mediaType = new MediaType().schema(envelopeSchema);
-        content.addMediaType(requestType, mediaType);
+                .xml(new XML().name(DAT_REQUEST_BOX));
     }
 
-    private static int getTotalNoOfResources(AxisService dataService) {
-        Object dataServiceObject =
-                dataService.getParameter(SWAGGER_RESOURCE_OBJECT).getValue();
+    private static int getTotalNoOfResources(AxisService dataService, List<String> restResource) {
+        Object dataServiceObject = dataService.getParameter(SWAGGER_RESOURCE_OBJECT).getValue();
         int noOfRestResource = 0;
-        for (Map.Entry<String, AxisResource> entry : ((AxisResources) dataServiceObject).getAxisResourceMap().getResources().entrySet()) {
+        for (Map.Entry<String, AxisResource> entry : ((AxisResources) dataServiceObject).
+                getAxisResourceMap().getResources().entrySet()) {
             noOfRestResource = noOfRestResource + entry.getValue().getMethods().size();
+            for (String method : entry.getValue().getMethods()) {
+                String resourceName = UNDERSCORE.concat(method.toLowerCase()).concat(entry.getKey().
+                        replaceAll(CURLY_OPEN_BRACKET, EMPTY_STRING).replaceAll(CURLY_CLOSE_BRACKET, EMPTY_STRING).
+                        replaceAll(SLASH, UNDERSCORE).toLowerCase());
+                restResource.add(resourceName);
+            }
         }
         return noOfRestResource;
     }
 
-    private static boolean isRequestBoxElement(AxisService dataService) {
-        for (Iterator<AxisOperation> it = dataService.getOperations(); it.hasNext(); ) {
-            AxisOperation opName = it.next();
-            AxisOperation tmpOp = dataService.getOperation(opName.getName());
-            if (tmpOp.getName().toString().trim().equals(DBConstants.REQUEST_BOX_ELEMENT)) {
-                return  true;
+    private static boolean hasSoapRequest(AxisService dataService, int noOfRestResource, List<String> soapResource,
+                                          List<String> restResource) {
+        if ((noOfRestResource > 0 && dataService.getPublishedOperations().size() > noOfRestResource) ||
+                (noOfRestResource == 0 && dataService.getPublishedOperations().size() > 0)) {
+            for (AxisOperation operation : dataService.getPublishedOperations()) {
+                String operationName = operation.getName().toString();
+                if (!restResource.contains(operationName)) {
+                    soapResource.add(URN + operationName);
+                }
             }
+            return true;
         }
         return false;
-    }
-
-    private static boolean hasSoapRequest(AxisService dataService, int noOfRestResource) {
-        return (noOfRestResource > 0 && dataService.getPublishedOperations().size() > noOfRestResource) ||
-                (noOfRestResource == 0 && dataService.getPublishedOperations().size() > 0);
     }
 
     /**
