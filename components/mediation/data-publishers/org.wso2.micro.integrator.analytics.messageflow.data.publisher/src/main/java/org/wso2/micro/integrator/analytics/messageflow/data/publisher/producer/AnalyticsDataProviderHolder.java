@@ -31,18 +31,34 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class AnalyticsDataProviderHolder {
     private static final Log log = LogFactory.getLog(AnalyticsDataProviderHolder.class);
+    private static volatile AnalyticsDataProviderHolder instance;
 
-    private static AnalyticsCustomDataProvider analyticsCustomDataProvider = null;
-    private static volatile boolean isInitiationAttempted = false;
+    private AnalyticsCustomDataProvider analyticsCustomDataProvider;
 
     private AnalyticsDataProviderHolder() {
+        loadCustomDataProvider();
+    }
+
+    /**
+     * Get the instance of the holder
+     *
+     * @return Instance of the holder
+     */
+    public static AnalyticsDataProviderHolder getInstance() {
+        if (instance == null) {
+            synchronized (AnalyticsDataProviderHolder.class) {
+                if (instance == null) {
+                    instance = new AnalyticsDataProviderHolder();
+                }
+            }
+        }
+        return instance;
     }
 
     private void loadCustomDataProvider() {
         try {
             String analyticsCustomDataProviderClass = SynapsePropertiesLoader.getPropertyValue(
                     ElasticConstants.SynapseConfigKeys.ELASTICSEARCH_CUSTOM_DATA_PROVIDER_CLASS, null);
-            isInitiationAttempted = true;
             if (analyticsCustomDataProviderClass == null) {
                 return;
             }
@@ -60,14 +76,7 @@ public class AnalyticsDataProviderHolder {
      *
      * @return Custom data provider
      */
-    public static AnalyticsCustomDataProvider getAnalyticsCustomDataProvider() {
-        if (!isInitiationAttempted) {
-            synchronized (AnalyticsDataProviderHolder.class) {
-                if (!isInitiationAttempted) {
-                    new AnalyticsDataProviderHolder().loadCustomDataProvider();
-                }
-            }
-        }
+    public AnalyticsCustomDataProvider getAnalyticsCustomDataProvider() {
         return analyticsCustomDataProvider;
     }
 }

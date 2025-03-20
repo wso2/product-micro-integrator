@@ -282,7 +282,9 @@ public class MessageFlowReporterThread extends Thread {
             dataUnit.generateElasticMetadata(dataUnit.getMessageContext());
         }
         ElasticMetadata elasticMetadata = dataUnit.getElasticMetadata();
-        AnalyticsCustomDataProvider customDataProvider = AnalyticsDataProviderHolder.getAnalyticsCustomDataProvider();
+        AnalyticsCustomDataProvider customDataProvider = AnalyticsDataProviderHolder
+                .getInstance()
+                .getAnalyticsCustomDataProvider();
         if (customDataProvider != null) {
             if (elasticMetadata.getAnalyticsMetadata() == null) {
                 dataUnit.getMessageContext().setProperty(ANALYTICS_METADATA, new HashMap<String, Object>());
