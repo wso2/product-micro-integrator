@@ -120,16 +120,12 @@ public final class SwaggerUtils {
                 if (dataServiceObject instanceof AxisResources) {
                     AxisResourceMap axisResourceMap = ((AxisResources) dataServiceObject).getAxisResourceMap();
                     return SwaggerUtils.createSwaggerFromDefinition(axisResourceMap, dataServiceName, transports,
-                            serverConfig, isJSON, hasRequestBoxOperation(dataService));
+                            serverConfig, isJSON, dataService);
                 }
             }
             return null;
         }
         return null;
-    }
-
-    private static boolean hasRequestBoxOperation(AxisService dataService) {
-        return dataService.getOperation(new QName("request_box")) != null;
     }
 
     /**
@@ -145,7 +141,7 @@ public final class SwaggerUtils {
      */
     private static String createSwaggerFromDefinition(AxisResourceMap axisResourceMap, String dataServiceName,
                                                       List<String> transports, MIServerConfig serverConfig,
-                                                      boolean isJSON, boolean hasRequestBoxOperation) throws AxisFault {
+                                                      boolean isJSON, AxisService dataService) throws AxisFault {
 
         OpenAPI openAPI = new OpenAPI();
 
@@ -173,7 +169,7 @@ public final class SwaggerUtils {
             // adding the resource. all the paths should start with "/"
             paths.put(entry.getKey().startsWith("/") ? entry.getKey() : "/" + entry.getKey(), pathItem);
         }
-        if (hasRequestBoxOperation) {
+        if (dataService.getOperation(new QName("request_box")) != null) {
             addRestRequestBoxPath(axisResourceMap, paths);
         }
         openAPI.setPaths(paths);
