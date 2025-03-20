@@ -56,7 +56,6 @@ import org.wso2.micro.application.deployer.AppDeployerUtils;
 import org.wso2.micro.application.deployer.CarbonApplication;
 import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.core.util.StringUtils;
-import org.wso2.micro.integrator.dataservices.common.DBConstants;
 import org.wso2.micro.integrator.dataservices.core.DataHolder;
 import org.wso2.micro.integrator.initializer.deployment.application.deployer.CappDeployer;
 import org.wso2.securevault.SecretResolver;
@@ -490,10 +489,10 @@ public class ServiceCatalogUtils {
                 metaFileName.replaceAll(METADATA_FOLDER_STRING, SWAGGER_FOLDER_STRING))).exists()) {
             return processProxyServiceMetadata(tempDir, metadataYamlFolder, md5MapOfAllService);
         } else if (metaFileName.contains(DATA_SERVICE_SUFFIX)) {
-            return processAPIMetadata(metadataFolder, metaFileName, tempDir, metadataYamlFolder,
+            return processServiceMetadata(metadataFolder, metaFileName, tempDir, metadataYamlFolder,
                     md5MapOfAllService, true);
         } else {
-            return processAPIMetadata(metadataFolder, metaFileName, tempDir, metadataYamlFolder,
+            return processServiceMetadata(metadataFolder, metaFileName, tempDir, metadataYamlFolder,
                     md5MapOfAllService, false);
         }
     }
@@ -511,9 +510,9 @@ public class ServiceCatalogUtils {
      * @throws ResolverException        error occurred while updating the metadata file.
      * @throws NoSuchAlgorithmException could not find the MD% algorithm.
      */
-    private static boolean processAPIMetadata(File metadataFolder, String metaFileName, File tempDir,
-                                              File metadataYamlFolder, Map<String, String> md5MapOfAllService,
-                                              boolean isDataService)
+    private static boolean processServiceMetadata(File metadataFolder, String metaFileName, File tempDir,
+                                                  File metadataYamlFolder, Map<String, String> md5MapOfAllService,
+                                                  boolean isDataService)
             throws IOException, ResolverException, NoSuchAlgorithmException {
         String APIName = metaFileName.substring(0, metaFileName.indexOf(METADATA_FOLDER_STRING));
         String APIVersion =
@@ -1024,7 +1023,7 @@ public class ServiceCatalogUtils {
         headerParameter.setName("SOAPAction");
         headerParameter.setRequired(true);
         RequestBody requestBody = new RequestBody();
-        if (soapOperation.contains(REQUEST_BOX) && soapOperation.size() > 1) {
+        if (soapOperation.contains(URN_REQUEST_BOX) && soapOperation.size() > 1) {
             requestBody.description("This example accommodates both single and request box operations. " +
                     "Populate `dat:operation_name` for single requests or `dat:request_box` " +
                     "for invoking multiple operations. Include only the relevant sections for your operation.");

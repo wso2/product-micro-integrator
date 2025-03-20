@@ -162,8 +162,7 @@ public final class SwaggerUtils {
                 List<AxisResourceParameter> parameterList = entry.getValue().getResourceParameterList(method);
                 addPathAndQueryParameters(method, operation, parameterList);
                 // Adding a sample request payload for methods except GET and DELETE ( OAS3 onwards )
-                addSampleRequestBody(method, operation, parameterList, entry.getKey().
-                        endsWith(Constants.BATCH_REQUEST));
+                addSampleRequestBody(method, operation, parameterList, entry.getKey());
                 addDefaultResponseAndPathItem(pathItem, method, operation);
             }
             // adding the resource. all the paths should start with "/"
@@ -206,7 +205,7 @@ public final class SwaggerUtils {
 
     // Add request body schema for methods except GET and DELETE.
     private static void addSampleRequestBody(String method, Operation operation,
-                                             List<AxisResourceParameter> parameterList, boolean isBatchRequest) {
+                                             List<AxisResourceParameter> parameterList, String operationName) {
 
         if (!method.equals("GET") && !method.equals("DELETE")) {
             RequestBody requestBody = new RequestBody();
@@ -223,10 +222,10 @@ public final class SwaggerUtils {
             updatePayloadPropertiesWithTypeMapping(parameterList, payloadProperties);
             objectSchema.setProperties(payloadProperties);
             bodySchema.setProperties(inputProperties);
-            if (isBatchRequest) {
+            if (operationName.endsWith(Constants.BATCH_REQUEST)) {
                 // Create the outer structure schema
-                Schema outerSchema = new ObjectSchema().
-                        addProperty(Constants.PAYLOAD, new ArraySchema().items(objectSchema));
+                Schema outerSchema = new ObjectSchema().addProperty(operationName,
+                        new ArraySchema().items(objectSchema));
                 inputProperties.put(Constants.PAYLOAD, outerSchema);
             } else {
                 inputProperties.put(Constants.PAYLOAD, objectSchema);
