@@ -72,6 +72,11 @@ public class ElasticConstants {
          * Name of the Synapse configuration used to determine if the Elasticsearch service is enabled.
          */
         public static final String ELASTICSEARCH_ENABLED = "analytics.enabled";
+
+        /**
+         * Name of the custom data provider class that can add new properties to the elastic search properties.
+         */
+        public static final String ELASTICSEARCH_CUSTOM_DATA_PROVIDER_CLASS = "analytics.custom_data_provider_class";
     }
 
     public static class ServerMetadataFieldDef {

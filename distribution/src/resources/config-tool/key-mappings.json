@@ -523,5 +523,6 @@
   "analytics.proxy_service_analytics.enabled" : "synapse_properties.'analytics.proxy_service_analytics.enabled'",
   "analytics.sequence_analytics.enabled" : "synapse_properties.'analytics.sequence_analytics.enabled'",
   "analytics.endpoint_analytics.enabled" : "synapse_properties.'analytics.endpoint_analytics.enabled'",
-  "analytics.inbound_endpoint_analytics.enabled" : "synapse_properties.'analytics.inbound_endpoint_analytics.enabled'"
+  "analytics.inbound_endpoint_analytics.enabled" : "synapse_properties.'analytics.inbound_endpoint_analytics.enabled'",
+  "analytics.custom_data_provider_class": "synapse_properties.'analytics.custom_data_provider_class'"
 }
