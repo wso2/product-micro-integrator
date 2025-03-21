@@ -30,6 +30,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.BooleanSchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.IntegerSchema;
@@ -65,6 +66,9 @@ import org.wso2.carbon.mediation.commons.rest.api.swagger.OpenAPIProcessor;
 import org.wso2.carbon.mediation.commons.rest.api.swagger.SwaggerConstants;
 import org.wso2.micro.core.Constants;
 import org.wso2.micro.integrator.transport.handlers.requestprocessors.swagger.format.MIServerConfig;
+
+import javax.xml.namespace.QName;
+
 import static org.wso2.micro.application.deployer.AppDeployerUtils.createRegistryPath;
 
 import java.util.Arrays;
@@ -116,7 +120,7 @@ public final class SwaggerUtils {
                 if (dataServiceObject instanceof AxisResources) {
                     AxisResourceMap axisResourceMap = ((AxisResources) dataServiceObject).getAxisResourceMap();
                     return SwaggerUtils.createSwaggerFromDefinition(axisResourceMap, dataServiceName, transports,
-                            serverConfig, isJSON);
+                            serverConfig, isJSON, dataService);
                 }
             }
             return null;
@@ -137,8 +141,7 @@ public final class SwaggerUtils {
      */
     private static String createSwaggerFromDefinition(AxisResourceMap axisResourceMap, String dataServiceName,
                                                       List<String> transports, MIServerConfig serverConfig,
-                                                      boolean isJSON)
-            throws AxisFault {
+                                                      boolean isJSON, AxisService dataService) throws AxisFault {
 
         OpenAPI openAPI = new OpenAPI();
 
@@ -159,11 +162,14 @@ public final class SwaggerUtils {
                 List<AxisResourceParameter> parameterList = entry.getValue().getResourceParameterList(method);
                 addPathAndQueryParameters(method, operation, parameterList);
                 // Adding a sample request payload for methods except GET and DELETE ( OAS3 onwards )
-                addSampleRequestBody(method, operation, parameterList);
+                addSampleRequestBody(method, operation, parameterList, entry.getKey());
                 addDefaultResponseAndPathItem(pathItem, method, operation);
             }
-            // adding the resource. all the paths should starts with "/"
+            // adding the resource. all the paths should start with "/"
             paths.put(entry.getKey().startsWith("/") ? entry.getKey() : "/" + entry.getKey(), pathItem);
+        }
+        if (dataService.getOperation(new QName("request_box")) != null) {
+            addRestRequestBoxPath(axisResourceMap, paths);
         }
         openAPI.setPaths(paths);
         try {
@@ -175,9 +181,31 @@ public final class SwaggerUtils {
         }
     }
 
+    private static void addRestRequestBoxPath(AxisResourceMap axisResourceMap, Paths paths) {
+        PathItem pathItem = new PathItem();
+        Operation operation = new Operation();
+        HashMap<String, List<AxisResourceParameter>> parameterListWithOperationName = new HashMap<>();
+        for (Map.Entry<String, AxisResource> entry : axisResourceMap.getResources().entrySet()) {
+            String name = entry.getKey();
+            if (!name.endsWith(Constants.BATCH_REQUEST)) {
+                for (String method : entry.getValue().getMethods()) {
+                    String requestBoxMethodName = Constants.UNDERSCORE.concat(method.toLowerCase()).concat(
+                            name.replaceAll(Constants.CURLY_OPEN_BRACKET, Constants.EMPTY).
+                                    replaceAll(Constants.CURLY_CLOSE_BRACKET, Constants.EMPTY).
+                                    replaceAll(Constants.SLASH, Constants.UNDERSCORE).toLowerCase());
+                    parameterListWithOperationName.put(requestBoxMethodName,
+                            entry.getValue().getResourceParameterList(method));
+                }
+            }
+        }
+        addSampleRequestBoxBody(operation, parameterListWithOperationName);
+        addDefaultResponseAndPathItem(pathItem, "POST", operation);
+        paths.put(Constants.SLASH.concat(Constants.REQUEST_BOX), pathItem);
+    }
+
     // Add request body schema for methods except GET and DELETE.
     private static void addSampleRequestBody(String method, Operation operation,
-                                             List<AxisResourceParameter> parameterList) {
+                                             List<AxisResourceParameter> parameterList, String operationName) {
 
         if (!method.equals("GET") && !method.equals("DELETE")) {
             RequestBody requestBody = new RequestBody();
@@ -191,29 +219,72 @@ public final class SwaggerUtils {
             Map<String, Schema> inputProperties = new HashMap<>();
             ObjectSchema objectSchema = new ObjectSchema();
             Map<String, Schema> payloadProperties = new HashMap<>();
-            for (AxisResourceParameter resourceParameter : parameterList) {
-                switch (resourceParameter.getParameterDataType()) {
-                    case SwaggerProcessorConstants.INTEGER:
-                        payloadProperties.put(resourceParameter.getParameterName(), new IntegerSchema());
-                        break;
-                    case SwaggerProcessorConstants.NUMBER:
-                        payloadProperties.put(resourceParameter.getParameterName(), new NumberSchema());
-                        break;
-                    case SwaggerProcessorConstants.BOOLEAN:
-                        payloadProperties.put(resourceParameter.getParameterName(), new BooleanSchema());
-                        break;
-                    default:
-                        payloadProperties.put(resourceParameter.getParameterName(), new StringSchema());
-                }
-            }
+            updatePayloadPropertiesWithTypeMapping(parameterList, payloadProperties);
             objectSchema.setProperties(payloadProperties);
             bodySchema.setProperties(inputProperties);
-            inputProperties.put("payload", objectSchema);
+            if (operationName.endsWith(Constants.BATCH_REQUEST)) {
+                // Create the outer structure schema
+                String[] paths = operationName.split(Constants.SLASH);
+                Schema outerSchema = new ObjectSchema().addProperty(paths[paths.length - 1],
+                        new ArraySchema().items(objectSchema));
+                inputProperties.put(Constants.PAYLOAD, outerSchema);
+            } else {
+                inputProperties.put(Constants.PAYLOAD, objectSchema);
+            }
             mediaType.setSchema(bodySchema);
             Content content = new Content();
             content.addMediaType("application/json", mediaType);
             requestBody.setContent(content);
             operation.setRequestBody(requestBody);
+        }
+    }
+
+    private static void addSampleRequestBoxBody(Operation operation,
+                                                HashMap<String, List<AxisResourceParameter>> parameterList) {
+        RequestBody requestBody = new RequestBody();
+        requestBody.description("Sample Payload");
+        requestBody.setRequired(false);
+
+        MediaType mediaType = new MediaType();
+        Schema bodySchema = new Schema();
+        bodySchema.setType("object");
+
+        Map<String, Schema> inputProperties = new HashMap<>();
+        Map<String, Schema> properties = new HashMap<>();
+        ObjectSchema objectSchema = new ObjectSchema();
+        for (Map.Entry<String, List<AxisResourceParameter>> entry :parameterList.entrySet()) {
+            Map<String, Schema> payloadProperties = new HashMap<>();
+            updatePayloadPropertiesWithTypeMapping(entry.getValue(), payloadProperties);
+            ObjectSchema objectSchemaForEveryOperation = new ObjectSchema();
+            objectSchemaForEveryOperation.setProperties(payloadProperties);
+            properties.put(entry.getKey(), objectSchemaForEveryOperation);
+        }
+        objectSchema.setProperties(properties);
+        inputProperties.put(Constants.REQUEST_BOX, objectSchema);
+        bodySchema.setProperties(inputProperties);
+        mediaType.setSchema(bodySchema);
+        Content content = new Content();
+        content.addMediaType("application/json", mediaType);
+        requestBody.setContent(content);
+        operation.setRequestBody(requestBody);
+    }
+
+    private static void updatePayloadPropertiesWithTypeMapping(List<AxisResourceParameter> resourceParameters,
+                                                        Map<String, Schema>  payloadProperties) {
+        for (AxisResourceParameter resourceParameter : resourceParameters) {
+            switch (resourceParameter.getParameterDataType()) {
+                case SwaggerProcessorConstants.INTEGER:
+                    payloadProperties.put(resourceParameter.getParameterName(), new IntegerSchema());
+                    break;
+                case SwaggerProcessorConstants.NUMBER:
+                    payloadProperties.put(resourceParameter.getParameterName(), new NumberSchema());
+                    break;
+                case SwaggerProcessorConstants.BOOLEAN:
+                    payloadProperties.put(resourceParameter.getParameterName(), new BooleanSchema());
+                    break;
+                default:
+                    payloadProperties.put(resourceParameter.getParameterName(), new StringSchema());
+            }
         }
     }
 

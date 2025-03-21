@@ -69,8 +69,32 @@ public class Constants {
     public static final String WSDL_FILE_NAME = "definition.wsdl";
     public static final String YAML_FILE_EXTENSION = ".yaml";
     public static final String PROXY_SERVICE_SUFFIX = "_proxy";
+    public static final String DATA_SERVICE_SUFFIX = "_data_service";
+    public static final String SWAGGER_RESOURCE_OBJECT= "org.wso2.ws.dataservice.dataservice.obj";
     public static final String PATH_SEPARATOR = "/";
     public static final String WSDL_URL_PATH = "?wsdl";
+    public static final String SWAGGER_URL_PATH = "?swagger.yaml";
+    public static final String URN_REQUEST_BOX = "urn:request_box";
+    public static final String REQUEST_BOX = "request_box";
+    public static final String STRING = "string";
+    public static final String URN = "urn:";
+    public static final String OBJECT = "object";
+    public static final String QUESTION_MARK = "?";
+    public static final String EMPTY_STRING = "";
+    public static final String UNDERSCORE = "_";
+    public static final String SOAP_ENV_BODY = "soapenv:Body";
+    public static final String SOAP_ENV_HEADER = "soapenv:Header";
+    public static final String ENVELOPE = "Envelope";
+    public static final String SOAP_ENV = "soapenv";
+    public static final String PARAM_NAME_1 = "dat:param_name_1";
+    public static final String PARAM_NAME_2 = "dat:param_name_2";
+    public static final String OPERATION_NAME = "dat:operation_name";
+    public static final String OPERATION_NAME_1 = "dat:operation_name_1";
+    public static final String OPERATION_NAME_2 = "dat:operation_name_2";
+    public static final String DAT_REQUEST_BOX = "dat:request_box";
+    public static final String CURLY_OPEN_BRACKET = "\\{";
+    public static final String CURLY_CLOSE_BRACKET = "}";
+    public static final String SLASH = "/";
 
     // constants related to retry mechanism
     public static final int INTERVAL_BETWEEN_RETRIES = 2000;
@@ -83,5 +107,10 @@ public class Constants {
     public static final String HTTPS_LISTENER_PORT = "transport.https.listener.parameter.port";
     public static final String HTTP_LISTENER_PORT = "transport.http.listener.parameter.port";
     public static final String SERVER_PORT_OFFSET = "portOffset";
+    public static final String SOAP_11_NAME_SPACE = "http://schemas.xmlsoap.org/soap/envelope/";
+    public static final String SOAP_12_NAME_SPACE = "http://www.w3.org/2003/05/soap-envelope";
+    public static final String TEXT_XML = "text/xml";
+    public static final String APPLICATION_SOAP = "application/soap+xml";
+    public static final String APPLICATION_XML = "application/xml";
 
 }

@@ -103,4 +103,12 @@ public class Constants {
 
     public static final String BOUNCY_CASTLE_PROVIDER = "BC";
     public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    public static final String PAYLOAD = "payload";
+    public static final String BATCH_REQUEST = "_batch_req";
+    public static final String REQUEST_BOX = "request_box";
+    public static final String EMPTY = "";
+    public static final String CURLY_OPEN_BRACKET = "\\{";
+    public static final String CURLY_CLOSE_BRACKET = "}";
+    public static final String UNDERSCORE = "_";
+    public static final String SLASH = "/";
 }
