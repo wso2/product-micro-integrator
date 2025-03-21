@@ -63,10 +63,10 @@ public class AnalyticsDataProviderHolder {
                 return;
             }
             Class<?> clazz = Class.forName(analyticsCustomDataProviderClass);
-            Constructor<?> constructor = clazz.getConstructors()[0];
+            Constructor<?> constructor = clazz.getDeclaredConstructor(); // No-arg constructor
             analyticsCustomDataProvider = (AnalyticsCustomDataProvider) constructor.newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
-                 | InvocationTargetException e) {
+                 | InvocationTargetException | NoSuchMethodException e) {
             log.error("Error in obtaining custom producer class", e);
         }
     }

@@ -33,7 +33,7 @@ public class SampleCustomDataProvider implements AnalyticsCustomDataProvider {
     public Map<String, Object> getCustomProperties(MessageContext messageContext) {
         Map<String, Object> properties = new HashMap<>();
         SOAPBody soapBody = messageContext.getEnvelope().getBody();
-        String body = "ERROR: BODY CONTENT FOUND!";
+        String body = "";
         if (soapBody != null) {
             body = soapBody.toString();
         }
