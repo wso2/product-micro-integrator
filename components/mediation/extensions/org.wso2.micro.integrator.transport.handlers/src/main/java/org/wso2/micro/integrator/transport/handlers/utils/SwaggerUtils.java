@@ -224,7 +224,8 @@ public final class SwaggerUtils {
             bodySchema.setProperties(inputProperties);
             if (operationName.endsWith(Constants.BATCH_REQUEST)) {
                 // Create the outer structure schema
-                Schema outerSchema = new ObjectSchema().addProperty(operationName,
+                String[] paths = operationName.split(Constants.SLASH);
+                Schema outerSchema = new ObjectSchema().addProperty(paths[paths.length - 1],
                         new ArraySchema().items(objectSchema));
                 inputProperties.put(Constants.PAYLOAD, outerSchema);
             } else {
