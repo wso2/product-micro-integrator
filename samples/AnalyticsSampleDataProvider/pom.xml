@@ -30,7 +30,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <wso2.mi.version>4.4.0-SNAPSHOT</wso2.mi.version>
+        <wso2.mi.version>4.4.0</wso2.mi.version>
         <synapse.version>4.0.0-wso2v222</synapse.version>
     </properties>
 
