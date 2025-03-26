@@ -24,16 +24,22 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUni
 import org.apache.synapse.aspects.flow.statistics.data.raw.CallbackDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
+import org.apache.synapse.aspects.flow.statistics.elasticsearch.ElasticMetadata;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.AbstractStatisticEvent;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 import org.apache.synapse.aspects.flow.statistics.util.TracingDataCollectionHelper;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.data.MessageFlowObserverStore;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.producer.AnalyticsCustomDataProvider;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.producer.AnalyticsDataProviderHolder;
 import org.wso2.micro.integrator.initializer.services.SynapseEnvironmentService;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+
+import static org.apache.synapse.SynapseConstants.ANALYTICS_METADATA;
 
 /**
  * Worker which processes statistic events and publish to analytic server.
@@ -97,7 +103,6 @@ public class MessageFlowReporterThread extends Thread {
     }
 
     private void processAndPublishEventList(StatisticsReportingEventHolder statisticsReportingEventHolder) {
-
         List<StatisticsReportingEvent> remainingEvents = new ArrayList<>();
         List<StatisticsLog> messageFlowLogs = new ArrayList<>();
 
@@ -148,11 +153,7 @@ public class MessageFlowReporterThread extends Thread {
                 } else {
                     statisticsLog.setParentIndex(getParent(messageFlowLogs, parentIndex));
                 }
-
-                if (dataUnit.getElasticMetadata() != null) {
-                    statisticsLog.setElasticMetadata(dataUnit.getElasticMetadata());
-                }
-
+                setElasticMetaData(dataUnit, statisticsLog);
                 if (statisticsLog.getHashCode() == null) {
                     statisticsLog.setHashCode(statisticsLog.getComponentId().hashCode());
                 }
@@ -267,12 +268,32 @@ public class MessageFlowReporterThread extends Thread {
             StatisticsLog updatingLog = messageFlowLogs.get(index);
             updatingLog.incrementNoOfFaults();
             index = updatingLog.getParentIndex();
-
-            if (dataUnit.getElasticMetadata() != null) {
-                updatingLog.setElasticMetadata(dataUnit.getElasticMetadata());
-            }
+            setElasticMetaData(dataUnit, updatingLog);
         }
 
+    }
+
+    private void setElasticMetaData(BasicStatisticDataUnit dataUnit, StatisticsLog statisticsLog) {
+        if (dataUnit.getElasticMetadata() == null) {
+            if (dataUnit.getMessageContext() == null) {
+                log.warn("Cannot generate elastic metadata. Message context is null.");
+                return;
+            }
+            dataUnit.generateElasticMetadata(dataUnit.getMessageContext());
+        }
+        ElasticMetadata elasticMetadata = dataUnit.getElasticMetadata();
+        AnalyticsCustomDataProvider customDataProvider = AnalyticsDataProviderHolder
+                .getInstance()
+                .getAnalyticsCustomDataProvider();
+        if (customDataProvider != null) {
+            if (elasticMetadata.getAnalyticsMetadata() == null) {
+                dataUnit.getMessageContext().setProperty(ANALYTICS_METADATA, new HashMap<String, Object>());
+                elasticMetadata = new ElasticMetadata(dataUnit.getMessageContext());
+            }
+            elasticMetadata.getAnalyticsMetadata().putAll(
+                    customDataProvider.getCustomProperties(dataUnit.getMessageContext()));
+        }
+        statisticsLog.setElasticMetadata(elasticMetadata);
     }
 
     public void shutdown() {

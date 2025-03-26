@@ -25,13 +25,11 @@ import junit.framework.TestCase;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMDocument;
 import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axiom.om.util.StAXUtils;
 import org.apache.axiom.soap.SOAPBody;
 import org.apache.axiom.soap.SOAPEnvelope;
-import org.apache.axiom.soap.impl.builder.StAXSOAPModelBuilder;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.engine.AxisConfiguration;
@@ -47,9 +45,6 @@ import org.apache.synapse.aspects.flow.statistics.elasticsearch.ElasticMetadata;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingEvent;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
-import org.apache.synapse.commons.json.JsonUtil;
-import org.apache.synapse.config.Entry;
-import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.endpoints.HTTPEndpointFactory;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -61,14 +56,15 @@ import org.apache.synapse.endpoints.HTTPEndpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.transport.netty.BridgeConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.producer.AnalyticsCustomDataProvider;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.schema.ElasticDataSchema;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import java.io.FileInputStream;
 import java.io.StringReader;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.Map;
 
 public class ElasticStatisticsTest extends TestCase {
@@ -272,9 +268,23 @@ public class ElasticStatisticsTest extends TestCase {
         event.setDuration(event.getEndTime() - event.getStartTime());
         event.setEntryPoint("EP");
         event.setFaultCount(0);
-        ElasticMetadata elasticMetadata = new ElasticMetadata(messageContext);
-        event.setElasticMetadata(elasticMetadata);
+        event.setElasticMetadata(createElasticMetadata());
         return event;
+    }
+
+    private ElasticMetadata createElasticMetadata() {
+        AnalyticsCustomDataProvider customDataProvider = new SampleCustomDataProvider();
+        Map<String, Object> customProperties = customDataProvider.getCustomProperties(messageContext);
+        Map<String, Object> contextProperties =  new HashMap<>(messageContext.getProperties());
+        contextProperties.computeIfAbsent(SynapseConstants.ANALYTICS_METADATA, k -> new HashMap<>());
+        ((HashMap<String, Object>) contextProperties.get(SynapseConstants.ANALYTICS_METADATA)).putAll(customProperties);
+        return new ElasticMetadata(
+                messageContext.getConfiguration(),
+                messageContext.isFaultResponse(),
+                messageContext.getMessageID(),
+                messageContext.getContextEntries(),
+                contextProperties
+        );
     }
 
     private void verifySchema(JsonObject analytic, AnalyticPayloadType payloadType) {
@@ -300,6 +310,7 @@ public class ElasticStatisticsTest extends TestCase {
             default:
                 assertTrue(payloadElement.isJsonObject());
         }
+        verifyCustomProperties(payloadElement);
     }
 
     private void verifyServerInfo(JsonElement serverInfoElement) {
@@ -407,6 +418,22 @@ public class ElasticStatisticsTest extends TestCase {
         assertTrue(payload.has(ElasticConstants.EnvelopDef.LATENCY));
         assertEquals(STATIC_LATENCY, payload.get(ElasticConstants.EnvelopDef.LATENCY).getAsInt());
         assertTrue(payload.has(ElasticConstants.EnvelopDef.METADATA));
+    }
+
+    private void verifyCustomProperties(JsonElement payloadElement) {
+        assertNotNull(payloadElement);
+        assertTrue(payloadElement.isJsonObject());
+
+        JsonObject payload = payloadElement.getAsJsonObject();
+        assertTrue(payload.has(ElasticConstants.EnvelopDef.METADATA));
+        assertTrue(payload.get(ElasticConstants.EnvelopDef.METADATA).isJsonObject());
+
+        JsonObject metadata = payload.get(ElasticConstants.EnvelopDef.METADATA).getAsJsonObject();
+        assertTrue(metadata.has("messageBody"));
+        assertTrue(metadata.get("messageBody").isJsonPrimitive());
+
+        String messageBody = metadata.get("messageBody").getAsString();
+        assertEquals(messageContext.getEnvelope().getBody().toString(), messageBody);
     }
 
     enum AnalyticPayloadType {
