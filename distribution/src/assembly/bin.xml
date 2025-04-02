@@ -705,6 +705,7 @@
                 <include>org.apache.poi:poi:jar</include>
                 <include>org.apache.poi:poi-ooxml:jar</include>
                 <include>com.zaxxer:SparseBitSet:jar</include>
+                <include>com.google.guava:failureaccess:jar</include>
             </includes>
         </dependencySet>
         <dependencySet>
