@@ -1813,7 +1813,7 @@
         <poi-ooxml.version>5.3.0</poi-ooxml.version>
         <poi.version>5.3.0</poi.version>
         <xmlbeans.orbit.version>5.3.0.wso2v1</xmlbeans.orbit.version>
-        <commons-compress.orbit.version>1.25.0.wso2v1</commons-compress.orbit.version>
+        <commons-compress.orbit.version>1.27.1.wso2v1</commons-compress.orbit.version>
         <xmlbeans.orbit.imp.pkg.version>[5.3.0.wso2v1,6.0.0.wso2v1)</xmlbeans.orbit.imp.pkg.version>
 
         <commons-collections4.orbit.version>4.4.wso2v1</commons-collections4.orbit.version>
