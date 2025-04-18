@@ -37,7 +37,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.sql.DataSource;
 
 /**
@@ -158,6 +160,33 @@ public class RDBMSCommunicationBusContextImpl implements CommunicationBusContext
             close(connection, task);
         }
     }
+
+    public Map<String, String> getMessageProcessorStates() {
+        Map<String, String> updatedStates = new HashMap<>();
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        try {
+            connection = getConnection();
+            preparedStatement = connection.prepareStatement(queryManager.getQuery(
+                    DBQueries.SELECT_MP_STATE_UPDATE_EVENT));
+            resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                String mpName = resultSet.getString("MP_NAME");
+                String newState = resultSet.getString("MP_STATE");
+                updatedStates.put(mpName, newState);
+            }
+        } catch (SQLException e) {
+            String errMsg = RDBMSConstantUtils.MP_GET_ALL_STATES;
+            log.warn("Error occurred while " + errMsg, e);
+        } finally {
+            close(resultSet, RDBMSConstantUtils.MP_GET_ALL_STATES);
+            close(preparedStatement, RDBMSConstantUtils.MP_GET_ALL_STATES);
+            close(connection, RDBMSConstantUtils.MP_GET_ALL_STATES);
+        }
+        return updatedStates;
+    }
+
 
     @Override
     public String getCoordinatorNodeId(String groupId) throws ClusterCoordinationException {

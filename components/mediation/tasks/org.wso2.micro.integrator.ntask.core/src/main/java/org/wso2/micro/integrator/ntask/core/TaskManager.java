@@ -111,6 +111,25 @@ public interface TaskManager {
      */
     TaskState getTaskState(String taskName) throws TaskException;
 
+    /**
+     * Sets the task state.
+     *
+     * @param taskName The name of the task
+     * @param taskState The state to set
+     * @throws TaskException Exception
+     */
+    void setMessageProcessorTaskState(String taskName, String taskState);
+
+    /**
+     * Gets the task state.
+     *
+     * @param taskName The name of the task
+     * @return State of the task
+     */
+    String getMessageProcessorTaskState(String taskName);
+
+    void clearRecentlyUpdatedStates();
+
     boolean isDeactivated(String taskName) throws TaskException;
 
     boolean isTaskRunning(String taskName) throws TaskException;

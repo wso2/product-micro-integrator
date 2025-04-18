@@ -23,6 +23,7 @@ import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.message.processor.MessageProcessor;
+import org.apache.synapse.registry.Registry;
 import org.apache.synapse.task.TaskDescription;
 import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 import org.wso2.micro.integrator.ntask.common.TaskException;
@@ -39,7 +40,9 @@ import org.wso2.micro.integrator.ntask.core.internal.TasksDSComponent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class is responsible for handling / scheduling all tasks in Micro Integrator.
@@ -62,6 +65,11 @@ public class ScheduledTaskManager extends AbstractQuartzTaskManager {
     private SynapseEnvironment synapseEnvironment = null;
     private TaskStore taskStore;
     private String localNodeId;
+
+    private static final String REG_PROCESSOR_BASE_PATH = "/repository/components/org.apache.synapse.message.processor/";
+    private static final String MP_STATE = "MESSAGE_PROCESSOR_STATE";
+    private Registry registry = null;
+    private static final Map<String, String> recentlyUpdatedStates = new ConcurrentHashMap<>();
 
     ScheduledTaskManager(TaskRepository taskRepository, TaskStore taskStore) throws TaskException {
 
@@ -229,7 +237,6 @@ public class ScheduledTaskManager extends AbstractQuartzTaskManager {
             }
         }
     }
-
     public List<String> getLocallyRunningCoordinatedTasks() {
         return new ArrayList<>(locallyRunningCoordinatedTasks);
     }
@@ -380,6 +387,53 @@ public class ScheduledTaskManager extends AbstractQuartzTaskManager {
     @Override
     public TaskState getTaskState(String taskName) throws TaskException {
         return this.getLocalTaskState(taskName);
+    }
+
+
+    @Override
+    public void setMessageProcessorTaskState(String taskName, String taskState) {
+        taskStore.addOrUpdateMessageProcessorState(taskName, taskState);
+        recentlyUpdatedStates.put(taskName, taskState);
+    }
+
+    @Override
+    public String getMessageProcessorTaskState(String taskName) {
+        return taskStore.getMessageProcessorTaskState(taskName);
+    }
+
+    /**
+     * Updates the message processor state in the registry.
+     *
+     * @param taskName  The name of the task
+     * @param taskState The state to set
+     */
+    public void updateMessageProcessorStateInRegistry(String taskName, String taskState) {
+        String localCached = recentlyUpdatedStates.get(taskName);
+        if (!Objects.equals(taskState, localCached)) {
+            // New or changed state; update registry and cache
+            initializeRegistry();
+            if ("CLEAR".equalsIgnoreCase(taskState)) {
+                registry.delete(REG_PROCESSOR_BASE_PATH + taskName);
+            } else {
+                registry.newNonEmptyResource(REG_PROCESSOR_BASE_PATH + taskName, false, "text/plain", taskState,
+                        MP_STATE);
+            }
+            recentlyUpdatedStates.put(taskName, taskState);
+        }
+    }
+
+    private void initializeRegistry() {
+        if (synapseEnvironment == null) {
+            synapseEnvironment = MicroIntegratorBaseUtils.getSynapseEnvironment();
+        }
+        if (registry == null) { 
+            registry = synapseEnvironment.getSynapseConfiguration().getRegistry();
+        }
+    }
+
+    @Override
+    public void clearRecentlyUpdatedStates() {
+        recentlyUpdatedStates.clear();
     }
 
     @Override

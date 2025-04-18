@@ -61,6 +61,14 @@ public abstract class MemberEventListener {
      */
     public abstract void reJoined(String nodeId, RDBMSMemberEventCallBack callBack);
 
+    /**
+     * Invoked when the message processor state is changed.
+     *
+     * @param messageProcessorName - The name of the message processor
+     * @param state - The new state of the message processor
+     */
+    public abstract void messageProcessorStateChanged(String messageProcessorName, String state);
+
     public String getGroupId() {
         return this.groupId;
     }

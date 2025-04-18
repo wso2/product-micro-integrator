@@ -150,4 +150,8 @@ public class TaskEventListener extends MemberEventListener {
         }
     }
 
+    @Override
+    public void messageProcessorStateChanged(String messageProcessorName, String state) {
+        taskManager.updateMessageProcessorStateInRegistry(messageProcessorName, state);
+    }
 }

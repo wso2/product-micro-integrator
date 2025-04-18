@@ -212,4 +212,18 @@ public class TaskStore {
         return rdmbsConnector.retrieveAllUnAssignedAndIncompleteTasks();
     }
 
+    /**
+     * Add or update the message processor state.
+     *
+     * @param mpName              Name of the message processor.
+     * @param messageProcessorState State of the message processor.
+     */
+    public void addOrUpdateMessageProcessorState(String mpName, String messageProcessorState) {
+        rdmbsConnector.addOrUpdateMPState(mpName, messageProcessorState);
+    }
+
+    public String getMessageProcessorTaskState(String taskName) {
+        return rdmbsConnector.getMessageProcessorState(taskName);
+    }
+
 }

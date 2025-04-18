@@ -40,9 +40,11 @@ import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.
 import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.DELETE_TASK;
 import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.DESTINED_NODE_ID;
 import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.GET_ALL_ASSIGNED_INCOMPLETE_TASKS;
+import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.MP_STATE;
 import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.REMOVE_ASSIGNMENT_AND_UPDATE_STATE;
 import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.REMOVE_TASKS_OF_NODE;
 import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.RETRIEVE_ALL_TASKS;
+import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.RETRIEVE_MP_STATE;
 import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.RETRIEVE_TASKS_OF_NODE;
 import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.RETRIEVE_TASK_STATE;
 import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.RETRIEVE_UNASSIGNED_NOT_COMPLETED_TASKS;
@@ -52,6 +54,8 @@ import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.
 import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.UPDATE_TASK_STATE;
 import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.UPDATE_TASK_STATE_FOR_DESTINED_NODE;
 import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.UPDATE_TASK_STATUS_TO_DEACTIVATED;
+import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.INSERT_MP_STATE;
+import static org.wso2.micro.integrator.ntask.coordination.task.store.connector.TaskQueryHelper.UPDATE_MP_STATE;
 
 /**
  * The connector class which deals with underlying coordinated task table.
@@ -377,6 +381,65 @@ public class RDMBSConnector {
             }
         }
     }
+
+    public String getMessageProcessorState(String processorName) {
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(RETRIEVE_MP_STATE)) {
+            preparedStatement.setString(1, processorName);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getString(MP_STATE);
+                }
+            }
+        } catch (SQLException ex) {
+            LOG.warn("Failed to get message processor state " +
+                    "(Please sync registry for robust message processor state handle)");
+        }
+        return null;
+    }
+
+    public void addOrUpdateMPState(String processorName, String state) {
+        try (Connection connection = getConnection();
+             PreparedStatement insertStmt = connection.prepareStatement(INSERT_MP_STATE)) {
+
+            insertStmt.setString(1, processorName);
+            insertStmt.setString(2, state);
+            insertStmt.executeUpdate();
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Successfully inserted processor [" + processorName + "] with state [" + state + "].");
+            }
+
+        } catch (SQLException ex) {
+            if (ex.getSQLState() != null && ex.getSQLState().startsWith(SQL_INTEGRITY_VIOLATION_CODE)) {
+                // Duplicate key -> perform update
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("MP [" + processorName + "] already exists. Attempting to update state.");
+                }
+
+                try (Connection connection = getConnection();
+                     PreparedStatement updateStmt = connection.prepareStatement(UPDATE_MP_STATE)) {
+
+                    updateStmt.setString(1, state);
+                    updateStmt.setString(2, processorName);
+                    updateStmt.executeUpdate();
+
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Successfully updated state of MP [" + processorName + "] to [" + state + "].");
+                    }
+
+                } catch (SQLException updateEx) {
+                    LOG.warn("Failed to update existing message processor state " +
+                            "(Please sync registry for robust message processor state handle)", updateEx);
+                }
+
+            } else {
+                LOG.warn("Failed to Insert message processor state " +
+                        "(Please sync registry for robust message processor state handle)");
+            }
+        }
+    }
+
 
     /**
      * Updates the destined node id and state to none if it was in running.
