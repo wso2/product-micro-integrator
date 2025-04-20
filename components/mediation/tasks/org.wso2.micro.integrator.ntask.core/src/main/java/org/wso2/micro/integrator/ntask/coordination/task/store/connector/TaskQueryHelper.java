@@ -28,6 +28,13 @@ public class TaskQueryHelper {
     //task table Name
     public static final String TABLE_NAME = "COORDINATED_TASK_TABLE";
 
+    //message processor table Name
+    public static final String MP_TABLE_NAME = "MP_STATE_TABLE";
+
+    //MP table columns
+    public static final String MP_NAME = "MP_NAME";
+    public static final String MP_STATE = "MP_STATE";
+
     // Task table columns
     public static final String TASK_NAME = "TASK_NAME";
     public static final String DESTINED_NODE_ID = "DESTINED_NODE_ID";
@@ -57,6 +64,12 @@ public class TaskQueryHelper {
     static final String UPDATE_TASK_STATE =
             "UPDATE  " + TABLE_NAME + "  SET " + TASK_STATE + " = ? WHERE " + TASK_NAME + " =? ";
 
+    static final String UPDATE_MP_STATE =
+            "UPDATE " + MP_TABLE_NAME + " SET " + MP_STATE + " = ? WHERE " + MP_NAME + " =?";
+
+    static final String INSERT_MP_STATE =
+            "INSERT INTO " + MP_TABLE_NAME + " ( " + MP_NAME + ", " + MP_STATE + ") VALUES (?, ?)";
+
     static final String UPDATE_TASK_STATE_FOR_DESTINED_NODE =
             "UPDATE  " + TABLE_NAME + "  SET " + TASK_STATE + " = ? WHERE " + TASK_NAME + " =? AND " + DESTINED_NODE_ID
                     + " =?";
@@ -73,6 +86,9 @@ public class TaskQueryHelper {
 
     static final String RETRIEVE_TASK_STATE =
             "SELECT " + TASK_STATE + " FROM " + TABLE_NAME + "  WHERE " + TASK_NAME + " =?";
+
+    static final String RETRIEVE_MP_STATE =
+            "SELECT " + MP_STATE + " FROM " + MP_TABLE_NAME + "  WHERE " + MP_NAME + " =?";
 
     static final String REMOVE_ASSIGNMENT_AND_UPDATE_STATE =
             "UPDATE " + TABLE_NAME + " SET " + DESTINED_NODE_ID + " = NULL , " + TASK_STATE + " = " + TASK_STATE_CONST

@@ -20,6 +20,7 @@ package org.wso2.micro.integrator.coordination;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.config.mapper.ConfigParser;
 import org.wso2.micro.integrator.coordination.exception.ClusterCoordinationException;
 import org.wso2.micro.integrator.coordination.node.NodeDetail;
 import org.wso2.micro.integrator.coordination.util.MemberEvent;
@@ -27,6 +28,8 @@ import org.wso2.micro.integrator.coordination.util.MemberEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -75,6 +78,14 @@ public class RDBMSMemberEventListenerTask implements Runnable {
 
     private int heartbeatWarningMargin;
 
+    private static final Map<String, String> mpStateCache = new ConcurrentHashMap<>();
+
+    private static boolean persistMessageProcessorTaskState = false;
+
+    private static final String TASK_CONFIG = "task_handling";
+
+    private static final String PERSIST_MESSAGE_PROCESSOR_STATE = "persist_message_processor_state";
+
 
     public RDBMSMemberEventListenerTask(String nodeId, String localGroupId,
                                         RDBMSCommunicationBusContextImpl communicationBusContext, 
@@ -85,6 +96,15 @@ public class RDBMSMemberEventListenerTask implements Runnable {
         this.communicationBusContext = communicationBusContext;
         this.maxDBReadTime = maxDBReadTime;
         this.heartbeatWarningMargin = heartbeatWarningMargin;
+        Map<String, Object> configs = ConfigParser.getParsedConfigs();
+        Object persistMPState = configs.get(TASK_CONFIG + "." + PERSIST_MESSAGE_PROCESSOR_STATE);
+        if (persistMPState != null) {
+            if (persistMPState instanceof Boolean) {
+                persistMessageProcessorTaskState = (Boolean) persistMPState;
+            } else if (persistMPState instanceof String) {
+                persistMessageProcessorTaskState = Boolean.parseBoolean((String) persistMPState);
+            }
+        }
     }
 
     /**
@@ -114,6 +134,13 @@ public class RDBMSMemberEventListenerTask implements Runnable {
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("No membership events to sync");
+                }
+            }
+            if (persistMessageProcessorTaskState) {
+                // Sync message processor states and notify listeners of any changes
+                Map<String, String> changedStates = syncAndGetChangedStates();
+                for (Map.Entry<String, String> entry : changedStates.entrySet()) {
+                    notifyMessageProcessorStateChanged(entry.getKey(), entry.getValue());
                 }
             }
         } catch (Throwable e) {
@@ -175,6 +202,40 @@ public class RDBMSMemberEventListenerTask implements Runnable {
                 }
             }
         }
+    }
+
+    /**
+     * Notifies the message processor state change event to the registered listeners.
+     *
+     * @param name The name of the message processor
+     */
+    private void notifyMessageProcessorStateChanged(String name, String newState) {
+        for (MemberEventListener listener : listeners) {
+            listener.messageProcessorStateChanged(name, newState);
+        }
+    }
+
+    /**
+     * Syncs the message processor states with the database and notifies the listeners of any changes.
+     *
+     * @return changedStates A map of message processor names and their new states.
+     */
+    private Map<String, String> syncAndGetChangedStates() {
+        Map<String, String> dbStates = communicationBusContext.getMessageProcessorStates();
+        Map<String, String> changedStates = new ConcurrentHashMap<>();
+        for (Map.Entry<String, String> entry : dbStates.entrySet()) {
+            String name = entry.getKey();
+            String newState = entry.getValue();
+            String cachedState = mpStateCache.get(name);
+
+            if (!newState.equals(cachedState)) {
+                // Update cache
+                mpStateCache.put(name, newState);
+                // Track the change
+                changedStates.put(name, newState);
+            }
+        }
+        return changedStates;
     }
 
     /**

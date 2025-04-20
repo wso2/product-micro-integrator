@@ -40,6 +40,7 @@ public class RDBMSConstantUtils {
     public static final String TASK_UPDATE_NODE_HEARTBEAT = "updating node heartbeat";
     public static final String TASK_CREATE_NODE_HEARTBEAT = "creating node heartbeat";
     public static final String TASK_GET_ALL_QUEUES = "getting all queues";
+    public static final String MP_GET_ALL_STATES = "getting states of all message processors";
     public static final String TASK_REMOVE_NODE_HEARTBEAT = "removing node heartbeat entry";
 
     public static final String HEART_BEAT_INTERVAL = "heartBeatInterval";

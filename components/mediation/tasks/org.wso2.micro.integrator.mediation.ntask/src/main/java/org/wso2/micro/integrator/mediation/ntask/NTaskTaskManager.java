@@ -23,7 +23,9 @@ import org.apache.synapse.task.SynapseTaskException;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.task.TaskManagerObserver;
+import org.wso2.config.mapper.ConfigParser;
 import org.wso2.micro.core.ServerStartupHandler;
+import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 import org.wso2.micro.integrator.mediation.ntask.internal.NtaskService;
 import org.wso2.micro.integrator.ntask.core.TaskInfo;
 import org.wso2.micro.integrator.ntask.core.TaskUtils;
@@ -62,6 +64,14 @@ public class NTaskTaskManager implements TaskManager, TaskServiceObserver, Serve
     private final List<TaskDescription> taskQueue = new ArrayList<>();
 
     private final Object taskQueueLock = new Object();
+
+    private static final String TASK_CONFIG = "task_handling";
+
+    private static final String MP_STATE_PREFIX = "MESSAGE_PROCESSOR_STATE_";
+
+    private static final String PERSIST_MESSAGE_PROCESSOR_STATE = "persist_message_processor_state";
+
+    private static String persistMessageProcessorTaskState = null;
 
     @Override
     public boolean schedule(TaskDescription taskDescription) {
@@ -364,6 +374,7 @@ public class NTaskTaskManager implements TaskManager, TaskServiceObserver, Serve
                 for (Object d : taskDescriptions) {
                     schedule((TaskDescription) d);
                 }
+
                 return true;
             } catch (Exception e) {
                 logger.error("Cannot initialize task manager. Error: " + e.getLocalizedMessage(), e);
@@ -477,16 +488,71 @@ public class NTaskTaskManager implements TaskManager, TaskServiceObserver, Serve
         if (name == null) {
             return false;
         }
+        initializePersistMPstate();
+        if (Boolean.parseBoolean(persistMessageProcessorTaskState)) {
+            String[] processorState = extractProcessorNameAndState(name, property);
+            if (processorState != null) {
+                String processorName = processorState[0];
+                String state = processorState[1];
+                if (state != null) {
+                    taskManager.setMessageProcessorTaskState(processorName, state);
+                }
+            }
+        }
         synchronized (lock) {
             properties.put(name, property);
         }
         return true;
     }
 
+    /**
+     * Checks and extracts processor name from a given key-value pair.
+     *
+     * @param key The property key
+     * @param value The associated state value
+     * @return Optional string array with [processorName, state], or null if not an MP state key
+     */
+    protected String[] extractProcessorNameAndState(String key, Object value) {
+        if (key != null && !key.isEmpty() && key.startsWith(MP_STATE_PREFIX)) {
+            String processorName = key.substring(MP_STATE_PREFIX.length());
+            if (!processorName.isEmpty() && value != null) {
+                return new String[]{processorName, value.toString()};
+            }
+        }
+        return null;
+    }
+
+    protected String extractProcessorName(String key) {
+        if (key != null && !key.isEmpty() && key.startsWith(MP_STATE_PREFIX)) {
+            String processorName = key.substring(MP_STATE_PREFIX.length());
+            if (!processorName.isEmpty()) {
+                return processorName;
+            }
+        }
+        return null;
+    }
+
+    private void initializePersistMPstate() {
+        if (persistMessageProcessorTaskState == null) {
+            Map<String, Object> configs = ConfigParser.getParsedConfigs();
+            Object persistMPState = configs.get(TASK_CONFIG + "." + PERSIST_MESSAGE_PROCESSOR_STATE);
+            if (persistMPState != null) {
+                persistMessageProcessorTaskState = persistMPState.toString();
+            }
+        }
+    }
+
     @Override
     public Object getProperty(String name) {
         if (name == null) {
             return null;
+        }
+        initializePersistMPstate();
+        if (Boolean.parseBoolean(persistMessageProcessorTaskState)) {
+            String processorName = extractProcessorName(name);
+            if (processorName != null) {
+                return taskManager.getMessageProcessorTaskState(processorName);
+            }
         }
         synchronized (lock) {
             return properties.get(name);
