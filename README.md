@@ -9,7 +9,7 @@
 
 [WSO2 Micro Integrator](https://wso2.com/micro-integrator/) is a comprehensive integration solution that simplifies your digital transformation journey. The Micro Integrator streamlines connectivity among applications, services, data, and the cloud using a user-friendly, low-code graphical design experience.
 
-To learn more about WSO2 Micro Integrator please visit [WSO2 Micro Integrator](https://wso2.com/integrator/ballerina-integrator/).
+To learn more about WSO2 Micro Integrator please visit [WSO2 Micro Integrator](https://wso2.com/integrator/micro-integrator/).
 
 ## Why Micro Integrator?
 
