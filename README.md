@@ -20,7 +20,7 @@ The Micro Integrator provides developers with a flawless experience in developin
 
 The Micro Integrator offers an enhanced experience for container-based architectures by simplifying Docker/Kubernetes deployments. 
 
-## Getting Started
+## Getting started
 
 See the following topics to get started with the product:
 - [System prerequisites](https://mi.docs.wso2.com/en/latest/install-and-setup/install/installation-prerequisites/)
@@ -43,7 +43,7 @@ Please follow the steps below to build WSO2 Micro Integrator from the source cod
 
 Please note that the product can be build using only JDK 11 but the integration tests can be run in either JDK 11, 17 or 21.
 
-### Build the Docker image
+### Build the docker image
 
 You can build the Docker image for the Micro Integrator by setting the `docker.skip` system property to `false` when running the
 Maven build. This builds and pushes the micro-integrator Docker image to the local Docker registry.
@@ -52,13 +52,13 @@ Maven build. This builds and pushes the micro-integrator Docker image to the loc
 mvn clean install -Ddocker.skip=false
 ```
 
-## Reporting Product Issues
+## Report product issues
 
-### Opening an issue
+### Open an issue
 
 Help us make our software better! Submit any bug reports or feature requests through [WSO2 Micro Integrator GitHub](https://github.com/wso2/product-micro-integrator) repo.
 
-### Reporting Security Issues
+### Report security issues
 
 Please **do not** report security issues via GitHub issues. Instead, follow the [WSO2 Security Vulnerability Reporting Guidelines](https://security.docs.wso2.com/en/latest/security-reporting/vulnerability-reporting-guidelines/).
 
@@ -69,7 +69,7 @@ Please **do not** report security issues via GitHub issues. Instead, follow the 
 - Join the conversation on [Discord](https://discord.gg/wso2).
 - Learn more by reading articles from our [library](https://wso2.com/library/?area=integration).
 
-## Commercial Support
+## Get commercial support
 
 You can take advantage of a WSO2 on-prem product subscription for the full range of software product benefits needed in your enterprise, like expert support, continuous product updates, vulnerability monitoring, and access to the licensed distribution for commercial use.
 
