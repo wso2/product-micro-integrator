@@ -20,7 +20,7 @@ The Micro Integrator provides developers with a flawless experience in developin
 
 The Micro Integrator offers an enhanced experience for container-based architectures by simplifying Docker/Kubernetes deployments. 
 
-## Getting started
+## Get started
 
 See the following topics to get started with the product:
 - [System prerequisites](https://mi.docs.wso2.com/en/latest/install-and-setup/install/installation-prerequisites/)
