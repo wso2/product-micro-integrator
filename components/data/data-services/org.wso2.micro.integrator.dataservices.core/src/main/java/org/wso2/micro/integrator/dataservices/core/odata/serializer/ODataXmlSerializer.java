@@ -70,11 +70,24 @@ import org.apache.olingo.server.core.serializer.utils.ContextURLBuilder;
 import org.apache.olingo.server.core.serializer.utils.ExpandSelectHelper;
 import org.apache.olingo.server.core.uri.UriHelperImpl;
 import org.apache.olingo.server.core.uri.queryoption.ExpandOptionImpl;
+import org.wso2.micro.integrator.dataservices.core.odata.StreamingEntityIterator;
+
+import static org.wso2.micro.integrator.dataservices.core.odata.ODataConstants.ODATA_COUNT_WITHOUT_PAGING;
 
 /**
  * This class is used to create an OData serializer with XML content.
  */
 public class ODataXmlSerializer implements ODataSerializer {
+    private static final boolean excludePagingForOdataCount;
+
+    /**
+     * Initializing the flag to determine if OData count should not be affected with
+     * $top, $skip, or $expand query options.
+     */
+    static {
+        String propertyValue = System.getProperty(ODATA_COUNT_WITHOUT_PAGING, "false");
+        excludePagingForOdataCount = Boolean.parseBoolean(propertyValue);
+    }
 
     public final static String NAMESPACE_URI = "http://docs.oasis-open.org/odata/ns/";
 
@@ -158,7 +171,7 @@ public class ODataXmlSerializer implements ODataSerializer {
             }
             if (options != null && options.getCount() != null && options.getCount().getValue()
                     && entitySet.getCount() != null) {
-                this.writeCount(entitySet, writer);
+                this.writeCount(entitySet, writer, excludePagingForOdataCount);
             }
             if (entitySet != null && entitySet.getNext() != null) {
                 this.writeNextLink(entitySet, writer);
@@ -1077,6 +1090,14 @@ public class ODataXmlSerializer implements ODataSerializer {
     private void writeCount(AbstractEntityCollection entitySet, XMLStreamWriter writer) throws XMLStreamException {
         writer.writeStartElement("m", "count", NAMESPACE_URI + "metadata");
         writer.writeCharacters(String.valueOf(entitySet.getCount() == null ? 0 : entitySet.getCount()));
+        writer.writeEndElement();
+    }
+
+    private void writeCount(AbstractEntityCollection entitySet, XMLStreamWriter writer, boolean excludePagingForOdataCount)
+            throws XMLStreamException {
+        writer.writeStartElement("m", "count", NAMESPACE_URI + "metadata");
+        Integer odataCount = excludePagingForOdataCount ? ((StreamingEntityIterator) entitySet).getOdataCount() : entitySet.getCount();
+        writer.writeCharacters(String.valueOf(odataCount == null ? 0 : odataCount));
         writer.writeEndElement();
     }
 
