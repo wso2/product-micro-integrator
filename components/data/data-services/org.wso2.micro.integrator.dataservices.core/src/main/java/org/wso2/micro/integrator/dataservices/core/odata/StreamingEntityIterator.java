@@ -41,6 +41,11 @@ public class StreamingEntityIterator extends EntityIterator {
     public int entityCount;
 
     /**
+     * Number of applicable entries.
+     */
+    public int odataCount;
+
+    /**
      * Number of entries.
      */
     public int rowsCount;
@@ -132,6 +137,10 @@ public class StreamingEntityIterator extends EntityIterator {
 
     public List<Entity> getEntityList() {
         return entityList;
+    }
+    public int getOdataCount() {
+
+        return odataCount;
     }
 
     @Override
