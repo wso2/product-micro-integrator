@@ -17,11 +17,15 @@
  */
 package org.wso2.micro.integrator.ntask.core.impl;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.quartz.SchedulerConfigException;
 import org.quartz.spi.ThreadPool;
+import org.wso2.micro.integrator.ntask.core.TaskUtils;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Quartz thread pool implementation which uses a cached thread executor service.
@@ -29,6 +33,7 @@ import java.util.concurrent.Executors;
 public class QuartzCachedThreadPool implements ThreadPool {
 
     private ExecutorService executor;
+    private static Log log = LogFactory.getLog(QuartzCachedThreadPool.class);
 
     @Override
     public int blockForAvailableThreads() {
@@ -47,6 +52,10 @@ public class QuartzCachedThreadPool implements ThreadPool {
 
     @Override
     public boolean runInThread(Runnable task) {
+        if (executor.isShutdown()) {
+            log.warn("Executor is shut down. Cannot accept new tasks.");
+            return false;
+        }
         this.executor.submit(task);
         return true;
     }
@@ -62,7 +71,20 @@ public class QuartzCachedThreadPool implements ThreadPool {
     @Override
     public void shutdown(boolean waitForJobsToComplete) {
         if (waitForJobsToComplete) {
+            log.info("Graceful scheduler shutdown initiated. Waiting for tasks to finish...");
             this.executor.shutdown();
+            try {
+                if (!executor.awaitTermination(TaskUtils.getMaxWaitTimeInSeconds(), TimeUnit.SECONDS)) {
+                    log.warn("Scheduler did not terminate in time. Forcing shutdown.");
+                    executor.shutdownNow();
+                } else {
+                    log.info("Scheduler terminated cleanly.");
+                }
+            } catch (InterruptedException e) {
+                log.warn("Scheduler shutdown interrupted. Forcing shutdown.");
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         } else {
             this.executor.shutdownNow();
         }
