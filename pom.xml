@@ -1815,7 +1815,7 @@
         <poi-ooxml.orbit.version>5.3.0.wso2v1</poi-ooxml.orbit.version>
         <poi-ooxml.orbit.imp.pkg.version>0.0.0</poi-ooxml.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([3.9.0.wso2v3,4.0.0)) after osgi bundle is corrected - rajith-->
 
-        <poi-ooxml.version>5.3.0</poi-ooxml.version>
+        <poi-ooxml.version>5.4.0</poi-ooxml.version>
         <poi.version>5.3.0</poi.version>
         <xmlbeans.orbit.version>5.3.0.wso2v1</xmlbeans.orbit.version>
         <commons-compress.orbit.version>1.27.1.wso2v1</commons-compress.orbit.version>
