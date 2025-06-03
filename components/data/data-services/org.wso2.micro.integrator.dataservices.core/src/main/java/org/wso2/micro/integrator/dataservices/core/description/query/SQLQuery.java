@@ -1661,7 +1661,7 @@ public class SQLQuery extends ExpressionQuery implements BatchRequestParticipant
         } else if (DBConstants.DataTypes.BLOB.equals(sqlType)) {
             setBlobValue(queryType, paramName, value, paramType, stmt, index);
         } else if (DBConstants.DataTypes.CLOB.equals(sqlType)) {
-           setClobValue(queryType, paramName, value, paramType, stmt, index);
+           setClobValue(value, paramType, stmt, index, connection);
         } else if (DBConstants.DataTypes.ORACLE_REF_CURSOR.equals(sqlType)) {
             setOracleRefCusor(stmt, index);
         } else if (DBConstants.DataTypes.STRUCT.equals(sqlType)) {
@@ -1676,27 +1676,24 @@ public class SQLQuery extends ExpressionQuery implements BatchRequestParticipant
         }
     }
 
-    private void setClobValue(int queryType, String paramName,
-                           String value, String paramType, PreparedStatement sqlQuery, int i)
+    private void setClobValue(String value, String paramType, PreparedStatement sqlQuery, int i, Connection connection)
          throws SQLException, DataServiceFault {
          if ("IN".equals(paramType)) {
              if (value == null) {
                  sqlQuery.setNull(i + 1, Types.CLOB);
              } else {
-                 // Use of Try-with-resources is removed since it causes "Stream closed" error.
-                 // The JDBC driver will handle closing the stream after reading the data.
-                 sqlQuery.setClob(i + 1, new BufferedReader(new StringReader(value)),
-                         value.length());
+                 Clob clob = connection.createClob();
+                 clob.setString(1, value);
+                 sqlQuery.setClob(i + 1, clob);
              }
          } else if ("INOUT".equals(paramType)) {
              if (value == null) {
                  ((CallableStatement) sqlQuery).setNull(i + 1,
                                         Types.CLOB);
              } else {
-                 // Use of Try-with-resources is removed since it causes "Stream closed" error.
-                 // The JDBC driver will handle closing the stream after reading the data.
-                 ((CallableStatement) sqlQuery).setClob(i + 1,
-                         new BufferedReader(new StringReader(value)), value.length());
+                 Clob clob = connection.createClob();
+                 clob.setString(1, value);
+                 sqlQuery.setClob(i + 1, clob);
              }
              ((CallableStatement) sqlQuery).registerOutParameter(i + 1,
                                 Types.CLOB);

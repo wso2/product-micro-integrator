@@ -53,35 +53,19 @@ public class DatabaseCreator {
      * @throws Exception
      */
     public void createRegistryDatabase() throws Exception {
-        try {
-            conn = dataSource.getConnection();
+        try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
-            statement = conn.createStatement();
-            executeSQLScript();
-            conn.commit();
-            if (log.isTraceEnabled()) {
-                log.trace("Registry tables are created successfully.");
+            try (Statement statement = conn.createStatement()) {
+                executeSQLScript();
+                conn.commit();
+                if (log.isTraceEnabled()) {
+                    log.trace("Registry tables are created successfully.");
+                }
             }
         } catch (SQLException e) {
             String msg = "Failed to create database tables for registry resource store. " + e.getMessage();
             log.fatal(msg, e);
             throw new Exception(msg, e);
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (SQLException e) {
-                    log.error("Failed to close SQL statement.", e);
-                }
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException e) {
-                log.error("Failed to close database connection.", e);
-            }
         }
     }
 
@@ -95,23 +79,11 @@ public class DatabaseCreator {
             if (log.isTraceEnabled()) {
                 log.trace("Running a query to test the database tables existence.");
             }
-            // check whether the tables are already created with a query
-            conn = dataSource.getConnection();
-            try {
-                statement = conn.createStatement();
+            try (Connection conn = dataSource.getConnection();
+                 Statement statement = conn.createStatement()) {
                 ResultSet rs = statement.executeQuery(checkSQL);
                 if (rs != null) {
                     rs.close();
-                }
-            } finally {
-                try {
-                    if (statement != null) {
-                        statement.close();
-                    }
-                } finally {
-                    if (conn != null) {
-                        conn.close();
-                    }
                 }
             }
         } catch (SQLException e) {
@@ -119,7 +91,6 @@ public class DatabaseCreator {
         }
         
         return true;
-
     }
 
 
