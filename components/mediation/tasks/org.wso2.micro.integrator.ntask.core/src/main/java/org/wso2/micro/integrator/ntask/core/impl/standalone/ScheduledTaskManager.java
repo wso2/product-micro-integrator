@@ -25,6 +25,7 @@ import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.registry.Registry;
 import org.apache.synapse.task.TaskDescription;
+import org.wso2.micro.integrator.coordination.ClusterCoordinator;
 import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 import org.wso2.micro.integrator.ntask.common.TaskException;
 import org.wso2.micro.integrator.ntask.coordination.TaskCoordinationException;
@@ -65,6 +66,7 @@ public class ScheduledTaskManager extends AbstractQuartzTaskManager {
     private SynapseEnvironment synapseEnvironment = null;
     private TaskStore taskStore;
     private String localNodeId;
+    private ClusterCoordinator clusterCoordinator;
 
     private static final String REG_PROCESSOR_BASE_PATH = "/repository/components/org.apache.synapse.message.processor/";
     private static final String MP_STATE = "MESSAGE_PROCESSOR_STATE";
@@ -76,6 +78,7 @@ public class ScheduledTaskManager extends AbstractQuartzTaskManager {
         super(taskRepository, taskStore);
         this.taskStore = taskStore;
         this.localNodeId = DataHolder.getInstance().getLocalNodeId();
+        this.clusterCoordinator = DataHolder.getInstance().getClusterCoordinator();
     }
 
     @Override
@@ -296,10 +299,25 @@ public class ScheduledTaskManager extends AbstractQuartzTaskManager {
     public boolean deleteTask(String taskName) throws TaskException {
 
         boolean result = this.deleteLocalTask(taskName);
-        // dis regard of results, if it is a coordinated task we need to remove as it can be in a completed state and
-        // result can be false.
-        if (deployedCoordinatedTasks.contains(taskName)) {
+
+        // This hits if and only if when hot deployment enabled so give the coordinator node to handle the task
+        // delete capability and give grace period to other nodes to update the local task states.
+        // Since soon after deleted the coordinator node will be assigning the task to other node and the node should
+        // be updated with the task state.
+        if (!clusterCoordinator.isLeader()) {
+            log.warn("Hot deployment enabled. Hence the task " + taskName
+                    + " will be deleted by the coordinator node.");
+        }
+        if (clusterCoordinator.isLeader() && deployedCoordinatedTasks.contains(taskName)) {
+            long hotDeploymentDelay = clusterCoordinator.getHeartbeatMaxRetryInterval();
             try {
+                log.info("Waiting for " + hotDeploymentDelay + " ms to hotdeployment to settle.");
+                try {
+                    Thread.sleep(hotDeploymentDelay); // Wait for nodes to settle
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
+                log.info("Deleting task " + taskName + " from the data base since this is a coordinated task.");
                 taskStore.deleteTasks(Collections.singletonList(taskName));
             } catch (TaskCoordinationException ex) {
                 log.error("Error while removing tasks.", ex);

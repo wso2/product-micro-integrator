@@ -80,12 +80,16 @@ import org.apache.olingo.server.core.serializer.utils.ContextURLBuilder;
 import org.apache.olingo.server.core.serializer.utils.ExpandSelectHelper;
 import org.apache.olingo.server.core.uri.UriHelperImpl;
 import org.apache.olingo.server.core.uri.queryoption.ExpandOptionImpl;
+import org.wso2.micro.integrator.dataservices.core.odata.StreamingEntityIterator;
+
+import static org.wso2.micro.integrator.dataservices.core.odata.ODataConstants.ODATA_COUNT_WITHOUT_PAGING;
 
 /**
  * This class is used to create an OData serializer with JSON content.
  */
 public class ODataJsonSerializer implements ODataSerializer {
     private static final Map<Geospatial.Type, String> geoValueTypeToJsonName;
+    private static final boolean excludePagingForOdataCount;
 
     static {
         Map<Geospatial.Type, String> temp = new EnumMap(Geospatial.Type.class);
@@ -97,6 +101,15 @@ public class ODataJsonSerializer implements ODataSerializer {
         temp.put(Type.MULTIPOLYGON, "MultiPolygon");
         temp.put(Type.GEOSPATIALCOLLECTION, "GeometryCollection");
         geoValueTypeToJsonName = Collections.unmodifiableMap(temp);
+    }
+
+    /**
+     * Initializing the flag to determine if OData count should not be affected with
+     * $top, $skip, or $expand query options.
+     */
+    static {
+        String propertyValue = System.getProperty(ODATA_COUNT_WITHOUT_PAGING, "false");
+        excludePagingForOdataCount = Boolean.parseBoolean(propertyValue);
     }
 
     private final boolean isIEEE754Compatible;
@@ -146,7 +159,11 @@ public class ODataJsonSerializer implements ODataSerializer {
                                     options.getSelect(), options.getWriteOnlyReferences(), (Set) null, name, json);
             }
             if (options != null && options.getCount() != null && options.getCount().getValue()) {
-                this.writeInlineCount("", entitySet.getCount(), json);
+                if (excludePagingForOdataCount) {
+                    this.writeInlineCount("", ((StreamingEntityIterator) entitySet).getOdataCount(), json);
+                } else {
+                    this.writeInlineCount("", entitySet.getCount(), json);
+                }
             }
             this.writeNextLink(entitySet, json, pagination);
             json.close();

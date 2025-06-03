@@ -55,6 +55,8 @@ public class TaskUtils {
 
     private static SecretResolver secretResolver;
 
+    private static final long DEFAULT_MAX_WAIT_TIME = 180;
+
     public static Document convertToDocument(File file) throws TaskException {
         DocumentBuilderFactory fac = DocumentBuilderFactory.newInstance();
         fac.setNamespaceAware(true);
@@ -72,6 +74,27 @@ public class TaskUtils {
             throw new TaskException("Error in creating an XML document from file: " + e.getMessage(),
                                     TaskException.Code.CONFIG_ERROR, e);
         }
+    }
+
+    /**
+     * Retrieves the maximum wait time for shutdown from a system property.
+     * If the property is not set or is invalid, returns the default value.
+     *
+     * @return the maximum wait time in seconds
+     */
+    public static long getMaxWaitTimeInSeconds() {
+        String value = System.getProperty("gracefulShutdownTimeout");
+        if (value != null) {
+            try {
+                long parsed = Long.parseLong(value.trim());
+                if (parsed > 0) {
+                    return parsed;
+                }
+            } catch (NumberFormatException e) {
+               //ignore the exception and use default value
+            }
+        }
+        return DEFAULT_MAX_WAIT_TIME;
     }
 
     private static void secureLoadElement(Element element) throws CryptoException {

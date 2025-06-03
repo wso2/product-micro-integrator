@@ -47,6 +47,7 @@ import org.wso2.micro.integrator.ntask.coordination.task.resolver.ActivePassiveR
 import org.wso2.micro.integrator.ntask.coordination.task.resolver.TaskLocationResolver;
 import org.wso2.micro.integrator.ntask.coordination.task.store.TaskStore;
 import org.wso2.micro.integrator.ntask.core.TaskStartupHandler;
+import org.wso2.micro.integrator.ntask.core.TaskUtils;
 import org.wso2.micro.integrator.ntask.core.impl.QuartzCachedThreadPool;
 import org.wso2.micro.integrator.ntask.core.impl.standalone.ScheduledTaskManager;
 import org.wso2.micro.integrator.ntask.core.service.TaskService;
@@ -60,6 +61,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 
 /**
@@ -77,7 +79,6 @@ public class TasksDSComponent {
     private static final String TASK_RESOLVER = "task_resolver";
 
     private final Log log = LogFactory.getLog(TasksDSComponent.class);
-
     private static Scheduler scheduler;
 
     private static SecretCallbackHandlerService secretCallbackHandlerService;
@@ -270,15 +271,43 @@ public class TasksDSComponent {
         if (executorService != null) {
             log.info("Shutting down coordinated task scheduler.");
             executorService.shutdown();
+            try {
+                if (!executorService.awaitTermination(TaskUtils.getMaxWaitTimeInSeconds()
+                        , TimeUnit.SECONDS)) {
+                    log.warn("Timeout while waiting for coordinated task scheduler. Forcing shutdown.");
+                    executorService.shutdownNow();
+                } else {
+                    log.info("Coordinated task scheduler shut down cleanly.");
+                }
+            } catch (InterruptedException e) {
+                log.warn("Interrupted during coordinated task scheduler shutdown. Forcing shutdown.");
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
         if (TasksDSComponent.getScheduler() != null) {
             try {
-                TasksDSComponent.getScheduler().shutdown();
+                TasksDSComponent.getScheduler().shutdown(true);
             } catch (Exception e) {
                 log.error(e);
             }
         }
-        executor.shutdown();
+        if (executor != null) {
+            log.info("Shutting down global executor.");
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(TaskUtils.getMaxWaitTimeInSeconds(), TimeUnit.SECONDS)) {
+                    log.warn("Global executor shutdown timed out. Forcing shutdown.");
+                    executor.shutdownNow();
+                } else {
+                    log.info("Global executor shut down cleanly.");
+                }
+            } catch (InterruptedException e) {
+                log.warn("Interrupted during global executor shutdown. Forcing shutdown.");
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
         taskService = null;
     }
 
