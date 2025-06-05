@@ -1087,7 +1087,7 @@ public class SQLQuery extends ExpressionQuery implements BatchRequestParticipant
                 break;
             }
             try {
-                resultAndNoUpdateCount = stmt.getMoreResults(Statement.KEEP_CURRENT_RESULT);
+                resultAndNoUpdateCount = stmt.getMoreResults();
             } catch (SQLException e) {
                 /*
                  * for some DBMS, this will throw an unsupported feature
