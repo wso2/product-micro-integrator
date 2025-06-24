@@ -20,7 +20,7 @@
     <parent>
         <artifactId>inbound-endpoints</artifactId>
         <groupId>org.wso2.ei</groupId>
-        <version>4.4.0-SNAPSHOT</version>
+        <version>4.3.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -179,10 +179,6 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.jms</groupId>
-            <artifactId>jakarta.jms-api</artifactId>
         </dependency>
     </dependencies>
     <build>
