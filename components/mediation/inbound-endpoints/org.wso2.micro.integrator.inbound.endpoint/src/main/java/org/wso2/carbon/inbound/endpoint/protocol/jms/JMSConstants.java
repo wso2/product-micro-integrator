@@ -265,4 +265,6 @@ public class JMSConstants {
 
     public static final String JMS_SPEC_VERSION_2_0 = "2.0";
 
+    public static final String JMS_SPEC_VERSION_3_1 = "3.1";
+
 }

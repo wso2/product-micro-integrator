@@ -1538,6 +1538,11 @@
                 <artifactId>failureaccess</artifactId>
                 <version>${failureaccess.version}</version>
             </dependency>
+            <dependency>
+                <groupId>jakarta.jms</groupId>
+                <artifactId>jakarta.jms-api</artifactId>
+                <version>${jakarta.jms-api.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1726,6 +1731,7 @@
         <jacoco.maven.plugin.version>0.8.8</jacoco.maven.plugin.version>
         <testng.version>6.11</testng.version>
         <javax.jms-api.version>2.0.1</javax.jms-api.version>
+        <jakarta.jms-api.version>3.1.0</jakarta.jms-api.version>
         <maven.dependency.plugin.version>3.1.1</maven.dependency.plugin.version>
         <commons-text.orbit.version>1.10.0.wso2v2</commons-text.orbit.version>
         <commons-lang3.orbit.version>3.17.0.wso2v1</commons-lang3.orbit.version>

@@ -26,6 +26,7 @@ import org.apache.synapse.task.TaskStartupObserver;
 import org.wso2.carbon.inbound.endpoint.common.InboundRequestProcessorImpl;
 import org.wso2.carbon.inbound.endpoint.common.InboundTask;
 import org.wso2.carbon.inbound.endpoint.protocol.PollingConstants;
+import org.wso2.carbon.inbound.endpoint.protocol.jms.jakarta.JakartaInjectHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,11 +44,14 @@ public class JMSProcessor extends InboundRequestProcessorImpl implements TaskSta
     private String injectingSeq;
     private String onErrorSeq;
     private int concurrentConsumers;
+    private boolean isJmsSpec31 = false;
 
     public JMSProcessor(InboundProcessorParams params) {
         this.name = params.getName();
         this.startInPausedMode = params.startInPausedMode();
         this.jmsProperties = params.getProperties();
+        isJmsSpec31 = JMSConstants.JMS_SPEC_VERSION_3_1.equals(jmsProperties.
+                getProperty(JMSConstants.PARAM_JMS_SPEC_VER));
 
         String inboundEndpointInterval = jmsProperties.getProperty(PollingConstants.INBOUND_ENDPOINT_INTERVAL);
         if (inboundEndpointInterval != null) {
@@ -101,8 +105,13 @@ public class JMSProcessor extends InboundRequestProcessorImpl implements TaskSta
         log.info("Initializing inbound JMS listener for inbound endpoint " + name);
         for (int consumers = 0; consumers < concurrentConsumers; consumers++) {
             JMSPollingConsumer jmsPollingConsumer = new JMSPollingConsumer(jmsProperties, interval, name);
-            jmsPollingConsumer.registerHandler(
-                    new JMSInjectHandler(injectingSeq, onErrorSeq, sequential, synapseEnvironment, jmsProperties));
+            if (isJmsSpec31) {
+                jmsPollingConsumer.registerJakartaHandler(
+                        new JakartaInjectHandler(injectingSeq, onErrorSeq, sequential, synapseEnvironment, jmsProperties));
+            } else {
+                jmsPollingConsumer.registerHandler(
+                        new JMSInjectHandler(injectingSeq, onErrorSeq, sequential, synapseEnvironment, jmsProperties));
+            }
             pollingConsumers.add(jmsPollingConsumer);
             start(jmsPollingConsumer, consumers);
         }
