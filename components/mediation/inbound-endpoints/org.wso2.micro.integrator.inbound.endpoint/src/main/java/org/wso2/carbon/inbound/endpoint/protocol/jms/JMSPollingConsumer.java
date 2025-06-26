@@ -24,6 +24,7 @@ import org.wso2.carbon.inbound.endpoint.protocol.jms.factory.CachedJMSConnection
 
 import java.util.Date;
 import java.util.Properties;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -34,6 +35,12 @@ import javax.jms.Session;
 public class JMSPollingConsumer {
 
     private static final Log logger = LogFactory.getLog(JMSPollingConsumer.class.getName());
+
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLock = rwLock.readLock();
+    private final ReentrantReadWriteLock.WriteLock writeLock = rwLock.writeLock();
+
+    private volatile boolean destroyed = false;
 
     /* Contents used for the process of reconnection */
     private static final int DEFAULT_RETRY_ITERATION = 0;
@@ -230,6 +237,13 @@ public class JMSPollingConsumer {
         logger.debug("Polling JMS messages.");
 
         try {
+            readLock.lock();
+            if (destroyed) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Polling skipped since consumer is already destroyed for Inbound Endpoint: " + name);
+                }
+                return null;
+            }
             connection = jmsConnectionFactory.getConnection(strUserName, strPassword);
             if (connection == null) {
                 logger.warn("Inbound JMS endpoint unable to get a connection.");
@@ -402,7 +416,12 @@ public class JMSPollingConsumer {
                        practice the Interrupted flag is set back to TRUE in this thread. */
                 }
             }
-            releaseResources(false);
+            try {
+                releaseResources(false);
+            } catch (Exception e) {
+                //ignore
+            }
+            readLock.unlock();
         }
         return null;
     }
@@ -426,16 +445,28 @@ public class JMSPollingConsumer {
 
     public void destroy() {
         synchronized (jmsConnectionFactory) {
-            if (messageConsumer != null) {
-                jmsConnectionFactory.closeConsumer(messageConsumer, true);
-            }
-            if (session != null) {
-                jmsConnectionFactory.closeSession(session, true);
-            }
-            if (connection != null) {
-                jmsConnectionFactory.closeConnection(connection, true);
+            writeLock.lock();
+            logger.info("Destroying JMS PollingConsumer hence polling is stopped for Inbound Endpoint: " + name);
+            try {
+                destroyed = true;
+                if (messageConsumer != null) {
+                    jmsConnectionFactory.closeConsumer(messageConsumer, true);
+                }
+                if (session != null) {
+                    jmsConnectionFactory.closeSession(session, true);
+                }
+                if (connection != null) {
+                    jmsConnectionFactory.closeConnection(connection, true);
+                }
+            } finally {
+                writeLock.unlock();
             }
         }
+    }
+
+    public void enablePolling() {
+        logger.info("JMS PollingConsumer resumed hence polling is started for Inbound Endpoint: " + name);
+        destroyed = false;
     }
 
     private Message receiveMessage(MessageConsumer messageConsumer) throws JMSException {
