@@ -29,6 +29,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.api.API;
@@ -64,6 +65,7 @@ import javax.xml.stream.XMLStreamException;
 
 import static org.wso2.micro.core.Constants.SUPER_TENANT_DOMAIN_NAME;
 import static org.wso2.micro.integrator.initializer.deployment.synapse.deployer.SynapseAppDeployerConstants.API_TYPE;
+import static org.wso2.micro.integrator.registry.MicroIntegratorRegistryConstants.REG_DEP_FAILURE_IDENTIFIER;
 
 public class CappDeployer extends AbstractDeployer {
 
@@ -231,13 +233,12 @@ public class CappDeployer extends AbstractDeployer {
                         AppDeployerUtils.getTenantIdLogString(AppDeployerUtils.getTenantId()));
             }
         } catch (DeploymentException e) {
-            log.error("Error occurred while deploying the Carbon application: " + cAppName
-                      + ". Reverting successfully deployed artifacts in the CApp.", e);
-            undeployCarbonApp(currentApp, axisConfig);
-            // Validate synapse config to remove half added swagger definitions in the case of a faulty CAPP.
-            SynapseConfigUtils.getSynapseConfiguration(SUPER_TENANT_DOMAIN_NAME).validateSwaggerTable();
-            faultyCAppObjects.add(currentApp);
-            faultyCapps.add(cAppName);
+            handleDeployException(e, cAppName, currentApp);
+        } catch (SynapseException e) {
+            // Handel SynapseException thrown by MicroIntegratorRegistry
+            if (e.getMessage() != null && e.getMessage().startsWith(REG_DEP_FAILURE_IDENTIFIER)){
+                handleDeployException(e, cAppName, currentApp);
+            }
         }
         if (serviceCatalogConfiguration != null && !faultyCapps.contains(cAppName)) {
             ServiceCatalogDeployer serviceDeployer = new ServiceCatalogDeployer(cAppName,
@@ -275,6 +276,16 @@ public class CappDeployer extends AbstractDeployer {
     private String extractCarbonApplication(String targetCAppPath) throws CarbonException {
 
         return AppDeployerUtils.extractCarbonApp(targetCAppPath);
+    }
+
+    private void handleDeployException(Exception e, String cAppName, CarbonApplication currentApp) {
+        log.error("Error occurred while deploying the Carbon application: " + cAppName
+                  + ". Reverting successfully deployed artifacts in the CApp.", e);
+        undeployCarbonApp(currentApp, axisConfig);
+        // Validate synapse config to remove half added swagger definitions in the case of a faulty CAPP.
+        SynapseConfigUtils.getSynapseConfiguration(SUPER_TENANT_DOMAIN_NAME).validateSwaggerTable();
+        faultyCAppObjects.add(currentApp);
+        faultyCapps.add(cAppName);
     }
 
     /**

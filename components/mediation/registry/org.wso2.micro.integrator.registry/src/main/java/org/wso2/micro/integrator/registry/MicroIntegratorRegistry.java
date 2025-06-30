@@ -89,6 +89,8 @@ import static org.wso2.micro.integrator.registry.MicroIntegratorRegistryConstant
 import static org.wso2.micro.integrator.registry.MicroIntegratorRegistryConstants.TYPE_KEY;
 import static org.wso2.micro.integrator.registry.MicroIntegratorRegistryConstants.URL_SEPARATOR;
 import static org.wso2.micro.integrator.registry.MicroIntegratorRegistryConstants.VALUE_KEY;
+import static org.wso2.micro.integrator.registry.MicroIntegratorRegistryConstants.REG_DEP_FAILURE_IDENTIFIER;
+
 public class MicroIntegratorRegistry extends AbstractRegistry {
 
     private static final Log log = LogFactory.getLog(MicroIntegratorRegistry.class);
@@ -582,7 +584,7 @@ public class MicroIntegratorRegistry extends AbstractRegistry {
             try {
                 addResource(parent, fileName, !isDirectory);
             } catch (Exception e) {
-                handleException("Error when adding a new resource", e);
+                handleException(REG_DEP_FAILURE_IDENTIFIER + "Error when adding a new resource", e);
             }
         } else {
             // Warn the user that unable to create resources in remote registry resources
@@ -641,7 +643,7 @@ public class MicroIntegratorRegistry extends AbstractRegistry {
                     writeToFile(parentFile, fileName, content, metadata, properties);
                 }
             } catch (Exception e) {
-                handleException("Error when adding a new resource", e);
+                handleException(REG_DEP_FAILURE_IDENTIFIER + "Error when adding a new resource", e);
             }
         } else {
             log.warn("Creating new resource in remote registry is NOT SUPPORTED. Unable to create: " + path);
@@ -917,7 +919,8 @@ public class MicroIntegratorRegistry extends AbstractRegistry {
                 log.debug("Successfully content written to file : " + parent.getPath() + URL_SEPARATOR + newFileName);
             }
         } catch (IOException e) {
-            handleException("Couldn't write to registry resource: " + parent.getPath() + URL_SEPARATOR + newFileName, e);
+            handleException(REG_DEP_FAILURE_IDENTIFIER + "Couldn't write to registry resource: " +
+                    parent.getPath() + URL_SEPARATOR + newFileName, e);
         }
     }
 
