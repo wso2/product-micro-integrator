@@ -24,6 +24,7 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.deployment.AbstractDeployer;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.deployment.repository.util.DeploymentFileData;
+import org.apache.axis2.deployment.util.Utils;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -43,6 +44,7 @@ import org.wso2.micro.core.CarbonAxisConfigurator;
 import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.core.util.FileManipulator;
 import org.wso2.micro.integrator.initializer.serviceCatalog.ServiceCatalogDeployer;
+import org.wso2.micro.integrator.initializer.utils.CAppDescriptor;
 import org.wso2.micro.integrator.initializer.utils.DeployerUtil;
 import org.wso2.micro.integrator.initializer.utils.ServiceCatalogUtils;
 
@@ -54,7 +56,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +69,9 @@ import javax.xml.stream.XMLStreamException;
 
 import static org.wso2.micro.core.Constants.SUPER_TENANT_DOMAIN_NAME;
 import static org.wso2.micro.integrator.initializer.deployment.synapse.deployer.SynapseAppDeployerConstants.API_TYPE;
+import static org.wso2.micro.integrator.initializer.utils.Constants.CAR_FILE_EXTENSION;
+import static org.wso2.micro.integrator.initializer.utils.DeployerUtil.getCAppProcessingOrder;
+import static org.wso2.micro.integrator.initializer.utils.DeployerUtil.hasCAppWithoutDescriptor;
 import static org.wso2.micro.integrator.registry.MicroIntegratorRegistryConstants.REG_DEP_FAILURE_IDENTIFIER;
 
 public class CappDeployer extends AbstractDeployer {
@@ -761,6 +768,51 @@ public class CappDeployer extends AbstractDeployer {
             // This error is properly handled later in the deployers and CAPP will go faulty.
             // Hence the exception is not propagated from here.
             return null;
+        }
+    }
+
+    /**
+     * Sorts the given list of DeploymentFileData objects between the specified indices according to the processing order of CApps.
+     * If any CApp is found without a descriptor.xml, the list is sorted alphabetically instead.
+     *
+     * @param filesToDeploy the list of DeploymentFileData objects to sort
+     * @param startIndex the starting index (inclusive) of the sublist to sort
+     * @param toIndex the ending index (exclusive) of the sublist to sort
+     */
+    public void sort(List<DeploymentFileData> filesToDeploy, int startIndex, int toIndex) {
+
+        File cAppDirFile = new File(this.cAppDir);
+        File[] cAppFiles = cAppDirFile.listFiles((dir, name) -> name.endsWith(CAR_FILE_EXTENSION));
+        boolean hasCAppWithoutDescriptor = hasCAppWithoutDescriptor(cAppFiles);
+        if (hasCAppWithoutDescriptor) {
+            log.warn(
+                    "Some CApps are missing descriptor.xml files. Hence, Dependency-based ordering will be " +
+                            "skipped, and all CApps will be deployed in alphabetical order.");
+            super.sort(filesToDeploy, startIndex, toIndex);
+        } else {
+            File[] orderedAllCApps = getCAppProcessingOrder(cAppFiles);
+
+            if (filesToDeploy == null || filesToDeploy.isEmpty()) {
+                return;
+            }
+            if (startIndex < 0 || toIndex > filesToDeploy.size() || startIndex >= toIndex) {
+                return;
+            }
+
+            // Build a map from file name to order index
+            Map<String, Integer> cAppOrderMap = new HashMap<>();
+            for (int i = 0; i < orderedAllCApps.length; i++) {
+                cAppOrderMap.put(orderedAllCApps[i].getName(), i);
+            }
+
+            // Extract the sublist to be sorted
+            List<DeploymentFileData> subList = filesToDeploy.subList(startIndex, toIndex);
+
+            // Sort sublist based on the position in orderedAllCApps
+            subList.sort(Comparator.comparingInt(dfd -> {
+                String name = dfd.getFile().getName();
+                return cAppOrderMap.getOrDefault(name, Integer.MAX_VALUE); // unknown files go last
+            }));
         }
     }
 }

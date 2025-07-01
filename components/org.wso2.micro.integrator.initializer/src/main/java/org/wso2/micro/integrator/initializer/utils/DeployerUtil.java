@@ -20,11 +20,34 @@ package org.wso2.micro.integrator.initializer.utils;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.deployment.util.Utils;
 import org.apache.synapse.api.API;
 import org.apache.synapse.api.version.VersionStrategy;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
 import javax.xml.namespace.QName;
+
+import static org.wso2.micro.integrator.initializer.utils.Constants.CAR_FILE_EXTENSION;
+import static org.wso2.micro.integrator.initializer.utils.Constants.DESCRIPTOR_XML_FILE_NAME;
 
 public class DeployerUtil {
 
@@ -40,5 +63,193 @@ public class DeployerUtil {
         VersionStrategy vStrategy = VersionStrategyFactory.createVersioningStrategy(api, apiElement);
         api.setVersionStrategy(vStrategy);
         return api;
+    }
+
+    /**
+     * Reads the content of descriptor.xml from a CApp (Carbon Application) file.
+     *
+     * @param cAppFilePath Path to the .car (CApp) file
+     * @return Content of descriptor.xml as a String, or null if not found or error occurs
+     */
+    public static String readDescriptorXmlFromCApp(String cAppFilePath) throws IOException {
+        File cappFile = new File(cAppFilePath);
+
+        if (!cappFile.exists()) {
+            throw new FileNotFoundException("CApp file not found: " + cAppFilePath);
+        }
+
+        try (ZipFile zip = new ZipFile(cappFile)) {
+            ZipEntry entry = zip.getEntry(DESCRIPTOR_XML_FILE_NAME);
+            if (entry != null) {
+                try (InputStream stream = zip.getInputStream(entry)) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+                    StringBuilder content = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        content.append(line).append("\n");
+                    }
+                    return content.toString();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Determines the processing order of Carbon Application (CApp) files based on their dependencies.
+     *
+     * <p>This method sorts the given CApp files alphabetically by name, analyzes their dependencies,
+     * create a dependency graph, and returns an array of files in the correct processing order.</p>
+     *
+     * @param cAppFiles An array of `File` objects representing the CApp files to be processed.
+     * @return An array of `File` objects in the order they should be processed.
+     * @throws IllegalArgumentException If a identifier in the processing order cannot be resolved to a corresponding CApp file.
+     */
+    public static File[] getCAppProcessingOrder(File[] cAppFiles) {
+        Arrays.sort(cAppFiles, Comparator.comparing(File::getName));
+        List<CAppDescriptor> cAppDescriptors = getCAppDescriptors(cAppFiles);
+        Map<String, List<String>> cAppDependencyGraph = createCAppDependencyGraph(cAppDescriptors);
+        List<String> graphProcessingOrder = getDependencyGraphProcessingOrder(cAppDependencyGraph);
+        File[] orderedFiles = new File[cAppFiles.length];
+        int index = 0;
+        for (String fileIdentifier : graphProcessingOrder) {
+            boolean fileFound = false;
+            if (fileIdentifier.endsWith(CAR_FILE_EXTENSION)) {
+                for (File file : cAppFiles) {
+                    if (file.getName().equals(fileIdentifier)) {
+                        orderedFiles[index++] = file;
+                        fileFound = true;
+                        break;
+                    }
+                }
+            } else {
+                for (CAppDescriptor cAppDescriptor : cAppDescriptors) {
+                    if (cAppDescriptor.getCAppId().equals(fileIdentifier)) {
+                        orderedFiles[index++] = cAppDescriptor.getCAppFile();
+                        fileFound = true;
+                        break;
+                    }
+                }
+            }
+            if (!fileFound) {
+                throw new IllegalArgumentException("No cAppFile found for file identifier: " + fileIdentifier);
+            }
+        }
+        return orderedFiles;
+    }
+
+    /**
+     * Checks if any of the provided CApp archive files are missing a descriptor.xml file.
+     *
+     * @param cAppFiles An array of `File` objects representing the CApp files to check.
+     * @return true if at least one CApp archive does not contain a descriptor.xml file, false otherwise.
+     */
+    public static boolean hasCAppWithoutDescriptor(File[] cAppFiles) {
+
+        if (cAppFiles == null) {
+            return false;
+        }
+        for (File carFile : cAppFiles) {
+            try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(carFile)) {
+                if (zip.getEntry(DESCRIPTOR_XML_FILE_NAME) == null) {
+                    return true;
+                }
+            } catch (IOException e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Creates a list of `CAppDescriptor` objects from an array of Carbon Application (CApp) files.
+     *
+     * @param cAppFiles An array of `File` objects representing the CApp files.
+     * @return A list of `CAppDescriptor` objects corresponding to the provided CApp files.
+     */
+    public static List<CAppDescriptor> getCAppDescriptors(File[] cAppFiles) {
+        List<CAppDescriptor> cAppDescriptors = new ArrayList<>();
+        for (File cAppFile : cAppFiles) {
+            cAppDescriptors.add(new CAppDescriptor(cAppFile));
+        }
+        return cAppDescriptors;
+    }
+
+    /**
+     * Creates a dependency graph for Carbon Applications (CApps) based on their dependencies.
+     *
+     * This method takes a list of `CAppDescriptor` objects, each representing a Carbon Application,
+     * and constructs a directed graph where each node represents a CApp and edges represent
+     * dependencies between them. The graph is represented as a map where the keys are CApp IDs
+     * and the values are lists of dependent CApp IDs.
+     *
+     * @param cAppDescriptors A list of `CAppDescriptor` objects representing the Carbon Applications.
+     * @return A map representing the dependency graph. The keys are CApp IDs, and the values are
+     *         lists of IDs of CApps that depend on the key CApp.
+     */
+    public static Map<String, List<String>> createCAppDependencyGraph(List<CAppDescriptor> cAppDescriptors) {
+        Map<String, List<String>> dependencyGraph = new LinkedHashMap<>();
+        for (CAppDescriptor cAppDescriptor : cAppDescriptors) {
+            for (String dependency : cAppDescriptor.getCAppDependencies()) {
+                if (dependencyGraph.containsKey(dependency)) {
+                    dependencyGraph.get(dependency).add(cAppDescriptor.getCAppId());
+                } else {
+                    List<String> dependentFiles = new ArrayList<>();
+                    dependentFiles.add(cAppDescriptor.getCAppId());
+                    dependencyGraph.put(dependency, dependentFiles);
+                }
+            }
+            dependencyGraph.putIfAbsent(cAppDescriptor.getCAppId(), new ArrayList<>());
+        }
+        return dependencyGraph;
+    }
+
+    /**
+     * Determines the processing order of nodes in a dependency graph using topological sorting.
+     *
+     * This method takes a directed acyclic graph (DAG) represented as an adjacency list and computes
+     * the order in which the nodes should be processed, ensuring that each node is processed only
+     * after all its dependencies have been processed.
+     *
+     * @param graph A map where the keys represent nodes and the values are lists of nodes that
+     *              depend on the corresponding key node.
+     * @return A list of nodes in the order they should be processed.
+     * @throws IllegalArgumentException If the graph contains cycles, making topological sorting impossible.
+     */
+    public static List<String> getDependencyGraphProcessingOrder(Map<String, List<String>> graph) throws IllegalArgumentException {
+        Map<String, Integer> inDegree = new LinkedHashMap<>();
+        for (String node : graph.keySet()) {
+            inDegree.put(node, 0);
+        }
+        for (List<String> dependents : graph.values()) {
+            for (String dependent : dependents) {
+                inDegree.put(dependent, inDegree.getOrDefault(dependent, 0) + 1);
+            }
+        }
+
+        Queue<String> queue = new LinkedList<>();
+        for (Map.Entry<String, Integer> entry : inDegree.entrySet()) {
+            if (entry.getValue() == 0) {
+                queue.add(entry.getKey());
+            }
+        }
+
+        List<String> sortedOrder = new ArrayList<>();
+        while (!queue.isEmpty()) {
+            String current = queue.poll();
+            sortedOrder.add(current);
+
+            for (String neighbor : graph.getOrDefault(current, Collections.emptyList())) {
+                inDegree.put(neighbor, inDegree.get(neighbor) - 1);
+                if (inDegree.get(neighbor) == 0) {
+                    queue.add(neighbor);
+                }
+            }
+        }
+
+        if (sortedOrder.size() != inDegree.size()) {
+            throw new IllegalArgumentException("Cyclic dependency detected among the CApps provided");
+        }
+        return sortedOrder;
     }
 }

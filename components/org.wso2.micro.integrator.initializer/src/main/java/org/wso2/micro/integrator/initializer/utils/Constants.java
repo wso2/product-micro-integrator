@@ -113,4 +113,6 @@ public class Constants {
     public static final String APPLICATION_SOAP = "application/soap+xml";
     public static final String APPLICATION_XML = "application/xml";
 
+    public static final String CAR_FILE_EXTENSION = ".car";
+    public static final String DESCRIPTOR_XML_FILE_NAME = "descriptor.xml";
 }
