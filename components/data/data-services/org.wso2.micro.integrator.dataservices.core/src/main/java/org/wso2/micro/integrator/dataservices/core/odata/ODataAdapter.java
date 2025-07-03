@@ -499,6 +499,7 @@ public class ODataAdapter implements ServiceHandler {
                         contextUrl = ContextURL.with().entitySet(details.edmEntitySet).build();
                     }
                     EntityCollectionSerializerOptions opts = buildSerializerOptions(details, contextUrl, id);
+                    setODataCountIfRequested(request ,details);
                     SerializerStreamResult serializerResult = serializer.entityCollectionStreamed(edm,
                                                                                                   details.edmEntitySet.getEntityType(),
                                                                                                   details.iterator,
@@ -535,6 +536,34 @@ public class ODataAdapter implements ServiceHandler {
                 }
             }
         });
+    }
+
+    private void setODataCountIfRequested(final DataRequest request, EntityDetails details) {
+        UriInfo uriInfo = request.getUriInfo();
+        FilterOption filterOption = uriInfo.getFilterOption();
+        CountOption countOption = uriInfo.getCountOption();
+        boolean isCountRequested = countOption != null && countOption.getValue() && filterOption != null;
+        if (isCountRequested && excludePagingForOdataCount) {
+            try {
+                EdmEntitySet edmEntitySet = request.getEntitySet();
+                String baseURL = request.getODataRequest().getRawBaseUri();
+
+                EntityIterator countIterator = getEntityIterator(edmEntitySet, baseURL,
+                        new QueryOptions(null, filterOption, null, null, null, null, null));
+
+                while (countIterator.hasNext()) {
+                    countIterator.next();
+                }
+                StreamingEntityIterator iterator = (StreamingEntityIterator) details.iterator;
+                iterator.odataCount = countIterator.getCount();
+
+            } catch (ODataServiceFault e) {
+                throw new ODataRuntimeException("Error while getting odata count: " + e.getMessage(), e);
+            } finally {
+                this.dataHandler.initStreaming();
+                // need to reset the streaming iterator for later use
+            }
+        }
     }
 
     /**
@@ -1319,15 +1348,13 @@ public class ODataAdapter implements ServiceHandler {
                             return false;
                         }
                         QueryOptions queryOptions = this.getQueryOptions();
-                        if (!excludePagingForOdataCount) {
-                            if (queryOptions.getTopOption() != null
-                                    && queryOptions.getTopCount() > queryOptions.getTopOption().getValue()) {
-                                return false;
-                            }
-                            if (queryOptions.getSkipTokenOption() != null && queryOptions.getSkipTokenCount() > (
-                                    queryOptions.getItemsToSkip() + queryOptions.getPageSize())) {
-                                return false;
-                            }
+                        if (queryOptions.getTopOption() != null
+                                && queryOptions.getTopCount() > queryOptions.getTopOption().getValue()) {
+                            return false;
+                        }
+                        if (queryOptions.getSkipTokenOption() != null && queryOptions.getSkipTokenCount() > (
+                                queryOptions.getItemsToSkip() + queryOptions.getPageSize())) {
+                            return false;
                         }
                         EdmEntitySet edmEntitySet = this.getEdmEntitySet();
                         ODataAdapter oDataAdapter = this.getAdapter();
@@ -1344,7 +1371,6 @@ public class ODataAdapter implements ServiceHandler {
                         }
 
                         String baseURL = this.getBaseURL();
-                        boolean countOnlyMode = false;
                         for (int i = 0; i < entries.size(); i++) {
                             Entity entity = createEntityForStreaming(oDataAdapter, tableName, entries.get(i), baseURL);
                             this.entityCount++;
@@ -1363,10 +1389,6 @@ public class ODataAdapter implements ServiceHandler {
                                             Locale.ROOT);
                                 }
                             }
-                            if (excludePagingForOdataCount) {
-                                // Need to get the Odata count before applying $top, $skip, or $expand query options.
-                                this.odataCount++;
-                            }
                             if (queryOptions.getSkipOption() != null) {
                                 queryOptions.stepSkipCount();
                                 if (queryOptions.getSkipCount() <= queryOptions.getSkipOption().getValue()) {
@@ -1376,12 +1398,8 @@ public class ODataAdapter implements ServiceHandler {
                             if (queryOptions.getTopOption() != null) {
                                 queryOptions.stepTopCount();
                                 if (queryOptions.getTopCount() > queryOptions.getTopOption().getValue()) {
-                                    if (excludePagingForOdataCount) {
-                                        countOnlyMode = true; // Enter count-only mode after reaching top limit
-                                    } else {
-                                        this.iterator = this.getEntityList().iterator();
-                                        return this.iterator.hasNext();
-                                    }
+                                    this.iterator = this.getEntityList().iterator();
+                                    return this.iterator.hasNext();
                                 }
                             }
                             if (queryOptions.getSkipTokenOption() != null) {
@@ -1390,40 +1408,28 @@ public class ODataAdapter implements ServiceHandler {
                                     continue;
                                 } else if (queryOptions.getSkipTokenCount() > (queryOptions.getItemsToSkip()
                                         + queryOptions.getPageSize())) {
-                                    if (excludePagingForOdataCount) {
-                                        countOnlyMode = true;
-                                    } else {
-                                        this.iterator = this.getEntityList().iterator();
-                                        return this.iterator.hasNext();
-                                    }
+                                    this.iterator = this.getEntityList().iterator();
+                                    return this.iterator.hasNext();
                                 }
                             }
                             if (queryOptions.getExpandOption() != null) {
                                 entity = expandEntityForStreaming(oDataAdapter, entity, baseURL, edmEntitySet,
                                                                   queryOptions.getExpandOption());
                             }
-                            if (excludePagingForOdataCount) {
-                                if (!countOnlyMode) {
-                                    this.getEntityList().add(entity);
-                                }
-                            } else {
-                                this.getEntityList().add(entity);
-                            }
+                            this.getEntityList().add(entity);
                         }
 
-                        if (!excludePagingForOdataCount) {
-                            if (this.entityCount < this.rowsCount && this.getEntityList().isEmpty()) {
-                                if (queryOptions.getFilterOption() != null) {
-                                    return hasNext();
-                                }
-                                if (queryOptions.getSkipOption() != null && (queryOptions.getSkipCount()
-                                        <= queryOptions.getSkipOption().getValue())) {
-                                    return hasNext();
-                                }
-                                if (queryOptions.getSkipTokenOption() != null && (queryOptions.getSkipTokenCount()
-                                        <= queryOptions.getItemsToSkip())) {
-                                    return hasNext();
-                                }
+                        if (this.entityCount < this.rowsCount && this.getEntityList().isEmpty()) {
+                            if (queryOptions.getFilterOption() != null) {
+                                return hasNext();
+                            }
+                            if (queryOptions.getSkipOption() != null && (queryOptions.getSkipCount()
+                                    <= queryOptions.getSkipOption().getValue())) {
+                                return hasNext();
+                            }
+                            if (queryOptions.getSkipTokenOption() != null && (queryOptions.getSkipTokenCount()
+                                    <= queryOptions.getItemsToSkip())) {
+                                return hasNext();
                             }
                         }
                         this.iterator = this.getEntityList().iterator();
