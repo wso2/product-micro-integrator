@@ -20,7 +20,7 @@ package org.wso2.micro.integrator.initializer.utils;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
-import org.apache.axis2.deployment.util.Utils;
+import org.apache.axis2.deployment.DeploymentException;
 import org.apache.synapse.api.API;
 import org.apache.synapse.api.version.VersionStrategy;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
@@ -105,13 +105,15 @@ public class DeployerUtil {
      * @return An array of `File` objects in the order they should be processed.
      * @throws IllegalArgumentException If a identifier in the processing order cannot be resolved to a corresponding CApp file.
      */
-    public static File[] getCAppProcessingOrder(File[] cAppFiles) {
+    public static File[] getCAppProcessingOrder(File[] cAppFiles) throws DeploymentException {
         Arrays.sort(cAppFiles, Comparator.comparing(File::getName));
         List<CAppDescriptor> cAppDescriptors = getCAppDescriptors(cAppFiles);
         Map<String, List<String>> cAppDependencyGraph = createCAppDependencyGraph(cAppDescriptors);
         List<String> graphProcessingOrder = getDependencyGraphProcessingOrder(cAppDependencyGraph);
         File[] orderedFiles = new File[cAppFiles.length];
         int index = 0;
+        StringBuilder missingMsg = new StringBuilder();
+
         for (String fileIdentifier : graphProcessingOrder) {
             boolean fileFound = false;
             if (fileIdentifier.endsWith(CAR_FILE_EXTENSION)) {
@@ -132,8 +134,13 @@ public class DeployerUtil {
                 }
             }
             if (!fileFound) {
-                throw new IllegalArgumentException("No cAppFile found for file identifier: " + fileIdentifier);
+                List<String> dependents = cAppDependencyGraph.getOrDefault(fileIdentifier, Collections.emptyList());
+                missingMsg.append("Missing CApp: ").append(fileIdentifier)
+                        .append(" (required by: ").append(String.join(", ", dependents)).append(")\n");
             }
+        }
+        if (missingMsg.length() > 0) {
+            throw new DeploymentException("Some CApps are missing:\n" + missingMsg);
         }
         return orderedFiles;
     }
@@ -214,9 +221,9 @@ public class DeployerUtil {
      * @param graph A map where the keys represent nodes and the values are lists of nodes that
      *              depend on the corresponding key node.
      * @return A list of nodes in the order they should be processed.
-     * @throws IllegalArgumentException If the graph contains cycles, making topological sorting impossible.
+     * @throws DeploymentException If the graph contains cycles, making topological sorting impossible.
      */
-    public static List<String> getDependencyGraphProcessingOrder(Map<String, List<String>> graph) throws IllegalArgumentException {
+    public static List<String> getDependencyGraphProcessingOrder(Map<String, List<String>> graph) throws DeploymentException {
         Map<String, Integer> inDegree = new LinkedHashMap<>();
         for (String node : graph.keySet()) {
             inDegree.put(node, 0);
@@ -248,7 +255,17 @@ public class DeployerUtil {
         }
 
         if (sortedOrder.size() != inDegree.size()) {
-            throw new IllegalArgumentException("Cyclic dependency detected among the CApps provided");
+            // Nodes with in-degree > 0 are part of the cycle
+            List<String> cycleNodes = new ArrayList<>();
+            for (Map.Entry<String, Integer> entry : inDegree.entrySet()) {
+                if (entry.getValue() > 0) {
+                    cycleNodes.add(entry.getKey());
+                }
+            }
+            throw new DeploymentException(
+                    "Cyclic dependency detected among the CApps provided. " +
+                            "CApps involved in the cycle: " + String.join(", ", cycleNodes)
+            );
         }
         return sortedOrder;
     }

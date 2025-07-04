@@ -18,6 +18,7 @@
 
 package org.wso2.micro.integrator.initializer.utils;
 
+import org.apache.axis2.deployment.DeploymentException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -155,7 +156,7 @@ public class DeployerUtilTest {
     }
 
     @Test
-    public void testComplexDependencyGraphProcessingOrder() {
+    public void testComplexDependencyGraphProcessingOrder() throws DeploymentException {
 
         Map<String, List<String>> dependencyGraph = new HashMap<>();
         dependencyGraph.put("A", Arrays.asList("B", "C"));
@@ -171,7 +172,7 @@ public class DeployerUtilTest {
     }
 
     @Test
-    public void testMultipleSeparatedGraphsProcessingOrder() {
+    public void testMultipleSeparatedGraphsProcessingOrder() throws DeploymentException {
 
         Map<String, List<String>> dependencyGraph = new HashMap<>();
         // First graph
@@ -192,7 +193,7 @@ public class DeployerUtilTest {
     }
 
     @Test
-    public void testMultipleDependenciesPointingToSameRootProject() {
+    public void testMultipleDependenciesPointingToSameRootProject() throws DeploymentException {
 
         Map<String, List<String>> dependencyGraph = new HashMap<>();
         dependencyGraph.put("A", Arrays.asList("B", "D"));
@@ -210,7 +211,7 @@ public class DeployerUtilTest {
     }
 
     @Test
-    public void testEmptyDependencyGraphProcessingOrder() {
+    public void testEmptyDependencyGraphProcessingOrder() throws DeploymentException {
 
         Map<String, List<String>> dependencyGraph = new HashMap<>();
         List<String> processingOrder = DeployerUtil.getDependencyGraphProcessingOrder(dependencyGraph);
@@ -219,7 +220,7 @@ public class DeployerUtilTest {
     }
 
     @Test
-    public void testMultipleProjectsWithSameDependency() {
+    public void testMultipleProjectsWithSameDependency() throws DeploymentException {
 
         Map<String, List<String>> dependencyGraph = new HashMap<>();
         dependencyGraph.put("I", Arrays.asList("A", "B", "C", "D", "E"));
@@ -246,8 +247,8 @@ public class DeployerUtilTest {
         dependencyGraph.put("Config2.car", Collections.singletonList("Exporter.car")); // Cyclic dependency
         try {
             DeployerUtil.getDependencyGraphProcessingOrder(dependencyGraph);
-        } catch (IllegalArgumentException e) {
-            assertEquals("Cycle detected in the dependency graph", e.getMessage());
+        } catch (DeploymentException e) {
+            assertEquals("Cyclic dependency detected among the CApps provided", e.getMessage());
         }
     }
 
@@ -263,7 +264,7 @@ public class DeployerUtilTest {
 
         try {
             DeployerUtil.getDependencyGraphProcessingOrder(dependencyGraph);
-        } catch (IllegalArgumentException e) {
+        } catch (DeploymentException e) {
             assertEquals("Cyclic dependency detected among the CApps provided", e.getMessage());
         }
     }

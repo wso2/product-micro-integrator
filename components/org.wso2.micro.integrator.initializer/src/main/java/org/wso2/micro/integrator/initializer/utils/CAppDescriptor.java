@@ -19,6 +19,7 @@
 package org.wso2.micro.integrator.initializer.utils;
 
 import org.apache.axis2.deployment.DeploymentEngine;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.w3c.dom.Document;
@@ -58,7 +59,9 @@ public class CAppDescriptor {
 
     public void addDependency(String dependency) {
 
-        cAppDependencies.add(dependency);
+        if (!cAppDependencies.contains(dependency)) {
+            cAppDependencies.add(dependency);
+        }
     }
 
     public String getCAppId() {
@@ -84,26 +87,46 @@ public class CAppDescriptor {
         try {
             String descriptorXml = readDescriptorXmlFromCApp(this.cAppFile.getAbsolutePath());
             if (descriptorXml != null && !descriptorXml.isEmpty()) {
-                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                DocumentBuilderFactory factory = SecureDocumentBuilderFactory.newDocumentBuilderFactory();
                 DocumentBuilder builder = factory.newDocumentBuilder();
                 Document document = builder.parse(new InputSource(new StringReader(descriptorXml)));
 
-                NodeList idElements = document.getElementsByTagName("id");
+                NodeList idElements = document.getElementsByTagName(Constants.ID);
                 if (idElements.getLength() > 0) {
                     setCAppId(idElements.item(0).getTextContent());
                 }
 
-                NodeList dependencyNodes = document.getElementsByTagName("dependency");
+                NodeList dependencyNodes = document.getElementsByTagName(Constants.DEPENDENCY);
                 for (int i = 0; i < dependencyNodes.getLength(); i++) {
                     Node dependencyNode = dependencyNodes.item(i);
-                    String groupId = dependencyNode.getAttributes().getNamedItem("groupId").getNodeValue();
-                    String artifactId = dependencyNode.getAttributes().getNamedItem("artifactId").getNodeValue();
-                    String version = dependencyNode.getAttributes().getNamedItem("version").getNodeValue();
-                    addDependency(groupId + "_" + artifactId + "_" + version);
+                    String groupId = dependencyNode.getAttributes().getNamedItem(Constants.CAPP_GROUP_ID).getNodeValue();
+                    String artifactId = dependencyNode.getAttributes().getNamedItem(Constants.CAPP_ARTIFACT_ID).getNodeValue();
+                    String version = dependencyNode.getAttributes().getNamedItem(Constants.CAPP_VERSION).getNodeValue();
+                    if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(artifactId) && StringUtils.isNotEmpty(version)) {
+                        addDependency(groupId + Constants.UNDERSCORE + artifactId + Constants.UNDERSCORE + version);
+                    } else {
+                        log.warn("Skipping dependency with missing attributes in descriptor.xml for CApp: "
+                                + this.cAppFile.getName());
+                    }
+
                 }
             }
-        } catch (Exception e) {
-            log.error("Error reading descriptor.xml from " + this.cAppFile.getName() + ": " + e.getMessage(), e);
+        } catch (javax.xml.parsers.ParserConfigurationException e) {
+            log.error("Could not initialize the XML parser for descriptor.xml in CApp: "
+                    + this.cAppFile.getName() + ". Please check your system configuration. Error: "
+                    + e.getMessage(), e);
+        } catch (org.xml.sax.SAXException e) {
+            log.error("Failed to parse descriptor.xml in CApp: "
+                    + this.cAppFile.getName() + ". The XML file may be invalid. Error: "
+                    + e.getMessage(), e);
+        } catch (java.io.IOException e) {
+            log.error("Could not read descriptor.xml from CApp: "
+                    + this.cAppFile.getName() + ". The file may be missing or inaccessible. Error: "
+                    + e.getMessage(), e);
+        } catch (NullPointerException e) {
+            log.error("Missing dependency attribute in descriptor.xml for CApp: "
+                    + this.cAppFile.getName() + ". A dependency element may lack groupId, artifactId, or version. Details: "
+                    + e.getMessage(), e);
         }
     }
 }

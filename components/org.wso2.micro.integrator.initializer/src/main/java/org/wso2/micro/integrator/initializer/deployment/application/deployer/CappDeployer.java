@@ -24,7 +24,6 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.deployment.AbstractDeployer;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.deployment.repository.util.DeploymentFileData;
-import org.apache.axis2.deployment.util.Utils;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -44,7 +43,6 @@ import org.wso2.micro.core.CarbonAxisConfigurator;
 import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.core.util.FileManipulator;
 import org.wso2.micro.integrator.initializer.serviceCatalog.ServiceCatalogDeployer;
-import org.wso2.micro.integrator.initializer.utils.CAppDescriptor;
 import org.wso2.micro.integrator.initializer.utils.DeployerUtil;
 import org.wso2.micro.integrator.initializer.utils.ServiceCatalogUtils;
 
@@ -56,7 +54,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -783,15 +780,12 @@ public class CappDeployer extends AbstractDeployer {
 
         File cAppDirFile = new File(this.cAppDir);
         File[] cAppFiles = cAppDirFile.listFiles((dir, name) -> name.endsWith(CAR_FILE_EXTENSION));
-        boolean hasCAppWithoutDescriptor = hasCAppWithoutDescriptor(cAppFiles);
-        if (hasCAppWithoutDescriptor) {
+        if (hasCAppWithoutDescriptor(cAppFiles)) {
             log.warn(
-                    "Some CApps are missing descriptor.xml files. Hence, Dependency-based ordering will be " +
+                    "Some or all CApps are missing descriptor.xml file. Hence, Dependency-based ordering will be " +
                             "skipped, and all CApps will be deployed in alphabetical order.");
             super.sort(filesToDeploy, startIndex, toIndex);
         } else {
-            File[] orderedAllCApps = getCAppProcessingOrder(cAppFiles);
-
             if (filesToDeploy == null || filesToDeploy.isEmpty()) {
                 return;
             }
@@ -799,20 +793,28 @@ public class CappDeployer extends AbstractDeployer {
                 return;
             }
 
-            // Build a map from file name to order index
-            Map<String, Integer> cAppOrderMap = new HashMap<>();
-            for (int i = 0; i < orderedAllCApps.length; i++) {
-                cAppOrderMap.put(orderedAllCApps[i].getName(), i);
+            try {
+                File[] orderedAllCApps = getCAppProcessingOrder(cAppFiles);
+
+                // Build a map from file name to order index
+                Map<String, Integer> cAppOrderMap = new HashMap<>();
+                for (int i = 0; i < orderedAllCApps.length; i++) {
+                    cAppOrderMap.put(orderedAllCApps[i].getName(), i);
+                }
+
+                // Extract the sublist to be sorted
+                List<DeploymentFileData> subList = filesToDeploy.subList(startIndex, toIndex);
+
+                // Sort sublist based on the position in orderedAllCApps
+                subList.sort(Comparator.comparingInt(dfd -> {
+                    String name = dfd.getFile().getName();
+                    return cAppOrderMap.getOrDefault(name, Integer.MAX_VALUE); // unknown files go last
+                }));
+            } catch (DeploymentException e) {
+                log.warn("Error while getting the CApp processing order according to dependencies. " +
+                                "CApps will be sorted alphabetically instead.", e);
+                super.sort(filesToDeploy, startIndex, toIndex);
             }
-
-            // Extract the sublist to be sorted
-            List<DeploymentFileData> subList = filesToDeploy.subList(startIndex, toIndex);
-
-            // Sort sublist based on the position in orderedAllCApps
-            subList.sort(Comparator.comparingInt(dfd -> {
-                String name = dfd.getFile().getName();
-                return cAppOrderMap.getOrDefault(name, Integer.MAX_VALUE); // unknown files go last
-            }));
         }
     }
 }
