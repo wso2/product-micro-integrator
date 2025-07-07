@@ -314,14 +314,12 @@ public class CappDeployerTest {
         files.add(new DeploymentFileData(carC, cappDeployer));
         files.add(new DeploymentFileData(carA, cappDeployer));
 
-        try {
-            cappDeployer.sort(files, 0, files.size());
-            // If no exception is thrown, fail the test
-            fail("Expected an exception due to cyclic dependency, but none was thrown.");
-        } catch (Exception e) {
-            assertTrue("Expected cycle detection error message",
-                    e.getMessage() != null && e.getMessage().contains("Cyclic dependency detected"));
-        }
+        cappDeployer.sort(files, 0, files.size());
+
+        // Should sort alphabetically because of cyclic dependency: expect a.car, b.car, c.car (alphabetical order)
+        assertEquals("a.car", files.get(0).getFile().getName());
+        assertEquals("b.car", files.get(1).getFile().getName());
+        assertEquals("c.car", files.get(2).getFile().getName());
     }
 
     @Test
@@ -342,34 +340,11 @@ public class CappDeployerTest {
         files.add(new DeploymentFileData(carB, cappDeployer));
         files.add(new DeploymentFileData(carC, cappDeployer));
 
-        try {
-            cappDeployer.sort(files, 0, files.size());
-            fail("Expected an exception due to missing cAppFile, but none was thrown.");
-        } catch (Exception e) {
-            assertTrue("Expected error message for missing cAppFile",
-                    e.getMessage() != null && e.getMessage().contains("No cAppFile found for file identifier"));
-        }
-    }
+        cappDeployer.sort(files, 0, files.size());
 
-//    @Test
-//    void testSort_InvalidIndices() {
-//        List<DeploymentFileData> files = new ArrayList<>();
-//        files.add(mockDeploymentFileData("a.car"));
-//        files.add(mockDeploymentFileData("b.car"));
-//
-//        cappDeployer.sort(files, -1, 1);
-//        cappDeployer.sort(files, 0, 0);
-//        cappDeployer.sort(files, 2, 1);
-//
-//        assertEquals("a.car", files.get(0).getFile().getName());
-//        assertEquals("b.car", files.get(1).getFile().getName());
-//    }
-
-    private DeploymentFileData mockDeploymentFileData(String fileName) {
-
-        File file = new File(fileName);
-        DeploymentFileData dfd = Mockito.mock(DeploymentFileData.class);
-        Mockito.when(dfd.getFile()).thenReturn(file);
-        return dfd;
+        // Since a dependency is missing, only the available CApps are sorted alphabetically: expect a.car, b.car, c.car (alphabetical order)
+        assertEquals("a.car", files.get(0).getFile().getName());
+        assertEquals("b.car", files.get(1).getFile().getName());
+        assertEquals("c.car", files.get(2).getFile().getName());
     }
 }

@@ -193,6 +193,25 @@ public class DeployerUtilTest {
     }
 
     @Test
+    public void testGetCAppProcessingOrderWithMissingCApp() throws Exception {
+        // Create only one CAR file, but declare a dependency on a missing CApp
+        File carFileA = createCarFile(tempDir, "a.car");
+        File[] testCarFiles = {carFileA};
+
+        // Write descriptor for 'a.car' with a dependency on 'b.car' (which does not exist)
+        String depB = "<dependency groupId=\"com.example\" artifactId=\"b\" version=\"1.0.0\" type=\"car\"/>";
+        writeDescriptorToExistingCarFile(carFileA, "com.example", "a", "1.0.0", depB);
+
+        try {
+            DeployerUtil.getCAppProcessingOrder(testCarFiles);
+            fail("Expected DeploymentException due to missing CApp");
+        } catch (DeploymentException e) {
+            assertTrue(e.getMessage().contains("Some CApps are missing:"));
+            assertTrue(e.getMessage().contains("com.example_b_1.0.0"));
+        }
+    }
+
+    @Test
     public void testMultipleDependenciesPointingToSameRootProject() throws DeploymentException {
 
         Map<String, List<String>> dependencyGraph = new HashMap<>();
@@ -248,7 +267,9 @@ public class DeployerUtilTest {
         try {
             DeployerUtil.getDependencyGraphProcessingOrder(dependencyGraph);
         } catch (DeploymentException e) {
-            assertEquals("Cyclic dependency detected among the CApps provided", e.getMessage());
+            assertEquals(
+                    "Cyclic dependency detected among the CApps provided. CApps involved in the cycle: Exporter.car, Config1.car, Config2.car",
+                    e.getMessage());
         }
     }
 
@@ -265,7 +286,8 @@ public class DeployerUtilTest {
         try {
             DeployerUtil.getDependencyGraphProcessingOrder(dependencyGraph);
         } catch (DeploymentException e) {
-            assertEquals("Cyclic dependency detected among the CApps provided", e.getMessage());
+            assertEquals("Cyclic dependency detected among the CApps provided. CApps involved in the cycle: B, C, D, E",
+                    e.getMessage());
         }
     }
 }
