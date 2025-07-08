@@ -327,8 +327,8 @@ public class RDBMSDataHandler implements ODataDataHandler {
             int index = 1;
             for (String column : keys.getNames()) {
                 String value = keys.getValue(column);
-                bindValuesToPreparedStatement(this.rdbmsDataTypes.get(tableName).get(column), value, index,
-                        statement, connection);
+                bindValuesToPreparedStatement(this.rdbmsDataTypes.get(tableName).get(column), value, index, statement,
+                        connection);
                 index++;
             }
             resultSet = statement.executeQuery();

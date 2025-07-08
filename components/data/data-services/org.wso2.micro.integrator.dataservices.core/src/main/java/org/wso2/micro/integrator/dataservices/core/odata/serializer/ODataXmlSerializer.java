@@ -1096,7 +1096,15 @@ public class ODataXmlSerializer implements ODataSerializer {
     private void writeCount(AbstractEntityCollection entitySet, XMLStreamWriter writer, boolean excludePagingForOdataCount)
             throws XMLStreamException {
         writer.writeStartElement("m", "count", NAMESPACE_URI + "metadata");
-        Integer odataCount = excludePagingForOdataCount ? ((StreamingEntityIterator) entitySet).getOdataCount() : entitySet.getCount();
+        Integer odataCount;
+        if (excludePagingForOdataCount){
+            StreamingEntityIterator entityIterator = (StreamingEntityIterator) entitySet;
+            boolean hasFilters = entityIterator.getQueryOptions().getFilterOption() != null;
+            // If the query not has filters, we can take whole rowCount as count.
+            odataCount = hasFilters ? entityIterator.getOdataCount() : entityIterator.rowsCount;
+        } else {
+            odataCount = entitySet.getCount();
+        }
         writer.writeCharacters(String.valueOf(odataCount == null ? 0 : odataCount));
         writer.writeEndElement();
     }
