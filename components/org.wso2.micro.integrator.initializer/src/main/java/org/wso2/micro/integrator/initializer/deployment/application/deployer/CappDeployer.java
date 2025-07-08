@@ -67,8 +67,8 @@ import javax.xml.stream.XMLStreamException;
 import static org.wso2.micro.core.Constants.SUPER_TENANT_DOMAIN_NAME;
 import static org.wso2.micro.integrator.initializer.deployment.synapse.deployer.SynapseAppDeployerConstants.API_TYPE;
 import static org.wso2.micro.integrator.initializer.utils.Constants.CAR_FILE_EXTENSION;
+import static org.wso2.micro.integrator.initializer.utils.DeployerUtil.getCAppsWithDescriptorCount;
 import static org.wso2.micro.integrator.initializer.utils.DeployerUtil.getCAppProcessingOrder;
-import static org.wso2.micro.integrator.initializer.utils.DeployerUtil.hasCAppWithoutDescriptor;
 import static org.wso2.micro.integrator.registry.MicroIntegratorRegistryConstants.REG_DEP_FAILURE_IDENTIFIER;
 
 public class CappDeployer extends AbstractDeployer {
@@ -780,19 +780,22 @@ public class CappDeployer extends AbstractDeployer {
 
         File cAppDirFile = new File(this.cAppDir);
         File[] cAppFiles = cAppDirFile.listFiles((dir, name) -> name.endsWith(CAR_FILE_EXTENSION));
-        if (hasCAppWithoutDescriptor(cAppFiles)) {
+
+        if (cAppFiles == null || filesToDeploy == null || filesToDeploy.isEmpty() || startIndex < 0 ||
+                toIndex > filesToDeploy.size() || startIndex >= toIndex) {
+            super.sort(filesToDeploy, startIndex, toIndex);
+            return;
+        }
+
+        int cAppsWithDescriptorCount = getCAppsWithDescriptorCount(cAppFiles);
+        if (cAppsWithDescriptorCount == 0) {
+            super.sort(filesToDeploy, startIndex, toIndex);
+        } else if (cAppsWithDescriptorCount < cAppFiles.length) {
             log.warn(
                     "Some or all CApps are missing descriptor.xml file. Hence, Dependency-based ordering will be " +
                             "skipped, and all CApps will be deployed in alphabetical order.");
             super.sort(filesToDeploy, startIndex, toIndex);
         } else {
-            if (filesToDeploy == null || filesToDeploy.isEmpty()) {
-                return;
-            }
-            if (startIndex < 0 || toIndex > filesToDeploy.size() || startIndex >= toIndex) {
-                return;
-            }
-
             try {
                 File[] orderedAllCApps = getCAppProcessingOrder(cAppFiles);
 

@@ -146,26 +146,26 @@ public class DeployerUtil {
     }
 
     /**
-     * Checks if any of the provided CApp archive files are missing a descriptor.xml file.
+     * Counts the number of CApp archive files that contain a descriptor.xml file.
      *
      * @param cAppFiles An array of `File` objects representing the CApp files to check.
-     * @return true if at least one CApp archive does not contain a descriptor.xml file, false otherwise.
+     * @return The count of CApp archives containing a descriptor.xml file.
      */
-    public static boolean hasCAppWithoutDescriptor(File[] cAppFiles) {
-
+    public static int getCAppsWithDescriptorCount(File[] cAppFiles) {
         if (cAppFiles == null) {
-            return false;
+            return 0;
         }
+        int count = 0;
         for (File carFile : cAppFiles) {
-            try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(carFile)) {
-                if (zip.getEntry(DESCRIPTOR_XML_FILE_NAME) == null) {
-                    return true;
+            try (ZipFile zip = new ZipFile(carFile)) {
+                if (zip.getEntry(DESCRIPTOR_XML_FILE_NAME) != null) {
+                    count++;
                 }
             } catch (IOException e) {
-                return false;
+                // Ignore files that cannot be read
             }
         }
-        return false;
+        return count;
     }
 
     /**
