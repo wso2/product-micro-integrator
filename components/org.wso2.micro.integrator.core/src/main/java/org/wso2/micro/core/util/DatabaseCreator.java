@@ -39,8 +39,6 @@ public class DatabaseCreator {
     private static Log log = LogFactory.getLog(DatabaseCreator.class);
     private DataSource dataSource;
     private String delimiter = ";";
-    private Connection conn = null;
-    private Statement statement;
 
     public DatabaseCreator(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -53,35 +51,19 @@ public class DatabaseCreator {
      * @throws Exception
      */
     public void createRegistryDatabase() throws Exception {
-        try {
-            conn = dataSource.getConnection();
+        try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
-            statement = conn.createStatement();
-            executeSQLScript();
-            conn.commit();
-            if (log.isTraceEnabled()) {
-                log.trace("Registry tables are created successfully.");
+            try (Statement statement = conn.createStatement()) {
+                executeSQLScript(statement, conn);
+                conn.commit();
+                if (log.isTraceEnabled()) {
+                    log.trace("Registry tables are created successfully.");
+                }
             }
         } catch (SQLException e) {
             String msg = "Failed to create database tables for registry resource store. " + e.getMessage();
             log.fatal(msg, e);
             throw new Exception(msg, e);
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (SQLException e) {
-                    log.error("Failed to close SQL statement.", e);
-                }
-            }
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException e) {
-                log.error("Failed to close database connection.", e);
-            }
         }
     }
 
@@ -96,30 +78,17 @@ public class DatabaseCreator {
                 log.trace("Running a query to test the database tables existence.");
             }
             // check whether the tables are already created with a query
-            conn = dataSource.getConnection();
-            try {
-                statement = conn.createStatement();
+            try (Connection conn = dataSource.getConnection();
+                 Statement statement = conn.createStatement()) {
                 ResultSet rs = statement.executeQuery(checkSQL);
                 if (rs != null) {
                     rs.close();
-                }
-            } finally {
-                try {
-                    if (statement != null) {
-                        statement.close();
-                    }
-                } finally {
-                    if (conn != null) {
-                        conn.close();
-                    }
                 }
             }
         } catch (SQLException e) {
             return false;
         }
-        
         return true;
-
     }
 
 
@@ -129,7 +98,7 @@ public class DatabaseCreator {
      * @param sql
      * @throws Exception
      */
-    private void executeSQL(String sql) throws Exception {
+    private void executeSQL(String sql, Statement statement, Connection conn) throws Exception {
         // Check and ignore empty statements
         if ("".equals(sql.trim())) {
             return;
@@ -282,8 +251,8 @@ public class DatabaseCreator {
      * @return StringBuffer
      * @throws Exception
      */
-    private void executeSQLScript() throws Exception {
-        String databaseType = getDatabaseType(this.conn);
+    private void executeSQLScript(Statement statement, Connection connection) throws Exception {
+        String databaseType = getDatabaseType(connection);
         boolean keepFormat = false;
         if ("oracle".equals(databaseType)) {
             delimiter = "/";
@@ -329,13 +298,13 @@ public class DatabaseCreator {
                     sql.append("\n");
                 }
                 if ((checkStringBufferEndsWith(sql, delimiter))) {
-                    executeSQL(sql.substring(0, sql.length() - delimiter.length()));
+                    executeSQL(sql.substring(0, sql.length() - delimiter.length()), statement, connection);
                     sql.replace(0, sql.length(), "");
                 }
             }
             // Catch any statements not followed by ;
             if (sql.length() > 0) {
-                executeSQL(sql.toString());
+                executeSQL(sql.toString(), statement, connection);
             }
         } catch (IOException e) {
             log.error("Error occurred while executing SQL script for creating registry database", e);
