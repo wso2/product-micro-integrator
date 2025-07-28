@@ -256,6 +256,8 @@
 <!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.addressing:${carbon.kernel.version}-->
 <!--                                </bundleDef>-->
                                 <!--Management API-->
+                                <bundleDef>jakarta.servlet:jakarta.servlet-api:${jakarta.servlet.api.version}</bundleDef>
+                                <bundleDef>org.apache.commons:commons-configuration2:${commons.configuration2.version}</bundleDef>
                                 <bundleDef>
                                     org.wso2.ei:org.wso2.micro.integrator.management.apis:${project.version}
                                 </bundleDef>
@@ -273,7 +275,6 @@
                                 </bundleDef>
                                 <bundleDef>org.atomikos.wso2:atomikos:${atomikos.version}</bundleDef>
                                 <bundleDef>org.eclipse.platform:org.eclipse.equinox.cm:${version.eclipse.equinox.cm}</bundleDef>
-                                <bundleDef>commons-configuration:commons-configuration:${commons.configuration.version}</bundleDef>
                                 <!-- bundles needed to swagger for DSS feature -->
                                 <bundleDef>org.wso2.orbit.io.swagger.v3:swagger-parser:${swagger.parser.orbit.version}</bundleDef>
                                 <bundleDef>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${fasterxml.jackson.version}</bundleDef>
