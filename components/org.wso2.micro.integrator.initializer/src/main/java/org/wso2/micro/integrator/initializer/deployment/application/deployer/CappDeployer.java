@@ -49,6 +49,7 @@ import org.wso2.micro.integrator.initializer.utils.ServiceCatalogUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -66,6 +67,7 @@ import javax.xml.stream.XMLStreamException;
 
 import static org.wso2.micro.core.Constants.SUPER_TENANT_DOMAIN_NAME;
 import static org.wso2.micro.integrator.initializer.deployment.synapse.deployer.SynapseAppDeployerConstants.API_TYPE;
+import static org.wso2.micro.integrator.initializer.utils.Constants.CAPP_FOLDER_NAME;
 import static org.wso2.micro.integrator.initializer.utils.Constants.CAR_FILE_EXTENSION;
 import static org.wso2.micro.integrator.initializer.utils.DeployerUtil.getCAppsWithDescriptorCount;
 import static org.wso2.micro.integrator.initializer.utils.DeployerUtil.getCAppProcessingOrder;
@@ -93,7 +95,7 @@ public class CappDeployer extends AbstractDeployer {
     private String appsDir;
 
     /**
-     * Carbon application file directory (i.e. 'car').
+     * Carbon application file extension (i.e. 'car').
      */
     private String extension;
 
@@ -101,6 +103,14 @@ public class CappDeployer extends AbstractDeployer {
      * Service Catalog Executor threads for publishing Services to Service Catalog.
      */
     private ExecutorService serviceCatalogExecutor;
+
+    /**
+     * Execution Tracker to track Service Catalog Execution at server startup.
+     * initialServiceCatalogExecutor will be executed when the first carbon application get deployed and
+     * this is a one time process.
+     */
+    private boolean isServiceCatalogStartupExecutionPending = true;
+    private ExecutorService initialServiceCatalogExecutor;
 
     /**
      * Map object to store Service Catalog configuration
@@ -128,6 +138,7 @@ public class CappDeployer extends AbstractDeployer {
             serviceCatalogConfiguration = ServiceCatalogUtils.readConfiguration(secretCallbackHandlerService);
             serviceCatalogExecutor = Executors.newFixedThreadPool(
                     ServiceCatalogUtils.getExecutorThreadCount(serviceCatalogConfiguration, 1));
+            initialServiceCatalogExecutor = Executors.newSingleThreadExecutor();
         }
     }
 
@@ -244,10 +255,23 @@ public class CappDeployer extends AbstractDeployer {
                 handleDeployException(e, cAppName, currentApp);
             }
         }
-        if (serviceCatalogConfiguration != null && !faultyCapps.contains(cAppName)) {
+
+        // Initial execution of Service catalog Deployer at server startup when last CApp get deployed
+        boolean isAllCAppsDeployed = getCAppFileList().length == cAppMap.size() + faultyCapps.size();
+        if (isServiceCatalogStartupExecutionPending && serviceCatalogConfiguration != null && isAllCAppsDeployed) {
+            ServiceCatalogDeployer serviceDeployer = new ServiceCatalogDeployer(null,
+                    ((CarbonAxisConfigurator) axisConfig.getAxisConfiguration().getConfigurator()).getRepoLocation(),
+                    serviceCatalogConfiguration, false);
+            initialServiceCatalogExecutor.execute(serviceDeployer);
+            isServiceCatalogStartupExecutionPending = false;
+        }
+
+        // Execution of Service catalog Deployer at each CApp hot deployment
+        if (serviceCatalogConfiguration != null && !faultyCapps.contains(cAppName) &&
+                !ServiceCatalogUtils.isServerInStartupMode()) {
             ServiceCatalogDeployer serviceDeployer = new ServiceCatalogDeployer(cAppName,
                     ((CarbonAxisConfigurator) axisConfig.getAxisConfiguration().getConfigurator()).getRepoLocation(),
-                    serviceCatalogConfiguration);
+                    serviceCatalogConfiguration, true);
             serviceCatalogExecutor.execute(serviceDeployer);
         }
     }
@@ -284,7 +308,7 @@ public class CappDeployer extends AbstractDeployer {
 
     private void handleDeployException(Exception e, String cAppName, CarbonApplication currentApp) {
         log.error("Error occurred while deploying the Carbon application: " + cAppName
-                  + ". Reverting successfully deployed artifacts in the CApp.", e);
+                + ". Reverting successfully deployed artifacts in the CApp.", e);
         undeployCarbonApp(currentApp, axisConfig);
         // Validate synapse config to remove half added swagger definitions in the case of a faulty CAPP.
         SynapseConfigUtils.getSynapseConfiguration(SUPER_TENANT_DOMAIN_NAME).validateSwaggerTable();
@@ -566,7 +590,7 @@ public class CappDeployer extends AbstractDeployer {
                 artifact = AppDeployerUtils.populateArtifact(artElement);
             } else {
                 log.error("artifact.xml is invalid. Parent Application : "
-                                  + parentApp.getAppNameWithVersion());
+                        + parentApp.getAppNameWithVersion());
                 return null;
             }
         } catch (XMLStreamException e) {
@@ -684,7 +708,7 @@ public class CappDeployer extends AbstractDeployer {
             // removing the extracted CApp form tmp/carbonapps/
             FileManipulator.deleteDir(carbonApp.getExtractedPath());
             log.info("Successfully undeployed Carbon Application : " + carbonApp.getAppNameWithVersion()
-                             + AppDeployerUtils.getTenantIdLogString(AppDeployerUtils.getTenantId()));
+                    + AppDeployerUtils.getTenantIdLogString(AppDeployerUtils.getTenantId()));
         } catch (Exception e) {
             log.error("Error occurred while trying to unDeploy  : " + carbonApp.getAppNameWithVersion(), e);
         }
@@ -819,5 +843,22 @@ public class CappDeployer extends AbstractDeployer {
                 super.sort(filesToDeploy, startIndex, toIndex);
             }
         }
+    }
+
+    /**
+     * Retrieves a list of Carbon Application (CApp) files from the CApps directory.
+     *
+     * This method scans the CApps folder within the Carbon repository location
+     * and returns all files with the ".car" extension (Carbon Archive files).
+     *
+     * @return an array of File objects representing all .car files found in the
+     *         CApps directory.
+     */
+    private File[] getCAppFileList() {
+        FilenameFilter CAPP_FILTER = (f, name) -> name.endsWith(".car");
+
+        File cappFolder = new File(((CarbonAxisConfigurator) axisConfig.getAxisConfiguration().getConfigurator())
+                .getRepoLocation(), CAPP_FOLDER_NAME);
+        return cappFolder.listFiles(CAPP_FILTER);
     }
 }

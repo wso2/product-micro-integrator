@@ -132,5 +132,6 @@ public class StartupFinalizer {
         log.info(String.format("WSO2 Micro Integrator started in %.2f seconds", startupTime));
         setServerStartUpDurationParam(String.valueOf(startupTime));
         System.getProperties().remove("setup"); // Clear the setup System property
+        System.setProperty("org.wso2.mi.server.startup.mode", "false");
     }
 }
