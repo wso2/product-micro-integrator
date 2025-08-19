@@ -30,6 +30,7 @@ import org.wso2.carbon.inbound.endpoint.persistence.InboundEndpointsDataStore;
 import org.wso2.carbon.inbound.endpoint.protocol.rabbitmq.RabbitMQTask;
 import org.wso2.micro.integrator.mediation.ntask.NTaskTaskManager;
 
+import java.util.Map;
 import java.util.Objects;
 
 import static org.wso2.carbon.inbound.endpoint.common.Constants.SUPER_TENANT_DOMAIN_NAME;
@@ -127,10 +128,10 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
             startUpController.destroy(removeTask);
         } else if (runningThread != null) {
             try {
-                //this is introduced where the the thread is suspended due to external server is not
+                //this is introduced where the thread is suspended due to external server is not
                 //up and running and waiting connection to be completed.
                 //thread join waits until that suspension is removed where inbound endpoint
-                //is un deployed that will eventually lead to completion of this thread
+                //is undeployed that will eventually lead to completion of this thread
                 runningThread.join();
             } catch (InterruptedException e) {
                 log.error("Error while stopping the inbound thread.");
@@ -140,14 +141,49 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
 
     @Override
     public boolean activate() {
+        log.info("Activating the Inbound Endpoint [" + name + "].");
+        boolean isSuccessfullyActivated = true;
 
-        return false;
+        /*
+         * For one-time trigger endpoints in non-coordinated mode:
+         * - No explicit pause/resume needed at runner level since they use a single execution model
+         * - The consumer (e.g. RabbitMQ, MQTT) handles its own state via isRunning/start/stop
+         * - The runner thread executes just once and exits after task.taskExecute()
+         * - Only coordination mode requires task activation via StartupController
+         */
+        // coordination mode
+        if (startUpController != null) {
+            if (!startUpController.activateTask()) {
+                log.error("Failed to activate the consumer: " + startUpController.getTaskDescription().getName());
+                isSuccessfullyActivated = false;
+            }
+        }
+
+        return isSuccessfullyActivated;
     }
 
     @Override
     public boolean deactivate() {
+        log.info("Deactivating the Inbound Endpoint [" + name + "].");
+        boolean isSuccessfullyDeactivated = true;
 
-        return false;
+        /*
+         * For one-time trigger endpoints in non-coordinated mode:
+         * - Explicit runner pause/resume control is not needed since each runner thread executes only once
+         * - The consumer (e.g. RabbitMQ, MQTT) handles its own consumer lifecycle management
+         * - The deactivate() method only manages task deactivation in coordinated mode via StartupController
+         * - For non-coordinated mode, consumer-level stop/close is sufficient
+         * - Startupcontroller deactivation is used only in coordinated mode for task state management
+         */
+        // coordination mode
+        if (startUpController != null) {
+            if (!startUpController.deactivateTask()) {
+                log.error("Failed to deactivate the consumer: " + startUpController.getTaskDescription().getName());
+                isSuccessfullyDeactivated = false;
+            }
+        }
+
+        return isSuccessfullyDeactivated;
     }
 
     @Override
