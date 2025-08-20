@@ -117,13 +117,7 @@ public class TasksDSComponent {
                 log.info("Initializing task coordination.");
                 DataSource coordinationDataSource = (DataSource) coordinationDatasourceObject;
                 clusterCoordinator = new ClusterCoordinator(coordinationDataSource);
-                if (clusterCoordinator.checkDuplicateNodeExistence()) {
-                    throw new ClusterCoordinationException(
-                            "Node with id " + clusterCoordinator.getThisNodeId() + " already "
-                                    + "exists in cluster or the previous shutdown of this node "
-                                    + "hasn't elapsed the heart beat expiry time of " + clusterCoordinator
-                                    .getHeartbeatMaxRetryInterval() + " milli seconds.");
-                }
+                clusterCoordinator.setDuplicateNode(clusterCoordinator.checkDuplicateNodeExistence());
                 dataHolder.setClusterCoordinator(clusterCoordinator);
                 // initialize task data base.
                 taskStore = new TaskStore(coordinationDataSource);
