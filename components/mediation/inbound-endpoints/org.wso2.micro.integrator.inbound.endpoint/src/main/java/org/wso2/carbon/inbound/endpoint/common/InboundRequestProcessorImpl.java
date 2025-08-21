@@ -165,6 +165,10 @@ public abstract class InboundRequestProcessorImpl implements InboundRequestProce
      * Activates the Inbound Endpoint by activating any associated startup controllers
      * or resuming inbound runner threads if no startup controllers are present.
      *
+     * The decision on whether to use startup controllers (task) or inbound runner threads will depend
+     * on the coordination enabled or not.
+     * - if coordination enabled then startup controller otherwise inbound runner thread
+     *
      * <p>This method first checks if there are any startup controllers. If there are, it attempts to activate
      * each controller and sets the success flag accordingly. If no startup controllers are present, it resumes
      * any inbound runner threads that may be running. The method returns a boolean indicating whether
@@ -179,7 +183,7 @@ public abstract class InboundRequestProcessorImpl implements InboundRequestProce
         log.info("Activating the Inbound Endpoint [" + name + "].");
 
         boolean isSuccessfullyActivated = false;
-        if (!startUpControllersList.isEmpty()) {
+        if (this.coordination && !startUpControllersList.isEmpty()) {
             for (StartUpController sc : startUpControllersList) {
                 if (sc.activateTask()) {
                     isSuccessfullyActivated = true;
