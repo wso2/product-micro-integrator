@@ -141,10 +141,10 @@ public class CORSRequestHandler extends AbstractHandler implements ManagedLifecy
         }
 
         // Handle CORS preflight OPTIONS request
-        if ("OPTIONS".equalsIgnoreCase(httpMethod)) {
+        if (RESTConstants.METHOD_OPTIONS.equalsIgnoreCase(httpMethod)) {
 
             //If the OPTIONS method is explicity specified in the resource
-            if (Arrays.asList(selectedResource.getMethods()).contains("OPTIONS")) {
+            if (Arrays.asList(selectedResource.getMethods()).contains(RESTConstants.METHOD_OPTIONS)) {
                 //We will not handle the CORS headers, let the back-end do it.
                 return true;
             }
@@ -318,13 +318,13 @@ public class CORSRequestHandler extends AbstractHandler implements ManagedLifecy
                 ((Axis2MessageContext) messageContext).getAxis2MessageContext();
         Map<String, String> headers =
                 (Map) axis2MC.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        String requestOrigin = headers.get("Origin");
+        String requestOrigin = headers.get(RESTConstants.CORS_HEADER_ORIGIN);
         String allowedOrigin = getAllowedOrigins(requestOrigin);
 
         //Set the access-Control-Allow-Credentials header in the response only if it is specified to true in the api-manager configuration
         //and the allowed origin is not the wildcard (*)
         if (allowCredentialsEnabled && !"*".equals(allowedOrigin)) {
-            messageContext.setProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_CREDENTIALS, Boolean.TRUE);
+            messageContext.setProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_CREDENTIALS, "true");
         }
 
         messageContext.setProperty(RESTConstants.INTERNAL_CORS_HEADER_ACCESS_CTL_ALLOW_ORIGIN, allowedOrigin);
