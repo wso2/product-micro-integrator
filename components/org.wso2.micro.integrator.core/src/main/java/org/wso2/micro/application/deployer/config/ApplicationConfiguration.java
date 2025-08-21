@@ -50,6 +50,8 @@ public class ApplicationConfiguration {
     public static final String APPLICATION_NS = "http://products.wso2.org/carbon";
 
     private String appName;
+    private String appGroupId;
+    private String appArtifactId;
     private String appVersion;
     private String mainSequence;
     private org.wso2.micro.application.deployer.config.Artifact applicationArtifact;
@@ -157,6 +159,8 @@ public class ApplicationConfiguration {
                     "found with the type - " + AppDeployerConstants.CARBON_APP_TYPE);
         }
         this.appName = appArtifact.getName();
+        this.appGroupId = appArtifact.getGroupId();
+        this.appArtifactId = appArtifact.getArtifactId();
         this.appVersion = appArtifact.getVersion();
         this.setMainSequence(appArtifact.getMainSequence());
 
@@ -202,5 +206,15 @@ public class ApplicationConfiguration {
 
     public void setMainSequence(String mainSequence) {
         this.mainSequence = mainSequence;
+    }
+
+    public String getAppGroupId() {
+
+        return appGroupId;
+    }
+
+    public String getAppArtifactId() {
+
+        return appArtifactId;
     }
 }

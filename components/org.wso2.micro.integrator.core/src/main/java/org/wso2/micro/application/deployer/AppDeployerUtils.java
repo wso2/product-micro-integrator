@@ -262,6 +262,8 @@ public final class AppDeployerUtils {
         Artifact artifact = new Artifact();
         // read top level attributes
         artifact.setName(readAttribute(artifactEle, Artifact.NAME));
+        artifact.setGroupId(readAttribute(artifactEle, Artifact.GROUP_ID));
+        artifact.setArtifactId(readAttribute(artifactEle, Artifact.ARTIFACT_ID));
         artifact.setVersion(readAttribute(artifactEle, Artifact.VERSION));
         artifact.setMainSequence(readAttribute(artifactEle, Artifact.MAIN_SEQUENCE));
         artifact.setType(readAttribute(artifactEle, Artifact.TYPE));

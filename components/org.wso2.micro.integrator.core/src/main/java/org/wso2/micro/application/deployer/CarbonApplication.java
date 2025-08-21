@@ -29,6 +29,8 @@ public class CarbonApplication {
     private String appName;
     private String extractedPath;
     private String appFilePath;
+    private String appGroupId;
+    private String appArtifactId;
     private String appVersion;
     private boolean deploymentCompleted;
     private String mainSequence;
@@ -111,5 +113,29 @@ public class CarbonApplication {
         this.mainSequence = mainSequence;
     }
 
+    public String getAppGroupId() {
+
+        return appGroupId;
+    }
+
+    public void setAppGroupId(String appGroupId) {
+
+        this.appGroupId = appGroupId;
+    }
+
+    public String getAppArtifactId() {
+
+        return appArtifactId;
+    }
+
+    public void setAppArtifactId(String appArtifactId) {
+
+        this.appArtifactId = appArtifactId;
+    }
+//
+//    public String getAppIdentifier() {
+//
+//        return this.appArtifactId + "/" + this.appGroupId + "/" + this.appVersion;
+//    }
 }
 

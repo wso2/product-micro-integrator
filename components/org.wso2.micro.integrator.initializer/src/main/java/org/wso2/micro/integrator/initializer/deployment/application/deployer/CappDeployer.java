@@ -33,6 +33,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.api.API;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.wso2.carbon.securevault.SecretCallbackHandlerService;
 import org.wso2.micro.application.deployer.AppDeployerUtils;
 import org.wso2.micro.application.deployer.CarbonApplication;
@@ -360,6 +361,14 @@ public class CappDeployer extends AbstractDeployer {
         }
         carbonApplication.setAppName(appName);
 
+        String appGroupID = appConfig.getAppGroupId();
+        if (StringUtils.isNotBlank(appGroupID)) {
+            carbonApplication.setAppGroupId(appGroupID);
+        }
+        String appArtifactId = appConfig.getAppArtifactId();
+        if (StringUtils.isNotBlank(appArtifactId)) {
+            carbonApplication.setAppArtifactId(appArtifactId);
+        }
         // Set App Version
         String appVersion = appConfig.getAppVersion();
         if (appVersion != null && !("").equals(appVersion)) {
@@ -513,8 +522,9 @@ public class CappDeployer extends AbstractDeployer {
                                 if (metaFile.getName().contains(SWAGGER_SUBSTRING)) {
                                     File swaggerFile = new File(metaFile, artifact.getFiles().get(0).getName());
                                     byte[] bytes = Files.readAllBytes(Paths.get(swaggerFile.getPath()));
-                                    String artifactName = artifact.getName()
-                                            .substring(0, artifact.getName().indexOf(SWAGGER_SUBSTRING));
+                                    // TODO Add check
+                                    String artifactName = artifact.getFullyQualifiedName()
+                                            .substring(0, artifact.getFullyQualifiedName().indexOf(SWAGGER_SUBSTRING));
                                     swaggerTable.put(artifactName, new String(bytes));
                                 }
                             } catch (FileNotFoundException e) {
@@ -539,7 +549,10 @@ public class CappDeployer extends AbstractDeployer {
                     String apiName = getApiNameFromFile(new FileInputStream(apiXmlPath));
                     if (!StringUtils.isEmpty(apiName)) {
                         // Re-constructing swagger table with API name since artifact name is not unique
-                        apiArtifactMap.put(artifact.getName(),apiName);
+                        // TODO Add check
+                        apiName = parentApp.getAppGroupId() + "__" + parentApp.getAppArtifactId() + "__"
+                                + parentApp.getAppVersion() + "__" + apiName;
+                        apiArtifactMap.put(artifact.getFullyQualifiedName(), apiName);
                     }
                 }
             } catch (FileNotFoundException e) {
