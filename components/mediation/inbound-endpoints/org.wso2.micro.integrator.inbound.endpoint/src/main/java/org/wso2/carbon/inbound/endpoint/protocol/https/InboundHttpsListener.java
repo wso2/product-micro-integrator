@@ -66,29 +66,38 @@ public class InboundHttpsListener extends InboundHttpListener {
 
     @Override
     public void init() {
-        /*
-         * The activate/deactivate functionality for the HTTPS protocol is not currently implemented
-         * for Inbound Endpoints.
-         *
-         * Therefore, the following check has been added to immediately return if the "suspend"
-         * attribute is set to true in the inbound endpoint configuration.
-         *
-         * Note: This implementation is temporary and should be revisited and improved once
-         * the activate/deactivate capability for HTTPS listener is implemented.
-         */
-        if (startInPausedMode) {
-            log.info("Inbound endpoint [" + name + "] is currently suspended.");
-            return;
+        log.info("HTTPS inbound endpoint [" + name + "] is initializing"
+                + (this.startInPausedMode ? " but will remain in suspended mode..." : "..."));
+
+        if (!startInPausedMode) {
+            if (isPortUsedByAnotherApplication(port)) {
+                log.warn("Port " + port + "used by inbound endpoint " + name + " is already used by another application "
+                        + "hence undeploying inbound endpoint");
+                throw new SynapseException("Port " + port + " used by inbound endpoint " + name + " is already used by "
+                        + "another application.");
+            } else {
+                HTTPEndpointManager.getInstance().startSSLEndpoint(port, name, sslConfiguration, processorParams);
+            }
         }
-        if (isPortUsedByAnotherApplication(port)) {
-            log.warn("Port " + port + "used by inbound endpoint " + name + " is already used by another application "
-                             + "hence undeploying inbound endpoint");
-            throw new SynapseException("Port " + port + " used by inbound endpoint " + name + " is already used by "
-                                               + "another application.");
-        } else {
-            HTTPEndpointManager.getInstance().startSSLEndpoint(port, name, sslConfiguration, processorParams);
+    }
+
+    @Override
+    public boolean activate() {
+        boolean isSuccessfullyActivated = false;
+        try {
+            isSuccessfullyActivated = HTTPEndpointManager.getInstance()
+                    .startSSLEndpoint(port, name, sslConfiguration, processorParams);
+        } catch (SynapseException e) {
+            log.error("Error while activating HTTPS inbound endpoint [" + name + "] on port " + port, e);
         }
 
+        if (isSuccessfullyActivated) {
+            log.info("HTTPS inbound endpoint [" + name + "] is activated successfully on port " + port);
+        } else {
+            log.warn("HTTPS inbound endpoint [" + name + "] activation failed on port " + port);
+        }
+
+        return isSuccessfullyActivated;
     }
 
 }

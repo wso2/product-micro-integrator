@@ -61,12 +61,12 @@ public abstract class GenericEventBasedConsumer {
     }
 
     /**
-     * This methods needs to be implemented when implementing the custom inbound
+     * This method needs to be implemented when implementing the custom inbound
      */
     public abstract void listen();
 
     /**
-     * This methods needs to be implemented when terminating the inbound
+     * This method needs to be implemented when terminating the inbound
      */
     public abstract void destroy();
 
@@ -148,9 +148,9 @@ public abstract class GenericEventBasedConsumer {
      * @return boolean
      */
     public static boolean isEventBasedInboundEndpoint(InboundProcessorParams inboundParameters) {
-        return inboundParameters.getProperties().containsKey(GenericInboundListener.PARAM_INBOUND_ENDPOINT_BEHAVIOR)
+        return inboundParameters.getProperties().containsKey(GenericConstants.PARAM_INBOUND_ENDPOINT_BEHAVIOR)
                 && PARAM_INBOUND_ENDPOINT_BEHAVIOR_EVENT_BASED.equals(inboundParameters.getProperties().getProperty(
-                GenericInboundListener.PARAM_INBOUND_ENDPOINT_BEHAVIOR));
+                GenericConstants.PARAM_INBOUND_ENDPOINT_BEHAVIOR));
     }
 
 }
