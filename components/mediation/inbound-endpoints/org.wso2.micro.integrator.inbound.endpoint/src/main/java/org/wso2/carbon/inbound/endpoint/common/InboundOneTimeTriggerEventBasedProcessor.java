@@ -53,4 +53,16 @@ public abstract class InboundOneTimeTriggerEventBasedProcessor extends InboundOn
         //Terminate waiting events
         eventBasedConsumer.destroy();
     }
+
+    @Override
+    public boolean activate() {
+        eventBasedConsumer.listen();
+        return super.activate();
+    }
+
+    @Override
+    public boolean deactivate() {
+        eventBasedConsumer.destroy();
+        return super.deactivate();
+    }
 }

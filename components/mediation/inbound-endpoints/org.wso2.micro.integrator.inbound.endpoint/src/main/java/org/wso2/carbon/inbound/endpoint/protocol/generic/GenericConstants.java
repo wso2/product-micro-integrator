@@ -20,5 +20,6 @@ package org.wso2.carbon.inbound.endpoint.protocol.generic;
 public class GenericConstants {
 
     public static final int INBOUND_BUILD_ERROR = 600001;
-    public static final String CRON_EXPRESSION = "cronExpression";
+    public static final String PARAM_INBOUND_ENDPOINT_BEHAVIOR = "inbound.behavior";
+
 }

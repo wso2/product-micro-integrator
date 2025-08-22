@@ -32,7 +32,6 @@ import java.util.Map;
 public abstract class GenericInboundListener implements InboundRequestProcessor {
 
     private static final Log log = LogFactory.getLog(GenericInboundListener.class);
-    public static final String PARAM_INBOUND_ENDPOINT_BEHAVIOR = "inbound.behavior";
     public static final String PARAM_INBOUND_ENDPOINT_BEHAVIOR_LISTENING = "listening";
 
     protected String injectingSequence;
@@ -109,10 +108,10 @@ public abstract class GenericInboundListener implements InboundRequestProcessor 
      * @return boolean
      */
     public static boolean isListeningInboundEndpoint(InboundProcessorParams inboundParameters) {
-        return inboundParameters.getProperties().containsKey(GenericInboundListener.PARAM_INBOUND_ENDPOINT_BEHAVIOR)
+        return inboundParameters.getProperties().containsKey(GenericConstants.PARAM_INBOUND_ENDPOINT_BEHAVIOR)
                 && GenericInboundListener.PARAM_INBOUND_ENDPOINT_BEHAVIOR_LISTENING
                 .equals(inboundParameters.getProperties()
-                                .getProperty(GenericInboundListener.PARAM_INBOUND_ENDPOINT_BEHAVIOR));
+                                .getProperty(GenericConstants.PARAM_INBOUND_ENDPOINT_BEHAVIOR));
     }
 
     protected static void handleException(String msg, Exception e) {

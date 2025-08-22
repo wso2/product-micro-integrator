@@ -54,7 +54,7 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
 
     public GenericProcessor(String name, String classImpl, Properties properties, long scanInterval,
                             String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment,
-                            boolean coordination, boolean sequential) {
+                            boolean coordination, boolean sequential, boolean startInPauseMode) {
         this.name = name;
         this.properties = properties;
         this.interval = scanInterval;
@@ -64,6 +64,7 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
         this.classImpl = classImpl;
         this.coordination = coordination;
         this.sequential = sequential;
+        this.startInPausedMode = startInPauseMode;
     }
 
     public GenericProcessor(String name, String classImpl, Properties properties, String cronExpression,
@@ -105,21 +106,8 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
     }
 
     public void init() {
-        /*
-         * The activate/deactivate functionality is not currently implemented
-         * for this Inbound Endpoint type.
-         *
-         * Therefore, the following check has been added to immediately return if the "suspend"
-         * attribute is set to true in the inbound endpoint configuration.
-         *
-         * Note: This implementation is temporary and should be revisited and improved once
-         * the activate/deactivate capability is implemented.
-         */
-        if (startInPausedMode) {
-            log.info("Inbound endpoint [" + name + "] is currently suspended.");
-            return;
-        }
-        log.info("Inbound listener " + name + " for class " + classImpl + " starting ...");
+        log.info("Inbound listener [" + name + "] is initializing"
+                + (this.startInPausedMode ? " but will remain in suspended mode..." : "..."));
         Map<String, ClassLoader> libClassLoaders = SynapseConfiguration.getLibraryClassLoaders();
         Class c = null;
         if (libClassLoaders != null) {
@@ -207,13 +195,13 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
 
     @Override
     public boolean activate() {
-
-        return false;
+        pollingConsumer.resume();
+        return super.activate();
     }
 
     @Override
     public boolean deactivate() {
-
-        return false;
+        pollingConsumer.destroy();
+        return super.deactivate();
     }
 }
