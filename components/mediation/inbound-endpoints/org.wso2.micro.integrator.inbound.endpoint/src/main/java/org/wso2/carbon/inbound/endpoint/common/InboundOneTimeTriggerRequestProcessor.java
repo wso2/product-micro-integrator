@@ -26,11 +26,9 @@ import org.apache.synapse.inbound.InboundTaskProcessor;
 import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
-import org.wso2.carbon.inbound.endpoint.persistence.InboundEndpointsDataStore;
 import org.wso2.carbon.inbound.endpoint.protocol.rabbitmq.RabbitMQTask;
 import org.wso2.micro.integrator.mediation.ntask.NTaskTaskManager;
 
-import java.util.Map;
 import java.util.Objects;
 
 import static org.wso2.carbon.inbound.endpoint.common.Constants.SUPER_TENANT_DOMAIN_NAME;
@@ -51,15 +49,11 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
 
     private OneTimeTriggerInboundRunner inboundRunner;
     private Thread runningThread;
+    private boolean isPaused = false;
     private static final Log log = LogFactory.getLog(InboundOneTimeTriggerRequestProcessor.class);
-    private InboundEndpointsDataStore dataStore;
 
     protected final static String COMMON_ENDPOINT_POSTFIX = "--SYNAPSE_INBOUND_ENDPOINT";
     public static final int TASK_THRESHOLD_INTERVAL = 1000;
-
-    public InboundOneTimeTriggerRequestProcessor() {
-        dataStore = InboundEndpointsDataStore.getInstance();
-    }
 
     /**
      * Based on the coordination option schedule the task with NTASK or run as a
@@ -97,10 +91,6 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
             }
         } else {
 
-            if (!dataStore.isPollingEndpointRegistered(SUPER_TENANT_DOMAIN_NAME, name)) {
-                dataStore.registerPollingEndpoint(SUPER_TENANT_DOMAIN_NAME, name);
-            }
-
             inboundRunner = new OneTimeTriggerInboundRunner(task, SUPER_TENANT_DOMAIN_NAME);
             if (task.getCallback() != null) {
                 task.getCallback().setInboundRunnerMode(true);
@@ -122,8 +112,6 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
     public void destroy(boolean removeTask) {
         log.info("Inbound endpoint " + name + " stopping.");
 
-        dataStore.unregisterPollingEndpoint(SUPER_TENANT_DOMAIN_NAME, name);
-
         if (startUpController != null) {
             startUpController.destroy(removeTask);
         } else if (runningThread != null) {
@@ -143,6 +131,7 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
     public boolean activate() {
         log.info("Activating the Inbound Endpoint [" + name + "].");
         boolean isSuccessfullyActivated = true;
+        isPaused = false;
 
         /*
          * For one-time trigger endpoints in non-coordinated mode:
@@ -166,6 +155,7 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
     public boolean deactivate() {
         log.info("Deactivating the Inbound Endpoint [" + name + "].");
         boolean isSuccessfullyDeactivated = true;
+        isPaused = true;
 
         /*
          * For one-time trigger endpoints in non-coordinated mode:
@@ -190,9 +180,9 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
     public boolean isDeactivated() {
 
         if (Objects.nonNull(startUpController)) {
-            return !startUpController.isTaskActive();
+            return !startUpController.isTaskActive() && isPaused;
         } else if (Objects.nonNull(runningThread)) {
-            return !runningThread.isAlive();
+            return !runningThread.isAlive() && isPaused;
         }
         return true;
     }
