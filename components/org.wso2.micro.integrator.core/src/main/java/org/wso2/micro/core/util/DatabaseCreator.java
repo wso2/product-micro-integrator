@@ -39,8 +39,6 @@ public class DatabaseCreator {
     private static Log log = LogFactory.getLog(DatabaseCreator.class);
     private DataSource dataSource;
     private String delimiter = ";";
-    private Connection conn = null;
-    private Statement statement;
 
     public DatabaseCreator(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -56,7 +54,7 @@ public class DatabaseCreator {
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
             try (Statement statement = conn.createStatement()) {
-                executeSQLScript();
+                executeSQLScript(statement, conn);
                 conn.commit();
                 if (log.isTraceEnabled()) {
                     log.trace("Registry tables are created successfully.");
@@ -79,6 +77,7 @@ public class DatabaseCreator {
             if (log.isTraceEnabled()) {
                 log.trace("Running a query to test the database tables existence.");
             }
+            // check whether the tables are already created with a query
             try (Connection conn = dataSource.getConnection();
                  Statement statement = conn.createStatement()) {
                 ResultSet rs = statement.executeQuery(checkSQL);
@@ -89,7 +88,6 @@ public class DatabaseCreator {
         } catch (SQLException e) {
             return false;
         }
-        
         return true;
     }
 
@@ -100,7 +98,7 @@ public class DatabaseCreator {
      * @param sql
      * @throws Exception
      */
-    private void executeSQL(String sql) throws Exception {
+    private void executeSQL(String sql, Statement statement, Connection conn) throws Exception {
         // Check and ignore empty statements
         if ("".equals(sql.trim())) {
             return;
@@ -253,8 +251,8 @@ public class DatabaseCreator {
      * @return StringBuffer
      * @throws Exception
      */
-    private void executeSQLScript() throws Exception {
-        String databaseType = getDatabaseType(this.conn);
+    private void executeSQLScript(Statement statement, Connection connection) throws Exception {
+        String databaseType = getDatabaseType(connection);
         boolean keepFormat = false;
         if ("oracle".equals(databaseType)) {
             delimiter = "/";
@@ -300,13 +298,13 @@ public class DatabaseCreator {
                     sql.append("\n");
                 }
                 if ((checkStringBufferEndsWith(sql, delimiter))) {
-                    executeSQL(sql.substring(0, sql.length() - delimiter.length()));
+                    executeSQL(sql.substring(0, sql.length() - delimiter.length()), statement, connection);
                     sql.replace(0, sql.length(), "");
                 }
             }
             // Catch any statements not followed by ;
             if (sql.length() > 0) {
-                executeSQL(sql.toString());
+                executeSQL(sql.toString(), statement, connection);
             }
         } catch (IOException e) {
             log.error("Error occurred while executing SQL script for creating registry database", e);
