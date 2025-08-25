@@ -28,7 +28,7 @@
     <groupId>org.wso2.ei</groupId>
     <artifactId>wso2-micro-integrator-parent</artifactId>
     <packaging>pom</packaging>
-    <version>4.5.0-m1</version>
+    <version>4.5.0-SNAPSHOT</version>
     <name>WSO2 Micro Integrator</name>
     <url>http://wso2.com/products/enterprise-integrator/</url>
     <description>WSO2 Micro Integrator</description>
@@ -1305,7 +1305,7 @@
             <dependency>
                 <groupId>org.wso2.ei</groupId>
                 <artifactId>org.wso2.micro.integrator.coordination</artifactId>
-                <version>4.5.0-m1</version>
+                <version>4.5.0-SNAPSHOT</version>
             </dependency>
             <!--SAP feature dependency-->
             <dependency>
@@ -1555,7 +1555,7 @@
         <url>https://github.com/wso2/micro-integrator.git</url>
         <developerConnection>scm:git:https://github.com/wso2/micro-integrator.git</developerConnection>
         <connection>scm:git:https://github.com/wso2/micro-integrator.git</connection>
-        <tag>v4.5.0-m1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <profiles>
