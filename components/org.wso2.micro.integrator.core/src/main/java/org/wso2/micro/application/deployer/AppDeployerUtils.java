@@ -622,12 +622,12 @@ public final class AppDeployerUtils {
         return "{super-tenant}";
     }
 
-    public static String computeResourcePath(String basePath, String resourceName) {
+    public static String computeResourcePath(String basePath, String resourceName, RegistryConfig registryConfig) {
         String fullResourcePath;
         if (basePath.endsWith("/")) {
-            fullResourcePath = basePath + resourceName;
+            fullResourcePath = basePath + registryConfig.getArtifactIdentifier() + "__" + resourceName;
         } else {
-            fullResourcePath = basePath + "/" + resourceName;
+            fullResourcePath = basePath + "/" + registryConfig.getArtifactIdentifier() + "__" + resourceName;
         }
         return fullResourcePath;
     }
