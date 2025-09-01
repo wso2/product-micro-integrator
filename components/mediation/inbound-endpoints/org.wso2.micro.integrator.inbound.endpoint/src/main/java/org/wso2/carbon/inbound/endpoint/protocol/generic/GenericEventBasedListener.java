@@ -149,6 +149,15 @@ public class GenericEventBasedListener extends InboundOneTimeTriggerEventBasedPr
         start();
     }
 
+    public boolean activate() {
+        eventConsumer.resume();
+        return super.activate();
+    }
 
+    @Override
+    public boolean deactivate() {
+        eventConsumer.destroy();
+        return super.deactivate();
+    }
 
 }
