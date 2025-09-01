@@ -54,15 +54,4 @@ public abstract class InboundOneTimeTriggerEventBasedProcessor extends InboundOn
         eventBasedConsumer.destroy();
     }
 
-    @Override
-    public boolean activate() {
-        eventBasedConsumer.listen();
-        return super.activate();
-    }
-
-    @Override
-    public boolean deactivate() {
-        eventBasedConsumer.destroy();
-        return super.deactivate();
-    }
 }

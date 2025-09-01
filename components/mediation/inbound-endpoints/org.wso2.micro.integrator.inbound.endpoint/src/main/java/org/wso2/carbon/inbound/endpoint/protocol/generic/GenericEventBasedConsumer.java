@@ -70,6 +70,11 @@ public abstract class GenericEventBasedConsumer {
      */
     public abstract void destroy();
 
+    /**
+     * This method needs to be implemented when activating the inbound
+     */
+    public abstract void resume();
+
     protected boolean injectMessage(String strMessage, String contentType) {
         InputStream in = new AutoCloseInputStream(new ByteArrayInputStream(strMessage.getBytes()));
         return injectMessage(in, contentType);
