@@ -145,6 +145,7 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
             if (!startUpController.activateTask()) {
                 log.error("Failed to activate the consumer: " + startUpController.getTaskDescription().getName());
                 isSuccessfullyActivated = false;
+                isPaused = true;
             }
         }
 
@@ -170,6 +171,7 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
             if (!startUpController.deactivateTask()) {
                 log.error("Failed to deactivate the consumer: " + startUpController.getTaskDescription().getName());
                 isSuccessfullyDeactivated = false;
+                isPaused = false;
             }
         }
 

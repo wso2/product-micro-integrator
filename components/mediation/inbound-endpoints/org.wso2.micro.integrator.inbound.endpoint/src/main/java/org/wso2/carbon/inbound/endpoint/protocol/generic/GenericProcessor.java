@@ -51,6 +51,20 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
 
     public GenericProcessor(String name, String classImpl, Properties properties, long scanInterval,
                             String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment,
+                            boolean coordination, boolean sequential) {
+        this.name = name;
+        this.properties = properties;
+        this.interval = scanInterval;
+        this.injectingSeq = injectingSeq;
+        this.onErrorSeq = onErrorSeq;
+        this.synapseEnvironment = synapseEnvironment;
+        this.classImpl = classImpl;
+        this.coordination = coordination;
+        this.sequential = sequential;
+    }
+
+    public GenericProcessor(String name, String classImpl, Properties properties, long scanInterval,
+                            String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment,
                             boolean coordination, boolean sequential, boolean startInPauseMode) {
         this.name = name;
         this.properties = properties;
