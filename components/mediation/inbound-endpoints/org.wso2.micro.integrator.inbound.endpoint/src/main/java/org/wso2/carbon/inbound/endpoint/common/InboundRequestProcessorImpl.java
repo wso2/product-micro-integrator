@@ -178,7 +178,7 @@ public abstract class InboundRequestProcessorImpl implements InboundRequestProce
         log.info("Activating the Inbound Endpoint [" + name + "].");
 
         boolean isSuccessfullyActivated = false;
-        if (this.coordination && !startUpControllersList.isEmpty()) {
+        if (!startUpControllersList.isEmpty()) {
             for (StartUpController sc : startUpControllersList) {
                 if (sc.activateTask()) {
                     isSuccessfullyActivated = true;
