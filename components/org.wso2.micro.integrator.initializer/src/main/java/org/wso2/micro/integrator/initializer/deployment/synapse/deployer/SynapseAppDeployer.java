@@ -277,6 +277,13 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                                             equals(artifact.getDeploymentStatus())) {
 
                 String artifactName = artifact.getName();
+                if (carbonApplication.getAppConfig().isVersionedDeployment()) {
+                    if (artifact.getType().equals("synapse/proxy-service")) {
+                        artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + "/" + artifactName;
+                    } else {
+                        artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + "__" + artifactName;
+                    }
+                }
                 File artifactInRepo = new File(artifactDir + File.separator + fileName);
 
                 try {
@@ -308,6 +315,9 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                                     new StAXOMBuilder(new FileInputStream(new File(artifactPath))).getDocumentElement();
                             API api = DeployerUtil.partiallyBuildAPI(apiElement);
                             artifactName = api.getName();
+                            if (carbonApplication.getAppConfig().isVersionedDeployment()) {
+                                artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + "__" + artifactName;
+                            }
                         }
 
                         Class[] paramString = new Class[1];
@@ -356,8 +366,8 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                     String artifactPath = artifact.getExtractedPath() + File.separator + fileName;
 
                     try {
-                        deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer, carbonApp.getAppGroupId(),
-                                carbonApp.getAppArtifactId(), carbonApp.getAppVersion()));
+                        deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer,
+                                carbonApp.getAppConfig().getAppArtifactIdentifier(), carbonApp.getAppConfig().getCAppDependencies()));
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                     } catch (DeploymentException e) {
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_FAILED);
@@ -395,8 +405,9 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                     try {
                         if (deployer instanceof LibraryArtifactDeployer) {
                             ((LibraryArtifactDeployer) deployer).deployLibraryDependency(
-                                    new DeploymentFileData(new File(artifactPath), deployer, carbonApp.getAppGroupId(),
-                                            carbonApp.getAppArtifactId(), carbonApp.getAppVersion()), artifact.getConnector());
+                                    new DeploymentFileData(new File(artifactPath), deployer,
+                                            carbonApp.getAppConfig().getAppArtifactIdentifier(),
+                                            carbonApp.getAppConfig().getCAppDependencies()), artifact.getConnector());
                         }
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                     } catch (DeploymentException e) {
@@ -441,8 +452,8 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                     } else {
                         try {
-                            deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer, carbonApp.getAppGroupId(), carbonApp.getAppArtifactId(),
-                                    carbonApp.getAppVersion()));
+                            deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer,
+                                    carbonApp.getAppConfig().getAppArtifactIdentifier(), carbonApp.getAppConfig().getCAppDependencies()));
                             artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                             try {
                                 String artifactName = getArtifactName(artifactPath, axisConfig);
@@ -1168,7 +1179,7 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                     try {
                         setCustomLogContent(deployer, carbonApp);
                         deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer,
-                                carbonApp.getAppGroupId(), carbonApp.getAppArtifactId(), carbonApp.getAppVersion()));
+                                carbonApp.getAppConfig().getAppArtifactIdentifier(), carbonApp.getAppConfig().getCAppDependencies()));
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                     } catch (DeploymentException e) {
                         artifact.setDeploymentStatus(AppDeployerConstants.DEPLOYMENT_STATUS_FAILED);

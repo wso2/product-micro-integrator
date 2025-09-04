@@ -27,8 +27,6 @@ public class Artifact {
 
     public static final String NAME = "name";
     public static final String TYPE = "type";
-    public static final String GROUP_ID = "groupId";
-    public static final String ARTIFACT_ID = "artifactId";
     public static final String VERSION = "version";
 
     public static final String MAIN_SEQUENCE = "mainSequence";
@@ -46,8 +44,7 @@ public class Artifact {
     public int unresolvedDepCount = 0;
 
     private String type;
-    private String groupId;
-    private String artifactId;
+    private String artifactIdentifier;
     private String version;
     private String name;
     private String serverRole;
@@ -180,33 +177,19 @@ public class Artifact {
         this.connector = connector;
     }
 
-    public String getGroupId() {
+    public void setArtifactIdentifier(String artifactIdentifier) {
 
-        return groupId;
+        this.artifactIdentifier = artifactIdentifier;
     }
 
-    public void setGroupId(String groupId) {
+    public String getArtifactIdentifier() {
 
-        this.groupId = groupId;
-        // TODO
-        this.groupId = "com.example"; // This is a placeholder, replace with actual logic if needed
-    }
-
-    public String getArtifactId() {
-
-        return artifactId;
-    }
-
-    public void setArtifactId(String artifactId) {
-
-        this.artifactId = artifactId;
-        // TODO
-        this.artifactId = "projectc"; // This is a placeholder, replace with actual logic if needed
+        return artifactIdentifier;
     }
 
     public String getFullyQualifiedName() {
 
-        return groupId + "__" + artifactId + "__" + version + "__" + name;
+        return artifactIdentifier + "__" + name;
     }
 
     public static class Dependency {

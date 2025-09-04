@@ -21,6 +21,7 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.xml.AbstractMediatorFactory;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.SequenceMediatorFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.wso2.micro.integrator.identity.entitlement.mediator.EntitlementConstants;
@@ -153,7 +154,7 @@ public class EntitlementMediatorFactory extends AbstractMediatorFactory {
         if (onAccept != null) {
             String onAcceptValue = onAccept.getAttributeValue();
             if (onAcceptValue != null) {
-                mediator.setOnAcceptSeqKey(onAcceptValue);
+                mediator.setOnAcceptSeqKey(FactoryUtils.getFullyQualifiedName(properties, onAcceptValue));
             }
         } else {
             OMElement onAcceptMediatorElement = element.getFirstChildWithName(
@@ -167,7 +168,7 @@ public class EntitlementMediatorFactory extends AbstractMediatorFactory {
         if (obligations != null) {
             String obligationsValue = obligations.getAttributeValue();
             if (obligationsValue != null) {
-                mediator.setObligationsSeqKey(obligationsValue.trim());
+                mediator.setObligationsSeqKey(FactoryUtils.getFullyQualifiedName(properties, obligationsValue.trim()));
             }
         } else {
             OMElement obligationsMediatorElement = element
@@ -181,7 +182,7 @@ public class EntitlementMediatorFactory extends AbstractMediatorFactory {
         if (advice != null) {
             String adviceValue = advice.getAttributeValue();
             if (adviceValue != null) {
-                mediator.setAdviceSeqKey(adviceValue.trim());
+                mediator.setAdviceSeqKey(FactoryUtils.getFullyQualifiedName(properties, adviceValue.trim()));
             }
         } else {
             OMElement adviceMediatorElement = element

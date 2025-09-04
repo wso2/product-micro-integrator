@@ -361,14 +361,6 @@ public class CappDeployer extends AbstractDeployer {
         }
         carbonApplication.setAppName(appName);
 
-        String appGroupID = appConfig.getAppGroupId();
-        if (StringUtils.isNotBlank(appGroupID)) {
-            carbonApplication.setAppGroupId(appGroupID);
-        }
-        String appArtifactId = appConfig.getAppArtifactId();
-        if (StringUtils.isNotBlank(appArtifactId)) {
-            carbonApplication.setAppArtifactId(appArtifactId);
-        }
         // Set App Version
         String appVersion = appConfig.getAppVersion();
         if (appVersion != null && !("").equals(appVersion)) {
@@ -550,8 +542,7 @@ public class CappDeployer extends AbstractDeployer {
                     if (!StringUtils.isEmpty(apiName)) {
                         // Re-constructing swagger table with API name since artifact name is not unique
                         // TODO Add check
-                        apiName = parentApp.getAppGroupId() + "__" + parentApp.getAppArtifactId() + "__"
-                                + parentApp.getAppVersion() + "__" + apiName;
+                        apiName = parentApp.getAppConfig().getAppArtifactIdentifier() + "__" + apiName;
                         apiArtifactMap.put(artifact.getFullyQualifiedName(), apiName);
                     }
                 }
@@ -599,7 +590,7 @@ public class CappDeployer extends AbstractDeployer {
             OMElement artElement = new StAXOMBuilder(artifactXmlStream).getDocumentElement();
 
             if (Artifact.ARTIFACT.equals(artElement.getLocalName())) {
-                artifact = AppDeployerUtils.populateArtifact(artElement);
+                artifact = AppDeployerUtils.populateArtifact(parentApp, artElement);
             } else {
                 log.error("artifact.xml is invalid. Parent Application : "
                         + parentApp.getAppNameWithVersion());

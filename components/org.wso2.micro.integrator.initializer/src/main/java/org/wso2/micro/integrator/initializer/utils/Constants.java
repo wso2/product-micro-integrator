@@ -82,6 +82,7 @@ public class Constants {
     public static final String QUESTION_MARK = "?";
     public static final String EMPTY_STRING = "";
     public static final String UNDERSCORE = "_";
+    public static final String DOUBLE_UNDERSCORE = "__";
     public static final String SOAP_ENV_BODY = "soapenv:Body";
     public static final String SOAP_ENV_HEADER = "soapenv:Header";
     public static final String ENVELOPE = "Envelope";

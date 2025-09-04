@@ -103,7 +103,7 @@ public class CAppDescriptor {
                     String artifactId = dependencyNode.getAttributes().getNamedItem(Constants.CAPP_ARTIFACT_ID).getNodeValue();
                     String version = dependencyNode.getAttributes().getNamedItem(Constants.CAPP_VERSION).getNodeValue();
                     if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(artifactId) && StringUtils.isNotEmpty(version)) {
-                        addDependency(groupId + Constants.UNDERSCORE + artifactId + Constants.UNDERSCORE + version);
+                        addDependency(groupId + Constants.DOUBLE_UNDERSCORE + artifactId + Constants.DOUBLE_UNDERSCORE + version);
                     } else {
                         log.warn("Skipping dependency with missing attributes in descriptor.xml for CApp: "
                                 + this.cAppFile.getName());

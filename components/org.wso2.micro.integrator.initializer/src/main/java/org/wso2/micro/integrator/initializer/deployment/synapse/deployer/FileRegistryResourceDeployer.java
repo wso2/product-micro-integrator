@@ -170,7 +170,7 @@ public class FileRegistryResourceDeployer implements AppDeploymentHandler {
 
                 if (regConfig != null) {
                     regConfig.setAppName(appName);
-                    regConfig.setArtifactIdentifier("com.example__projectc__1.0.2");
+                    regConfig.setArtifactIdentifier(artifact.getArtifactIdentifier());
                     regConfig.setExtractedPath(artifact.getExtractedPath());
                     regConfig.setParentArtifactName(artifact.getName());
                     regConfig.setConfigFileName(fileName);

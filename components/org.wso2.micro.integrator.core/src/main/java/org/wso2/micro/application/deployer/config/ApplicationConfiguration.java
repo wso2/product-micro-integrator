@@ -17,6 +17,7 @@
 */
 package org.wso2.micro.application.deployer.config;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.commons.logging.Log;
@@ -25,6 +26,7 @@ import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.application.deployer.AppDeployerConstants;
 import org.wso2.micro.application.deployer.AppDeployerUtils;
 
+import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,6 +34,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -44,14 +47,26 @@ public class ApplicationConfiguration {
 
     public static final String ARTIFACTS_XML = "artifacts.xml";
     public static final String METADATA_XML = "metadata.xml";
+    public static final String DESCRIPTOR_XML = "descriptor.xml";
     public static final String FEATURE_POSTFIX = ".feature.group";
+
+    private static final QName Q_DEPLOYMENT_TYPE = new QName("deploymentType");
+    private static final QName Q_ID = new QName("id");
+    private static final QName Q_DEPENDENCIES = new QName("dependencies");
+    private static final QName Q_DEPENDENCY = new QName("dependency");
+
+    private static final QName A_GROUP_ID = new QName("groupId");
+    private static final QName A_ARTIFACT_ID = new QName("artifactId");
+    private static final QName A_VERSION = new QName("version");
+    private static final QName A_TYPE = new QName("type");
 
     // TODO - define a correct ns
     public static final String APPLICATION_NS = "http://products.wso2.org/carbon";
 
     private String appName;
-    private String appGroupId;
-    private String appArtifactId;
+    private boolean isVersionedDeployment = false;
+    private String appArtifactIdentifier;
+    private HashMap<String, String> cAppDependencies = new HashMap<>();
     private String appVersion;
     private String mainSequence;
     private org.wso2.micro.application.deployer.config.Artifact applicationArtifact;
@@ -77,6 +92,7 @@ public class ApplicationConfiguration {
         try {
             xmlInputStream = new FileInputStream(f);
             buildConfiguration(new StAXOMBuilder(xmlInputStream).getDocumentElement());
+            processProjectDependencies(appXmlPath);
         } catch (FileNotFoundException e) {
             handleException("artifacts.xml File cannot be loaded from " + appXmlPath, e);
         } catch (XMLStreamException e) {
@@ -120,6 +136,9 @@ public class ApplicationConfiguration {
     }
 
     public String getAppNameWithVersion() {
+        if (isVersionedDeployment()) {
+            return getAppArtifactIdentifier();
+        }
         if (getAppName() != null) {
             if (getAppVersion() != null) {
                 return getAppName() + "_" + getAppVersion();
@@ -159,8 +178,6 @@ public class ApplicationConfiguration {
                     "found with the type - " + AppDeployerConstants.CARBON_APP_TYPE);
         }
         this.appName = appArtifact.getName();
-        this.appGroupId = appArtifact.getGroupId();
-        this.appArtifactId = appArtifact.getArtifactId();
         this.appVersion = appArtifact.getVersion();
         this.setMainSequence(appArtifact.getMainSequence());
 
@@ -195,6 +212,56 @@ public class ApplicationConfiguration {
         this.applicationArtifact = appArtifact;
     }
 
+    private void processProjectDependencies(String appPath) throws CarbonException {
+
+        File f = new File(appPath + ApplicationConfiguration.DESCRIPTOR_XML);
+        if (f.exists()) {
+            InputStream xmlInputStream = null;
+            try {
+                xmlInputStream = new FileInputStream(f);
+                populateArtifactIdentifiers(new StAXOMBuilder(xmlInputStream).getDocumentElement());
+            } catch (XMLStreamException | FileNotFoundException e) {
+                handleException("Error while parsing the descriptor.xml file ", e);
+            } finally {
+                if (xmlInputStream != null) {
+                    try {
+                        xmlInputStream.close();
+                    } catch (IOException e) {
+                        log.error("Error while closing input stream.", e);
+                    }
+                }
+            }
+        }
+    }
+
+    private void populateArtifactIdentifiers(OMElement descriptorElement) throws CarbonException {
+
+        OMElement deploymentEl = descriptorElement.getFirstChildWithName(Q_DEPLOYMENT_TYPE);
+
+        if (deploymentEl != null) {
+            String deploymentType = deploymentEl.getText().trim();
+            if (AppDeployerConstants.VERSIONED_DEPLOYMENT.equals(deploymentType)) {
+                isVersionedDeployment = true;
+                OMElement idEl = descriptorElement.getFirstChildWithName(Q_ID);
+                if (idEl != null) {
+                    this.appArtifactIdentifier = idEl.getText().trim();
+                } else {
+                    throw new CarbonException("Invalid descriptor.xml. Artifact id is missing for a versioned deployment");
+                }
+
+                OMElement depsEl = descriptorElement.getFirstChildWithName(Q_DEPENDENCIES);
+                if (depsEl != null) {
+                    for (Iterator<?> it = depsEl.getChildrenWithName(Q_DEPENDENCY); it.hasNext(); ) {
+                        OMElement depEl = (OMElement) it.next();
+                        String fullyQualifiedDepName = getAttr(depEl, A_GROUP_ID) + "__" + getAttr(depEl, A_ARTIFACT_ID);
+                        String version = getAttr(depEl, A_VERSION);
+                        cAppDependencies.put(fullyQualifiedDepName, version);
+                    }
+                }
+            }
+        }
+    }
+
     private void handleException(String msg, Exception e) throws CarbonException {
         log.error(msg, e);
         throw new CarbonException(msg, e);
@@ -208,13 +275,23 @@ public class ApplicationConfiguration {
         this.mainSequence = mainSequence;
     }
 
-    public String getAppGroupId() {
+    public boolean isVersionedDeployment() {
 
-        return appGroupId;
+        return isVersionedDeployment;
     }
 
-    public String getAppArtifactId() {
+    public String getAppArtifactIdentifier() {
 
-        return appArtifactId;
+        return appArtifactIdentifier;
+    }
+
+    public HashMap<String, String> getCAppDependencies() {
+
+        return cAppDependencies;
+    }
+
+    private static String getAttr(OMElement el, QName qn) {
+        OMAttribute a = el.getAttribute(qn);
+        return a != null ? a.getAttributeValue().trim() : null;
     }
 }

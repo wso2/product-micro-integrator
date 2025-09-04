@@ -25,6 +25,7 @@ import org.apache.axis2.deployment.Deployer;
 import org.apache.axis2.deployment.DeploymentEngine;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.Bundle;
@@ -254,7 +255,7 @@ public final class AppDeployerUtils {
      * @param artifactEle - artifact OMElement
      * @return created Artifact object
      */
-    public static Artifact populateArtifact(OMElement artifactEle) {
+    public static Artifact populateArtifact(CarbonApplication parentApp, OMElement artifactEle) {
         if (artifactEle == null) {
             return null;
         }
@@ -262,8 +263,9 @@ public final class AppDeployerUtils {
         Artifact artifact = new Artifact();
         // read top level attributes
         artifact.setName(readAttribute(artifactEle, Artifact.NAME));
-        artifact.setGroupId(readAttribute(artifactEle, Artifact.GROUP_ID));
-        artifact.setArtifactId(readAttribute(artifactEle, Artifact.ARTIFACT_ID));
+        if (parentApp != null) {
+            artifact.setArtifactIdentifier(parentApp.getAppConfig().getAppArtifactIdentifier());
+        }
         artifact.setVersion(readAttribute(artifactEle, Artifact.VERSION));
         artifact.setMainSequence(readAttribute(artifactEle, Artifact.MAIN_SEQUENCE));
         artifact.setType(readAttribute(artifactEle, Artifact.TYPE));
@@ -289,7 +291,7 @@ public final class AppDeployerUtils {
             Iterator subArtItr = subArtifactsElement.getChildrenWithLocalName(Artifact.ARTIFACT);
             while (subArtItr.hasNext()) {
                 // as this is also an artifact, use recursion
-                Artifact subArtifact = populateArtifact((OMElement) subArtItr.next());
+                Artifact subArtifact = populateArtifact(parentApp, (OMElement) subArtItr.next());
                 artifact.addSubArtifact(subArtifact);
             }
         }
@@ -305,6 +307,11 @@ public final class AppDeployerUtils {
         }
 
         return artifact;
+    }
+
+    public static Artifact populateArtifact(OMElement artifactEle) {
+
+        return populateArtifact(null, artifactEle);
     }
 
     /**
@@ -624,10 +631,13 @@ public final class AppDeployerUtils {
 
     public static String computeResourcePath(String basePath, String resourceName, RegistryConfig registryConfig) {
         String fullResourcePath;
+        if (StringUtils.isNotBlank(registryConfig.getArtifactIdentifier())) {
+            resourceName = registryConfig.getArtifactIdentifier() + "__" + resourceName;
+        }
         if (basePath.endsWith("/")) {
-            fullResourcePath = basePath + registryConfig.getArtifactIdentifier() + "__" + resourceName;
+            fullResourcePath = basePath + resourceName;
         } else {
-            fullResourcePath = basePath + "/" + registryConfig.getArtifactIdentifier() + "__" + resourceName;
+            fullResourcePath = basePath + "/" + resourceName;
         }
         return fullResourcePath;
     }
