@@ -82,7 +82,7 @@ public class GenericTask extends InboundTask implements LocalTaskActionListener 
     public void notifyLocalTaskResume(String taskName) {
         try {
             pollingConsumer.resume();
-        } catch (NoSuchMethodError e) {
+        } catch (AbstractMethodError | NoSuchMethodError e) {
             logger.warn("resume() method not available in this version of PollingConsumer. Update to the latest " +
                     "server version immediately Task: " + taskName);
         }
