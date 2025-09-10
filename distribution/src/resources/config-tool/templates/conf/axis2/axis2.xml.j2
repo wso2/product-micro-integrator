@@ -280,6 +280,7 @@
                 <Location>{{transport.http.listener.truststore.location}}</Location>
                 <Type>{{transport.http.listener.truststore.type}}</Type>
                 <Password>{{transport.http.listener.truststore.password}}</Password>
+                <Algorithm>{{transport.http.listener.truststore.algorithm}}</Algorithm>
             </TrustStore>
         </parameter>
         {% if transport.http.listener.verify_client is defined %}
@@ -427,6 +428,7 @@
                 <Location>{{transport_item.truststore.location}}</Location>
                 <Type>{{transport_item.truststore.type}}</Type>
                 <Password>{{transport_item.truststore.password}}</Password>
+                <Algorithm>{{transport_item.truststore.algorithm}}</Algorithm>
             </TrustStore>
         </parameter>
         {% endif %}
@@ -530,6 +532,7 @@
                 <Location>{{transport.http.sender.truststore.location}}</Location>
                 <Type>{{transport.http.sender.truststore.type}}</Type>
                 <Password>{{transport.http.sender.truststore.password}}</Password>
+                <Algorithm>{{transport.http.sender.truststore.algorithm}}</Algorithm>
             </TrustStore>
         </parameter>
         {% if transport.http.sender.ssl_profile.file_path is defined %}
@@ -589,6 +592,7 @@
                     <Location>{{transport.netty.https.sender.truststore.location}}</Location>
                     <Type>{{transport.netty.https.sender.truststore.type}}</Type>
                     <Password>{{transport.netty.https.sender.truststore.password}}</Password>
+                    <Algorithm>{{transport.netty.https.sender.truststore.algorithm}}</Algorithm>
                 </TrustStore>
             </parameter>
             {% if transport.netty.http.sender.certificate_revocation_verifier_enable is defined %}
@@ -712,6 +716,8 @@
         <parameter name="ws.trust.store" locked="false">
             <ws.trust.store.location>{{transport.wss.sender.truststore_location}}</ws.trust.store.location>
             <ws.trust.store.Password>{{transport.wss.sender.truststore_password}}</ws.trust.store.Password>
+            <ws.trust.store.Type>{{transport_item.truststore.type}}</ws.trust.store.Type>
+            <ws.trust.store.Algorithm>{{transport_item.truststore.algorithm}}</ws.trust.store.Algorithm>
         </parameter>
     </transportSender>
     {% endif %}
@@ -736,6 +742,7 @@
                 <Location>{{transport_item.truststore.location}}</Location>
                 <Type>{{transport_item.truststore.type}}</Type>
                 <Password>{{transport_item.truststore.password}}</Password>
+                <Algorithm>{{transport_item.truststore.algorithm}}</Algorithm>
             </TrustStore>
         </parameter>
         {% endif %}

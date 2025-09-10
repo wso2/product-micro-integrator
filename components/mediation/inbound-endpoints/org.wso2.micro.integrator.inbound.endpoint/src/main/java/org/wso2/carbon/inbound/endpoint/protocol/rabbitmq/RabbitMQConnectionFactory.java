@@ -33,6 +33,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,10 +52,15 @@ public class RabbitMQConnectionFactory {
 
     private ConnectionFactory connectionFactory;
     private String name;
-    private Map<String, String> parameters = new HashMap<>();
+    private final Map<String, String> parameters = new HashMap<>();
     private int retryInterval;
     private int retryCount;
     private Address[] addresses;
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    private static final String BCJSSE = "BCJSSE";
+    private static final String PKIX = "PKIX";
 
     /**
      * Digest a AMQP CF definition from the configuration and construct
@@ -158,6 +165,7 @@ public class RabbitMQConnectionFactory {
      * @param sslEnabled ssl enabled
      */
     private void setSSL(Map<String, String> parameters, boolean sslEnabled) {
+        String provider = getPreferredJceProvider();
         try {
             if (sslEnabled) {
                 String keyStoreLocation = parameters.get(RabbitMQConstants.SSL_KEYSTORE_LOCATION);
@@ -180,21 +188,46 @@ public class RabbitMQConnectionFactory {
                     }
                 } else {
                     char[] keyPassphrase = keyStorePassword.toCharArray();
-                    KeyStore ks = KeyStore.getInstance(keyStoreType);
-                    ks.load(new FileInputStream(keyStoreLocation), keyPassphrase);
+                    KeyStore ks;
+                    if (provider != null) {
+                        ks = KeyStore.getInstance(keyStoreType, provider);
+                    } else {
+                        ks = KeyStore.getInstance(keyStoreType);
+                    }
+                    ks.load(Files.newInputStream(Paths.get(keyStoreLocation)), keyPassphrase);
 
-                    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    KeyManagerFactory kmf;
+                    if (provider != null) {
+                        kmf = KeyManagerFactory.getInstance(PKIX, BCJSSE);
+                    } else {
+                        kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    }
                     kmf.init(ks, keyPassphrase);
 
                     char[] trustPassphrase = trustStorePassword.toCharArray();
-                    KeyStore tks = KeyStore.getInstance(trustStoreType);
-                    tks.load(new FileInputStream(trustStoreLocation), trustPassphrase);
 
-                    TrustManagerFactory tmf = TrustManagerFactory
-                            .getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    KeyStore tks;
+                    if (provider != null) {
+                        tks = KeyStore.getInstance(trustStoreType, provider);
+                    } else {
+                        tks = KeyStore.getInstance(trustStoreType);
+                    }
+                    tks.load(Files.newInputStream(Paths.get(trustStoreLocation)), trustPassphrase);
+
+                    TrustManagerFactory tmf;
+                    if (provider != null) {
+                        tmf = TrustManagerFactory.getInstance(PKIX, BCJSSE);
+                    } else {
+                        tmf = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    }
                     tmf.init(tks);
 
-                    SSLContext c = SSLContext.getInstance(sslVersion);
+                    SSLContext c;
+                    if (provider != null) {
+                        c = SSLContext.getInstance(sslVersion, BCJSSE);
+                    } else {
+                        c = SSLContext.getInstance(sslVersion);
+                    }
                     c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
                     connectionFactory.useSslProtocol(c);
@@ -253,6 +286,20 @@ public class RabbitMQConnectionFactory {
             }
         }
         return connection;
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    public static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 
 }

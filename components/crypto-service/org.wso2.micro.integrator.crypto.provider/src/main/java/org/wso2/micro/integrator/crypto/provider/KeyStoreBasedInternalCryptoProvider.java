@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.crypto.api.CryptoException;
 import org.wso2.carbon.crypto.api.InternalCryptoProvider;
+import org.wso2.micro.integrator.crypto.provider.internal.DefaultCryptoProviderComponent;
 
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -43,11 +44,11 @@ import javax.crypto.NoSuchPaddingException;
  */
 public class KeyStoreBasedInternalCryptoProvider implements InternalCryptoProvider {
 
-    private static Log log = LogFactory.getLog(KeyStoreBasedInternalCryptoProvider.class);
+    private static final Log log = LogFactory.getLog(KeyStoreBasedInternalCryptoProvider.class);
 
-    private KeyStore keyStore;
-    private String keyAlias;
-    private String keyPassword;
+    private final KeyStore keyStore;
+    private final String keyAlias;
+    private final String keyPassword;
 
     public KeyStoreBasedInternalCryptoProvider(KeyStore keyStore, String keyAlias, String keyPassword) {
 
@@ -70,7 +71,9 @@ public class KeyStoreBasedInternalCryptoProvider implements InternalCryptoProvid
 
         try {
             Cipher cipher;
-
+            if (StringUtils.isBlank(javaSecurityAPIProvider)) {
+                javaSecurityAPIProvider = DefaultCryptoProviderComponent.getPreferredJceProvider();
+            }
             if (StringUtils.isBlank(javaSecurityAPIProvider)) {
                 cipher = Cipher.getInstance(algorithm);
             } else {
@@ -121,7 +124,9 @@ public class KeyStoreBasedInternalCryptoProvider implements InternalCryptoProvid
 
         try {
             Cipher cipher;
-
+            if (StringUtils.isBlank(javaSecurityAPIProvider)) {
+                javaSecurityAPIProvider = DefaultCryptoProviderComponent.getPreferredJceProvider();
+            }
             if (StringUtils.isBlank(javaSecurityAPIProvider)) {
                 cipher = Cipher.getInstance(algorithm);
             } else {

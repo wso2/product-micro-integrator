@@ -29,6 +29,7 @@ import java.nio.charset.Charset;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -41,13 +42,13 @@ import javax.crypto.Cipher;
 public class CryptoUtil {
 
     private static final String CIPHER_TRANSFORMATION_SYSTEM_PROPERTY = "org.wso2.CipherTransformation";
-    private static Log log = LogFactory.getLog(CryptoUtil.class);
-    private String primaryKeyStoreAlias;
-    private String internalKeyStoreAlias;
-    private String primaryKeyStoreKeyPass;
-    private String internalKeyStoreKeyPass;
-    private CarbonServerConfigurationService serverConfigService;
-    private Gson gson = new Gson();
+    private static final Log log = LogFactory.getLog(CryptoUtil.class);
+    private final String primaryKeyStoreAlias;
+    private final String internalKeyStoreAlias;
+    private final String primaryKeyStoreKeyPass;
+    private final String internalKeyStoreKeyPass;
+    private final CarbonServerConfigurationService serverConfigService;
+    private final Gson gson = new Gson();
     private static CryptoUtil instance = null;
     private static final char[] HEX_CHARACTERS = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
                                                             'C', 'D', 'E', 'F'};
@@ -111,9 +112,9 @@ public class CryptoUtil {
         byte[] encryptedKey;
         org.wso2.micro.core.encryption.SymmetricEncryption encryption = org.wso2.micro.core.encryption.SymmetricEncryption
                 .getInstance();
-
+        String provider = getJceProvider();
         try {
-            if (Boolean.valueOf(encryption.getSymmetricKeyEncryptEnabled())) {
+            if (Boolean.parseBoolean(encryption.getSymmetricKeyEncryptEnabled())) {
                 encryptedKey = encryption.encryptWithSymmetricKey(plainTextBytes);
             } else {
                 Cipher keyStoreCipher;
@@ -135,13 +136,21 @@ public class CryptoUtil {
                     if (log.isDebugEnabled()) {
                         log.debug("Cipher transformation for encryption : " + cipherTransformation);
                     }
-                    keyStoreCipher = Cipher.getInstance(cipherTransformation, getJceProvider());
+                    if (provider != null) {
+                        keyStoreCipher = Cipher.getInstance(cipherTransformation, provider);
+                    } else {
+                        keyStoreCipher = Cipher.getInstance(cipherTransformation);
+                    }
                     isCipherTransformEnabled = true;
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug("Default Cipher transformation for encryption : RSA");
                     }
-                    keyStoreCipher = Cipher.getInstance("RSA", getJceProvider());
+                    if (provider != null) {
+                        keyStoreCipher = Cipher.getInstance(Constants.RSA, provider);
+                    } else {
+                        keyStoreCipher = Cipher.getInstance(Constants.RSA);
+                    }
                 }
 
                 keyStoreCipher.init(Cipher.ENCRYPT_MODE, certs[0].getPublicKey());
@@ -215,9 +224,9 @@ public class CryptoUtil {
         byte[] decryptedValue;
         org.wso2.micro.core.encryption.SymmetricEncryption encryption = org.wso2.micro.core.encryption.SymmetricEncryption
                 .getInstance();
-
+        String provider = getJceProvider();
         try {
-            if (Boolean.valueOf(encryption.getSymmetricKeyEncryptEnabled())) {
+            if (Boolean.parseBoolean(encryption.getSymmetricKeyEncryptEnabled())) {
                 decryptedValue = encryption.decryptWithSymmetricKey(cipherTextBytes);
             } else {
                 Cipher keyStoreCipher;
@@ -243,17 +252,29 @@ public class CryptoUtil {
                         if (log.isDebugEnabled()) {
                             log.debug("Cipher transformation for decryption : " + cipherHolder.getTransformation());
                         }
-                        keyStoreCipher = Cipher.getInstance(cipherHolder.getTransformation(), getJceProvider());
+                        if (provider != null) {
+                            keyStoreCipher = Cipher.getInstance(cipherHolder.getTransformation(), provider);
+                        } else {
+                            keyStoreCipher = Cipher.getInstance(cipherHolder.getTransformation());
+                        }
                         cipherTextBytes = cipherHolder.getCipherBase64Decoded();
                         isCipherTransformEnabled = true;
                     } else {
-                        keyStoreCipher = Cipher.getInstance(cipherTransformation, getJceProvider());
+                        if (provider != null) {
+                            keyStoreCipher = Cipher.getInstance(cipherTransformation, provider);
+                        } else {
+                            keyStoreCipher = Cipher.getInstance(cipherTransformation);
+                        }
                         isCipherTransformEnabled = true;
                     }
                 } else {
                     // This will reach if the user have removed org.wso2.CipherTransformation from the carbon.properties
                     // or delete carbon.properties file
-                    keyStoreCipher = Cipher.getInstance("RSA", getJceProvider());
+                    if (provider != null) {
+                        keyStoreCipher = Cipher.getInstance(Constants.RSA, provider);
+                    } else {
+                        keyStoreCipher = Cipher.getInstance(Constants.RSA);
+                    }
                 }
 
                 keyStoreCipher.init(Cipher.DECRYPT_MODE, privateKey);
@@ -289,10 +310,10 @@ public class CryptoUtil {
     public byte[] decrypt(byte[] cipherTextBytes, String cipherTransformation) throws
                                                                                org.wso2.micro.core.util.CryptoException {
         byte[] decryptedValue;
-
+        String provider = getJceProvider();
         org.wso2.micro.core.encryption.SymmetricEncryption encryption = SymmetricEncryption.getInstance();
         try {
-            if (Boolean.valueOf(encryption.getSymmetricKeyEncryptEnabled())) {
+            if (Boolean.parseBoolean(encryption.getSymmetricKeyEncryptEnabled())) {
                 decryptedValue = encryption.decryptWithSymmetricKey(cipherTextBytes);
             } else {
                 Cipher keyStoreCipher;
@@ -308,9 +329,17 @@ public class CryptoUtil {
                     privateKey = (PrivateKey) keyStore.getKey(primaryKeyStoreAlias, primaryKeyStoreKeyPass.toCharArray());
                 }
                 if (cipherTransformation != null) {
-                    keyStoreCipher = Cipher.getInstance(cipherTransformation, getJceProvider());
+                    if (provider != null) {
+                        keyStoreCipher = Cipher.getInstance(cipherTransformation, provider);
+                    } else {
+                        keyStoreCipher = Cipher.getInstance(cipherTransformation);
+                    }
                 } else {
-                    keyStoreCipher = Cipher.getInstance("RSA", getJceProvider());
+                    if (provider != null) {
+                        keyStoreCipher = Cipher.getInstance(Constants.RSA, provider);
+                    } else {
+                        keyStoreCipher = Cipher.getInstance(Constants.RSA);
+                    }
                 }
 
                 keyStoreCipher.init(Cipher.DECRYPT_MODE, privateKey);
@@ -407,7 +436,7 @@ public class CryptoUtil {
         CipherHolder cipherHolder = new CipherHolder();
         cipherHolder.setCipherText(Base64.encode(originalCipher));
         cipherHolder.setTransformation(transformation);
-        cipherHolder.setThumbPrint(calculateThumbprint(certificate, "SHA-1"), "SHA-1");
+        cipherHolder.setThumbPrint(calculateThumbprint(certificate));
         String cipherWithMetadataStr = gson.toJson(cipherHolder);
         if (log.isDebugEnabled()) {
             log.debug("Cipher with meta data : " + cipherWithMetadataStr);
@@ -434,10 +463,20 @@ public class CryptoUtil {
         }
     }
 
-    private String calculateThumbprint(Certificate certificate, String digest)
+    private String calculateThumbprint(Certificate certificate)
             throws NoSuchAlgorithmException, CertificateEncodingException {
+        String provider = getJceProvider();
+        MessageDigest messageDigest;
+        if (provider != null) {
+            try {
+                messageDigest = MessageDigest.getInstance("SHA-1", provider);
+            } catch (NoSuchProviderException e) {
+                throw new CertificateEncodingException(e);
+            }
+        } else {
+            messageDigest = MessageDigest.getInstance("SHA-1");
+        }
 
-        MessageDigest messageDigest = MessageDigest.getInstance(digest);
         messageDigest.update(certificate.getEncoded());
         byte[] digestByteArray = messageDigest.digest();
 
@@ -458,12 +497,13 @@ public class CryptoUtil {
      *
      * @return
      */
-    private String getJceProvider() {
-        String provider = CarbonServerConfigurationService.getInstance().getFirstProperty("JCEProvider");
-        if (provider == null && provider.equalsIgnoreCase(Constants.BOUNCY_CASTLE_FIPS_PROVIDER)) {
-            return Constants.BOUNCY_CASTLE_FIPS_PROVIDER;
+    public static String getJceProvider() {
+        String provider = System.getProperty(Constants.SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(Constants.BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(Constants.BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
         }
-        return Constants.BOUNCY_CASTLE_PROVIDER;
+        return null;
     }
 }
 

@@ -26,7 +26,9 @@ import org.opensaml.security.x509.X509Credential;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509CRL;
@@ -55,9 +57,15 @@ public class X509CredentialImpl implements X509Credential {
      * @throws InvalidKeySpecException
      */
     public X509CredentialImpl(BigInteger modulus, BigInteger publicExponent)
-            throws NoSuchAlgorithmException, InvalidKeySpecException {
+            throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         RSAPublicKeySpec spec = new RSAPublicKeySpec(modulus, publicExponent);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        String provider = WSXACMLEntitlementServiceClient.getPreferredJceProvider();
+        KeyFactory keyFactory;
+            if (provider != null) {
+                keyFactory = KeyFactory.getInstance("RSA", provider);
+            } else {
+                keyFactory = KeyFactory.getInstance("RSA");
+            }
         publicKey = keyFactory.generatePublic(spec);
     }
 

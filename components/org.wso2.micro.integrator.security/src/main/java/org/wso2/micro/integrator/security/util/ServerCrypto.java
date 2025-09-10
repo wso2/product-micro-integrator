@@ -77,6 +77,9 @@ public class ServerCrypto implements Crypto {
     public final static String PROP_ID_XKMS_SERVICE_PASS_PHRASE = "org.wso2.wsas.security.wso2wsas.crypto.xkms.pass";
     public final static String PROP_ID_TENANT_ID = "org.wso2.stratos.tenant.id";
     public final static String PROP_ID_XKMS_SERVICE_URL = "org.wso2.carbon.security.crypto.xkms.url";
+    public static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    public static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
     private static final String SKI_OID = "2.5.29.14";
     private static Log log = LogFactory.getLog(ServerCrypto.class);
     private static CertificateFactory certFact = null;
@@ -93,6 +96,7 @@ public class ServerCrypto implements Crypto {
     public ServerCrypto(Properties prop, ClassLoader loader) throws CredentialException,
             IOException {
         boolean isSetDoomFalse = false;
+        String provider = getJceProvider();
         try {
 
             int tenantId = Constants.SUPER_TENANT_ID;
@@ -128,7 +132,11 @@ public class ServerCrypto implements Crypto {
         InputStream cacertsIs = new FileInputStream(cacertsPath);
         try {
             String cacertsPasswd = properties.getProperty(PROP_ID_CACERT_PASS, "changeit");
-            cacerts = KeyStore.getInstance(KeyStore.getDefaultType());
+            if (provider != null) {
+                cacerts = KeyStore.getInstance("BCFKS", provider);
+            } else {
+                cacerts = KeyStore.getInstance(KeyStore.getDefaultType());
+            }
             cacerts.load(cacertsIs, cacertsPasswd.toCharArray());
 
         } catch (GeneralSecurityException e) {
@@ -479,12 +487,19 @@ public class ServerCrypto implements Crypto {
             byte[] value = new byte[encoded.length - 22];
             System.arraycopy(encoded, 22, value, 0, value.length);
             MessageDigest sha;
+            String provider = getJceProvider();
             try {
-                sha = MessageDigest.getInstance("SHA-1");
+                if (provider != null) {
+                    sha = MessageDigest.getInstance("SHA-1", provider);
+                } else {
+                    sha = MessageDigest.getInstance("SHA-1");
+                }
             } catch (NoSuchAlgorithmException ex) {
                 throw new WSSecurityException(1, "noSKIHandling",
                         new Object[]{"Wrong certificate version (<3) and no "
                                 + "SHA1 message digest availabe"});
+            } catch (NoSuchProviderException e) {
+                throw new WSSecurityException("Specified security provider is not available in this environment: ", e);
             }
             sha.reset();
             sha.update(value);
@@ -508,10 +523,17 @@ public class ServerCrypto implements Crypto {
     public String getAliasForX509CertThumb(byte[] thumb) throws WSSecurityException {
         Certificate cert;
         MessageDigest sha;
+        String provider = getJceProvider();
         try {
-            sha = MessageDigest.getInstance("SHA-1");
+            if (provider != null) {
+                sha = MessageDigest.getInstance("SHA-1", provider);
+            } else {
+                sha = MessageDigest.getInstance("SHA-1");
+            }
         } catch (NoSuchAlgorithmException e1) {
             throw new WSSecurityException(0, "noSHA1availabe");
+        } catch (NoSuchProviderException e) {
+            throw new WSSecurityException("Specified security provider is not available in this environment: ", e);
         }
         try {
             for (Enumeration e = keystore.aliases(); e.hasMoreElements(); ) {
@@ -560,6 +582,9 @@ public class ServerCrypto implements Crypto {
         if (certFact == null) {
             try {
                 String provider = properties.getProperty(PROP_ID_CERT_PROVIDER);
+                if (provider == null) {
+                    provider = getJceProvider();
+                }
                 if (provider == null || provider.length() == 0) {
                     certFact = CertificateFactory.getInstance("X.509");
                 } else {
@@ -708,6 +733,9 @@ public class ServerCrypto implements Crypto {
             String provider = properties
                     .getProperty("org.apache.ws.security.crypto.merlin.cert.provider");
             CertPathValidator certPathValidator;
+            if (provider == null) {
+                provider = getJceProvider();
+            }
             if (provider == null || provider.length() == 0) {
                 certPathValidator = CertPathValidator.getInstance("PKIX");
             } else {
@@ -720,5 +748,19 @@ public class ServerCrypto implements Crypto {
                     new Object[]{ex.getMessage()}, ex);
         }
         return true;
+    }
+
+    /**
+     * Get the JCE provider to be used for encryption/decryption
+     *
+     * @return
+     */
+    public static String getJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }

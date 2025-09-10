@@ -34,6 +34,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
@@ -179,7 +180,12 @@ public class JWTAuthorizationProvider implements AuthorizationProvider {
             try{
                 //Create signature instance with signature algorithm and public cert, to verify the signature.
                 Signature verifySig = null;
-                verifySig = Signature.getInstance("SHA256withRSA");
+                String providerName = DBUtils.getPreferredJceProvider();
+                if (providerName != null) {
+                    verifySig = Signature.getInstance("SHA256withRSA", providerName);
+                } else {
+                    verifySig = Signature.getInstance("SHA256withRSA");
+                }
                 verifySig.initVerify(publicCert);
                 //Update signature with signature data.
                 verifySig.update((base64EncodedHeader+"."+base64EncodedBody).getBytes());
@@ -190,6 +196,8 @@ public class JWTAuthorizationProvider implements AuthorizationProvider {
                 throw new AxisFault("Invalid Key");
             } catch (SignatureException e) {
                 throw new AxisFault("Signature Object not initialized properly");
+            } catch (NoSuchProviderException e) {
+                throw new AxisFault("Specified security provider is not available in this environment: ", e);
             }
         }else{
             throw new AxisFault("No public cert found");
@@ -243,9 +251,16 @@ public class JWTAuthorizationProvider implements AuthorizationProvider {
         MessageDigest sha = null;
 
         try {
-            sha = MessageDigest.getInstance("SHA-1");
+            String providerName = DBUtils.getPreferredJceProvider();
+            if (providerName != null) {
+                sha = MessageDigest.getInstance("SHA-1", providerName);
+            } else {
+                sha = MessageDigest.getInstance("SHA-1");
+            }
         } catch (NoSuchAlgorithmException e1) {
-            throw new AxisFault("noSHA1availabe");
+            throw new AxisFault("noSHA1availabe", e1);
+        } catch (NoSuchProviderException e) {
+            throw new AxisFault("Specified security provider is not available in this environment: ", e);
         }
         try {
             for (Enumeration<String> e = keyStore.aliases(); e.hasMoreElements();) {

@@ -37,14 +37,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementPermission;
-import java.security.Provider;
-import java.security.Security;
 
 public class Activator implements BundleActivator {
 
-    private static Log log = LogFactory.getLog(Activator.class);
-
-    public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final Log log = LogFactory.getLog(Activator.class);
 
     private ServiceRegistration registration;
 
@@ -69,15 +65,6 @@ public class Activator implements BundleActivator {
             logServerInfo();
 
             initializeCarbonServerConfigurationService(bundleContext);
-
-            String jceProvider = CarbonServerConfigurationService.getInstance().getFirstProperty("JCEProvider");
-            String providerClass;
-            if (BOUNCY_CASTLE_FIPS_PROVIDER.equals(jceProvider)) {
-                providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
-            } else {
-                providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
-            }
-            Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
 
 
             if (log.isDebugEnabled()){

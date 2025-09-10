@@ -28,6 +28,7 @@ import org.wso2.carbon.crypto.api.ExternalCryptoProvider;
 import org.wso2.carbon.crypto.api.HybridEncryptionInput;
 import org.wso2.carbon.crypto.api.HybridEncryptionOutput;
 import org.wso2.carbon.crypto.api.PrivateKeyInfo;
+import org.wso2.micro.core.util.CryptoUtil;
 import org.wso2.micro.core.util.KeyStoreManager;
 
 import java.io.ByteArrayOutputStream;
@@ -67,6 +68,9 @@ public class KeyStoreBasedExternalCryptoProvider implements ExternalCryptoProvid
 
         try {
             Signature signature;
+            if (StringUtils.isBlank(javaSecurityAPIProvider)) {
+                javaSecurityAPIProvider = CryptoUtil.getJceProvider();
+            }
             if (StringUtils.isBlank(javaSecurityAPIProvider)) {
                 signature = Signature.getInstance(algorithm);
             } else {
@@ -125,7 +129,9 @@ public class KeyStoreBasedExternalCryptoProvider implements ExternalCryptoProvid
 
         try {
             Cipher cipher;
-
+            if (StringUtils.isBlank(javaSecurityAPIProvider)) {
+                javaSecurityAPIProvider = CryptoUtil.getJceProvider();
+            }
             if (StringUtils.isBlank(javaSecurityAPIProvider)) {
                 cipher = Cipher.getInstance(algorithm);
             } else {
@@ -187,7 +193,9 @@ public class KeyStoreBasedExternalCryptoProvider implements ExternalCryptoProvid
 
         try {
             Cipher cipher;
-
+            if (StringUtils.isBlank(javaSecurityAPIProvider)) {
+                javaSecurityAPIProvider = CryptoUtil.getJceProvider();
+            }
             if (StringUtils.isBlank(javaSecurityAPIProvider)) {
                 cipher = Cipher.getInstance(algorithm);
             } else {
@@ -250,7 +258,9 @@ public class KeyStoreBasedExternalCryptoProvider implements ExternalCryptoProvid
 
         try {
             Signature signature;
-
+            if (StringUtils.isBlank(javaSecurityAPIProvider)) {
+                javaSecurityAPIProvider = CryptoUtil.getJceProvider();
+            }
             if (StringUtils.isBlank(javaSecurityAPIProvider)) {
                 signature = Signature.getInstance(algorithm);
             } else {
@@ -525,7 +535,9 @@ public class KeyStoreBasedExternalCryptoProvider implements ExternalCryptoProvid
                                           AlgorithmParameterSpec algoParams) throws Exception {
 
         Cipher cipher;
-        // Check if JCE provider is specified.
+        if (StringUtils.isBlank(jceSecurityProvider)) {
+            jceSecurityProvider = CryptoUtil.getJceProvider();
+        }
         if (StringUtils.isBlank(jceSecurityProvider)) {
             cipher = Cipher.getInstance(symmetricAlgorithm);
         } else {
@@ -549,7 +561,9 @@ public class KeyStoreBasedExternalCryptoProvider implements ExternalCryptoProvid
                                         String symmetricAlgorithm, SecretKeySpec decryptionKey) throws Exception {
 
         Cipher cipher;
-        // Check if JCE provider is specified.
+        if (StringUtils.isBlank(jceSecurityProvider)) {
+            jceSecurityProvider = CryptoUtil.getJceProvider();
+        }
         if (StringUtils.isBlank(jceSecurityProvider)) {
             cipher = Cipher.getInstance(symmetricAlgorithm);
         } else {

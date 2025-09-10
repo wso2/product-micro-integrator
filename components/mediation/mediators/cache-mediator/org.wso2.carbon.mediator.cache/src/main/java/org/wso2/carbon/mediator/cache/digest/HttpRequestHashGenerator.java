@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -142,8 +143,14 @@ public class HttpRequestHashGenerator implements DigestGenerator {
     public byte[] getDigest(String toAddress, String digestAlgorithm) throws CachingException {
 
         byte[] digest = new byte[0];
+        String provider = Util.getPreferredJceProvider();
+        MessageDigest md;
         try {
-            MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+            if (provider != null) {
+                md = MessageDigest.getInstance(digestAlgorithm, provider);
+            } else {
+                md = MessageDigest.getInstance(digestAlgorithm);
+            }
             md.update(toAddress.getBytes(charsetName));
             digest = md.digest();
         } catch (NoSuchAlgorithmException e) {
@@ -152,6 +159,8 @@ public class HttpRequestHashGenerator implements DigestGenerator {
         } catch (UnsupportedEncodingException e) {
             handleException("Error in generating the digest " +
                                     "using the provided encoding : " + charsetName, e);
+        } catch (NoSuchProviderException e) {
+            handleException("Specified security provider is not available in this environment: ", e);
         }
 
         return digest;
@@ -205,9 +214,14 @@ public class HttpRequestHashGenerator implements DigestGenerator {
     private byte[] getDigest(String toAddress, Map<String, String> transportHeaders, String digestAlgorithm)
             throws CachingException {
         byte[] digest = new byte[0];
+        String provider = Util.getPreferredJceProvider();
+        MessageDigest md;
         try {
-
-            MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+            if (provider != null) {
+                md = MessageDigest.getInstance(digestAlgorithm, provider);
+            } else {
+                md = MessageDigest.getInstance(digestAlgorithm);
+            }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
             dos.write(toAddress.getBytes(charsetName));
@@ -224,6 +238,8 @@ public class HttpRequestHashGenerator implements DigestGenerator {
         } catch (IOException e) {
             handleException("Error in calculating the " +
                                     "digest value for the headers", e);
+        } catch (NoSuchProviderException e) {
+            handleException("Specified security provider is not available in this environment: ", e);
         }
         return digest;
     }
@@ -233,9 +249,14 @@ public class HttpRequestHashGenerator implements DigestGenerator {
         byte[] digest = new byte[0];
 
         if (!key.equalsIgnoreCase("Date") && !key.equalsIgnoreCase("User-Agent")) {
+            String provider = Util.getPreferredJceProvider();
+            MessageDigest md;
             try {
-
-                MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+                if (provider != null) {
+                    md = MessageDigest.getInstance(digestAlgorithm, provider);
+                } else {
+                    md = MessageDigest.getInstance(digestAlgorithm);
+                }
                 md.update((byte) 0);
                 md.update((byte) 0);
                 md.update((byte) 0);
@@ -256,6 +277,8 @@ public class HttpRequestHashGenerator implements DigestGenerator {
             } catch (UnsupportedEncodingException e) {
                 handleException("Error in generating the digest " +
                                         "using the provided encoding : " + charsetName, e);
+            } catch (NoSuchProviderException e) {
+                handleException("Specified security provider is not available in this environment: ", e);
             }
         }
 
@@ -294,9 +317,14 @@ public class HttpRequestHashGenerator implements DigestGenerator {
                             String digestAlgorithm) throws CachingException {
         byte[] digest = new byte[0];
 
+        String provider = Util.getPreferredJceProvider();
+        MessageDigest md;
         try {
-
-            MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+            if (provider != null) {
+                md = MessageDigest.getInstance(digestAlgorithm, provider);
+            } else {
+                md = MessageDigest.getInstance(digestAlgorithm);
+            }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
             dos.writeInt(1);
@@ -347,6 +375,8 @@ public class HttpRequestHashGenerator implements DigestGenerator {
         } catch (IOException e) {
             handleException("Error in calculating the " +
                                     "digest value for the OMElement : " + element, e);
+        } catch (NoSuchProviderException e) {
+            handleException("Specified security provider is not available in this environment: ", e);
         }
 
         return digest;
@@ -365,9 +395,14 @@ public class HttpRequestHashGenerator implements DigestGenerator {
 
         byte[] digest = new byte[0];
 
+        String provider = Util.getPreferredJceProvider();
+        MessageDigest md;
         try {
-
-            MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+            if (provider != null) {
+                md = MessageDigest.getInstance(digestAlgorithm, provider);
+            } else {
+                md = MessageDigest.getInstance(digestAlgorithm);
+            }
             md.update((byte) 0);
             md.update((byte) 0);
             md.update((byte) 0);
@@ -382,6 +417,8 @@ public class HttpRequestHashGenerator implements DigestGenerator {
         } catch (UnsupportedEncodingException e) {
             handleException("Error in generating the digest " +
                                     "using the provided encoding : " + charsetName, e);
+        } catch (NoSuchProviderException e) {
+            handleException("Specified security provider is not available in this environment: ", e);
         }
 
         return digest;
@@ -401,9 +438,14 @@ public class HttpRequestHashGenerator implements DigestGenerator {
 
         byte[] digest = new byte[0];
 
+        String provider = Util.getPreferredJceProvider();
+        MessageDigest md;
         try {
-
-            MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+            if (provider != null) {
+                md = MessageDigest.getInstance(digestAlgorithm, provider);
+            } else {
+                md = MessageDigest.getInstance(digestAlgorithm);
+            }
             md.update((byte) 0);
             md.update((byte) 0);
             md.update((byte) 0);
@@ -422,6 +464,8 @@ public class HttpRequestHashGenerator implements DigestGenerator {
         } catch (UnsupportedEncodingException e) {
             handleException("Error in generating the digest " +
                                     "using the provided encoding : " + charsetName, e);
+        } catch (NoSuchProviderException e) {
+            handleException("Specified security provider is not available in this environment: ", e);
         }
 
         return digest;
@@ -443,9 +487,14 @@ public class HttpRequestHashGenerator implements DigestGenerator {
         if (!(attribute.getLocalName().equals("xmlns") ||
                 attribute.getLocalName().startsWith("xmlns:"))) {
 
+            String provider = Util.getPreferredJceProvider();
+            MessageDigest md;
             try {
-
-                MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+                if (provider != null) {
+                    md = MessageDigest.getInstance(digestAlgorithm, provider);
+                } else {
+                    md = MessageDigest.getInstance(digestAlgorithm);
+                }
                 md.update((byte) 0);
                 md.update((byte) 0);
                 md.update((byte) 0);
@@ -464,6 +513,8 @@ public class HttpRequestHashGenerator implements DigestGenerator {
             } catch (UnsupportedEncodingException e) {
                 handleException("Error in generating the digest " +
                                         "using the provided encoding : " + charsetName, e);
+            } catch (NoSuchProviderException e) {
+                handleException("Specified security provider is not available in this environment: ", e);
             }
         }
 
