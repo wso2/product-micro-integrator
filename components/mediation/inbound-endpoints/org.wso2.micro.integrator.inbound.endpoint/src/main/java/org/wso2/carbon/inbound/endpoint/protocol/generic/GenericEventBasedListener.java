@@ -150,13 +150,25 @@ public class GenericEventBasedListener extends InboundOneTimeTriggerEventBasedPr
     }
 
     public boolean activate() {
-        eventConsumer.resume();
+        try {
+            eventConsumer.resume();
+        } catch (AbstractMethodError e) {
+            throw new UnsupportedOperationException("Unsupported operation 'activate()' for Inbound Endpoint: . " + getName() +
+                    "If using a WSO2-released inbound, please upgrade to the latest version. " +
+                    "If this is a custom inbound, implement the 'activate' logic accordingly.");
+        }
         return super.activate();
     }
 
     @Override
     public boolean deactivate() {
-        eventConsumer.destroy();
+        try {
+            eventConsumer.pause();
+        } catch (AbstractMethodError e) {
+            throw new UnsupportedOperationException("Unsupported operation 'deactivate()' for Inbound Endpoint: . " + getName() +
+                    "If using a WSO2-released inbound, please upgrade to the latest version. " +
+                    "If this is a custom inbound, implement the 'deactivate' logic accordingly.");
+        }
         return super.deactivate();
     }
 
