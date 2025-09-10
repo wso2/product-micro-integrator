@@ -28,6 +28,8 @@ import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 
 import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.util.Hashtable;
 import java.util.Properties;
@@ -51,6 +53,12 @@ public class MqttConnectionFactory {
     private SSLSocketFactory socketFactory;
     private static final int PORT_MIN_BOUND = 0;
     private static final int PORT_MAX_BOUND = 65535;
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    private static final String PKIX = "PKIX";
+    private static final String BCJSSE = "BCJSSE";
+    private static final String TLS = "TLS";
 
     public MqttConnectionFactory(Properties passedInParameter) {
 
@@ -330,26 +338,62 @@ public class MqttConnectionFactory {
     protected SSLSocketFactory getSocketFactory(String keyStoreLocation, String keyStoreType, String keyStorePassword,
                                                 String trustStoreLocation, String trustStoreType,
                                                 String trustStorePassword, String sslVersion) throws Exception {
-
+        String provider = getPreferredJceProvider();
         char[] keyPassphrase = keyStorePassword.toCharArray();
-        KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-        keyStore.load(new FileInputStream(keyStoreLocation), keyPassphrase);
-
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        KeyStore keyStore;
+        if (provider != null) {
+            keyStore = KeyStore.getInstance(keyStoreType, provider);
+        } else {
+            keyStore = KeyStore.getInstance(keyStoreType);
+        }
+        keyStore.load(Files.newInputStream(Paths.get(keyStoreLocation)), keyPassphrase);
+        KeyManagerFactory keyManagerFactory;
+        if (provider != null) {
+            keyManagerFactory = KeyManagerFactory.getInstance(PKIX, BCJSSE);
+        } else {
+            keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        }
         keyManagerFactory.init(keyStore, keyPassphrase);
 
         char[] trustPassphrase = trustStorePassword.toCharArray();
-        KeyStore trustStore = KeyStore.getInstance(trustStoreType);
-        trustStore.load(new FileInputStream(trustStoreLocation), trustPassphrase);
-
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory
-                .getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        KeyStore trustStore;
+        if (provider != null) {
+            trustStore = KeyStore.getInstance(trustStoreType, provider);
+        } else {
+            trustStore = KeyStore.getInstance(trustStoreType);
+        }
+        trustStore.load(Files.newInputStream(Paths.get(trustStoreLocation)), trustPassphrase);
+        TrustManagerFactory trustManagerFactory;
+        if (provider != null) {
+            trustManagerFactory = TrustManagerFactory.getInstance(PKIX, BCJSSE);
+        } else {
+            trustManagerFactory = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        }
         trustManagerFactory.init(trustStore);
 
-        SSLContext sslContext = SSLContext.getInstance(sslVersion);
+        SSLContext sslContext;
+        if (provider != null) {
+            sslContext = SSLContext.getInstance(sslVersion, BCJSSE);
+        } else {
+            sslContext = SSLContext.getInstance(sslVersion);
+        }
         sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
 
         return sslContext.getSocketFactory();
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    private static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 
 }

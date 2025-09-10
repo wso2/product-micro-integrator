@@ -29,6 +29,7 @@ import org.wso2.micro.integrator.security.util.Secret;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -52,6 +53,9 @@ public class SystemUserRoleManager {
     int tenantId;
     private DataSource dataSource;
     private static final String SHA_1_PRNG = "SHA1PRNG";
+    public static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    public static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     public SystemUserRoleManager(DataSource dataSource, int tenantId) throws UserStoreException {
         super();
@@ -372,14 +376,18 @@ public class SystemUserRoleManager {
         } catch (UnsupportedSecretTypeException e) {
             throw new UserStoreException("Unsupported credential type", e);
         }
-
+        String provider = getJceProvider();
         try {
             dbConnection = DatabaseUtil.getDBConnection(dataSource);
             String sqlStmt1 = SystemJDBCConstants.ADD_USER_SQL;
-
+            SecureRandom secureRandom;
             String saltValue = null;
             try {
-                SecureRandom secureRandom = SecureRandom.getInstance(SHA_1_PRNG);
+                if (provider != null) {
+                    secureRandom = SecureRandom.getInstance("DEFAULT", provider);
+                } else {
+                    secureRandom = SecureRandom.getInstance(SHA_1_PRNG);
+                }
                 byte[] bytes = new byte[16];
                 //secureRandom is automatically seeded by calling nextBytes
                 secureRandom.nextBytes(bytes);
@@ -561,11 +569,16 @@ public class SystemUserRoleManager {
             if (saltValue != null) {
                 password.addChars(saltValue.toCharArray());
             }
-
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            String provider = getJceProvider();
+            MessageDigest digest;
+            if (provider != null) {
+                digest = MessageDigest.getInstance("SHA-256", provider);
+            } else {
+                digest = MessageDigest.getInstance("SHA-256");
+            }
             byte[] byteValue = digest.digest(password.getBytes());
             return Base64.encode(byteValue);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             String errorMessage = "Error occurred while preparing password";
             if (log.isDebugEnabled()) {
                 log.debug(errorMessage, e);
@@ -632,5 +645,19 @@ public class SystemUserRoleManager {
             }
             DatabaseUtil.closeAllConnections(null, prepStmt);
         }
+    }
+
+    /**
+     * Get the JCE provider to be used for encryption/decryption
+     *
+     * @return
+     */
+    public static String getJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }

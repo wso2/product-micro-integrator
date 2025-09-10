@@ -127,8 +127,11 @@ public class DBUtils {
     private static HashMap<String, String> conversionTypes = null;
 
     private static HashMap<String, String> xsdSqlTypeMap = null;
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
-    private static String currentParamsDisabledProperty;
+    private static final String currentParamsDisabledProperty;
 
     /* initialize the conversion types */
 
@@ -1329,6 +1332,20 @@ public class DBUtils {
             throw new DataServiceFault(e, "Illegal access attempt for class - " + roleRetrieverClass + " Error - " +
                                           e.getMessage());
         }
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    public static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 
 }

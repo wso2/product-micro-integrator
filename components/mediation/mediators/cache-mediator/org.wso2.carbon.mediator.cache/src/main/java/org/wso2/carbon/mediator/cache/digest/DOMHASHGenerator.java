@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -130,10 +131,14 @@ public class DOMHASHGenerator implements DigestGenerator {
     public byte[] getDigest(OMDocument document, String digestAlgorithm) throws CachingException {
 
         byte[] digest = new byte[0];
-
+        String provider = Util.getPreferredJceProvider();
+        MessageDigest md;
         try {
-
-            MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+            if (provider != null) {
+                md = MessageDigest.getInstance(digestAlgorithm, provider);
+            } else {
+                md = MessageDigest.getInstance(digestAlgorithm);
+            }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
             dos.writeInt(9);
@@ -160,6 +165,8 @@ public class DOMHASHGenerator implements DigestGenerator {
         } catch (IOException e) {
             handleException("Error in calculating the " +
                                     "digest value for the OMDocument : " + document, e);
+        } catch (NoSuchProviderException e) {
+            handleException("Specified security provider is not available in this environment: ", e);
         }
 
         return digest;
@@ -176,10 +183,14 @@ public class DOMHASHGenerator implements DigestGenerator {
     public byte[] getDigest(OMElement element, String digestAlgorithm) throws CachingException {
 
         byte[] digest = new byte[0];
-
+        String provider = Util.getPreferredJceProvider();
+        MessageDigest md;
         try {
-
-            MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+            if (provider != null) {
+                md = MessageDigest.getInstance(digestAlgorithm, provider);
+            } else {
+                md = MessageDigest.getInstance(digestAlgorithm);
+            }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
             dos.writeInt(1);
@@ -222,6 +233,8 @@ public class DOMHASHGenerator implements DigestGenerator {
         } catch (IOException e) {
             handleException("Error in calculating the " +
                                     "digest value for the OMElement : " + element, e);
+        } catch (NoSuchProviderException e) {
+            handleException("Specified security provider is not available in this environment: ", e);
         }
 
         return digest;
@@ -240,10 +253,14 @@ public class DOMHASHGenerator implements DigestGenerator {
             throws CachingException {
 
         byte[] digest = new byte[0];
-
+        String provider = Util.getPreferredJceProvider();
+        MessageDigest md;
         try {
-
-            MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+            if (provider != null) {
+                md = MessageDigest.getInstance(digestAlgorithm, provider);
+            } else {
+                md = MessageDigest.getInstance(digestAlgorithm);
+            }
             md.update((byte) 0);
             md.update((byte) 0);
             md.update((byte) 0);
@@ -262,6 +279,8 @@ public class DOMHASHGenerator implements DigestGenerator {
         } catch (UnsupportedEncodingException e) {
             handleException("Error in generating the digest " +
                                     "using the provided encoding : UnicodeBigUnmarked", e);
+        } catch (NoSuchProviderException e) {
+            handleException("Specified security provider is not available in this environment: ", e);
         }
 
         return digest;
@@ -282,10 +301,14 @@ public class DOMHASHGenerator implements DigestGenerator {
 
         if (!(attribute.getLocalName().equals("xmlns") ||
                 attribute.getLocalName().startsWith("xmlns:"))) {
-
+            String provider = Util.getPreferredJceProvider();
+            MessageDigest md;
             try {
-
-                MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+                if (provider != null) {
+                    md = MessageDigest.getInstance(digestAlgorithm, provider);
+                } else {
+                    md = MessageDigest.getInstance(digestAlgorithm);
+                }
                 md.update((byte) 0);
                 md.update((byte) 0);
                 md.update((byte) 0);
@@ -304,6 +327,8 @@ public class DOMHASHGenerator implements DigestGenerator {
             } catch (UnsupportedEncodingException e) {
                 handleException("Error in generating the digest " +
                                         "using the provided encoding : UnicodeBigUnmarked", e);
+            } catch (NoSuchProviderException e) {
+                handleException("Specified security provider is not available in this environment: ", e);
             }
         }
 
@@ -323,9 +348,14 @@ public class DOMHASHGenerator implements DigestGenerator {
 
         byte[] digest = new byte[0];
 
+        String provider = Util.getPreferredJceProvider();
+        MessageDigest md;
         try {
-
-            MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+            if (provider != null) {
+                md = MessageDigest.getInstance(digestAlgorithm, provider);
+            } else {
+                md = MessageDigest.getInstance(digestAlgorithm);
+            }
             md.update((byte) 0);
             md.update((byte) 0);
             md.update((byte) 0);
@@ -340,6 +370,8 @@ public class DOMHASHGenerator implements DigestGenerator {
         } catch (UnsupportedEncodingException e) {
             handleException("Error in generating the digest " +
                                     "using the provided encoding : UnicodeBigUnmarked", e);
+        } catch (NoSuchProviderException e) {
+            handleException("Specified security provider is not available in this environment: ", e);
         }
 
         return digest;

@@ -83,6 +83,7 @@ import java.nio.charset.Charset;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
@@ -106,6 +107,9 @@ public class WSXACMLEntitlementServiceClient extends AbstractEntitlementServiceC
     public static final String DOCUMENT_BUILDER_FACTORY_IMPL = "org.apache.xerces.jaxp.DocumentBuilderFactoryImpl";
     private static boolean isBootStrapped = false;
     public static final String URN_OASIS_NAMES_TC_XACML_2_0_CONTEXT_SCHEMA_OS = "urn:oasis:names:tc:xacml:2.0:context:schema:os";
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     private static OMNamespace xacmlContextNS = OMAbstractFactory.getOMFactory()
             .createOMNamespace(URN_OASIS_NAMES_TC_XACML_2_0_CONTEXT_SCHEMA_OS, "xacml-context");
@@ -573,12 +577,16 @@ public class WSXACMLEntitlementServiceClient extends AbstractEntitlementServiceC
         String keyAlias = serverConfig.getFirstProperty("Security.KeyStore.KeyAlias");
         String ksType = serverConfig.getFirstProperty("Security.KeyStore.Type");
         String privateKeyPassword = serverConfig.getFirstProperty("Security.KeyStore.KeyPassword");
-
+        String provider = getPreferredJceProvider();
         try {
             FileInputStream fis = new FileInputStream(ksLocation);
             BufferedInputStream bis = new BufferedInputStream(fis);
-            KeyStore keyStore = KeyStore.getInstance(ksType);
-
+            KeyStore keyStore;
+            if (provider != null) {
+                keyStore = KeyStore.getInstance(ksType, provider);
+            } else {
+                keyStore = KeyStore.getInstance(ksType);
+            }
             keyStore.load(bis, ksPassword.toCharArray());
             bis.close();
             issuerPK = (PrivateKey) keyStore.getKey(keyAlias, privateKeyPassword.toCharArray());
@@ -596,6 +604,8 @@ public class WSXACMLEntitlementServiceClient extends AbstractEntitlementServiceC
             log.error("Error in reading keystore file.", e);
         } catch (UnrecoverableKeyException e) {
             log.error("Error in getting the private key.", e);
+        } catch (NoSuchProviderException e) {
+            log.error("Specified security provider is not available in this environment: ", e);
         }
 
         BasicX509Credential basicCredential = new BasicX509Credential((java.security.cert.X509Certificate) certificate);
@@ -619,6 +629,20 @@ public class WSXACMLEntitlementServiceClient extends AbstractEntitlementServiceC
             throw new EntitlementProxyException("Unable to retrieve builder for object QName " + objectQName);
         }
         return builder.buildObject(objectQName.getNamespaceURI(), objectQName.getLocalPart(), objectQName.getPrefix());
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    public static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 
 }

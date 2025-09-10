@@ -176,26 +176,21 @@ public class KeyStoreManager {
     public KeyStore getPrimaryKeyStore() throws Exception {
         if (tenantId == Constants.SUPER_TENANT_ID) {
             if (primaryKeyStore == null) {
-
+                KeyStore store;
+                String provider = CryptoUtil.getJceProvider();
                 CarbonServerConfigurationService config = this.getServerConfigService();
                 String file =
-                        new File(config
-                                .getFirstProperty(Constants.SERVER_PRIMARY_KEYSTORE_FILE))
-                                .getAbsolutePath();
-                KeyStore store = KeyStore
-                        .getInstance(config
-                                .getFirstProperty(Constants.SERVER_PRIMARY_KEYSTORE_TYPE));
-                String password = config
-                        .getFirstProperty(Constants.SERVER_PRIMARY_KEYSTORE_PASSWORD);
-                FileInputStream in = null;
-                try {
-                    in = new FileInputStream(file);
+                        new File(config.getFirstProperty(Constants.SERVER_PRIMARY_KEYSTORE_FILE)).getAbsolutePath();
+                if (provider != null) {
+                    store = KeyStore.getInstance(config.getFirstProperty(Constants.SERVER_PRIMARY_KEYSTORE_TYPE),
+                            provider);
+                } else {
+                    store = KeyStore.getInstance(config.getFirstProperty(Constants.SERVER_PRIMARY_KEYSTORE_TYPE));
+                }
+                String password = config.getFirstProperty(Constants.SERVER_PRIMARY_KEYSTORE_PASSWORD);
+                try (FileInputStream in = new FileInputStream(file)) {
                     store.load(in, password.toCharArray());
                     primaryKeyStore = store;
-                } finally {
-                    if (in != null) {
-                        in.close();
-                    }
                 }
             }
             return primaryKeyStore;
@@ -241,33 +236,33 @@ public class KeyStoreManager {
         }
 
         KeyStore keyStore = keyStoreMap.get(keyStoreName);
+        String provider = CryptoUtil.getJceProvider();
 
         if (keyStore == null) {
             lock.lock();
             try {
                 // Double-check to prevent race condition
                 keyStore = keyStoreMap.get(keyStoreName);
+                KeyStore store;
                 if (keyStore == null) {
                     String file =
                             new File(keyStoreDetails.get(Constants.SERVER_PRIVATE_KEYSTORE_FILE))
                                     .getAbsolutePath();
-                    KeyStore store = KeyStore
-                            .getInstance(keyStoreDetails.get(Constants.SERVER_PRIVATE_KEYSTORE_TYPE));
+                    if (provider != null) {
+                        store = KeyStore.getInstance(keyStoreDetails.get(Constants.SERVER_PRIVATE_KEYSTORE_TYPE),
+                                provider);
+                    } else {
+                        store = KeyStore.getInstance(keyStoreDetails.get(Constants.SERVER_PRIVATE_KEYSTORE_TYPE));
+                    }
                     String password = keyStoreDetails.get(Constants.SERVER_PRIVATE_KEYSTORE_PASSWORD);
                     String alias = MiscellaneousUtil.getProtectedToken(password);
                     if (!StringUtils.isEmpty(alias)) {
                         password = configurationService.getResolvedValue(alias);
                     }
-                    FileInputStream in = null;
-                    try {
-                        in = new FileInputStream(file);
+                    try (FileInputStream in = new FileInputStream(file)) {
                         store.load(in, password.toCharArray());
                         keyStoreMap.put(keyStoreName, store);
                         keyStore = store;
-                    } finally {
-                        if (in != null) {
-                            in.close();
-                        }
                     }
                 }
             } finally {
@@ -315,7 +310,8 @@ public class KeyStoreManager {
      *                   than tenant 0
      */
     public KeyStore getInternalKeyStore() throws Exception {
-
+        String provider = CryptoUtil.getJceProvider();
+        KeyStore store;
         if (tenantId == Constants.SUPER_TENANT_ID) {
             if (internalKeyStore == null) {
                 CarbonServerConfigurationService config = this.getServerConfigService();
@@ -323,13 +319,15 @@ public class KeyStoreManager {
                         getFirstProperty(Constants.SERVER_INTERNAL_KEYSTORE_FILE) == null) {
                     return null;
                 }
-                String file = new File(config
-                        .getFirstProperty(Constants.SERVER_INTERNAL_KEYSTORE_FILE))
+                String file = new File(config.getFirstProperty(Constants.SERVER_INTERNAL_KEYSTORE_FILE))
                         .getAbsolutePath();
-                KeyStore store = KeyStore.getInstance(config
-                        .getFirstProperty(Constants.SERVER_INTERNAL_KEYSTORE_TYPE));
-                String password = config
-                        .getFirstProperty(Constants.SERVER_INTERNAL_KEYSTORE_PASSWORD);
+                if (provider != null) {
+                    store = KeyStore.getInstance(config.getFirstProperty(Constants.SERVER_INTERNAL_KEYSTORE_TYPE),
+                            provider);
+                } else {
+                    store = KeyStore.getInstance(config.getFirstProperty(Constants.SERVER_INTERNAL_KEYSTORE_TYPE));
+                }
+                String password = config.getFirstProperty(Constants.SERVER_INTERNAL_KEYSTORE_PASSWORD);
                 try (FileInputStream in = new FileInputStream(file)) {
                     store.load(in, password.toCharArray());
                     internalKeyStore = store;
@@ -353,6 +351,8 @@ public class KeyStoreManager {
      */
     @Deprecated
     public KeyStore getRegistryKeyStore() throws Exception {
+        String provider = CryptoUtil.getJceProvider();
+        KeyStore store;
         if (tenantId == Constants.SUPER_TENANT_ID) {
             if (registryKeyStore == null) {
 
@@ -361,20 +361,17 @@ public class KeyStoreManager {
                         new File(config
                                 .getFirstProperty(Constants.SERVER_REGISTRY_KEYSTORE_FILE))
                                 .getAbsolutePath();
-                KeyStore store = KeyStore
-                        .getInstance(config
-                                .getFirstProperty(Constants.SERVER_REGISTRY_KEYSTORE_TYPE));
+                if (provider != null) {
+                    store = KeyStore.getInstance(config.getFirstProperty(Constants.SERVER_REGISTRY_KEYSTORE_TYPE),
+                            provider);
+                } else {
+                    store = KeyStore.getInstance(config.getFirstProperty(Constants.SERVER_REGISTRY_KEYSTORE_TYPE));
+                }
                 String password = config
                         .getFirstProperty(Constants.SERVER_REGISTRY_KEYSTORE_PASSWORD);
-                FileInputStream in = null;
-                try {
-                    in = new FileInputStream(file);
+                try (FileInputStream in = new FileInputStream(file)) {
                     store.load(in, password.toCharArray());
                     registryKeyStore = store;
-                } finally {
-                    if (in != null) {
-                        in.close();
-                    }
                 }
             }
             return registryKeyStore;
@@ -459,8 +456,14 @@ public class KeyStoreManager {
         MicroIntegratorBaseUtils.checkSecurity();
         String absolutePath = new File(keyStorePath).getAbsolutePath();
         FileInputStream inputStream = null;
+        String provider = CryptoUtil.getJceProvider();
+        KeyStore store;
         try {
-            KeyStore store = KeyStore.getInstance(type);
+            if (provider != null) {
+                store = KeyStore.getInstance(type, provider);
+            } else {
+                store = KeyStore.getInstance(type);
+            }
             inputStream = new FileInputStream(absolutePath);
             store.load(inputStream, password.toCharArray());
             return store;

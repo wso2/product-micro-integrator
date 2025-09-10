@@ -29,6 +29,9 @@ import org.wso2.micro.application.deployer.config.ApplicationConfiguration;
 import org.wso2.micro.application.deployer.config.Artifact;
 import org.wso2.micro.application.deployer.config.CappFile;
 import org.wso2.micro.application.deployer.handler.AppDeploymentHandler;
+import org.wso2.micro.core.Constants;
+import org.wso2.micro.core.util.CryptoUtil;
+import org.wso2.micro.integrator.initializer.utils.DeployerUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,6 +43,7 @@ import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -160,12 +164,23 @@ public class ConfigDeployer implements AppDeploymentHandler {
         char[] password = SslSenderTrustStoreHolder.getInstance().getPassword().toCharArray();
         String type = SslSenderTrustStoreHolder.getInstance().getType();
         Path trustStorePath = Paths.get(getHome(), SslSenderTrustStoreHolder.getInstance().getLocation());
+        String provider = DeployerUtil.getJceProvider();
+        KeyStore trustStore;
         try (FileInputStream trustStoreStream = new FileInputStream(trustStorePath.toFile())) {
-            KeyStore trustStore = KeyStore.getInstance(type);
+            if (provider != null) {
+                trustStore = KeyStore.getInstance(type, provider);
+            } else {
+                trustStore = KeyStore.getInstance(type);
+            }
             trustStore.load(trustStoreStream, password);
             if (!trustStore.containsAlias(key)) {
                 // Load the certificate file
-                CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+                CertificateFactory certFactory;
+                if (provider != null) {
+                    certFactory = CertificateFactory.getInstance("X.509", provider);
+                } else {
+                    certFactory = CertificateFactory.getInstance("X.509");
+                }
                 try (FileInputStream certStream = new FileInputStream(path)) {
                     Certificate cert = certFactory.generateCertificate(certStream);
                     // Add the certificate to the truststore
@@ -191,6 +206,8 @@ public class ConfigDeployer implements AppDeploymentHandler {
             log.error(String.format("An error occurred while processing the truststore: %s", key));
         } catch (NoSuchAlgorithmException e) {
             log.error(String.format("An error occurred while loading the certificate: %s", key));
+        } catch (NoSuchProviderException e) {
+            log.error(String.format("Specified security provider is not available in this environment:  %s", e));
         }
     }
 

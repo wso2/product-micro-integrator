@@ -103,6 +103,8 @@ public class Constants {
 
     public static final String BOUNCY_CASTLE_PROVIDER = "BC";
     public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    public static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    public static final String RSA = "RSA";
     public static final String PAYLOAD = "payload";
     public static final String BATCH_REQUEST = "_batch_req";
     public static final String REQUEST_BOX = "request_box";

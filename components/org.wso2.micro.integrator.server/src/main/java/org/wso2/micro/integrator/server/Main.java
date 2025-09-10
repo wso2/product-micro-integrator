@@ -44,6 +44,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Provider;
+import java.security.Security;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -66,9 +68,16 @@ public class Main {
     protected static final String ONLY_PARSE_CONFIGURATION = "configParseOnly";
     protected static final String SKIP_STARTUP_EXTENSIONS = "skipStartupExtensions";
     protected static final String LOGFILES_HOME = "logfiles.home";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BC_FIPS_CLASS_NAME = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
+    private static final String BC_CLASS_NAME = "org.bouncycastle.jce.provider.BouncyCastleProvider";
+    private static final String JSSE_CLASS_NAME = "org.bouncycastle.jsse.provider.BouncyCastleJsseProvider";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    private static final String FIPS_APPROVED_ONLY = "org.bouncycastle.fips.approved_only";
 
     static File platformDirectory;
-    private static Log logger = LogFactory.getLog(Main.class);
+    private static final Log logger = LogFactory.getLog(Main.class);
 
     public static void main(String[] args) {
 
@@ -116,6 +125,7 @@ public class Main {
             skipExtensions = true;
         }
         handleConfiguration();          // handle config mapper configurations
+        addBcProviders();            // add JCE provider if configured
         if (!skipExtensions) {
             writePID(System.getProperty(LauncherConstants.CARBON_HOME));
             invokeExtensions();
@@ -386,6 +396,48 @@ public class Main {
         } catch (ConfigParserException e) {
             logger.fatal("Error while performing configuration changes", e);
             System.exit(1);
+        }
+    }
+
+    private static void addBcProviders() {
+        String jceProvider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (jceProvider != null) {
+            if (BOUNCY_CASTLE_FIPS_PROVIDER.equals(jceProvider)) {
+                setBcProviders(BC_FIPS_CLASS_NAME, jceProvider);
+                System.setProperty(FIPS_APPROVED_ONLY, "true");
+            } else if (BOUNCY_CASTLE_PROVIDER.equals(jceProvider)) {
+                setBcProviders(BC_CLASS_NAME, jceProvider);
+            } else {
+                throw new RuntimeException("Unsupported JCE provider: " + jceProvider);
+            }
+        }
+    }
+
+    private static void setBcProviders(String className, String jceProvider) {
+        try {
+            Security.insertProviderAt((Provider) Class.forName(className).
+                    getDeclaredConstructor().newInstance(), 1);
+            Provider bcjsse = (Provider) Class
+                    .forName(JSSE_CLASS_NAME)
+                    .getConstructor(String.class)
+                    .newInstance(jceProvider);
+            Security.insertProviderAt(bcjsse, 2);
+            logger.info("JCE provider:" + className + "is set properly");
+            logger.info("JSSE provider:" + JSSE_CLASS_NAME + "is set properly");
+        } catch (InstantiationException e) {
+            throw new RuntimeException("Failed to instantiate the class. Ensure it has " +
+                    "a public no-argument constructor.", e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Illegal access while creating/using the class. " +
+                    "Check visibility modifiers.", e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException("Constructor or method threw an exception during invocation.", e);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("The expected method or constructor was not found. " +
+                    "Verify method signatures.", e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("The specified class could not be found. Check the " +
+                    "fully qualified class name.", e);
         }
     }
 }

@@ -29,6 +29,7 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -50,6 +51,9 @@ public class PatchUtils {
     private static File bundleBackupDir;
     private static Set<String> servicepackPatchedList;
     private static List<String> previousPatchDirNames;
+    public static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    public static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     /**
      * Here is the patch applying algorithm.
@@ -421,18 +425,21 @@ public class PatchUtils {
     private static byte[] createChecksum(File file, String type) throws Exception {
         byte[] buffer = new byte[1024];
         // get the MessageDigest which handle the type(MD5 ,SHA , MD2) specifically
-        MessageDigest complete = MessageDigest.getInstance(type);
+        MessageDigest complete;
+        String provider = getJceProvider();
+        if (provider != null) {
+            complete = MessageDigest.getInstance(type, provider);
+        } else {
+            complete = MessageDigest.getInstance(type);
+        }
         int numRead;
-        InputStream fis = new FileInputStream(file);
-        try {
+        try (InputStream fis = Files.newInputStream(file.toPath())) {
             do {
                 numRead = fis.read(buffer);
                 if (numRead > 0) {
                     complete.update(buffer, 0, numRead);
                 }
             } while (numRead != -1);
-        } finally {
-            fis.close();
         }
         return complete.digest();
     }
@@ -664,5 +671,19 @@ public class PatchUtils {
                 return name.startsWith("patch") || name.startsWith("servicepack");
             }
         };
+    }
+
+    /**
+     * Get the JCE provider to be used for encryption/decryption
+     *
+     * @return
+     */
+    private static String getJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }

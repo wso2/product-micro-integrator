@@ -40,6 +40,7 @@ import org.wso2.micro.integrator.security.util.Secret;
 import javax.sql.DataSource;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -65,6 +66,9 @@ public final class UserCoreUtil {
     private static Boolean isEmailUserName;
     private static Boolean isCrossTenantUniqueUserName;
     private static RealmService realmService = null;
+    public static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    public static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
     /*
      * When user authenticates with out domain, need to set the domain of the user store that he
      * belongs to, as a thread local variable.
@@ -210,12 +214,20 @@ public final class UserCoreUtil {
                 }
 
                 try {
-                    MessageDigest messageDigest = MessageDigest.getInstance(passwordHashMethod);
+                    String provider = getJceProvider();
+                    MessageDigest messageDigest;
+                    if (provider != null) {
+                        messageDigest = MessageDigest.getInstance(passwordHashMethod, provider);
+                    } else {
+                        messageDigest = MessageDigest.getInstance(passwordHashMethod);
+                    }
                     byte[] digestValue = messageDigest.digest(passwordBytes);
                     String saltedPassword = "{" + passwordHashMethod + "}" + Base64.encode(digestValue);
                     passwordToStore = saltedPassword.getBytes();
                 } catch (NoSuchAlgorithmException e) {
                     throw new UserStoreException("Invalid hashMethod", e);
+                } catch (NoSuchProviderException e) {
+                    throw new RuntimeException("Specified security provider is not available in this environment: ", e);
                 }
             }
 
@@ -346,8 +358,16 @@ public final class UserCoreUtil {
         String randomNum = null;
 
         try {
-            // the secure random
-            SecureRandom prng = SecureRandom.getInstance("SHA1PRNG");
+            String provider = getJceProvider();
+            SecureRandom prng;
+            if (provider != null) {
+                // the secure random
+                prng = SecureRandom.getInstance("DEFAULT", provider);
+            } else {
+                // the secure random
+                prng = SecureRandom.getInstance("SHA1PRNG");
+            }
+
             for (int i = 0; i < length; i++) {
                 password[i] = passwordChars.charAt(prng.nextInt(passwordFeed.length()));
             }
@@ -359,6 +379,8 @@ public final class UserCoreUtil {
                 log.debug(errorMessage, e);
             }
             throw new UserStoreException(errorMessage, e);
+        } catch (NoSuchProviderException e) {
+            throw new RuntimeException("Specified security provider is not available in this environment: ", e);
         }
 
         return ArrayUtils.addAll(password, randomNum.toCharArray());
@@ -1084,5 +1106,19 @@ public final class UserCoreUtil {
         // please un-comment to find usages
         /*log.debug("This Functionality is not available in WSO2 Micro Integrator",
                  new Throwable("Unsupported operation"));*/
+    }
+
+    /**
+     * Get the JCE provider to be used for encryption/decryption
+     *
+     * @return
+     */
+    public static String getJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }

@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.micro.integrator.initializer.handler.transaction.TransactionConstants;
 import org.wso2.micro.integrator.initializer.handler.transaction.exception.TransactionCounterException;
 import org.wso2.micro.integrator.initializer.handler.transaction.exception.TransactionCounterInitializationException;
+import org.wso2.micro.integrator.initializer.utils.DeployerUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -62,9 +64,14 @@ public class CryptoUtil {
      */
     public static Cipher initializeCipher() throws TransactionCounterInitializationException {
         Cipher cipher;
+        String provider = DeployerUtil.getJceProvider();
         try {
             PublicKey publicKey = loadPublicKey();
-            cipher = Cipher.getInstance(TransactionConstants.ENCRYPTION_ALGORITHM);
+            if (provider != null) {
+                cipher = Cipher.getInstance(TransactionConstants.ENCRYPTION_ALGORITHM, provider);
+            } else {
+                cipher = Cipher.getInstance(TransactionConstants.ENCRYPTION_ALGORITHM);
+            }
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
             LOG.debug(
                     "Successfully initialized the Cipher to be used in the transaction count encryption process in "
@@ -72,6 +79,9 @@ public class CryptoUtil {
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidKeySpecException
                 | IOException e) {
             throw new TransactionCounterInitializationException("Error initializing Cipher ", e);
+        } catch (NoSuchProviderException e) {
+            throw new TransactionCounterInitializationException("Specified security provider is not available " +
+                    "in this environment: ", e);
         }
         return cipher;
     }
@@ -95,7 +105,8 @@ public class CryptoUtil {
         return encodedValue;
     }
 
-    private static PublicKey loadPublicKey() throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+    private static PublicKey loadPublicKey() throws NoSuchAlgorithmException, InvalidKeySpecException, IOException,
+            NoSuchProviderException {
 
         String publicKeyPEM = FileUtils.readFileToString(new File(TransactionConstants.PUBLIC_KEY),
                                                          StandardCharsets.UTF_8);
@@ -107,8 +118,13 @@ public class CryptoUtil {
 
         // decode to get the binary DER representation.
         byte[] publicKeyDER = Base64.getDecoder().decode(publicKeyPEM);
-
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        KeyFactory keyFactory;
+        String provider = DeployerUtil.getJceProvider();
+        if (provider != null) {
+            keyFactory = KeyFactory.getInstance("RSA", provider);
+        } else {
+            keyFactory = KeyFactory.getInstance("RSA");
+        }
         return keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyDER));
     }
 }

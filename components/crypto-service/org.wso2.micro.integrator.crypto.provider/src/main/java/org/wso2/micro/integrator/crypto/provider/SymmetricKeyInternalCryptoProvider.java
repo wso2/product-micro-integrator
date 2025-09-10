@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.crypto.api.CryptoException;
 import org.wso2.carbon.crypto.api.InternalCryptoProvider;
+import org.wso2.micro.integrator.crypto.provider.internal.DefaultCryptoProviderComponent;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -60,7 +61,9 @@ public class SymmetricKeyInternalCryptoProvider implements InternalCryptoProvide
 
         try {
             Cipher cipher;
-
+            if (StringUtils.isBlank(javaSecurityAPIProvider)) {
+                javaSecurityAPIProvider = DefaultCryptoProviderComponent.getPreferredJceProvider();
+            }
             if (StringUtils.isBlank(javaSecurityAPIProvider)) {
                 cipher = Cipher.getInstance(algorithm);
             } else {
@@ -95,7 +98,9 @@ public class SymmetricKeyInternalCryptoProvider implements InternalCryptoProvide
 
         try {
             Cipher cipher;
-
+            if (StringUtils.isBlank(javaSecurityAPIProvider)) {
+                javaSecurityAPIProvider = DefaultCryptoProviderComponent.getPreferredJceProvider();
+            }
             if (StringUtils.isBlank(javaSecurityAPIProvider)) {
                 cipher = Cipher.getInstance(algorithm);
             } else {

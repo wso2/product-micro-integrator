@@ -21,16 +21,23 @@ import org.wso2.micro.integrator.security.vault.Constants;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 
 public class KeyStoreUtil {
+
+    public static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    public static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     /**
      * Initializes the Cipher
@@ -57,16 +64,25 @@ public class KeyStoreUtil {
         try {
             Certificate certs = primaryKeyStore.getCertificate(keyAlias);
             String cipherTransformation = System.getProperty(Constants.CIPHER_TRANSFORMATION_SYSTEM_PROPERTY);
+            String provider = getJceProvider();
             if (cipherTransformation != null) {
-                cipher = Cipher.getInstance(cipherTransformation);
+                if (provider != null) {
+                    cipher = Cipher.getInstance(cipherTransformation, provider);
+                } else {
+                    cipher = Cipher.getInstance(cipherTransformation);
+                };
             } else {
-                cipher = Cipher.getInstance("RSA/ECB/OAEPwithSHA1andMGF1Padding");
+                if (provider != null) {
+                    cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-1AndMGF1Padding", provider);
+                } else {
+                    cipher = Cipher.getInstance("RSA/ECB/OAEPwithSHA1andMGF1Padding");
+                }
             }
             cipher.init(Cipher.ENCRYPT_MODE, certs);
-        } catch (KeyStoreException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
+        } catch (KeyStoreException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
+                 NoSuchProviderException e) {
             throw new SecureVaultException("Error initializing Cipher ", e);
         }
-
         System.out.println("\nPrimary KeyStore of Carbon Server is initialized Successfully\n");
         return cipher;
     }
@@ -80,12 +96,33 @@ public class KeyStoreUtil {
      * @return keystore object
      */
     private static KeyStore getKeyStore(String location, String storePassword, String storeType) {
-        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(location))) {
-            KeyStore keyStore = KeyStore.getInstance(storeType);
+        String provider = getJceProvider();
+        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(Paths.get(location)))) {
+            KeyStore keyStore;
+            if (provider != null) {
+                keyStore = KeyStore.getInstance(storeType, provider);
+            } else {
+                keyStore = KeyStore.getInstance(storeType);
+            }
             keyStore.load(bufferedInputStream, storePassword.toCharArray());
             return keyStore;
-        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException e) {
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException |
+                 NoSuchProviderException e) {
             throw new SecureVaultException("Error loading keyStore from ' " + location + " ' ", e);
         }
+    }
+
+    /**
+     * Get the JCE provider to be used for encryption/decryption
+     *
+     * @return
+     */
+    public static String getJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }
