@@ -161,7 +161,6 @@ public class TestPrepExecutionListener implements IExecutionListener {
         System.setProperty("javax.net.ssl.trustStore", commonResourcesDir + "/keystores/wso2carbon.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "wso2carbon");
         System.setProperty("javax.net.ssl.trustStoreType", "JKS");
-        System.setProperty("javax.net.ssl.trustStoreType", "JKS");
     }
 
     private String getServerHost(String url) {
