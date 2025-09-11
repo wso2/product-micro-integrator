@@ -1677,7 +1677,7 @@
         <carbon.rule.version>4.5.3</carbon.rule.version>
         <carbon.deployment.version>4.9.11</carbon.deployment.version>
         <wss4j.version>1.6.0-wso2v6</wss4j.version>
-        <rampart.wso2.version>1.7.0-wso2v1</rampart.wso2.version>
+        <rampart.wso2.version>1.7.0-wso2v6</rampart.wso2.version>
         <siddhi.version>3.2.3</siddhi.version>
         <opensaml.orbit.version>3.3.1.wso2v14</opensaml.orbit.version>
         <saml.common.util.version>1.0.10</saml.common.util.version>
@@ -1689,7 +1689,7 @@
         <orbit.version.poi.ooxml>5.3.0.wso2v1</orbit.version.poi.ooxml>
         <org.wso2.json.version>3.0.0.wso2v4</org.wso2.json.version>
         <version.equinox.http.servlet>1.1.400.v20130418-1354</version.equinox.http.servlet>
-        <version.tomcat>9.0.108</version.tomcat>
+        <version.tomcat>9.0.109</version.tomcat>
         <orbit.version.tomcat.jsp.api>${version.tomcat}.wso2v1</orbit.version.tomcat.jsp.api>
         <orbit.version.tomcat.el.api>${version.tomcat}.wso2v1</orbit.version.tomcat.el.api>
         <orbit.version.tomcat.servlet.api>${version.tomcat}.wso2v1</orbit.version.tomcat.servlet.api>
@@ -1722,7 +1722,7 @@
         <orbit.version.commons.lang>2.6.0.wso2v1</orbit.version.commons.lang>
         <version.geronimo.saaj.spec>1.0.1.wso2v2</version.geronimo.saaj.spec>
         <orbit.version.poi>3.17.0.wso2v1</orbit.version.poi>
-        <orbit.version.poi.scratchpad>5.3.0.wso2v1</orbit.version.poi.scratchpad>
+        <orbit.version.poi.scratchpad>5.4.1.wso2v1</orbit.version.poi.scratchpad>
         <slf4j.version>1.7.36</slf4j.version>
         <version.log4j.core>2.17.1</version.log4j.core>
         <version.jaxb>2.2.5.wso2v1</version.jaxb>
@@ -1738,7 +1738,7 @@
         <javax.jms-api.version>2.0.1</javax.jms-api.version>
         <maven.dependency.plugin.version>3.1.1</maven.dependency.plugin.version>
         <commons-text.orbit.version>1.13.1.wso2v1</commons-text.orbit.version>
-        <commons-lang3.orbit.version>3.17.0.wso2v1</commons-lang3.orbit.version>
+        <commons-lang3.orbit.version>3.18.0.wso2v1</commons-lang3.orbit.version>
         <joda-time.version>2.9.4.wso2v1</joda-time.version>
         <libthrift.version>0.16.0.wso2v1</libthrift.version>
         <axis2.mar.maven.plugin>1.5.2</axis2.mar.maven.plugin>
@@ -1760,7 +1760,7 @@
         <google.guava.version>33.0.0-jre</google.guava.version>
         <ca.uhn.hapi.wso2.version>2.4.0.wso2v2</ca.uhn.hapi.wso2.version>
         <junit.version>4.8.2</junit.version>
-        <netty.version>4.1.123.Final</netty.version>
+        <netty.version>4.1.127.Final</netty.version>
         <netty.tcnative.version>2.0.53.Final</netty.tcnative.version>
         <jacoco.agent.version>0.8.8</jacoco.agent.version>
         <activemq.version>5.2.0</activemq.version>
@@ -1822,11 +1822,11 @@
         <opencsv.orbit.version>1.8.wso2v1</opencsv.orbit.version>
         <opencsv.orbit.imp.pkg.version>0.0.0</opencsv.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([1.8.wso2v1,1.9)) after osgi bundle was corrected -->
 
-        <poi-ooxml.orbit.version>5.3.0.wso2v1</poi-ooxml.orbit.version>
+        <poi-ooxml.orbit.version>5.4.1.wso2v1</poi-ooxml.orbit.version>
         <poi-ooxml.orbit.imp.pkg.version>0.0.0</poi-ooxml.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([3.9.0.wso2v3,4.0.0)) after osgi bundle is corrected - rajith-->
 
-        <poi-ooxml.version>5.4.0</poi-ooxml.version>
-        <poi.version>5.3.0</poi.version>
+        <poi-ooxml.version>5.4.1</poi-ooxml.version>
+        <poi.version>5.4.1</poi.version>
         <xmlbeans.orbit.version>5.3.0.wso2v1</xmlbeans.orbit.version>
         <commons-compress.orbit.version>1.27.1.wso2v1</commons-compress.orbit.version>
         <xmlbeans.orbit.imp.pkg.version>[5.3.0.wso2v1,6.0.0.wso2v1)</xmlbeans.orbit.imp.pkg.version>
