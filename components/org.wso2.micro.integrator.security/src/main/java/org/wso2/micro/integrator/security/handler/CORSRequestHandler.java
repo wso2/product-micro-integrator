@@ -79,13 +79,9 @@ public class CORSRequestHandler extends AbstractHandler implements ManagedLifecy
         if (log.isDebugEnabled()) {
             log.debug("CORSRequestHandler: handleRequest called");
         }
-        if (SynapseCORSConfiguration.getInstance().isEnabled()) {
-            // if global CORS is enabled, per API CORS configuration is not needed
-            if (log.isDebugEnabled()) {
-                log.debug("CORSRequestHandler: Using global CORS configuration");
-            }
-            return true; // Continue processing with global CORS configuration
-        }
+
+        // If CORS is enabled per API, skip global CORS handler
+        messageContext.setProperty(RESTConstants.INTERNAL_CORS_PER_API_ENABLED, Boolean.TRUE);
 
         String httpMethod = (String) ((Axis2MessageContext) messageContext).getAxis2MessageContext()
                 .getProperty(Constants.Configuration.HTTP_METHOD);

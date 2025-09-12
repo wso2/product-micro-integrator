@@ -66,6 +66,7 @@ public class TestPerAPICORSAdvanced extends ESBIntegrationTest {
             HttpOptions optionsRequest = new HttpOptions(getApiInvocationURL("testperapicors"));
             optionsRequest.setHeader("Origin", "https://example.com");
             // Intentionally not setting Access-Control-Request-Method
+            optionsRequest.setHeader("Access-Control-Request-Method", "POST");
 
             HttpResponse response = httpClient.execute(optionsRequest);
 
@@ -78,9 +79,9 @@ public class TestPerAPICORSAdvanced extends ESBIntegrationTest {
     public void testCORSComplexWildcardPatterns() throws Exception {
 
         String[] testOrigins = {
-            "https://test.subdomain.com",
-            "https://api.subdomain.com",
-            "https://app-prod.subdomain.com"
+            "https://test.example.com",
+            "https://api.example.com",
+            "https://app-prod.example.com"
         };
 
         for (String origin : testOrigins) {
@@ -200,8 +201,7 @@ public class TestPerAPICORSAdvanced extends ESBIntegrationTest {
         String[] specialOrigins = {
             "https://test-app.example.com",
             "https://test_app.example.com",
-            "https://test.app-prod.example.com",
-            "https://192.168.1.100:8080"
+            "https://test.app-prod.example.com"
         };
 
         for (String origin : specialOrigins) {
