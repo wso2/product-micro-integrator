@@ -445,6 +445,12 @@ public class JMSPollingConsumer {
 
     public void destroy() {
         synchronized (jmsConnectionFactory) {
+            if (destroyed) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("PollingConsumer already destroyed for Inbound Endpoint: " + name);
+                }
+                return;
+            }
             writeLock.lock();
             logger.info("Destroying JMS PollingConsumer hence polling is stopped for Inbound Endpoint: " + name);
             try {
