@@ -104,23 +104,8 @@ public class MqttAsyncCallback extends OneTimeTriggerAbstractCallback implements
         if (log.isDebugEnabled()) {
             log.debug("Received Message: Topic:" + topic + "  Message: " + mqttMessage);
         }
-        MqttClientManager clientManager = MqttClientManager.getInstance();
-        String inboundIdentifier = clientManager
-                .buildIdentifier(mqttAsyncClient.getClientId(), confac.getServerHost(), confac.getServerPort());
-        if (super.isInboundRunnerMode()) {
-            //register tenant loading flag for inbound identifier
-            clientManager.registerInboundTenantLoadingFlag(inboundIdentifier);
-            //this is a blocking call
-            super.startInboundTenantLoading(inboundIdentifier);
-            //un-register tenant loading flag for inbound identifier
-            clientManager.unRegisterInboundTenantLoadingFlag(inboundIdentifier);
-
-            injectHandler.invoke(new MqttMessageContext(mqttMessage, topic, confac.getServerHost(),
-                    confac.getServerPort()), name);
-        } else {
-            injectHandler.invoke(new MqttMessageContext(mqttMessage, topic, confac.getServerHost(),
-                    confac.getServerPort()), name);
-        }
+        injectHandler.invoke(new MqttMessageContext(mqttMessage, topic, confac.getServerHost(),
+                confac.getServerPort()), name);
     }
 
     @Override
