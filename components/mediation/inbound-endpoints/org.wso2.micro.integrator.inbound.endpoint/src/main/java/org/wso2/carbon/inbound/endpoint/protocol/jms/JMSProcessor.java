@@ -143,6 +143,7 @@ public class JMSProcessor extends InboundRequestProcessorImpl implements TaskSta
      */
     @Override
     public void destroy(boolean removeTask) {
+        // Destroying all the polling consumers when the inbound endpoint is removed.
         for (JMSPollingConsumer pollingConsumer : pollingConsumers) {
             pollingConsumer.destroy();
         }
