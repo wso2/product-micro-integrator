@@ -212,22 +212,26 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
         try {
             pollingConsumer.resume();
         } catch (AbstractMethodError e) {
-            throw new UnsupportedOperationException("Unsupported operation 'activate()' for Inbound Endpoint: . " + getName() +
+            throw new UnsupportedOperationException("Unsupported operation 'resume()' for Inbound Endpoint: " + getName() +
                     "If using a WSO2-released inbound, please upgrade to the latest version. " +
-                    "If this is a custom inbound, implement the 'activate' logic accordingly.");
+                    "If this is a custom inbound, implement the 'resume' logic accordingly.");
         }
         return super.activate();
     }
 
     @Override
     public boolean deactivate() {
-        try {
-            pollingConsumer.pause();
-        } catch (AbstractMethodError e) {
-            throw new UnsupportedOperationException("Unsupported operation 'deactivate()' for Inbound Endpoint: . " + getName() +
-                    "If using a WSO2-released inbound, please upgrade to the latest version. " +
-                    "If this is a custom inbound, implement the 'deactivate' logic accordingly.");
+        boolean isTaskDeactivated = super.deactivate();
+
+        if (isTaskDeactivated) {
+            try {
+                pollingConsumer.pause();
+            } catch (AbstractMethodError e) {
+                throw new UnsupportedOperationException("Unsupported operation 'pause()' for Inbound Endpoint: " + getName() +
+                        "If using a WSO2-released inbound, please upgrade to the latest version. " +
+                        "If this is a custom inbound, implement the 'pause' logic accordingly.");
+            }
         }
-        return super.deactivate();
+        return isTaskDeactivated;
     }
 }

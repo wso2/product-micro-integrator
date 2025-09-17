@@ -90,14 +90,13 @@ public class InboundHttpListener implements InboundRequestProcessor {
         try {
             isSuccessfullyActivated = HTTPEndpointManager.getInstance()
                     .startEndpoint(port, name, processorParams);
+            if (isSuccessfullyActivated) {
+                log.info("HTTP inbound endpoint [" + name + "] is activated successfully on port " + port);
+            } else {
+                log.warn("HTTP inbound endpoint [" + name + "] activation failed on port " + port);
+            }
         } catch (SynapseException e) {
             log.error("Error while activating HTTP inbound endpoint [" + name + "] on port " + port, e);
-        }
-
-        if (isSuccessfullyActivated) {
-            log.info("HTTP inbound endpoint [" + name + "] is activated successfully on port " + port);
-        } else {
-            log.warn("HTTP inbound endpoint [" + name + "] activation failed on port " + port);
         }
 
         return isSuccessfullyActivated;

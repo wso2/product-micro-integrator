@@ -26,7 +26,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.inbound.DynamicControllOperationResult;
+import org.apache.synapse.inbound.DynamicControlOperationResult;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -284,7 +284,7 @@ public class InboundEndpointResource extends APIResource {
         }
 
         if (INACTIVE_STATUS.equalsIgnoreCase(status)) {
-            DynamicControllOperationResult result = inboundEndpoint.deactivate();
+            DynamicControlOperationResult result = inboundEndpoint.deactivate();
             if (result.isSuccess()) {
                 jsonResponse.put(Constants.MESSAGE_JSON_ATTRIBUTE, name + " : is deactivated");
                 AuditLogger.logAuditMessage(performedBy, Constants.AUDIT_LOG_TYPE_INBOUND_ENDPOINT,
@@ -293,7 +293,7 @@ public class InboundEndpointResource extends APIResource {
                 jsonResponse = Utils.createJsonError(result.getMessage(), axis2MessageContext, Constants.INTERNAL_SERVER_ERROR);
             }
         } else if (ACTIVE_STATUS.equalsIgnoreCase(status)) {
-            DynamicControllOperationResult result = inboundEndpoint.activate();
+            DynamicControlOperationResult result = inboundEndpoint.activate();
             if (result.isSuccess()) {
                 jsonResponse.put(Constants.MESSAGE_JSON_ATTRIBUTE, name + " : is activated");
                 AuditLogger.logAuditMessage(performedBy, Constants.AUDIT_LOG_TYPE_MESSAGE_PROCESSOR,

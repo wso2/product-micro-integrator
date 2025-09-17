@@ -61,22 +61,22 @@ public abstract class GenericEventBasedConsumer {
     }
 
     /**
-     * This method needs to be implemented when implementing the custom inbound
+     * This method needs to be implemented when implementing the custom inbound.
      */
     public abstract void listen();
 
     /**
-     * This method needs to be implemented when terminating the inbound
+     * This method needs to be implemented when terminating the inbound.
      */
     public abstract void destroy();
 
     /**
-     * This method needs to be implemented when activating the inbound
+     * This method needs to be implemented when activating the inbound.
      */
     public abstract void resume();
 
     /**
-     * This method needs to be implemented when deactivating the inbound
+     * This method needs to be implemented when deactivating the inbound.
      */
     public abstract void pause();
 
@@ -139,7 +139,7 @@ public abstract class GenericEventBasedConsumer {
     }
 
     /**
-     * Create the initial message context for the file
+     * Create the initial message context for the file.
      */
     private org.apache.synapse.MessageContext createMessageContext() {
         org.apache.synapse.MessageContext msgCtx = synapseEnvironment.createMessageContext();
@@ -151,7 +151,7 @@ public abstract class GenericEventBasedConsumer {
     }
 
     /**
-     * States whether generic endpoint is a eventBased
+     * States whether generic endpoint is a eventBased.
      * Return true; if eventBased
      *
      * @param inboundParameters Inbound Parameters for endpoint
