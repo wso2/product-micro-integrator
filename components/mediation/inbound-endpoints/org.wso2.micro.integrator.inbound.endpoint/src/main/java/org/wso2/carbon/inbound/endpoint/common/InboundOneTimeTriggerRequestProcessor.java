@@ -130,7 +130,6 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
     @Override
     public boolean activate() {
         log.info("Activating the Inbound Endpoint [" + name + "].");
-        boolean isSuccessfullyActivated = true;
         isPaused = false;
 
         /*
@@ -143,19 +142,18 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
         // coordination mode
         if (startUpController != null) {
             if (!startUpController.activateTask()) {
-                log.error("Failed to activate the consumer: " + startUpController.getTaskDescription().getName());
-                isSuccessfullyActivated = false;
+                log.error("Failed to activate the consumer task [" + startUpController.getTaskDescription().getName()
+                        + "] for the inbound endpoint " + name);
                 isPaused = true;
             }
         }
 
-        return isSuccessfullyActivated;
+        return !isPaused;
     }
 
     @Override
     public boolean deactivate() {
         log.info("Deactivating the Inbound Endpoint [" + name + "].");
-        boolean isSuccessfullyDeactivated = true;
         isPaused = true;
 
         /*
@@ -169,22 +167,22 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
         // coordination mode
         if (startUpController != null) {
             if (!startUpController.deactivateTask()) {
-                log.error("Failed to deactivate the consumer: " + startUpController.getTaskDescription().getName());
-                isSuccessfullyDeactivated = false;
+                log.error("Failed to deactivate the consumer task [" + startUpController.getTaskDescription().getName()
+                        + "] for the inbound endpoint " + name);
                 isPaused = false;
             }
         }
 
-        return isSuccessfullyDeactivated;
+        return isPaused;
     }
 
     @Override
     public boolean isDeactivated() {
 
         if (Objects.nonNull(startUpController)) {
-            return !startUpController.isTaskActive() && isPaused;
+            return !startUpController.isTaskActive();
         } else if (Objects.nonNull(runningThread)) {
-            return !runningThread.isAlive() && isPaused;
+            return !runningThread.isAlive();
         }
         return true;
     }
