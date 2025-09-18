@@ -75,53 +75,40 @@ public abstract class InboundRequestProcessorImpl implements InboundRequestProce
             cronExpression = ((GenericTask) task).getPollingConsumer().getCronExpression();
         }
         if (coordination) {
-            try {
-                TaskDescription taskDescription = getTaskDescription(task, endpointPostfix);
-                StartUpController startUpController = new StartUpController();
-                startUpController.setTaskDescription(taskDescription);
-                startUpController.init(synapseEnvironment);
-                startUpControllersList.add(startUpController);
-                // Register a listener to be notified when the local JMS/Generic task is deleted/paused
-                if (task instanceof JMSTask || task instanceof GenericTask) {
-                    TaskManager taskManagerImpl = synapseEnvironment.getTaskManager().getTaskManagerImpl();
-                    if (taskManagerImpl instanceof NTaskTaskManager) {
-                        NTaskTaskManager ntaskManager = (NTaskTaskManager) taskManagerImpl;
-                        if (task instanceof JMSTask) {
-                            ntaskManager.registerListener((JMSTask) task, taskDescription.getName());
-                        } else if (task instanceof GenericTask) {
-                            ntaskManager.registerListener((GenericTask) task, taskDescription.getName());
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Error starting the inbound endpoint " + name + ". Unable to schedule the task. " + e
-                        .getLocalizedMessage(), e);
-            }
+            handleTask(task, endpointPostfix);
         } else if (cronExpression != null && !cronExpression.isEmpty()) {
-            try {
-                TaskDescription taskDescription = getTaskDescription(task, endpointPostfix);
-                StartUpController startUpController = new StartUpController();
-                startUpController.setTaskDescription(taskDescription);
-                startUpController.init(synapseEnvironment);
-                startUpControllersList.add(startUpController);
-                // Register a listener to be notified when the local Cron/Generic task is deleted/paused
-                if (task instanceof JMSTask || task instanceof GenericTask) {
-                    TaskManager taskManagerImpl = synapseEnvironment.getTaskManager().getTaskManagerImpl();
-                    if (taskManagerImpl instanceof NTaskTaskManager) {
-                        NTaskTaskManager ntaskManager = (NTaskTaskManager) taskManagerImpl;
-                        if (task instanceof JMSTask) {
-                            ntaskManager.registerListener((JMSTask) task, taskDescription.getName());
-                        } else if (task instanceof GenericTask) {
-                            ntaskManager.registerListener((GenericTask) task, taskDescription.getName());
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Error starting the inbound endpoint " + name + ". Unable to schedule the task. " + e
-                        .getLocalizedMessage(), e);
-            }
+            //This cron expression support add in separate condition due to not break already implemented inbound without coordination.
+            handleTask(task, endpointPostfix);
         } else {
             startInboundRunnerThread(task, Constants.SUPER_TENANT_DOMAIN_NAME, false, startInPausedMode);
+        }
+    }
+
+    /**
+     * This function is for handling inbound task.
+     */
+    private void handleTask(InboundTask task, String endpointPostfix) {
+        try {
+            TaskDescription taskDescription = getTaskDescription(task, endpointPostfix);
+            StartUpController startUpController = new StartUpController();
+            startUpController.setTaskDescription(taskDescription);
+            startUpController.init(synapseEnvironment);
+            startUpControllersList.add(startUpController);
+            // Register a listener to be notified when the local Cron/Generic task is deleted/paused
+            if (task instanceof JMSTask || task instanceof GenericTask) {
+                TaskManager taskManagerImpl = synapseEnvironment.getTaskManager().getTaskManagerImpl();
+                if (taskManagerImpl instanceof NTaskTaskManager) {
+                    NTaskTaskManager ntaskManager = (NTaskTaskManager) taskManagerImpl;
+                    if (task instanceof JMSTask) {
+                        ntaskManager.registerListener((JMSTask) task, taskDescription.getName());
+                    } else if (task instanceof GenericTask) {
+                        ntaskManager.registerListener((GenericTask) task, taskDescription.getName());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error starting the inbound endpoint " + name + ". Unable to schedule the task. " + e
+                    .getLocalizedMessage(), e);
         }
     }
 
