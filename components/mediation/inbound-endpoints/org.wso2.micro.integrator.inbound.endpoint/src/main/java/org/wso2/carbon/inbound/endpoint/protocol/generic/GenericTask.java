@@ -87,6 +87,7 @@ public class GenericTask extends InboundTask implements LocalTaskActionListener 
                     "server version immediately Task: " + taskName);
         }
     }
+
     public GenericPollingConsumer getPollingConsumer() {
         return pollingConsumer;
     }

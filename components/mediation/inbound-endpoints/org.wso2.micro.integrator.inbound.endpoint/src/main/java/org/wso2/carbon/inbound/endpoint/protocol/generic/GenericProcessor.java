@@ -36,6 +36,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.wso2.carbon.inbound.endpoint.protocol.generic.GenericConstants.CRON_EXPRESSION;
+
 public class GenericProcessor extends InboundRequestProcessorImpl implements TaskStartupObserver {
 
     private GenericPollingConsumer pollingConsumer;
@@ -83,8 +85,8 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
         this.properties = params.getProperties();
         if (properties.getProperty(PollingConstants.INBOUND_ENDPOINT_INTERVAL) != null) {
             this.interval = Long.parseLong(properties.getProperty(PollingConstants.INBOUND_ENDPOINT_INTERVAL));
-        } else if (properties.getProperty("cronExpression") != null) {
-            this.cronExpression = properties.getProperty("cronExpression");
+        } else if (properties.getProperty(CRON_EXPRESSION) != null) {
+            this.cronExpression = properties.getProperty(CRON_EXPRESSION);
         }
         this.coordination = true;
         if (properties.getProperty(PollingConstants.INBOUND_COORDINATION) != null) {
