@@ -1825,8 +1825,12 @@
         <poi-ooxml.orbit.version>5.4.1.wso2v1</poi-ooxml.orbit.version>
         <poi-ooxml.orbit.imp.pkg.version>0.0.0</poi-ooxml.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([3.9.0.wso2v3,4.0.0)) after osgi bundle is corrected - rajith-->
 
+        <poi.orbit.version>5.4.1.wso2v1</poi.orbit.version>
+        <poi.orbit.imp.pkg.version>0.0.0</poi.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([3.9.0,4.0.0)) after osgi bundle is corrected - rajith-->
+
         <poi-ooxml.version>5.4.1</poi-ooxml.version>
         <poi.version>5.4.1</poi.version>
+
         <xmlbeans.orbit.version>5.3.0.wso2v1</xmlbeans.orbit.version>
         <commons-compress.orbit.version>1.27.1.wso2v1</commons-compress.orbit.version>
         <xmlbeans.orbit.imp.pkg.version>[5.3.0.wso2v1,6.0.0.wso2v1)</xmlbeans.orbit.imp.pkg.version>
@@ -1881,9 +1885,6 @@
 
         <google-oauth-client.orbit.version>1.33.3.wso2v1</google-oauth-client.orbit.version>
         <google-oauth-client.orbit.imp.pkg.version>[1.33.1,2.0)</google-oauth-client.orbit.imp.pkg.version>
-
-        <poi.orbit.version>5.3.0.wso2v1</poi.orbit.version>
-        <poi.orbit.imp.pkg.version>0.0.0</poi.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([3.9.0,4.0.0)) after osgi bundle is corrected - rajith-->
 
         <google-api-client.orbit.version>1.33.1.wso2v2</google-api-client.orbit.version>
         <google-api-client.orbit.imp.pkg.version>[1.33.1,2.0)</google-api-client.orbit.imp.pkg.version>
