@@ -74,10 +74,7 @@ public abstract class InboundRequestProcessorImpl implements InboundRequestProce
         if (task instanceof GenericTask)  {
             cronExpression = ((GenericTask) task).getPollingConsumer().getCronExpression();
         }
-        if (coordination) {
-            handleTask(task, endpointPostfix);
-        } else if (cronExpression != null && !cronExpression.isEmpty()) {
-            //This cron expression support add in separate condition due to not break already implemented inbound without coordination.
+        if (coordination || (cronExpression != null && !cronExpression.isEmpty())) {
             handleTask(task, endpointPostfix);
         } else {
             startInboundRunnerThread(task, Constants.SUPER_TENANT_DOMAIN_NAME, false, startInPausedMode);
