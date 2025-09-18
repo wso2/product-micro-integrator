@@ -37,6 +37,11 @@
     <packaging>bundle</packaging>
 
     <dependencies>
+      <dependency>
+        <groupId>org.apache.ws.commons.axiom</groupId>
+        <artifactId>axiom-api</artifactId>
+        <version>1.2.11-wso2v25</version>
+      </dependency>
         <dependency>
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-core</artifactId>
