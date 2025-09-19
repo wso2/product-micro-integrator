@@ -22,6 +22,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.w3c.dom.NodeList;
 import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.application.deployer.AppDeployerConstants;
 import org.wso2.micro.application.deployer.AppDeployerUtils;
@@ -66,6 +67,7 @@ public class ApplicationConfiguration {
     private String appName;
     private boolean isVersionedDeployment = false;
     private String appArtifactIdentifier;
+    private boolean isFatCAR = false;
     private HashMap<String, String> cAppDependencies = new HashMap<>();
     private String appVersion;
     private String mainSequence;
@@ -248,6 +250,10 @@ public class ApplicationConfiguration {
                 } else {
                     throw new CarbonException("Invalid descriptor.xml. Artifact id is missing for a versioned deployment");
                 }
+                OMElement isFatCARElements = descriptorElement.getFirstChildWithName(new QName("fatCarEnabled"));
+                if (isFatCARElements != null && "true".equals(isFatCARElements.getText().trim())) {
+                    isFatCAR = true;
+                }
 
                 OMElement depsEl = descriptorElement.getFirstChildWithName(Q_DEPENDENCIES);
                 if (depsEl != null) {
@@ -293,5 +299,9 @@ public class ApplicationConfiguration {
     private static String getAttr(OMElement el, QName qn) {
         OMAttribute a = el.getAttribute(qn);
         return a != null ? a.getAttributeValue().trim() : null;
+    }
+
+    public boolean isFatCAR() {
+        return isFatCAR;
     }
 }
