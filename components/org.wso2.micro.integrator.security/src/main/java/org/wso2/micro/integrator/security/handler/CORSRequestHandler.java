@@ -170,6 +170,9 @@ public class CORSRequestHandler extends AbstractHandler implements ManagedLifecy
 
     public String getAllowedOrigins(String origin) {
         if (allowedOrigins.contains("*")) {
+            if (allowCredentialsEnabled) {
+                return origin;
+            }
             return "*";
         } else if (allowedOrigins.contains(origin)) {
             return origin;
