@@ -98,7 +98,7 @@ public class InboundHttpsListener extends InboundHttpListener {
             if (isSuccessfullyActivated) {
                 log.info("HTTPS inbound endpoint [" + name + "] is activated successfully on port " + port);
             } else {
-                log.warn("HTTPS inbound endpoint [" + name + "] activation failed on port " + port);
+                log.error("HTTPS inbound endpoint [" + name + "] activation failed on port " + port);
             }
         } catch (SynapseException e) {
             log.error("Error while activating HTTPS inbound endpoint [" + name + "] on port " + port, e);
