@@ -24,6 +24,7 @@ import org.apache.synapse.inbound.InboundRequestProcessor;
 import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
+import org.jetbrains.annotations.NotNull;
 import org.wso2.carbon.inbound.endpoint.persistence.InboundEndpointsDataStore;
 import org.wso2.carbon.inbound.endpoint.protocol.generic.GenericTask;
 import org.wso2.carbon.inbound.endpoint.protocol.jms.JMSTask;
@@ -46,6 +47,7 @@ public abstract class InboundRequestProcessorImpl implements InboundRequestProce
     protected String name;
     protected boolean coordination;
     protected boolean startInPausedMode;
+    protected String cronExpression;
 
     private List<StartUpController> startUpControllersList = new ArrayList<>();
     private HashMap<Thread, InboundRunner> inboundRunnersThreadsMap = new HashMap<>();
@@ -68,47 +70,75 @@ public abstract class InboundRequestProcessorImpl implements InboundRequestProce
     protected void start(InboundTask task, String endpointPostfix) {
         log.info("Starting the inbound endpoint [" + name + "]" + (startInPausedMode ? " in suspended mode" : "")
                 + ", with coordination " + coordination + ". Interval : " + interval + ". Type : " + endpointPostfix);
-        if (coordination) {
-            try {
-                TaskDescription taskDescription = new TaskDescription();
-                taskDescription.setName(name + "-" + endpointPostfix);
-                taskDescription.setTaskGroup(endpointPostfix);
-                if (interval < InboundTask.TASK_THRESHOLD_INTERVAL) {
-                    taskDescription.setInterval(InboundTask.TASK_THRESHOLD_INTERVAL);
-                } else {
-                    taskDescription.setInterval(interval);
-                }
-                taskDescription.setIntervalInMs(true);
-                taskDescription.addResource(TaskDescription.INSTANCE, task);
-                taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
-                taskDescription.setTaskImplClassName(task.getClass().getName());
-                taskDescription.addProperty(TaskUtils.TASK_OWNER_PROPERTY, TaskUtils.TASK_BELONGS_TO_INBOUND_ENDPOINT);
-                taskDescription.addProperty(TaskUtils.TASK_OWNER_NAME, name);
-                taskDescription.addProperty(TaskUtils.START_IN_PAUSED_MODE, String.valueOf(startInPausedMode));
-                StartUpController startUpController = new StartUpController();
-                startUpController.setTaskDescription(taskDescription);
-                startUpController.init(synapseEnvironment);
-                startUpControllersList.add(startUpController);
-                // Register a listener to be notified when the local JMS/Generic task is deleted/paused
-                if (task instanceof JMSTask || task instanceof GenericTask) {
-                    TaskManager taskManagerImpl = synapseEnvironment.getTaskManager().getTaskManagerImpl();
-                    if (taskManagerImpl instanceof NTaskTaskManager) {
-                        NTaskTaskManager ntaskManager = (NTaskTaskManager) taskManagerImpl;
-                        if (task instanceof JMSTask) {
-                            ntaskManager.registerListener((JMSTask) task, taskDescription.getName());
-                        } else if (task instanceof GenericTask) {
-                            ntaskManager.registerListener((GenericTask) task, taskDescription.getName());
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Error starting the inbound endpoint " + name + ". Unable to schedule the task. " + e
-                        .getLocalizedMessage(), e);
-            }
+        //This only supports Generic tasks for cron expression based scheduling
+        if (task instanceof GenericTask)  {
+            cronExpression = ((GenericTask) task).getPollingConsumer().getCronExpression();
+        }
+        if (coordination || (cronExpression != null && !cronExpression.isEmpty())) {
+            handleTask(task, endpointPostfix);
         } else {
-
             startInboundRunnerThread(task, Constants.SUPER_TENANT_DOMAIN_NAME, false, startInPausedMode);
         }
+    }
+
+    /**
+     * This function is for handling inbound task.
+     */
+    private void handleTask(InboundTask task, String endpointPostfix) {
+        try {
+            TaskDescription taskDescription = getTaskDescription(task, endpointPostfix);
+            StartUpController startUpController = new StartUpController();
+            startUpController.setTaskDescription(taskDescription);
+            startUpController.init(synapseEnvironment);
+            startUpControllersList.add(startUpController);
+            // Register a listener to be notified when the local Cron/Generic task is deleted/paused
+            if (task instanceof JMSTask || task instanceof GenericTask) {
+                TaskManager taskManagerImpl = synapseEnvironment.getTaskManager().getTaskManagerImpl();
+                if (taskManagerImpl instanceof NTaskTaskManager) {
+                    NTaskTaskManager ntaskManager = (NTaskTaskManager) taskManagerImpl;
+                    if (task instanceof JMSTask) {
+                        ntaskManager.registerListener((JMSTask) task, taskDescription.getName());
+                    } else if (task instanceof GenericTask) {
+                        ntaskManager.registerListener((GenericTask) task, taskDescription.getName());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error starting the inbound endpoint " + name + ". Unable to schedule the task. " + e
+                    .getLocalizedMessage(), e);
+        }
+    }
+
+    /**
+     * Create a TaskDescription object for the given InboundTask and endpoint postfix.
+     *
+     * @param task The InboundTask for which the TaskDescription is to be created.
+     * @param endpointPostfix The postfix to be appended to the task name and group.
+     * @return A TaskDescription object populated with the relevant details from the InboundTask.
+     */
+    @NotNull
+    private TaskDescription getTaskDescription(InboundTask task, String endpointPostfix) {
+        TaskDescription taskDescription = new TaskDescription();
+        taskDescription.setName(name + "-" + endpointPostfix);
+        taskDescription.setTaskGroup(endpointPostfix);
+
+        if (cronExpression != null && !cronExpression.isEmpty()) {
+            taskDescription.setCronExpression(cronExpression);
+        } else {
+            if (interval < InboundTask.TASK_THRESHOLD_INTERVAL) {
+                taskDescription.setInterval(InboundTask.TASK_THRESHOLD_INTERVAL);
+            } else {
+                taskDescription.setInterval(interval);
+            }
+            taskDescription.setIntervalInMs(true);
+        }
+        taskDescription.addResource(TaskDescription.INSTANCE, task);
+        taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
+        taskDescription.setTaskImplClassName(task.getClass().getName());
+        taskDescription.addProperty(TaskUtils.TASK_OWNER_PROPERTY, TaskUtils.TASK_BELONGS_TO_INBOUND_ENDPOINT);
+        taskDescription.addProperty(TaskUtils.TASK_OWNER_NAME, name);
+        taskDescription.addProperty(TaskUtils.START_IN_PAUSED_MODE, String.valueOf(startInPausedMode));
+        return taskDescription;
     }
 
     /**
