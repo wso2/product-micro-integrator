@@ -33,3 +33,7 @@ mediation.flow.statistics.event.clean.interval=15000
 {%for property in opentelemetry.properties %}
 opentelemetry.properties.{{property.name}} = {{property.value}}
 {% endfor %}
+
+{% if opentelemetry.resource_attributes %}
+opentelemetry.properties.resource_attributes={% for attribute in opentelemetry.resource_attributes %}{{ attribute.name }}={{ attribute.value }}{% if not loop.last %},{% endif %}{% endfor %}
+{% endif %}
