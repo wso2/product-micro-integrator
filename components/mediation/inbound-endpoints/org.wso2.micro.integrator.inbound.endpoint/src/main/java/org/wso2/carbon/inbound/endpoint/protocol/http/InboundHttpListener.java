@@ -89,8 +89,6 @@ public class InboundHttpListener implements InboundRequestProcessor {
         boolean isSuccessfullyActivated = false;
         try {
             if (isPortUsedByAnotherApplication(port)) {
-                log.warn("Port [" + port + "] used by inbound endpoint [" + name + "] is already used by another application "
-                        + "hence activation of inbound endpoint failed");
                 throw new SynapseException("Port [" + port + "] used by inbound endpoint [" + name + "] is already used by "
                         + "another application.");
             } else {
@@ -101,7 +99,7 @@ public class InboundHttpListener implements InboundRequestProcessor {
             if (isSuccessfullyActivated) {
                 log.info("HTTP inbound endpoint [" + name + "] is activated successfully on port " + port);
             } else {
-                log.warn("HTTP inbound endpoint [" + name + "] activation failed on port " + port);
+                log.error("HTTP inbound endpoint [" + name + "] activation failed on port " + port);
             }
         } catch (SynapseException e) {
             log.error("Error while activating HTTP inbound endpoint [" + name + "] on port " + port, e);
@@ -120,7 +118,7 @@ public class InboundHttpListener implements InboundRequestProcessor {
             log.info("HTTP/HTTPS inbound endpoint [" + name + "] is deactivated successfully.");
             isSuccessfullyDeactivated = true;
         } else {
-            log.warn("HTTP/HTTPS inbound endpoint [" + name + "] deactivation failed on port " + port);
+            log.error("HTTP/HTTPS inbound endpoint [" + name + "] deactivation failed on port " + port);
         }
         return isSuccessfullyDeactivated;
     }
