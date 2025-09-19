@@ -77,6 +77,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -106,6 +107,7 @@ public class ServiceCatalogUtils {
     private static String lineSeparator;
     private static Map<String, Object> parsedConfigs;
     private static final String API_VERSION;
+    private static final String MD5 = "MD5";
     private static final FilenameFilter CAPP_FILTER = (f, name) -> name.endsWith(".car");
 
     static {
@@ -485,7 +487,7 @@ public class ServiceCatalogUtils {
      */
     private static boolean processMetadata(File tempDir, File metadataFolder, File metadataYamlFolder,
                                            Map<String, String> md5MapOfAllService) throws IOException
-            , ResolverException, NoSuchAlgorithmException {
+            , ResolverException, NoSuchAlgorithmException, NoSuchProviderException {
         String metaFileName = metadataYamlFolder.getName();
         if  (metaFileName.contains(PROXY_SERVICE_SUFFIX) && !(new File(metadataFolder,
                 metaFileName.replaceAll(METADATA_FOLDER_STRING, SWAGGER_FOLDER_STRING))).exists()) {
@@ -515,7 +517,7 @@ public class ServiceCatalogUtils {
     private static boolean processServiceMetadata(File metadataFolder, String metaFileName, File tempDir,
                                                   File metadataYamlFolder, Map<String, String> md5MapOfAllService,
                                                   boolean isDataService)
-            throws IOException, ResolverException, NoSuchAlgorithmException {
+            throws IOException, ResolverException, NoSuchAlgorithmException, NoSuchProviderException {
         String APIName = metaFileName.substring(0, metaFileName.indexOf(METADATA_FOLDER_STRING));
         String APIVersion =
                 metaFileName.substring(metaFileName.lastIndexOf(METADATA_FOLDER_STRING) +
@@ -588,7 +590,7 @@ public class ServiceCatalogUtils {
      */
     private static boolean processProxyServiceMetadata(File tempDir, File metadataYamlFolder,
                                            Map<String, String> md5MapOfAllService) throws IOException
-            , ResolverException, NoSuchAlgorithmException {
+            , ResolverException, NoSuchAlgorithmException, NoSuchProviderException {
 
         String metaFileName = metadataYamlFolder.getName();
         String proxyServiceName = metaFileName.substring(0,
@@ -871,6 +873,9 @@ public class ServiceCatalogUtils {
         } catch (NoSuchAlgorithmException e) {
             log.error("Could not generate the MD5 sum", e);
             return false;
+        } catch (NoSuchProviderException e) {
+            log.error("Specified security provider is not available in this environment: ", e);
+            return false;
         }
         return true;
     }
@@ -915,8 +920,15 @@ public class ServiceCatalogUtils {
      * @throws IOException              error occurred while processing the file.
      * @throws NoSuchAlgorithmException Could not find the MD5 sum algo.
      */
-    private static String getFileChecksum(File file) throws NoSuchAlgorithmException, IOException {
-        MessageDigest md5Digest = MessageDigest.getInstance("MD5");
+    private static String getFileChecksum(File file) throws NoSuchAlgorithmException, IOException,
+            NoSuchProviderException {
+        String provider = DeployerUtil.getJceProvider();
+        MessageDigest md5Digest;
+        if (provider != null) {
+            md5Digest = MessageDigest.getInstance(MD5, provider);
+        } else {
+            md5Digest = MessageDigest.getInstance(MD5);
+        }
         FileInputStream fis = new FileInputStream(file);
 
         byte[] byteArray = new byte[1024];

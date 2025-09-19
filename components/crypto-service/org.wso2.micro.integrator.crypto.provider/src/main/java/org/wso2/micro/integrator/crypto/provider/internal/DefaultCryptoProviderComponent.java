@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 
 /**
@@ -66,6 +67,9 @@ public class DefaultCryptoProviderComponent {
     private ServiceRegistration<InternalCryptoProvider> symmetricKeyInternalCryptoProviderRegistration;
     private ServiceRegistration<KeyResolver> contextIndependentResolverRegistration;
     private CarbonServerConfigurationService serverConfigurationService;
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     @Activate
     public void activate(ComponentContext context) {
@@ -227,7 +231,13 @@ public class DefaultCryptoProviderComponent {
             keyStoreFileInputStream = new FileInputStream(file);
 
             String keyStoreType = getKeyStoreConfigurationPropertyOrFail(INTERNAL_KEYSTORE_TYPE_PROPERTY_PATH);
-            KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+            String provider = getPreferredJceProvider();
+            KeyStore keyStore;
+            if (provider != null) {
+                keyStore = KeyStore.getInstance(keyStoreType, provider);
+            } else {
+                keyStore = KeyStore.getInstance(keyStoreType);
+            }
 
             keyStore.load(keyStoreFileInputStream, password.toCharArray());
 
@@ -240,6 +250,8 @@ public class DefaultCryptoProviderComponent {
                     .format("Internal keystore file does not exist in the path as configured " + "in '%s' property.",
                             INTERNAL_KEYSTORE_FILE_PROPERTY_PATH);
             throw new CryptoException(errorMessage);
+        } catch (NoSuchProviderException e) {
+            throw new CryptoException("Specified security provider is not available in this environment", e);
         } finally {
             if (keyStoreFileInputStream != null) {
                 try {
@@ -260,5 +272,19 @@ public class DefaultCryptoProviderComponent {
         }
 
         return propertyValue;
+    }
+
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    public static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }

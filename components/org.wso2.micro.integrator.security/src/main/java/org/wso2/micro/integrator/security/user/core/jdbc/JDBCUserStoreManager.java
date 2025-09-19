@@ -54,8 +54,10 @@ import org.wso2.micro.integrator.security.user.core.util.JDBCRealmUtil;
 import org.wso2.micro.integrator.security.user.core.util.UserCoreUtil;
 import org.wso2.micro.integrator.security.util.Secret;
 
+import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -102,6 +104,9 @@ public class JDBCUserStoreManager extends AbstractUserStoreManager {
     private static final String ORACLE = "oracle";
     private static final String MYSQL = "mysql";
     private boolean fileBasedUserStoreMode = false;
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
     public JDBCUserStoreManager() {
 
     }
@@ -2405,13 +2410,21 @@ public class JDBCUserStoreManager extends AbstractUserStoreManager {
     private String generateSaltValue() {
         String saltValue = null;
         try {
-            SecureRandom secureRandom = SecureRandom.getInstance(SHA_1_PRNG);
+            SecureRandom secureRandom;
+            String provider = getJceProvider();
+            if (provider != null) {
+                secureRandom = SecureRandom.getInstance("DEFAULT", provider);
+            } else {
+                secureRandom = SecureRandom.getInstance(SHA_1_PRNG);
+            }
             byte[] bytes = new byte[16];
             //secureRandom is automatically seeded by calling nextBytes
             secureRandom.nextBytes(bytes);
             saltValue = Base64.encode(bytes);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA1PRNG algorithm could not be found.");
+        } catch (NoSuchProviderException e) {
+            throw new RuntimeException("Specified security provider is not available in this environment: ", e);
         }
         return saltValue;
     }
@@ -2651,8 +2664,13 @@ public class JDBCUserStoreManager extends AbstractUserStoreManager {
                         .equals(UserCoreConstants.RealmConfig.PASSWORD_HASH_METHOD_PLAIN_TEXT)) {
                     return password;
                 }
-
-                MessageDigest dgst = MessageDigest.getInstance(digsestFunction);
+                MessageDigest dgst;
+                String provider = getJceProvider();
+                if (provider != null) {
+                    dgst = MessageDigest.getInstance(digsestFunction, provider);
+                } else {
+                    dgst = MessageDigest.getInstance(digsestFunction);
+                }
                 byte[] byteValue = dgst.digest(digestInput.getBytes());
                 password = Base64.encode(byteValue);
             }
@@ -2663,6 +2681,8 @@ public class JDBCUserStoreManager extends AbstractUserStoreManager {
                 log.debug(msg, e);
             }
             throw new UserStoreException(msg, e);
+        } catch (NoSuchProviderException e) {
+            throw new UserStoreException("Specified security provider is not available in this environment: ", e);
         }
     }
 
@@ -2695,8 +2715,13 @@ public class JDBCUserStoreManager extends AbstractUserStoreManager {
                     passwordString = new String(credentialObj.getChars());
                     return passwordString;
                 }
-
-                MessageDigest digest = MessageDigest.getInstance(digestFunction);
+                MessageDigest digest;
+                String provider = getJceProvider();
+                if (provider != null) {
+                    digest = MessageDigest.getInstance(digestFunction, provider);
+                } else {
+                    digest = MessageDigest.getInstance(digestFunction);
+                }
                 byte[] byteValue = digest.digest(credentialObj.getBytes());
                 passwordString = Base64.encode(byteValue);
             } else {
@@ -2710,6 +2735,8 @@ public class JDBCUserStoreManager extends AbstractUserStoreManager {
                 log.debug(msg, e);
             }
             throw new UserStoreException(msg, e);
+        } catch (NoSuchProviderException e) {
+            throw new RuntimeException("Specified security provider is not available in this environment: ", e);
         } finally {
             credentialObj.clear();
         }
@@ -4336,5 +4363,19 @@ public class JDBCUserStoreManager extends AbstractUserStoreManager {
             throw new UserStoreException("The sql statement for retrieving user roles is null");
         }
         return sqlStmt;
+    }
+
+    /**
+     * Get the JCE provider to be used for encryption/decryption
+     *
+     * @return
+     */
+    private static String getJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }

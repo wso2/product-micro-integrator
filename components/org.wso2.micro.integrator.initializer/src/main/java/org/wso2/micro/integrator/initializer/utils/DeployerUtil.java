@@ -51,6 +51,10 @@ import static org.wso2.micro.integrator.initializer.utils.Constants.DESCRIPTOR_X
 
 public class DeployerUtil {
 
+    public static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    public static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+
     /**
      * Partially build a synapse API for deployment purposes.
      * @param apiElement OMElement of API configuration.
@@ -268,5 +272,19 @@ public class DeployerUtil {
             );
         }
         return sortedOrder;
+    }
+
+    /**
+     * Get the JCE provider to be used for encryption/decryption
+     *
+     * @return
+     */
+    public static String getJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
     }
 }
