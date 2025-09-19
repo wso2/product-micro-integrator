@@ -49,7 +49,6 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
 
     private OneTimeTriggerInboundRunner inboundRunner;
     private Thread runningThread;
-    private boolean isPaused = false;
     private static final Log log = LogFactory.getLog(InboundOneTimeTriggerRequestProcessor.class);
 
     protected final static String COMMON_ENDPOINT_POSTFIX = "--SYNAPSE_INBOUND_ENDPOINT";
@@ -130,7 +129,6 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
     @Override
     public boolean activate() {
         log.info("Activating the Inbound Endpoint [" + name + "].");
-        isPaused = false;
 
         /*
          * For one-time trigger endpoints in non-coordinated mode:
@@ -144,17 +142,16 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
             if (!startUpController.activateTask()) {
                 log.error("Failed to activate the consumer task [" + startUpController.getTaskDescription().getName()
                         + "] for the inbound endpoint " + name);
-                isPaused = true;
+                return false;
             }
         }
 
-        return !isPaused;
+        return true;
     }
 
     @Override
     public boolean deactivate() {
         log.info("Deactivating the Inbound Endpoint [" + name + "].");
-        isPaused = true;
 
         /*
          * For one-time trigger endpoints in non-coordinated mode:
@@ -169,11 +166,11 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
             if (!startUpController.deactivateTask()) {
                 log.error("Failed to deactivate the consumer task [" + startUpController.getTaskDescription().getName()
                         + "] for the inbound endpoint " + name);
-                isPaused = false;
+                return false;
             }
         }
 
-        return isPaused;
+        return true;
     }
 
     @Override
