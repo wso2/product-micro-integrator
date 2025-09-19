@@ -88,8 +88,16 @@ public class InboundHttpListener implements InboundRequestProcessor {
     public boolean activate() {
         boolean isSuccessfullyActivated = false;
         try {
-            isSuccessfullyActivated = HTTPEndpointManager.getInstance()
-                    .startEndpoint(port, name, processorParams);
+            if (isPortUsedByAnotherApplication(port)) {
+                log.warn("Port [" + port + "] used by inbound endpoint [" + name + "] is already used by another application "
+                        + "hence activation of inbound endpoint failed");
+                throw new SynapseException("Port [" + port + "] used by inbound endpoint [" + name + "] is already used by "
+                        + "another application.");
+            } else {
+                isSuccessfullyActivated = HTTPEndpointManager.getInstance()
+                        .startEndpoint(port, name, processorParams);
+            }
+
             if (isSuccessfullyActivated) {
                 log.info("HTTP inbound endpoint [" + name + "] is activated successfully on port " + port);
             } else {
