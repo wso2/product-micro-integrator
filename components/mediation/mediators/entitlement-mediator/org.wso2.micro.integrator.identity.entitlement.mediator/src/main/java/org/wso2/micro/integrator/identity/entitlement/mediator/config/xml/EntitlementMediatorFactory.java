@@ -139,7 +139,7 @@ public class EntitlementMediatorFactory extends AbstractMediatorFactory {
         if (onReject != null) {
             String onRejectValue = onReject.getAttributeValue();
             if (onRejectValue != null) {
-                mediator.setOnRejectSeqKey(onRejectValue.trim());
+                mediator.setOnRejectSeqKey(FactoryUtils.getFullyQualifiedName(properties, onRejectValue.trim()));
             }
         } else {
             OMElement onRejectMediatorElement = element.getFirstChildWithName(
