@@ -80,6 +80,7 @@ import org.wso2.micro.integrator.initializer.ServiceBusConstants;
 import org.wso2.micro.integrator.initializer.ServiceBusUtils;
 import org.wso2.micro.integrator.initializer.persistence.MediationPersistenceManager;
 import org.wso2.micro.integrator.initializer.utils.ConfigurationHolder;
+import org.wso2.micro.integrator.initializer.utils.Constants;
 import org.wso2.micro.integrator.initializer.utils.DeployerUtil;
 import org.wso2.micro.integrator.initializer.utils.LocalEntryUtil;
 
@@ -281,7 +282,7 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                     if (artifact.getType().equals("synapse/proxy-service")) {
                         artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + "/" + artifactName;
                     } else {
-                        artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + "__" + artifactName;
+                        artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + Constants.DOUBLE_UNDERSCORE + artifactName;
                     }
                 }
                 File artifactInRepo = new File(artifactDir + File.separator + fileName);
@@ -316,7 +317,7 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                             API api = DeployerUtil.partiallyBuildAPI(apiElement);
                             artifactName = api.getName();
                             if (carbonApplication.getAppConfig().isVersionedDeployment()) {
-                                artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + "__" + artifactName;
+                                artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + Constants.DOUBLE_UNDERSCORE + artifactName;
                             }
                         }
 

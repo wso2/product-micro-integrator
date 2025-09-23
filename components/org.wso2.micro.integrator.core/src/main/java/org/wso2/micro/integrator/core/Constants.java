@@ -42,4 +42,5 @@ public class Constants {
     public static final int BAD_REQUEST = 400;
     public static final int NOT_IMPLEMENTED = 501;
     public static final int BAD_GATEWAY = 502;
+    public static final String ENABLE_VERSIONED_CAPP_DEPLOYMENT = "enableVersionedCAppDeployment";
 }

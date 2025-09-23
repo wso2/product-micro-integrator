@@ -22,10 +22,10 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.w3c.dom.NodeList;
 import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.application.deployer.AppDeployerConstants;
 import org.wso2.micro.application.deployer.AppDeployerUtils;
+import org.wso2.micro.integrator.core.Constants;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -238,34 +238,58 @@ public class ApplicationConfiguration {
 
     private void populateArtifactIdentifiers(OMElement descriptorElement) throws CarbonException {
 
-        OMElement deploymentEl = descriptorElement.getFirstChildWithName(Q_DEPLOYMENT_TYPE);
+        if (isVersionedDeploymentEnabled(descriptorElement)) {
+            this.appArtifactIdentifier = getRequiredElementText(descriptorElement, Q_ID,
+                    "Invalid descriptor.xml. Artifact id is missing for a versioned deployment");
 
-        if (deploymentEl != null) {
-            String deploymentType = deploymentEl.getText().trim();
-            if (AppDeployerConstants.VERSIONED_DEPLOYMENT.equals(deploymentType)) {
-                isVersionedDeployment = true;
-                OMElement idEl = descriptorElement.getFirstChildWithName(Q_ID);
-                if (idEl != null) {
-                    this.appArtifactIdentifier = idEl.getText().trim();
-                } else {
-                    throw new CarbonException("Invalid descriptor.xml. Artifact id is missing for a versioned deployment");
-                }
-                OMElement isFatCARElements = descriptorElement.getFirstChildWithName(new QName("fatCarEnabled"));
-                if (isFatCARElements != null && "true".equals(isFatCARElements.getText().trim())) {
-                    isFatCAR = true;
-                }
+            OMElement fatCarElement = descriptorElement.getFirstChildWithName(new QName(org.apache.axis2.Constants.FAT_CAR_ENABLED));
+            isFatCAR = fatCarElement != null && "true".equals(fatCarElement.getText().trim());
 
-                OMElement depsEl = descriptorElement.getFirstChildWithName(Q_DEPENDENCIES);
-                if (depsEl != null) {
-                    for (Iterator<?> it = depsEl.getChildrenWithName(Q_DEPENDENCY); it.hasNext(); ) {
-                        OMElement depEl = (OMElement) it.next();
-                        String fullyQualifiedDepName = getAttr(depEl, A_GROUP_ID) + "__" + getAttr(depEl, A_ARTIFACT_ID);
-                        String version = getAttr(depEl, A_VERSION);
-                        cAppDependencies.put(fullyQualifiedDepName, version);
-                    }
+            OMElement dependenciesElement = descriptorElement.getFirstChildWithName(Q_DEPENDENCIES);
+            if (dependenciesElement != null) {
+                for (Iterator<?> it = dependenciesElement.getChildrenWithName(Q_DEPENDENCY); it.hasNext(); ) {
+                    OMElement dependency = (OMElement) it.next();
+                    String depName = getAttr(dependency, A_GROUP_ID) + "__" + getAttr(dependency, A_ARTIFACT_ID);
+                    cAppDependencies.put(depName, getAttr(dependency, A_VERSION));
                 }
             }
         }
+    }
+
+    /**
+     * Checks if versioned deployment is enabled.
+     * <p>
+     * This method determines whether versioned deployment is enabled by checking
+     * the system property `enableVersionedCAppDeployment` or the deployment type
+     * specified in the provided descriptor element.
+     *
+     * @param descriptorElement The descriptor element to check for deployment type
+     * @return true if versioned deployment is enabled, false otherwise
+     */
+    private boolean isVersionedDeploymentEnabled(OMElement descriptorElement) {
+
+        String systemProperty = System.getProperty(Constants.ENABLE_VERSIONED_CAPP_DEPLOYMENT);
+        if ("true".equals(systemProperty != null ? systemProperty.trim() : null)) {
+            return isVersionedDeployment = true;
+        }
+
+        OMElement deploymentElement = descriptorElement.getFirstChildWithName(Q_DEPLOYMENT_TYPE);
+        if (deploymentElement != null) {
+            String deploymentType = deploymentElement.getText().trim();
+            if (AppDeployerConstants.VERSIONED_DEPLOYMENT.equals(deploymentType)) {
+                return isVersionedDeployment = true;
+            }
+        }
+        return false;
+    }
+
+    private String getRequiredElementText(OMElement parent, QName childName, String errorMessage) throws CarbonException {
+
+        OMElement child = parent.getFirstChildWithName(childName);
+        if (child == null) {
+            throw new CarbonException(errorMessage);
+        }
+        return child.getText().trim();
     }
 
     private void handleException(String msg, Exception e) throws CarbonException {

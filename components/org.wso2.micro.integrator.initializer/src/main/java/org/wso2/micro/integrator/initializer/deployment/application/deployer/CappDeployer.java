@@ -43,6 +43,7 @@ import org.wso2.micro.core.CarbonAxisConfigurator;
 import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.core.util.FileManipulator;
 import org.wso2.micro.integrator.initializer.serviceCatalog.ServiceCatalogDeployer;
+import org.wso2.micro.integrator.initializer.utils.Constants;
 import org.wso2.micro.integrator.initializer.utils.DeployerUtil;
 import org.wso2.micro.integrator.initializer.utils.ServiceCatalogUtils;
 
@@ -538,9 +539,12 @@ public class CappDeployer extends AbstractDeployer {
                                 if (metaFile.getName().contains(SWAGGER_SUBSTRING)) {
                                     File swaggerFile = new File(metaFile, artifact.getFiles().get(0).getName());
                                     byte[] bytes = Files.readAllBytes(Paths.get(swaggerFile.getPath()));
-                                    // TODO Add check
-                                    String artifactName = artifact.getFullyQualifiedName()
-                                            .substring(0, artifact.getFullyQualifiedName().indexOf(SWAGGER_SUBSTRING));
+                                    String artifactName = artifact.getName()
+                                            .substring(0, artifact.getName().indexOf(SWAGGER_SUBSTRING));
+                                    if (parentApp.getAppConfig().isVersionedDeployment()) {
+                                        artifactName = artifact.getFullyQualifiedName()
+                                                .substring(0, artifact.getFullyQualifiedName().indexOf(SWAGGER_SUBSTRING));
+                                    }
                                     swaggerTable.put(artifactName, new String(bytes));
                                 }
                             } catch (FileNotFoundException e) {
@@ -565,9 +569,12 @@ public class CappDeployer extends AbstractDeployer {
                     String apiName = getApiNameFromFile(new FileInputStream(apiXmlPath));
                     if (!StringUtils.isEmpty(apiName)) {
                         // Re-constructing swagger table with API name since artifact name is not unique
-                        // TODO Add check
-                        apiName = parentApp.getAppConfig().getAppArtifactIdentifier() + "__" + apiName;
-                        apiArtifactMap.put(artifact.getFullyQualifiedName(), apiName);
+                        if (parentApp.getAppConfig().isVersionedDeployment()) {
+                            apiName = parentApp.getAppConfig().getAppArtifactIdentifier() + Constants.DOUBLE_UNDERSCORE + apiName;
+                            apiArtifactMap.put(artifact.getFullyQualifiedName(), apiName);
+                        } else {
+                            apiArtifactMap.put(artifact.getName(),apiName);
+                        }
                     }
                 }
             } catch (FileNotFoundException e) {
@@ -708,7 +715,7 @@ public class CappDeployer extends AbstractDeployer {
             undeployCarbonApp(existingApp, axisConfig);
             if (existingApp.getAppConfig().isFatCAR()) {
                 for (String dependencyIdentifier : existingApp.getAppConfig().getCAppDependencies().keySet()) {
-                    String dependencyName = dependencyIdentifier + "__" + existingApp.getAppConfig().getCAppDependencies().get(dependencyIdentifier);
+                    String dependencyName = dependencyIdentifier + Constants.DOUBLE_UNDERSCORE + existingApp.getAppConfig().getCAppDependencies().get(dependencyIdentifier);
                     CarbonApplication dependentCAR = getCarbonAppByFullyQualifiedName(dependencyName);
                     if (dependentCAR != null) {
                         undeploy(dependentCAR.getAppFilePath());
@@ -855,8 +862,7 @@ public class CappDeployer extends AbstractDeployer {
                             dependentCAppFiles.add(new File(cAppFile.getAbsolutePath() + File.separator + entry.getName()));
                         });
             } catch (Exception ude) {
-                // unwrap our unchecked wrapper to keep the method signature
-//                throw new DeploymentException(ude.getMessage(), ude.getCause());
+                // Since we deploy CApps in alphabetical order when there is any error, this can be ignored.
             }
         }
         cAppFiles = Arrays.copyOf(cAppFiles, cAppFiles.length + dependentCAppFiles.size());

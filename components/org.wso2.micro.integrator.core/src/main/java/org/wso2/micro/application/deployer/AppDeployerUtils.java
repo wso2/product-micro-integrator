@@ -67,11 +67,11 @@ import java.util.zip.ZipInputStream;
 import javax.xml.namespace.QName;
 
 public final class AppDeployerUtils {
-	
+
 	private static final Log log = LogFactory.getLog(AppDeployerUtils.class);
-	
+
 	private static final AppDeployerUtils INSTANCE = new AppDeployerUtils();
-	
+
 	private static String APP_UNZIP_DIR;
 	private static final String INTERNAL_ARTIFACTS_DIR = "internal-artifacts";
 	private static volatile boolean isAppDirCreated = false;
@@ -87,8 +87,8 @@ public final class AppDeployerUtils {
 
 	private AppDeployerUtils() {
 		// hide utility class
-		
-		
+
+
 	}
 
     static {
@@ -125,7 +125,7 @@ public final class AppDeployerUtils {
         }
 
         isAppDirCreated = true;
-		
+
 	}
 
 
@@ -242,12 +242,12 @@ public final class AppDeployerUtils {
             try {
                 if (fis != null) {
                 	fis.close();
-                }                
+                }
             } catch (IOException e) {
                 log.error("Error occured while closing the streams", e);
             }
-            
-            try {                
+
+            try {
                 if (fos != null) {
                 	fos.close();
                 }
@@ -311,7 +311,7 @@ public final class AppDeployerUtils {
             CappFile tempFile = new CappFile();
             tempFile.setName(fileElement.getText());
             tempFile.setVersion(readAttribute(fileElement, Artifact.VERSION));
-            artifact.addFile(tempFile);            
+            artifact.addFile(tempFile);
         }
 
         return artifact;
@@ -557,7 +557,7 @@ public final class AppDeployerUtils {
 
     /**
      * Checks whether the given dependencies has library type artifacts
-     * 
+     *
      * @param deps - list of dependencies
      * @return - true if found..
      */
@@ -650,6 +650,15 @@ public final class AppDeployerUtils {
         return fullResourcePath;
     }
 
+    /**
+     * Extracts the given sourcePath to the destination directory. If the sourcePath is a file,
+     * extracts the file. If the sourcePath is not a file, assumes it is a Fat CAR and tries to
+     * find the outer CAR and the inner CAR to be extracted.
+     *
+     * @param sourcePath Path of the source CAR or Fat CAR
+     * @param destDir    Destination directory to which the source CAR should be extracted
+     * @throws IOException
+     */
     private static void extractPossiblyNested(String sourcePath, String destDir) throws IOException {
         Path src = Paths.get(sourcePath);
         if (Files.isRegularFile(src)) {
