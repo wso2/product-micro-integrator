@@ -1682,7 +1682,7 @@
         <carbon.rule.version>4.5.3</carbon.rule.version>
         <carbon.deployment.version>4.9.11</carbon.deployment.version>
         <wss4j.version>1.6.0-wso2v6</wss4j.version>
-        <rampart.wso2.version>1.7.0-wso2v6</rampart.wso2.version>
+        <rampart.wso2.version>1.7.0-wso2v1</rampart.wso2.version>
         <siddhi.version>3.2.3</siddhi.version>
         <opensaml.orbit.version>3.3.1.wso2v14</opensaml.orbit.version>
         <saml.common.util.version>1.0.10</saml.common.util.version>
