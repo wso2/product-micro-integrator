@@ -83,6 +83,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -95,7 +96,7 @@ public class ServiceCatalogUtils {
 
     private static final Log log = LogFactory.getLog(ServiceCatalogUtils.class);
     private static SecretResolver secretResolver;
-    private static List<ServiceMetaDataHolder> md5List = new ArrayList<>();
+    private static List<ServiceMetaDataHolder> md5List = new CopyOnWriteArrayList<>();
     private static Boolean alreadyUploaded = false;
     private static String resolvedHostName;
     private static String resolvedGroupId;
@@ -105,6 +106,7 @@ public class ServiceCatalogUtils {
     private static String lineSeparator;
     private static Map<String, Object> parsedConfigs;
     private static final String API_VERSION;
+    private static final FilenameFilter CAPP_FILTER = (f, name) -> name.endsWith(".car");
 
     static {
         String apiVersion = System.getProperty(SERVICE_CATALOG_API_VERSION_PROPERTY);
@@ -766,11 +768,66 @@ public class ServiceCatalogUtils {
      * @param targetDir          temporary folder location.
      * @param repoLocation       location of the deployment folder of MI.
      * @param md5MapOfAllService map containing md5 values of all services.
-     * @return extracted successfully.
+     * @return true if extraction was successful, false otherwise.
      */
     public static boolean extractMetadataFromCAPPs(File targetDir, String repoLocation,
                                                    Map<String, String> md5MapOfAllService) {
-        FilenameFilter cappFilter = (f, name) -> name.endsWith(".car");
+        File cappFolder = new File(repoLocation, CAPP_FOLDER_NAME);
+        File[] files = cappFolder.listFiles(CAPP_FILTER);
+        if (files == null) return false; // should not reach here. Checked in checkPreConditions() method
+
+        for (File file : files) {
+            if (!extractCApp(file, targetDir, md5MapOfAllService)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Extract given CAPP and put metadata files in the temporary folder.
+     *
+     * @param cAppName           CAPP name to extract
+     * @param targetDir          temporary folder location.
+     * @param repoLocation       location of the deployment folder of MI.
+     * @param md5MapOfAllService map containing md5 values of all services.
+     * @return true if extraction was successful, false otherwise.
+     */
+    public static boolean extractMetadataFromCAPP(String cAppName, File targetDir, String repoLocation,
+                                                   Map<String, String> md5MapOfAllService) {
+        File cappFolder = new File(repoLocation, CAPP_FOLDER_NAME);
+        File[] files = cappFolder.listFiles(CAPP_FILTER);
+        if (files == null) return false; // should not reach here. Checked in checkPreConditions() method
+
+        if (cAppName != null && !cAppName.isEmpty()) {
+            File file = new File(cappFolder, cAppName);
+            if (file.exists()) {
+                return extractCApp(file, targetDir, md5MapOfAllService);
+            } else {
+                log.error("CAPP file not found: " + cAppName);
+                return false;
+            }
+        } else {
+            log.error("CAPP name should be defined");
+            return false;
+        }
+    }
+
+    /**
+     * Extracts the contents of a Carbon Application (CApp) archive, processes its metadata, and generates
+     * the corresponding MD5 checksums for all services defined within the metadata.
+     *
+     * This method first extracts the CApp archive to a temporary directory and checks if a metadata folder
+     * exists. If the metadata folder is found, it iterates through the metadata files and processes them
+     * to update the target directory with necessary files. The method handles different exceptions, including
+     * I/O issues, errors in extracting the CApp, misconfigured environment variables, and MD5 generation failures.
+     *
+     * @param cApp The Carbon Application (CApp) archive to be extracted.
+     * @param targetDir The target directory where extracted files should be placed.
+     * @param md5MapOfAllService A map containing MD5 checksums of all services, used for verification.
+     * @return true if the extraction and processing were successful, false otherwise.
+     */
+    private static boolean extractCApp(File cApp, File targetDir, Map<String, String> md5MapOfAllService) {
         FilenameFilter metaFilter = (f, name) -> name.contains(METADATA_FOLDER_STRING);
 
         /*
@@ -787,38 +844,33 @@ public class ServiceCatalogUtils {
          *    - artifact.xml
          */
 
-        File cappFolder = new File(repoLocation, CAPP_FOLDER_NAME);
-        File[] files = cappFolder.listFiles(cappFilter);
-        if (files == null) return false; // should not reach here. Checked in checkPreConditions() method
-        for (File file : files) {
-            try {
-                // Extract the CAPP and get extracted location.
-                String tempExtractedDirPath = AppDeployerUtils.extractCarbonApp(file.getPath());
-                File metadataFolder = new File(tempExtractedDirPath, METADATA_FOLDER_NAME);
-                // does not have a metadata folder -> old CAPP format.
-                if (metadataFolder.exists()) {
-                    File[] metadataFolders = metadataFolder.listFiles(metaFilter);
-                    if (metadataFolders != null) {
-                        for (File metadataYamlFolder : metadataFolders) {
-                            if (!processMetadata(targetDir, metadataFolder, metadataYamlFolder, md5MapOfAllService)) {
-                                return false;
-                            }
+        try {
+            // Extract the CAPP and get extracted location.
+            String tempExtractedDirPath = AppDeployerUtils.extractCarbonApp(cApp.getPath());
+            File metadataFolder = new File(tempExtractedDirPath, METADATA_FOLDER_NAME);
+            // does not have a metadata folder -> old CAPP format.
+            if (metadataFolder.exists()) {
+                File[] metadataFolders = metadataFolder.listFiles(metaFilter);
+                if (metadataFolders != null) {
+                    for (File metadataYamlFolder : metadataFolders) {
+                        if (!processMetadata(targetDir, metadataFolder, metadataYamlFolder, md5MapOfAllService)) {
+                            return false;
                         }
                     }
                 }
-            } catch (IOException e) {
-                log.error("Error occurred while processing the metadata files", e);
-                return false;
-            } catch (CarbonException e) {
-                log.error("Error occurred when extracting the carbon application", e);
-                return false;
-            } catch (ResolverException e) {
-                log.error("Environment variables are not configured correctly", e);
-                return false;
-            } catch (NoSuchAlgorithmException e) {
-                log.error("Could not generate the MD5 sum", e);
-                return false;
             }
+        } catch (IOException e) {
+            log.error("Error occurred while processing the metadata files", e);
+            return false;
+        } catch (CarbonException e) {
+            log.error("Error occurred when extracting the carbon application", e);
+            return false;
+        } catch (ResolverException e) {
+            log.error("Environment variables are not configured correctly", e);
+            return false;
+        } catch (NoSuchAlgorithmException e) {
+            log.error("Could not generate the MD5 sum", e);
+            return false;
         }
         return true;
     }
@@ -1206,5 +1258,19 @@ public class ServiceCatalogUtils {
             log.debug("Service Catalog Executor Thread count is not defined. Setting to default " + def);
         }
         return def;
+    }
+
+    /**
+     * Determines if the server is currently in startup mode.
+     *
+     * This method checks for the presence of the "setup" system property
+     * which is set during server initialization. The property is used to
+     * indicate that the server is still in the process of starting up.
+     *
+     * @return true if the server is in startup mode, false otherwise
+     */
+    public static boolean isServerInStartupMode() {
+        String isStartUpMode = System.getProperty("org.wso2.mi.server.startup.mode");
+        return isStartUpMode != null && Boolean.parseBoolean(isStartUpMode);
     }
 }

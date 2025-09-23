@@ -78,4 +78,7 @@ public class MicroIntegratorRegistryConstants {
     public static final String CONFIGURATION_REGISTRY_PATH = "registry/config";
     public static final String GOVERNANCE_REGISTRY_PATH = "registry/governance";
     public static final String LOCAL_REGISTRY_PATH = "registry/local";
+
+
+    public static final String REG_DEP_FAILURE_IDENTIFIER = "Registry deployment failed: ";
 }

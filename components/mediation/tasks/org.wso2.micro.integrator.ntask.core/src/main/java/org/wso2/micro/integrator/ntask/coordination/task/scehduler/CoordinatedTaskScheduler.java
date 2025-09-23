@@ -64,6 +64,7 @@ public class CoordinatedTaskScheduler implements Runnable {
     private ClusterCommunicator clusterCommunicator;
     private ScheduledTaskManager taskManager;
     private String localNodeId;
+    private boolean isCoordinationStarted = true;
 
     public CoordinatedTaskScheduler(ScheduledTaskManager taskManager, TaskStore taskStore,
                                     TaskLocationResolver taskLocationResolver, ClusterCommunicator connector) {
@@ -86,6 +87,15 @@ public class CoordinatedTaskScheduler implements Runnable {
     public void run() {
 
         try {
+            if (isCoordinationStarted && clusterCoordinator.isDuplicateNode()) {
+                try {
+                    LOG.warn("This node is a duplicate node. Hence waiting for the cluster to settle down.");
+                    Thread.sleep(clusterCoordinator.getHeartbeatMaxRetryInterval());
+                } catch (InterruptedException ex) {
+                    // ignore
+                }
+            }
+            isCoordinationStarted = false;
             pauseDeactivatedTasks();
             scheduleAssignedTasks(CoordinatedTask.States.ACTIVATED);
             checkInterrupted();

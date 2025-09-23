@@ -331,6 +331,7 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
     public class HeartBeatExecutionTask implements Runnable {
         private CoordinatorElectionTask coordinatorElectionTask;
         private long lastHeartbeatFinishedTime;
+        private boolean isInitialHeartbeat = true;
 
         public HeartBeatExecutionTask(boolean stillCoordinator) {
             coordinatorElectionTask = new CoordinatorElectionTask(localNodeId, localGroupId, stillCoordinator);
@@ -340,6 +341,19 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
         public void run() {
             while (isCoordinatorTasksRunning) {
                 try {
+                    if (isInitialHeartbeat && isDuplicatedNode()) {
+                        try {
+                            // Sleep for the duration of the heartbeatMaxRetryInterval to allow other nodes to take over
+                            // the coordinator role and settle cluster. Tasks assigned to this node are already unassigned
+                            // so it will be already assigned to other nodes
+                            log.warn("Node with ID " + localNodeId + " in group " + localGroupId +
+                                    " is a duplicate node. Handover the coordinator role to another node.");
+                            Thread.sleep(heartbeatMaxRetryInterval);
+                        } catch (InterruptedException ex) {
+                            // ignore
+                        }
+                    }
+                    isInitialHeartbeat = false;
                     long currentHeartbeatStartedTime = System.currentTimeMillis();
                     coordinatorElectionTask.runCoordinationElectionTask(currentHeartbeatStartedTime);
                     long taskEndedTime = System.currentTimeMillis();
@@ -391,7 +405,6 @@ public class RDBMSCoordinationStrategy implements CoordinationStrategy {
          * Used to uniquely identify the group ID in the cluster.
          */
         private String localGroupId;
-
         /**
          * Executor service used to communicate with the database.
          */

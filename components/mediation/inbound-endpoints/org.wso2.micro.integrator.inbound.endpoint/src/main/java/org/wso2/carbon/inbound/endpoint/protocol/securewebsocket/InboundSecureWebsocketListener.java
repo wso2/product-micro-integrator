@@ -20,6 +20,7 @@ package org.wso2.carbon.inbound.endpoint.protocol.securewebsocket;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.inbound.InboundProcessorParams;
 import org.wso2.carbon.inbound.endpoint.protocol.websocket.InboundWebsocketConstants;
 import org.wso2.carbon.inbound.endpoint.protocol.websocket.InboundWebsocketListener;
@@ -50,21 +51,31 @@ public class InboundSecureWebsocketListener extends InboundWebsocketListener {
 
     @Override
     public void init() {
-        /*
-         * The activate/deactivate functionality for the WSS Inbound Endpoint is not currently implemented.
-         *
-         * Therefore, the following check has been added to immediately return if the "suspend"
-         * attribute is set to true in the inbound endpoint configuration.
-         *
-         * Note: This implementation is temporary and should be revisited and improved once
-         * the activate/deactivate capability for WSS listener is implemented.
-         */
-        if (startInPausedMode) {
-            log.info("Inbound endpoint [" + name + "] is currently suspended.");
-            return;
+        log.info("WebSocket inbound endpoint [" + name + "] is initializing"
+                + (startInPausedMode ? " but will remain in suspended mode..." : "..."));
+
+        if (!startInPausedMode) {
+            int offsetPort = port + PersistenceUtils.getPortOffset(processorParams.getProperties());
+            WebsocketEndpointManager.getInstance().startSSLEndpoint(offsetPort, name, processorParams);
         }
-        int offsetPort = port + PersistenceUtils.getPortOffset(processorParams.getProperties());
-        WebsocketEndpointManager.getInstance().startSSLEndpoint(offsetPort, name, processorParams);
     }
 
+    @Override
+    public boolean activate() {
+        boolean isSuccessfullyActivated = false;
+        try {
+            int offsetPort = port + PersistenceUtils.getPortOffset(processorParams.getProperties());
+            isSuccessfullyActivated = WebsocketEndpointManager.getInstance()
+                    .startSSLEndpoint(offsetPort, name, processorParams);
+        } catch (SynapseException e) {
+            log.error("Error while activating WebSocket inbound endpoint [" + name + "] on port " + port, e);
+        }
+
+        if (isSuccessfullyActivated) {
+            log.info("WebSocket inbound endpoint [" + name + "] is activated successfully on port " + port);
+        } else {
+            log.warn("WebSocket inbound endpoint [" + name + "] activation failed on port " + port);
+        }
+        return isSuccessfullyActivated;
+    }
 }

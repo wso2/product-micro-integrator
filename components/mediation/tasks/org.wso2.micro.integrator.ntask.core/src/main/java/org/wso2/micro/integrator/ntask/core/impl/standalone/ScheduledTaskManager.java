@@ -308,11 +308,13 @@ public class ScheduledTaskManager extends AbstractQuartzTaskManager {
         // delete capability and give grace period to other nodes to update the local task states.
         // Since soon after deleted the coordinator node will be assigning the task to other node and the node should
         // be updated with the task state.
-        if (!clusterCoordinator.isLeader()) {
+
+        boolean isCoordinationEnabled = DataHolder.getInstance().isCoordinationEnabledGlobally();
+        if (isCoordinationEnabled && !clusterCoordinator.isLeader()) {
             log.warn("Hot deployment enabled. Hence the task " + taskName
                     + " will be deleted by the coordinator node.");
         }
-        if (clusterCoordinator.isLeader() && deployedCoordinatedTasks.contains(taskName)) {
+        if (isCoordinationEnabled && clusterCoordinator.isLeader() && deployedCoordinatedTasks.contains(taskName)) {
             long hotDeploymentDelay = clusterCoordinator.getHeartbeatMaxRetryInterval();
             try {
                 log.info("Waiting for " + hotDeploymentDelay + " ms to hotdeployment to settle.");

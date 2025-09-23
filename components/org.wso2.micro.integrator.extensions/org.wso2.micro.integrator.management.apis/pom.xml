@@ -4,7 +4,7 @@
     <parent>
     <groupId>org.wso2.ei</groupId>
     <artifactId>org.wso2.micro.integrator.extensions</artifactId>
-    <version>4.4.0-SNAPSHOT</version>
+    <version>4.5.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -48,9 +48,8 @@
             <artifactId>nimbus-jose-jwt</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
-            <version>${commons.configuration.version}</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.ei</groupId>
@@ -86,7 +85,7 @@
                             com.nimbusds.jose.crypto;version="${nimbus-jose.orbit.imp.pkg.version}",
                             com.nimbusds.jwt;version="${nimbus-jose.orbit.imp.pkg.version}",
                             org.osgi.service.cm;version="${version.eclipse.equinox.cm}",
-                            org.apache.commons.configuration;version="${commons.configuration.version}",
+                            org.apache.commons.configuration2;version="${commons.configuration2.imp.pkg.version}",
                             *;resolution:=optional
                         </Import-Package>
                     </instructions>

@@ -46,8 +46,22 @@ public abstract class GenericPollingConsumer {
     protected String onErrorSeq;
     protected boolean coordination;
     protected boolean sequential;
+    protected String cronExpression;
 
     private static final Log log = LogFactory.getLog(GenericPollingConsumer.class);
+
+    public GenericPollingConsumer(Properties properties, String name, SynapseEnvironment synapseEnvironment,
+                                  String cronExpression, String injectingSeq, String onErrorSeq, boolean coordination,
+                                  boolean sequential) {
+        this.properties = properties;
+        this.name = name;
+        this.synapseEnvironment = synapseEnvironment;
+        this.injectingSeq = injectingSeq;
+        this.onErrorSeq = onErrorSeq;
+        this.coordination = coordination;
+        this.sequential = sequential;
+        this.cronExpression = cronExpression;
+    }
 
     public GenericPollingConsumer(Properties properties, String name, SynapseEnvironment synapseEnvironment,
                                   long scanInterval, String injectingSeq, String onErrorSeq, boolean coordination,
@@ -55,18 +69,17 @@ public abstract class GenericPollingConsumer {
         this.properties = properties;
         this.name = name;
         this.synapseEnvironment = synapseEnvironment;
-        this.scanInterval = scanInterval;
         this.injectingSeq = injectingSeq;
         this.onErrorSeq = onErrorSeq;
         this.coordination = coordination;
         this.sequential = sequential;
+        this.scanInterval = scanInterval;
     }
-
     public abstract Object poll();
 
-    public void resume() {
-        log.info("Resuming inbound endpoint " + name);
-    }
+    public abstract void resume();
+
+    public abstract void pause();
 
     public void destroy() {
         log.info("Default destroy invoked. Not overwritten.");
@@ -145,5 +158,9 @@ public abstract class GenericPollingConsumer {
 
     protected Properties getInboundProperties() {
         return properties;
+    }
+
+    public String getCronExpression() {
+        return cronExpression;
     }
 }

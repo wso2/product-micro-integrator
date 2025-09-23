@@ -160,7 +160,11 @@ public class ODataJsonSerializer implements ODataSerializer {
             }
             if (options != null && options.getCount() != null && options.getCount().getValue()) {
                 if (excludePagingForOdataCount) {
-                    this.writeInlineCount("", ((StreamingEntityIterator) entitySet).getOdataCount(), json);
+                    StreamingEntityIterator entityIterator = (StreamingEntityIterator) entitySet;
+                    boolean hasFilters = entityIterator.getQueryOptions().getFilterOption() != null;
+                    // If the query has no filters, we can take whole rowCount as count.
+                    this.writeInlineCount("",
+                            hasFilters ? entityIterator.getOdataCount() : entityIterator.rowsCount, json);
                 } else {
                     this.writeInlineCount("", entitySet.getCount(), json);
                 }

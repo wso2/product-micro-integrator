@@ -34,6 +34,7 @@ public class ClusterCoordinator {
 
     private static final Log log = LogFactory.getLog(ClusterCoordinator.class);
     private RDBMSCoordinationStrategy rdbmsCoordinationStrategy;
+    private boolean isDuplicateNode = false;
 
     public ClusterCoordinator(DataSource coordinationDatasource) throws DataSourceException {
 
@@ -54,6 +55,14 @@ public class ClusterCoordinator {
 
     public int getHeartbeatMaxRetryInterval() {
         return rdbmsCoordinationStrategy.getHeartbeatMaxRetryInterval();
+    }
+
+    public boolean isDuplicateNode() {
+        return isDuplicateNode;
+    }
+
+    public void setDuplicateNode(boolean isDuplicateNode) {
+        this.isDuplicateNode = isDuplicateNode;
     }
 
     /**

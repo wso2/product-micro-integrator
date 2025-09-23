@@ -113,4 +113,11 @@ public class Constants {
     public static final String APPLICATION_SOAP = "application/soap+xml";
     public static final String APPLICATION_XML = "application/xml";
 
+    public static final String CAR_FILE_EXTENSION = ".car";
+    public static final String DESCRIPTOR_XML_FILE_NAME = "descriptor.xml";
+    public static final String ID = "id";
+    public static final String DEPENDENCY = "dependency";
+    public static final String CAPP_GROUP_ID = "groupId";
+    public static final String CAPP_ARTIFACT_ID = "artifactId";
+    public static final String CAPP_VERSION = "version";
 }
