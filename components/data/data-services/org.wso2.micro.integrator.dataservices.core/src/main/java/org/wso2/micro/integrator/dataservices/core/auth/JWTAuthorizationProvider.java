@@ -253,7 +253,7 @@ public class JWTAuthorizationProvider implements AuthorizationProvider {
         try {
             String providerName = DBUtils.getPreferredJceProvider();
             if (providerName != null) {
-                sha = MessageDigest.getInstance("SHA-1", providerName);
+                sha = MessageDigest.getInstance("SHA-256", providerName);
             } else {
                 sha = MessageDigest.getInstance("SHA-1");
             }

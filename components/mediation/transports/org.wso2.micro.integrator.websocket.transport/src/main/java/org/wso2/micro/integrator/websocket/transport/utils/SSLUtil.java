@@ -23,10 +23,13 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import javax.net.ssl.KeyManagerFactory;
@@ -39,41 +42,62 @@ public class SSLUtil {
     private static String TRUST_STORE_TYPE = "JKS";
     private static String KEY_MANAGER_TYPE = "SunX509";
     private static String TRUST_MANAGER_TYPE = "SunX509";
-    private static String PROTOCOL = "TLS";
+    private static String PROTOCOL = "TLSv1.2";
 
     private static SSLContext serverSSLCtx = null;
     private static SSLContext clientSSLCtx = null;
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     private static final Log LOGGER = LogFactory.getLog(SSLUtil.class);
 
-    public static SSLContext createServerSSLContext(final String keyStoreLocation, final String keyStorePwd) {
+    public static SSLContext createServerSSLContext(final String keyStoreLocation, final String keyStorePwd,
+                                                    String type) {
         try {
             if (serverSSLCtx == null) {
-                KeyStore keyStore = KeyStore.getInstance(KEY_STORE_TYPE);
-                keyStore.load(new FileInputStream(keyStoreLocation), keyStorePwd.toCharArray());
+                type = (type != null) ? type : TRUST_STORE_TYPE;
+                String provider = getPreferredJceProvider();
+                KeyStore keyStore;
+                if (provider != null) {
+                    keyStore = KeyStore.getInstance(type, provider);
+                } else {
+                    keyStore = KeyStore.getInstance(type);
+                }
+                keyStore.load(Files.newInputStream(Paths.get(keyStoreLocation)), keyStorePwd.toCharArray());
                 KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KEY_MANAGER_TYPE);
                 keyManagerFactory.init(keyStore, keyStorePwd.toCharArray());
                 serverSSLCtx = SSLContext.getInstance(PROTOCOL);
                 serverSSLCtx.init(keyManagerFactory.getKeyManagers(), null, null);
             }
-        } catch (UnrecoverableKeyException | KeyManagementException | NoSuchAlgorithmException | CertificateException | KeyStoreException | IOException e) {
+        } catch (UnrecoverableKeyException | KeyManagementException | NoSuchAlgorithmException | CertificateException |
+                 KeyStoreException | IOException | NoSuchProviderException e) {
             LOGGER.error("Exception was thrown while building the server SSL Context", e);
         }
 
         return serverSSLCtx;
     }
 
-    public static SSLContext createClientSSLContext(final String trustStoreLocation, final String trustStorePwd) {
+    public static SSLContext createClientSSLContext(final String trustStoreLocation, final String trustStorePwd,
+                                                    String type) {
         try {
             if (clientSSLCtx == null) {
-                KeyStore trustStore = KeyStore.getInstance(TRUST_STORE_TYPE);
-                trustStore.load(new FileInputStream(trustStoreLocation), trustStorePwd.toCharArray());
+                type = (type != null) ? type : TRUST_STORE_TYPE;
+                String provider = getPreferredJceProvider();
+                KeyStore trustStore;
+                if (provider != null) {
+                    trustStore = KeyStore.getInstance(type, provider);
+                } else {
+                    trustStore = KeyStore.getInstance(type);
+                }
+                trustStore.load(Files.newInputStream(Paths.get(trustStoreLocation)), trustStorePwd.toCharArray());
                 TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TRUST_MANAGER_TYPE);
                 trustManagerFactory.init(trustStore);
                 clientSSLCtx = SSLContext.getInstance(PROTOCOL);
                 clientSSLCtx.init(null, trustManagerFactory.getTrustManagers(), null);
             }
-        } catch (KeyManagementException | KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
+        } catch (KeyManagementException | KeyStoreException | NoSuchAlgorithmException | CertificateException |
+                 IOException | NoSuchProviderException e) {
             LOGGER.error("Exception was thrown while building the client SSL Context", e);
         }
 
@@ -81,19 +105,41 @@ public class SSLUtil {
 
     }
 
-    public static TrustManagerFactory createTrustmanager(final String trustStoreLocation, final String trustStorePwd) {
+    public static TrustManagerFactory createTrustmanager(final String trustStoreLocation, final String trustStorePwd,
+                                                         String type) {
         TrustManagerFactory trustManagerFactory = null;
         try {
             if (clientSSLCtx == null) {
-                KeyStore trustStore = KeyStore.getInstance(TRUST_STORE_TYPE);
-                trustStore.load(new FileInputStream(trustStoreLocation), trustStorePwd.toCharArray());
+                type = (type != null) ? type : TRUST_STORE_TYPE;
+                String provider = getPreferredJceProvider();
+                KeyStore trustStore;
+                if (provider != null) {
+                    trustStore = KeyStore.getInstance(type, provider);
+                } else {
+                    trustStore = KeyStore.getInstance(type);
+                }
+                trustStore.load(Files.newInputStream(Paths.get(trustStoreLocation)), trustStorePwd.toCharArray());
                 trustManagerFactory = TrustManagerFactory.getInstance(TRUST_MANAGER_TYPE);
                 trustManagerFactory.init(trustStore);
             }
-        } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
+        } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException|
+                 NoSuchProviderException e) {
             LOGGER.error("Exception was thrown while building the client SSL Context", e);
         }
         return trustManagerFactory;
     }
 
+    /**
+     * Get the preferred JCE provider.
+     *
+     * @return the preferred JCE provider
+     */
+    public static String getPreferredJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
+        }
+        return null;
+    }
 }

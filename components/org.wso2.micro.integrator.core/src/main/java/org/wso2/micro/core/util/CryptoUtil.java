@@ -469,7 +469,7 @@ public class CryptoUtil {
         MessageDigest messageDigest;
         if (provider != null) {
             try {
-                messageDigest = MessageDigest.getInstance("SHA-1", provider);
+                messageDigest = MessageDigest.getInstance("SHA-256", provider);
             } catch (NoSuchProviderException e) {
                 throw new CertificateEncodingException(e);
             }

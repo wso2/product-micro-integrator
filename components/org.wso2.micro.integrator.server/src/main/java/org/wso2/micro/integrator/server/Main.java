@@ -46,6 +46,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Provider;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -403,8 +404,9 @@ public class Main {
         String jceProvider = System.getProperty(SECURITY_JCE_PROVIDER);
         if (jceProvider != null) {
             if (BOUNCY_CASTLE_FIPS_PROVIDER.equals(jceProvider)) {
-                setBcProviders(BC_FIPS_CLASS_NAME, jceProvider);
                 System.setProperty(FIPS_APPROVED_ONLY, "true");
+                System.setProperty("org.bouncycastle.rsa.allow_multi_use", "true");
+                setBcProviders(BC_FIPS_CLASS_NAME, jceProvider);
             } else if (BOUNCY_CASTLE_PROVIDER.equals(jceProvider)) {
                 setBcProviders(BC_CLASS_NAME, jceProvider);
             } else {

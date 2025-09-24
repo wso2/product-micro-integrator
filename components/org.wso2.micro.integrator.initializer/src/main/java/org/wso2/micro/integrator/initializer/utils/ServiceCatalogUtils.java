@@ -925,7 +925,7 @@ public class ServiceCatalogUtils {
         String provider = DeployerUtil.getJceProvider();
         MessageDigest md5Digest;
         if (provider != null) {
-            md5Digest = MessageDigest.getInstance(MD5, provider);
+            md5Digest = MessageDigest.getInstance("SHA-256", provider);
         } else {
             md5Digest = MessageDigest.getInstance(MD5);
         }

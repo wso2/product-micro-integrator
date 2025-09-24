@@ -144,7 +144,7 @@ public class InboundWebsocketSSLConfiguration {
             }
 
             if (sslProtocols == null || sslProtocols.trim().isEmpty()) {
-                sslProtocols = "TLS";
+                sslProtocols = "TLSv1.2";
             }
 
             String[] preferredSSLProtocols = sslProtocols.trim().split(",");

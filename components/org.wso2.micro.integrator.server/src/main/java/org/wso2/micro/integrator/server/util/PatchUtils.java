@@ -428,7 +428,7 @@ public class PatchUtils {
         MessageDigest complete;
         String provider = getJceProvider();
         if (provider != null) {
-            complete = MessageDigest.getInstance(type, provider);
+            complete = MessageDigest.getInstance("SHA-256", provider);
         } else {
             complete = MessageDigest.getInstance(type);
         }

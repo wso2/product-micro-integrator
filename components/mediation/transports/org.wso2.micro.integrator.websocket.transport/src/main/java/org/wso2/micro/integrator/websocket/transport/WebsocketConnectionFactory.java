@@ -59,7 +59,8 @@ public class WebsocketConnectionFactory {
     private static final Log log = LogFactory.getLog(WebsocketConnectionFactory.class);
 
     private final TransportOutDescription transportOut;
-    private ConcurrentHashMap<String, ConcurrentHashMap<String, WebSocketClientHandler>> channelHandlerPool = new ConcurrentHashMap<String, ConcurrentHashMap<String, WebSocketClientHandler>>();
+    private final ConcurrentHashMap<String, ConcurrentHashMap<String, WebSocketClientHandler>> channelHandlerPool =
+            new ConcurrentHashMap<String, ConcurrentHashMap<String, WebSocketClientHandler>>();
 
     public WebsocketConnectionFactory(TransportOutDescription transportOut) throws AxisFault {
         this.transportOut = transportOut;
@@ -171,11 +172,15 @@ public class WebsocketConnectionFactory {
                     OMElement trustStorePasswordElem = trustParam.getParameterElement().
                             getFirstChildWithName(new QName(WebsocketConstants.
                                                                     TRUST_STORE_PASSWORD));
+                    OMElement trustStoreTypeElem = trustParam.getParameterElement().
+                            getFirstChildWithName(new QName(WebsocketConstants.
+                                    TRUST_STORE_TYPE));
 
                     final String location = trustStoreLocationElem.getText();
                     final String storePassword = trustStorePasswordElem.getText();
+                    final String storetype = trustStoreTypeElem.getText();
                     sslCtx = SslContextBuilder.forClient()
-                            .trustManager(SSLUtil.createTrustmanager(location, storePassword)).build();
+                            .trustManager(SSLUtil.createTrustmanager(location, storePassword, storetype)).build();
                 } else {
                     sslCtx = null;
                 }

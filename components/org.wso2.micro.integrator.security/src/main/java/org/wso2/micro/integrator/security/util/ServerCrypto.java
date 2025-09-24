@@ -33,6 +33,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
@@ -129,13 +131,18 @@ public class ServerCrypto implements Crypto {
          * Load cacerts
          */
         String cacertsPath = System.getProperty("java.home") + "/lib/security/cacerts";
-        InputStream cacertsIs = new FileInputStream(cacertsPath);
-        try {
+        String type;
+        if (provider != null && provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER)) {
+            type = prop.getProperty("org.wso2.carbon.security.crypto.type", "BCFKS");
+        } else {
+            type = prop.getProperty("org.wso2.carbon.security.crypto.type", KeyStore.getDefaultType());
+        }
+        try (InputStream cacertsIs = Files.newInputStream(Paths.get(cacertsPath))) {
             String cacertsPasswd = properties.getProperty(PROP_ID_CACERT_PASS, "changeit");
             if (provider != null) {
-                cacerts = KeyStore.getInstance("BCFKS", provider);
+                cacerts = KeyStore.getInstance(type, provider);
             } else {
-                cacerts = KeyStore.getInstance(KeyStore.getDefaultType());
+                cacerts = KeyStore.getInstance(type);
             }
             cacerts.load(cacertsIs, cacertsPasswd.toCharArray());
 
@@ -146,8 +153,6 @@ public class ServerCrypto implements Crypto {
             } else {
                 throw new CredentialException(3, "secError00", e);
             }
-        } finally {
-            cacertsIs.close();
         }
 
     }
@@ -490,7 +495,7 @@ public class ServerCrypto implements Crypto {
             String provider = getJceProvider();
             try {
                 if (provider != null) {
-                    sha = MessageDigest.getInstance("SHA-1", provider);
+                    sha = MessageDigest.getInstance("SHA-256", provider);
                 } else {
                     sha = MessageDigest.getInstance("SHA-1");
                 }
@@ -526,7 +531,7 @@ public class ServerCrypto implements Crypto {
         String provider = getJceProvider();
         try {
             if (provider != null) {
-                sha = MessageDigest.getInstance("SHA-1", provider);
+                sha = MessageDigest.getInstance("SHA-256", provider);
             } else {
                 sha = MessageDigest.getInstance("SHA-1");
             }

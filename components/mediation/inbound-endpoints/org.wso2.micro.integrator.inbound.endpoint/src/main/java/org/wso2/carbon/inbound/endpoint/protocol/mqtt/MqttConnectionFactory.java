@@ -58,7 +58,7 @@ public class MqttConnectionFactory {
     private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
     private static final String PKIX = "PKIX";
     private static final String BCJSSE = "BCJSSE";
-    private static final String TLS = "TLS";
+    private static final String TLS = "TLSv1.2";
 
     public MqttConnectionFactory(Properties passedInParameter) {
 
