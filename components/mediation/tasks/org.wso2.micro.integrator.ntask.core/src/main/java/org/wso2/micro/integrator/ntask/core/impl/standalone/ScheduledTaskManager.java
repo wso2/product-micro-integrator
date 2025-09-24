@@ -300,6 +300,10 @@ public class ScheduledTaskManager extends AbstractQuartzTaskManager {
 
         boolean result = this.deleteLocalTask(taskName);
 
+        if (clusterCoordinator == null) {
+            return result;
+        }
+
         // This hits if and only if when hot deployment enabled so give the coordinator node to handle the task
         // delete capability and give grace period to other nodes to update the local task states.
         // Since soon after deleted the coordinator node will be assigning the task to other node and the node should

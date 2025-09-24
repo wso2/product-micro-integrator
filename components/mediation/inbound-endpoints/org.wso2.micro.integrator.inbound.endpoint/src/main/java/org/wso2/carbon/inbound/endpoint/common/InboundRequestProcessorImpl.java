@@ -52,13 +52,8 @@ public abstract class InboundRequestProcessorImpl implements InboundRequestProce
     private List<StartUpController> startUpControllersList = new ArrayList<>();
     private HashMap<Thread, InboundRunner> inboundRunnersThreadsMap = new HashMap<>();
     private static final Log log = LogFactory.getLog(InboundRequestProcessorImpl.class);
-    private InboundEndpointsDataStore dataStore;
 
     protected final static String COMMON_ENDPOINT_POSTFIX = "--SYNAPSE_INBOUND_ENDPOINT";
-
-    public InboundRequestProcessorImpl() {
-        dataStore = InboundEndpointsDataStore.getInstance();
-    }
 
     /**
      * Based on the coordination option schedule the task with NTASK or run as a
@@ -194,6 +189,10 @@ public abstract class InboundRequestProcessorImpl implements InboundRequestProce
     /**
      * Activates the Inbound Endpoint by activating any associated startup controllers
      * or resuming inbound runner threads if no startup controllers are present.
+     *
+     * The decision on whether to use startup controllers (task) or inbound runner threads will depend
+     * on the coordination enabled or not.
+     * - if coordination enabled then startup controller otherwise inbound runner thread
      *
      * <p>This method first checks if there are any startup controllers. If there are, it attempts to activate
      * each controller and sets the success flag accordingly. If no startup controllers are present, it resumes

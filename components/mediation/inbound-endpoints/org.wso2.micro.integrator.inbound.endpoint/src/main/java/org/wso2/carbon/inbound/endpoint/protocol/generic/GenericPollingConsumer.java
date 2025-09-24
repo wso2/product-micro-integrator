@@ -77,9 +77,9 @@ public abstract class GenericPollingConsumer {
     }
     public abstract Object poll();
 
-    public void resume() {
-        log.info("Resuming inbound endpoint " + name);
-    }
+    public abstract void resume();
+
+    public abstract void pause();
 
     public void destroy() {
         log.info("Default destroy invoked. Not overwritten.");

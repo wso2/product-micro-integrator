@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2025, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,11 +15,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.wso2.carbon.inbound.endpoint.protocol.generic;
+package org.wso2.carbon.inbound.endpoint.protocol.jms.jakarta;
 
-public class GenericConstants {
+import jakarta.jms.JMSException;
+import java.io.IOException;
 
-    public static final int INBOUND_BUILD_ERROR = 600001;
-    public static final String PARAM_INBOUND_ENDPOINT_BEHAVIOR = "inbound.behavior";
-    public static final String CRON_EXPRESSION = "cronExpression";
+public class JMSExceptionWrapper extends IOException {
+    private static final long serialVersionUID = 852441109009079511L;
+
+    public JMSExceptionWrapper(JMSException ex) {
+        initCause(ex);
+    }
 }
