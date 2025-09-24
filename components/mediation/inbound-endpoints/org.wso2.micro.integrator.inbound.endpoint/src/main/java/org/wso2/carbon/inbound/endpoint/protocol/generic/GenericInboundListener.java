@@ -32,8 +32,8 @@ import java.util.Map;
 public abstract class GenericInboundListener implements InboundRequestProcessor {
 
     private static final Log log = LogFactory.getLog(GenericInboundListener.class);
-    public static final String PARAM_INBOUND_ENDPOINT_BEHAVIOR = "inbound.behavior";
     public static final String PARAM_INBOUND_ENDPOINT_BEHAVIOR_LISTENING = "listening";
+    public static final String PARAM_INBOUND_ENDPOINT_BEHAVIOR = "inbound.behavior";
 
     protected String injectingSequence;
     protected String onErrorSequence;
@@ -122,13 +122,17 @@ public abstract class GenericInboundListener implements InboundRequestProcessor 
 
     @Override
     public boolean activate() {
-
+        log.warn("Unsupported operation 'activate()' for Inbound Endpoint: " + name +
+                "If using a WSO2-released inbound, please upgrade to the latest version. " +
+                "If this is a custom inbound, implement the 'activate' logic accordingly.");
         return false;
     }
 
     @Override
     public boolean deactivate() {
-
+        log.warn("Unsupported operation 'deactivate()' for Inbound Endpoint: " + name +
+                "If using a WSO2-released inbound, please upgrade to the latest version. " +
+                "If this is a custom inbound, implement the 'deactivate' logic accordingly.");
         return false;
     }
 
