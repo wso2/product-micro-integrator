@@ -28,7 +28,7 @@ import java.util.Properties;
 public class GenericTask extends InboundTask implements LocalTaskActionListener {
     private static final Log logger = LogFactory.getLog(GenericTask.class.getName());
 
-    private GenericPollingConsumer pollingConsumer;
+    private final GenericPollingConsumer pollingConsumer;
 
     public GenericTask(GenericPollingConsumer pollingConsumer, long interval) {
         logger.debug("Generic Task initalize.");
@@ -86,5 +86,9 @@ public class GenericTask extends InboundTask implements LocalTaskActionListener 
             logger.warn("resume() method not available in this version of PollingConsumer. Update to the latest " +
                     "server version immediately Task: " + taskName);
         }
+    }
+
+    public GenericPollingConsumer getPollingConsumer() {
+        return pollingConsumer;
     }
 }

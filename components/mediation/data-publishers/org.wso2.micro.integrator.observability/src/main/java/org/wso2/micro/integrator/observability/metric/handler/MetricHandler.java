@@ -26,6 +26,7 @@ import org.apache.synapse.AbstractExtendedSynapseHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.api.API;
+import org.apache.synapse.api.version.URLBasedVersionStrategy;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.RESTConstants;
@@ -306,6 +307,17 @@ public class MetricHandler extends AbstractExtendedSynapseHandler {
     /**
      * Get the api name.
      *
+     * The APIs can be defined with three version types as None, Context and URL
+     * None - DefaultVersionStrategy i.e. no versioning (eg:- https://api.example.com/resources)
+     * Context - ContextBasedVersionStrategy : {version} is replaced by given version[v1] (eg:- https://api.example.com/{version}/resources)
+     * URL - URLBasedVersionStrategy : given version[v1] get append to end of context (eg:- https://api.example.com/v1/resources)
+     *
+     * [ADDITIONAL INFO] When resolving the API NAME priority will be is as follows if the Api context and method are same.
+     * This priority-based resolution behavior remains consistent regardless of whether metrics are enabled or disabled in the system.
+     *  1. ContextBasedVersionStrategy
+     *  2. URLBasedVersionStrategy
+     *  3. DefaultVersionStrategy
+     *
      * @param contextPath The api context path
      * @param synCtx The Synapse Message Context
      * @return String The api name
@@ -315,23 +327,30 @@ public class MetricHandler extends AbstractExtendedSynapseHandler {
         Collection<API> withVersionsApiList = new ArrayList<>();
         Collection<API> defaultApiList = new ArrayList<>();
         updateApiLists(apiList, withVersionsApiList, defaultApiList);
+
+        // Check APIs defined with ContextBasedVersionStrategy or URLBasedVersionStrategy
         if (!withVersionsApiList.isEmpty()) {
-            String apiName = getResolvedApiName(contextPath, synCtx, withVersionsApiList);
+            String apiName = getResolvedApiName(contextPath, synCtx, withVersionsApiList, false);
             if (apiName != null) {
                 return apiName;
             }
         }
-        return getResolvedApiName(contextPath, synCtx, defaultApiList);
+        // Check APIs defined with DefaultVersionStrategy
+        return getResolvedApiName(contextPath, synCtx, defaultApiList, true);
     }
 
     private static String getResolvedApiName(String contextPath, MessageContext synCtx,
-                                                       Collection<API> apiList) {
+                                                       Collection<API> apiList, boolean defaultVersionStrategy) {
         String apiName = null;
         for (API api : apiList) {
             String apiContextPath = api.getContext();
-            if (StringUtils.isNotBlank(api.getVersionStrategy().getVersion())) {
-                apiContextPath = apiContextPath + "/" + api.getVersionStrategy().getVersion();
+            if (!defaultVersionStrategy) {
+                if (api.getVersionStrategy() instanceof URLBasedVersionStrategy) {
+                    apiContextPath = apiContextPath + "/" + api.getVersionStrategy().getVersion();
+                }
             }
+
+            // Cross-check invoking API context with current API context
             if (RESTUtils.matchApiPath(contextPath, apiContextPath)) {
                 apiName = api.getName();
                 synCtx.setProperty(RESTConstants.PROCESSED_API, api);
