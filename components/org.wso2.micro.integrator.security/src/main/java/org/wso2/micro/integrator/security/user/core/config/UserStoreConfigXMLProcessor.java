@@ -77,6 +77,9 @@ public class UserStoreConfigXMLProcessor {
     private SecretResolver secretResolver;
     private String filePath = null;
     private Gson gson = new Gson();
+    public static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    public static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    public static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
 
     public UserStoreConfigXMLProcessor(String path) {
         this.filePath = path;
@@ -385,9 +388,14 @@ public class UserStoreConfigXMLProcessor {
         String password = serverConfigurationService.getFirstProperty(passwordXPath);
         String keyPass = serverConfigurationService.getFirstProperty(keypassXPath);
         String keyAlias = serverConfigurationService.getFirstProperty(keyAliasXPath);
-
+        String provider = getJceProvider();
+        KeyStore store;
         try {
-            KeyStore store = KeyStore.getInstance(serverConfigurationService.getFirstProperty(typeXPath));
+            if (provider != null) {
+                store = KeyStore.getInstance(serverConfigurationService.getFirstProperty(typeXPath), provider);
+            } else {
+                store = KeyStore.getInstance(serverConfigurationService.getFirstProperty(typeXPath));
+            }
             String file = new File(serverConfigurationService.getFirstProperty(locationXPath)).getAbsolutePath();
             in = new FileInputStream(file);
             store.load(in, password.toCharArray());
@@ -444,7 +452,7 @@ public class UserStoreConfigXMLProcessor {
             throw new org.wso2.micro.integrator.security.user.api.UserStoreException(
                     "Private key initialization failed. Cannot decrypt the userstore password.");
         }
-
+        String provider = getJceProvider();
         if(cipherTransformation != null) {
             // extract the original cipher if custom transformation is used configured in carbon.properties.
             CipherHolder cipherHolder = cipherTextToCipherHolder(cipherTextBytes);
@@ -453,17 +461,29 @@ public class UserStoreConfigXMLProcessor {
                 if (log.isDebugEnabled()) {
                     log.debug("Cipher transformation for decryption : " + cipherHolder.getTransformation());
                 }
-                keyStoreCipher = Cipher.getInstance(cipherHolder.getTransformation(), getJceProvider());
+                if (provider != null) {
+                    keyStoreCipher = Cipher.getInstance(cipherHolder.getTransformation(), provider);
+                } else {
+                    keyStoreCipher = Cipher.getInstance(cipherHolder.getTransformation());
+                }
                 cipherTextBytes = cipherHolder.getCipherBase64Decoded();
             } else {
                 // If the ciphertext is not a self-contained, directly decrypt using transformation configured in
                 // carbon.properties file
-                keyStoreCipher = Cipher.getInstance(cipherTransformation, getJceProvider());
+                if (provider != null) {
+                    keyStoreCipher = Cipher.getInstance(cipherTransformation, provider);
+                } else {
+                    keyStoreCipher = Cipher.getInstance(cipherTransformation);
+                }
             }
         } else {
             // If reach here, user have removed org.wso2.CipherTransformation property or carbon.properties file
             // hence RSA is considered as default transformation
-            keyStoreCipher = Cipher.getInstance("RSA", getJceProvider());
+            if (provider != null) {
+                keyStoreCipher = Cipher.getInstance("RSA", provider);
+            } else {
+                keyStoreCipher = Cipher.getInstance("RSA");
+            }
         }
         keyStoreCipher.init(Cipher.DECRYPT_MODE, privateKey);
         return new String(keyStoreCipher.doFinal(cipherTextBytes), Charset.defaultCharset());
@@ -493,12 +513,13 @@ public class UserStoreConfigXMLProcessor {
         *
         * @return JCE provider
         */
-    private String getJceProvider() {
-        String provider = CarbonServerConfigurationService.getInstance().getFirstProperty("JCEProvider");
-        if (provider == null && Constants.BOUNCY_CASTLE_FIPS_PROVIDER.equals(provider)) {
-            return Constants.BOUNCY_CASTLE_FIPS_PROVIDER;
+    private static String getJceProvider() {
+        String provider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (provider != null && (provider.equalsIgnoreCase(BOUNCY_CASTLE_FIPS_PROVIDER) ||
+                provider.equalsIgnoreCase(BOUNCY_CASTLE_PROVIDER))) {
+            return provider;
         }
-        return Constants.BOUNCY_CASTLE_PROVIDER;
+        return null;
     }
 
     /**

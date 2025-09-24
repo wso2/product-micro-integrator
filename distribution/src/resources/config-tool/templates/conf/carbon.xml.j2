@@ -358,6 +358,7 @@
             <KeyAlias>{{keystore.primary.alias}}</KeyAlias>
             <!-- Private Key password-->
             <KeyPassword>{{keystore.primary.key_password}}</KeyPassword>
+            <Algorithm>{{keystore.primary.algorithm}}</Algorithm>
         </KeyStore>
 
         <!--
@@ -375,6 +376,7 @@
             <KeyAlias>{{keystore.internal.alias}}</KeyAlias>
             <!-- Private Key password-->
             <KeyPassword>{{keystore.internal.key_password}}</KeyPassword>
+            <Algorithm>{{keystore.internal.algorithm}}</Algorithm>
         </InternalKeyStore>
 
         <!--
@@ -388,6 +390,7 @@
             <Type>{{truststore.type}}</Type>
             <!-- trust-store password -->
             <Password>{{truststore.password}}</Password>
+            <Algorithm>{{truststore.algorithm}}</Algorithm>
         </TrustStore>
 
         <!--
@@ -606,9 +609,4 @@
         <Username>{{monitoring.ei_analytics.username}}</Username>
         <Password>{{monitoring.ei_analytics.password}}</Password>
     </Analytics>
-
-    <!-- Configure JCE provider -->
-    {% if jce_provider.provider_name is defined %}
-        <JCEProvider>{{jce_provider.provider_name}}</JCEProvider>
-    {% endif %}
 </Server>

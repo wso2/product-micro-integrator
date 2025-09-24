@@ -20,6 +20,7 @@ package org.wso2.micro.core.encryption;
 
 import org.apache.axiom.om.util.Base64;
 import org.wso2.micro.core.util.CryptoException;
+import org.wso2.micro.core.util.CryptoUtil;
 import org.wso2.micro.integrator.core.services.CarbonServerConfigurationService;
 import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 import org.wso2.securevault.SecretResolver;
@@ -36,7 +37,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.security.InvalidKeyException;
+import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.Properties;
 
 public class SymmetricEncryption {
@@ -132,13 +135,18 @@ public class SymmetricEncryption {
         byte[] encryptedData = null;
         String encryptionAlgo;
         String symmetricKeyInRegistry;
+        String provider = CryptoUtil.getJceProvider();
         try {
             if (symmetricKeyEncryptAlgo == null) {
                 encryptionAlgo = symmetricKeyEncryptAlgoDefault;
             } else {
                 encryptionAlgo = symmetricKeyEncryptAlgo;
             }
-            c = Cipher.getInstance(encryptionAlgo);
+            if (provider != null) {
+                c = Cipher.getInstance(encryptionAlgo, provider);
+            } else {
+                c = Cipher.getInstance(encryptionAlgo);
+            }
             c.init(Cipher.ENCRYPT_MODE, symmetricKey);
             encryptedData = c.doFinal(plainText);
         } catch (Exception e) {
@@ -151,18 +159,25 @@ public class SymmetricEncryption {
         Cipher c = null;
         byte[] decryptedData = null;
         String encryptionAlgo;
+        String provider = CryptoUtil.getJceProvider();
         try {
             if (symmetricKeyEncryptAlgo == null) {
                 encryptionAlgo = symmetricKeyEncryptAlgoDefault;
             } else {
                 encryptionAlgo = symmetricKeyEncryptAlgo;
             }
-            c = Cipher.getInstance(encryptionAlgo);
+            if (provider != null) {
+                c = Cipher.getInstance(encryptionAlgo, provider);
+            } else {
+                c = Cipher.getInstance(encryptionAlgo);
+            }
             c.init(Cipher.DECRYPT_MODE, symmetricKey);
             decryptedData = c.doFinal(encryptionBytes);
         } catch (InvalidKeyException | BadPaddingException | IllegalBlockSizeException |
                 NoSuchAlgorithmException | NoSuchPaddingException e) {
             throw new CryptoException("Error when decrypting data.", e);
+        } catch (NoSuchProviderException e) {
+            throw new RuntimeException(e);
         }
         return decryptedData;
     }

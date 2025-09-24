@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.*;
 
 /**
@@ -132,9 +133,14 @@ public class REQUESTHASHGenerator extends DOMHASHGenerator {
 
         byte[] digest = new byte[0];
 
+        String provider = Util.getPreferredJceProvider();
+        MessageDigest md;
         try {
-
-            MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+            if (provider != null) {
+                md = MessageDigest.getInstance(digestAlgorithm, provider);
+            } else {
+                md = MessageDigest.getInstance(digestAlgorithm);
+            }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
             dos.writeInt(1);
@@ -201,6 +207,8 @@ public class REQUESTHASHGenerator extends DOMHASHGenerator {
         } catch (IOException e) {
             handleException("Error in calculating the " +
                                     "digest value for the OMElement : " + element, e);
+        } catch (NoSuchProviderException e) {
+            handleException("Specified security provider is not available in this environment: ", e);
         }
 
         return digest;
@@ -221,9 +229,14 @@ public class REQUESTHASHGenerator extends DOMHASHGenerator {
         byte[] digest = new byte[0];
 
         if (!key.equalsIgnoreCase("Date") && !key.equalsIgnoreCase("User-Agent")) {
+            String provider = Util.getPreferredJceProvider();
+            MessageDigest md;
             try {
-
-                MessageDigest md = MessageDigest.getInstance(digestAlgorithm);
+                if (provider != null) {
+                    md = MessageDigest.getInstance(digestAlgorithm, provider);
+                } else {
+                    md = MessageDigest.getInstance(digestAlgorithm);
+                }
                 md.update((byte) 0);
                 md.update((byte) 0);
                 md.update((byte) 0);
@@ -244,6 +257,8 @@ public class REQUESTHASHGenerator extends DOMHASHGenerator {
             } catch (UnsupportedEncodingException e) {
                 handleException("Error in generating the digest " +
                                         "using the provided encoding : UnicodeBigUnmarked", e);
+            } catch (NoSuchProviderException e) {
+                handleException("Specified security provider is not available in this environment: ", e);
             }
         }
 
