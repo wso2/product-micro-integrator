@@ -607,8 +607,12 @@ public class HttpRequestHashGenerator implements DigestGenerator {
                         return o1.compareToIgnoreCase(o2);
                     }
                 });
-        transportHeaders.putAll((Map<String, String>) msgContext.
-                getProperty(MessageContext.TRANSPORT_HEADERS));
+
+        Map<String, String> headers = (Map<String, String>) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+        if (headers != null) {
+            transportHeaders.putAll(headers);
+        }
+
         //remove permanently excluded headers from hashing methods
         for (String header : permanentlyExcludedHeaders) {
             transportHeaders.remove(header);
