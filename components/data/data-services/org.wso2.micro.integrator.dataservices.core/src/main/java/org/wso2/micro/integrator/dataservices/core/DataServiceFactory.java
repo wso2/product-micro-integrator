@@ -18,6 +18,7 @@
 package org.wso2.micro.integrator.dataservices.core;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.deployment.repository.util.DeploymentFileData;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.micro.integrator.dataservices.common.DBConstants;
 import org.wso2.micro.integrator.dataservices.common.DBConstants.AuthorizationProviderConfig;
@@ -53,6 +54,16 @@ import java.util.List;
  */
 public class DataServiceFactory {
 
+    public static DataService createDataService(DeploymentFileData deploymentFileData, OMElement dbsElement,
+                                                String dsLocation) throws DataServiceFault {
+
+        String serviceName = dbsElement.getAttributeValue(new QName(DBSFields.NAME));
+        if (deploymentFileData.isVersionedDeployment()) {
+            serviceName = deploymentFileData.getArtifactIdentifier() + "/" + serviceName;
+        }
+        return populateDataService(serviceName, dbsElement, dsLocation);
+    }
+
     /**
      * Creates a DataService object with the given information.
      *
@@ -61,10 +72,16 @@ public class DataServiceFactory {
     @SuppressWarnings("unchecked")
     public static DataService createDataService(OMElement dbsElement,
                                                 String dsLocation) throws DataServiceFault {
+
+        String serviceName = dbsElement.getAttributeValue(new QName(DBSFields.NAME));
+        return populateDataService(serviceName, dbsElement, dsLocation);
+    }
+
+    private static DataService populateDataService(String serviceName, OMElement dbsElement, String dsLocation)
+            throws DataServiceFault {
+
         DataService dataService = null;
         try {
-            /* get service name */
-            String serviceName = dbsElement.getAttributeValue(new QName(DBSFields.NAME));
             String serviceNamespace = dbsElement.getAttributeValue(new QName(DBSFields.SERVICE_NAMESPACE));
             if (DBUtils.isEmptyString(serviceNamespace)) {
                 serviceNamespace = DBConstants.WSO2_DS_NAMESPACE;

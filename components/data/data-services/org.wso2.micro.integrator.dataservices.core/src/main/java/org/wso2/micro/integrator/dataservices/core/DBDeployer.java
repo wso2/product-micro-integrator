@@ -56,6 +56,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.neethi.Policy;
 import org.apache.neethi.PolicyEngine;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -197,6 +198,10 @@ public class DBDeployer extends AbstractDeployer {
             *  Hence assigning the service group as the service group name */
             String serviceGroupName = serviceHierarchy +
                     this.getServiceNameFromDSContents(deploymentFileData.getFile());
+
+			if (deploymentFileData.isVersionedDeployment()) {
+				serviceGroupName = deploymentFileData.getArtifactIdentifier() + "/" + serviceGroupName;
+			}
 
 			if (DBUtils.isAvailableDSServiceGroup(axisConfig, serviceGroupName)) {
 				throw new DataServiceFault("Data Service name is already exists. Please choose different name for \'" +
@@ -800,7 +805,7 @@ public class DBDeployer extends AbstractDeployer {
 	/**
 	 * Creates AxisService from DBS.
 	 */
-	private AxisService createDBService(String configFilePath,
+	private AxisService createDBService(DeploymentFileData deploymentFileData,
 			AxisConfiguration axisConfiguration) throws DataServiceFault {
 		FileInputStream fis = null;
 		try {
@@ -809,6 +814,8 @@ public class DBDeployer extends AbstractDeployer {
 			    This config file  path is trustworthy, file path cannot be access by the user.
 			*/
 			/* convert to multiple config format */
+			String configFilePath = deploymentFileData.getAbsolutePath();
+
 			convertConfigToMultipleDSFormat(configFilePath);
 
 			fis = new FileInputStream(configFilePath);
@@ -821,7 +828,7 @@ public class DBDeployer extends AbstractDeployer {
             this.secureVaultResolve(dbsElement);
 
 			/* create the data service object from dbs */
-			DataService dataService = DataServiceFactory.createDataService(dbsElement, configFilePath);
+			DataService dataService = DataServiceFactory.createDataService(deploymentFileData, dbsElement, configFilePath);
 
 			String serviceName = dataService.getName();
 
@@ -1184,7 +1191,7 @@ public class DBDeployer extends AbstractDeployer {
 			Security Comment
 			CurrentFile contains the actual dbs data location in the server. there isn't any input from the user.
 		 */
-		AxisService axisService = createDBService(currentFile.getAbsolutePath(), configCtx.getAxisConfiguration());
+		AxisService axisService = createDBService(currentFile, configCtx.getAxisConfiguration());
 		axisService.setParent(axisServiceGroup);
 		axisService.setClassLoader(axisConfig.getServiceClassLoader());
         /* handle services.xml, if exists */

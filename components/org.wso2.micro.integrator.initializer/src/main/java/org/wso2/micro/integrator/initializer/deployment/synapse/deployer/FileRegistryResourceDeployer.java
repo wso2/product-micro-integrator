@@ -170,6 +170,7 @@ public class FileRegistryResourceDeployer implements AppDeploymentHandler {
 
                 if (regConfig != null) {
                     regConfig.setAppName(appName);
+                    regConfig.setArtifactIdentifier(artifact.getArtifactIdentifier());
                     regConfig.setExtractedPath(artifact.getExtractedPath());
                     regConfig.setParentArtifactName(artifact.getName());
                     regConfig.setConfigFileName(fileName);
@@ -205,7 +206,7 @@ public class FileRegistryResourceDeployer implements AppDeploymentHandler {
                 log.error("Specified file to be written as a resource is " + "not found at : " + filePath);
                 continue;
             }
-            String resourcePath = AppDeployerUtils.computeResourcePath(createRegistryKey(resource),resource.getFileName());
+            String resourcePath = AppDeployerUtils.computeResourcePath(createRegistryKey(resource), resource.getFileName(), registryConfig);
             String mediaType = resource.getMediaType();
             ((MicroIntegratorRegistry)lightweightRegistry).addNewNonEmptyResource(resourcePath, false, mediaType,
                                                                                   readResourceContent(file),
@@ -260,7 +261,7 @@ public class FileRegistryResourceDeployer implements AppDeploymentHandler {
                 continue;
             }
             String resourcePath = AppDeployerUtils.computeResourcePath(createRegistryPath(resource.getPath()),
-                                                                       resource.getFileName());
+                                                                       resource.getFileName(), registryConfig);
             lightweightRegistry.delete(resourcePath);
         }
 

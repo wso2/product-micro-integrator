@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.AbstractMediatorFactory;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.SynapseJsonPathFactory;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.SynapseXPathFactory;
@@ -84,7 +85,8 @@ public class DataServiceCallMediatorFactory extends AbstractMediatorFactory {
 
         DataServiceCallMediator mediator = new DataServiceCallMediator();
         processAuditStatus(mediator, elem);
-        String dsName = elem.getAttributeValue(new QName(DataServiceCallMediatorConstants.SERVICE_NAME));
+        String dsName = FactoryUtils.getFullyQualifiedName(properties,
+                elem.getAttributeValue(new QName(DataServiceCallMediatorConstants.SERVICE_NAME)), FactoryUtils.TYPE_DATA_SERVICE);
         if (dsName == null) {
             handleException("The 'serviceName' attribute in 'dataServicesCall' element  is missing " +
                     "in the configuration.");

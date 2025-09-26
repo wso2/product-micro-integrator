@@ -44,6 +44,7 @@ public class Artifact {
     public int unresolvedDepCount = 0;
 
     private String type;
+    private String artifactIdentifier;
     private String version;
     private String name;
     private String serverRole;
@@ -174,6 +175,21 @@ public class Artifact {
 
     public void setConnector(String connector) {
         this.connector = connector;
+    }
+
+    public void setArtifactIdentifier(String artifactIdentifier) {
+
+        this.artifactIdentifier = artifactIdentifier;
+    }
+
+    public String getArtifactIdentifier() {
+
+        return artifactIdentifier;
+    }
+
+    public String getFullyQualifiedName() {
+
+        return artifactIdentifier + "__" + name;
     }
 
     public static class Dependency {

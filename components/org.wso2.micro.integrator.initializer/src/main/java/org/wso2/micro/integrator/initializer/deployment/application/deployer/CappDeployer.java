@@ -43,6 +43,7 @@ import org.wso2.micro.core.CarbonAxisConfigurator;
 import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.core.util.FileManipulator;
 import org.wso2.micro.integrator.initializer.serviceCatalog.ServiceCatalogDeployer;
+import org.wso2.micro.integrator.initializer.utils.Constants;
 import org.wso2.micro.integrator.initializer.utils.DeployerUtil;
 import org.wso2.micro.integrator.initializer.utils.ServiceCatalogUtils;
 
@@ -53,15 +54,19 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.zip.ZipFile;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -166,7 +171,7 @@ public class CappDeployer extends AbstractDeployer {
     public void deploy(DeploymentFileData deploymentFileData) throws DeploymentException {
         String artifactPath = deploymentFileData.getAbsolutePath();
         try {
-            deployCarbonApps(artifactPath);
+            deployCarbonApps(artifactPath, deploymentFileData.isEmbeddedCAR());
         } catch (Exception e) {
             log.error("Error while deploying carbon application " + artifactPath, e);
         }
@@ -180,7 +185,7 @@ public class CappDeployer extends AbstractDeployer {
      * @param artifactPath - file path to be processed
      * @throws CarbonException - error while building
      */
-    private void deployCarbonApps(String artifactPath) throws CarbonException {
+    private void deployCarbonApps(String artifactPath, boolean isEmbeddedCAR) throws CarbonException {
 
         File cAppDirectory = new File(this.cAppDir);
 
@@ -196,8 +201,20 @@ public class CappDeployer extends AbstractDeployer {
         }
 
         String targetCAppPath = cAppDirectory + File.separator + cAppName;
+        if (isEmbeddedCAR) {
+            String parentCApp = extractParentCAppName(archPathToProcess);
+            targetCAppPath = cAppDirectory + File.separator + parentCApp + File.separator + "dependencies" + File.separator + cAppName;
+        }
         String extractedPath = extractCarbonApplication(targetCAppPath);
         deployCarbonApplications(cAppName, targetCAppPath, extractedPath);
+    }
+
+    public static String extractParentCAppName(String filePath) {
+        Path p = Paths.get(filePath);
+        if (p.getParent() != null && p.getParent().getParent() != null) {
+            return p.getParent().getParent().getFileName().toString();
+        }
+        return null;
     }
 
     /**
@@ -440,6 +457,15 @@ public class CappDeployer extends AbstractDeployer {
         return null;
     }
 
+    public static CarbonApplication getCarbonAppByFullyQualifiedName(String cAppName) {
+        for (CarbonApplication capp : cAppMap) {
+            if (cAppName.equals(capp.getAppNameWithVersion())) {
+                return capp;
+            }
+        }
+        return null;
+    }
+
     /**
      * Checks whether a given file is a jar or an aar file.
      *
@@ -515,6 +541,10 @@ public class CappDeployer extends AbstractDeployer {
                                     byte[] bytes = Files.readAllBytes(Paths.get(swaggerFile.getPath()));
                                     String artifactName = artifact.getName()
                                             .substring(0, artifact.getName().indexOf(SWAGGER_SUBSTRING));
+                                    if (parentApp.getAppConfig().isVersionedDeployment()) {
+                                        artifactName = artifact.getFullyQualifiedName()
+                                                .substring(0, artifact.getFullyQualifiedName().indexOf(SWAGGER_SUBSTRING));
+                                    }
                                     swaggerTable.put(artifactName, new String(bytes));
                                 }
                             } catch (FileNotFoundException e) {
@@ -539,7 +569,12 @@ public class CappDeployer extends AbstractDeployer {
                     String apiName = getApiNameFromFile(new FileInputStream(apiXmlPath));
                     if (!StringUtils.isEmpty(apiName)) {
                         // Re-constructing swagger table with API name since artifact name is not unique
-                        apiArtifactMap.put(artifact.getName(),apiName);
+                        if (parentApp.getAppConfig().isVersionedDeployment()) {
+                            apiName = parentApp.getAppConfig().getAppArtifactIdentifier() + Constants.DOUBLE_UNDERSCORE + apiName;
+                            apiArtifactMap.put(artifact.getFullyQualifiedName(), apiName);
+                        } else {
+                            apiArtifactMap.put(artifact.getName(),apiName);
+                        }
                     }
                 }
             } catch (FileNotFoundException e) {
@@ -586,7 +621,7 @@ public class CappDeployer extends AbstractDeployer {
             OMElement artElement = new StAXOMBuilder(artifactXmlStream).getDocumentElement();
 
             if (Artifact.ARTIFACT.equals(artElement.getLocalName())) {
-                artifact = AppDeployerUtils.populateArtifact(artElement);
+                artifact = AppDeployerUtils.populateArtifact(parentApp, artElement);
             } else {
                 log.error("artifact.xml is invalid. Parent Application : "
                         + parentApp.getAppNameWithVersion());
@@ -678,6 +713,16 @@ public class CappDeployer extends AbstractDeployer {
         }
         if (existingApp != null) {
             undeployCarbonApp(existingApp, axisConfig);
+            if (existingApp.getAppConfig().isFatCAR()) {
+                for (String dependencyIdentifier : existingApp.getAppConfig().getCAppDependencies().keySet()) {
+                    String dependencyName = dependencyIdentifier + Constants.DOUBLE_UNDERSCORE + existingApp.getAppConfig().getCAppDependencies().get(dependencyIdentifier);
+                    CarbonApplication dependentCAR = getCarbonAppByFullyQualifiedName(dependencyName);
+                    if (dependentCAR != null) {
+                        undeploy(dependentCAR.getAppFilePath());
+                    }
+                }
+
+            }
         } else {
             log.info("Undeploying Faulty Carbon Application On : " + filePath);
             removeFaultyCarbonApp(filePath);
@@ -804,6 +849,26 @@ public class CappDeployer extends AbstractDeployer {
         File cAppDirFile = new File(this.cAppDir);
         File[] cAppFiles = cAppDirFile.listFiles((dir, name) -> name.endsWith(CAR_FILE_EXTENSION));
 
+        ArrayList<File> dependentCAppFiles = new ArrayList<>();
+
+        for (File cAppFile : cAppFiles) {
+            // Scan for nested CARs under dependencies/
+            try (ZipFile zipFile = new ZipFile(cAppFile)) {
+                zipFile.stream()
+                        .filter(e -> !e.isDirectory())
+                        .filter(e -> e.getName().startsWith(AppDeployerUtils.DEPENDENCIES_DIR))
+                        .filter(e -> e.getName().toLowerCase(Locale.ROOT).endsWith(".car"))
+                        .forEach(entry -> {
+                            dependentCAppFiles.add(new File(cAppFile.getAbsolutePath() + File.separator + entry.getName()));
+                        });
+            } catch (Exception ude) {
+                // Since we deploy CApps in alphabetical order when there is any error, this can be ignored.
+            }
+        }
+        cAppFiles = Arrays.copyOf(cAppFiles, cAppFiles.length + dependentCAppFiles.size());
+        for (int i = 0; i < dependentCAppFiles.size(); i++) {
+            cAppFiles[cAppFiles.length - dependentCAppFiles.size() + i] = dependentCAppFiles.get(i);
+        }
         if (cAppFiles == null || filesToDeploy == null || filesToDeploy.isEmpty() || startIndex < 0 ||
                 toIndex > filesToDeploy.size() || startIndex >= toIndex) {
             super.sort(filesToDeploy, startIndex, toIndex);

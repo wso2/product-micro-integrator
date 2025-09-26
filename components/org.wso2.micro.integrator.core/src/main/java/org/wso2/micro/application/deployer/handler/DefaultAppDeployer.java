@@ -29,6 +29,7 @@ import org.osgi.framework.BundleException;
 import org.wso2.micro.application.deployer.AppDeployerConstants;
 import org.wso2.micro.application.deployer.AppDeployerUtils;
 import org.wso2.micro.application.deployer.CarbonApplication;
+import org.wso2.micro.application.deployer.config.ApplicationConfiguration;
 import org.wso2.micro.application.deployer.config.Artifact;
 import org.wso2.micro.application.deployer.config.CappFile;
 import org.wso2.micro.core.Constants;
@@ -67,7 +68,7 @@ public class DefaultAppDeployer implements AppDeploymentHandler {
                                                                                            DeploymentException{
         List<Artifact.Dependency> dependencies = carbonApp.getAppConfig().getApplicationArtifact()
                 .getDependencies();
-        deployRecursively(dependencies, axisConfig);
+        deployRecursively(dependencies, axisConfig, carbonApp.getAppConfig());
     }
 
     /**
@@ -142,7 +143,8 @@ public class DefaultAppDeployer implements AppDeploymentHandler {
      * @param deps       - list of dependencies to be searched..
      * @param axisConfig - Axis config of the current tenant
      */
-    private void deployRecursively(List<Artifact.Dependency> deps, AxisConfiguration axisConfig)
+    private void deployRecursively(List<Artifact.Dependency> deps, AxisConfiguration axisConfig,
+                                   ApplicationConfiguration applicationConfiguration)
             throws DeploymentException{
         for (Artifact.Dependency dependency : deps) {
             Artifact artifact = dependency.getArtifact();
@@ -167,7 +169,8 @@ public class DefaultAppDeployer implements AppDeploymentHandler {
                     artifact.setDeploymentStatus(
                             org.wso2.micro.application.deployer.AppDeployerConstants.DEPLOYMENT_STATUS_PENDING);
                     // Call the deploy method of the deployer
-                    deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer));
+                    deployer.deploy(new DeploymentFileData(new File(artifactPath), deployer,
+                            applicationConfiguration.getAppArtifactIdentifier(), applicationConfiguration.getCAppDependencies()));
                     artifact.setDeploymentStatus(org.wso2.micro.application.deployer.AppDeployerConstants.DEPLOYMENT_STATUS_DEPLOYED);
                 } catch (DeploymentException e) {
                     artifact.setDeploymentStatus(org.wso2.micro.application.deployer.AppDeployerConstants.DEPLOYMENT_STATUS_FAILED);
@@ -195,7 +198,7 @@ public class DefaultAppDeployer implements AppDeploymentHandler {
                 artifact.setRuntimeObjectName(fileName);
             }
             // deploy the dependencies of the current artifact
-            deployRecursively(artifact.getDependencies(), axisConfig);
+            deployRecursively(artifact.getDependencies(), axisConfig, applicationConfiguration);
         }
     }
 

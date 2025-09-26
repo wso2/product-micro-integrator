@@ -89,4 +89,5 @@ public class AppDeployerConstants {
 
     public static final String SUPER_TENANT_ID_STR = String.valueOf(Constants.SUPER_TENANT_ID);
     public static final int SUPER_TENANT_ID_INT = Constants.SUPER_TENANT_ID;
+    public static final String VERSIONED_DEPLOYMENT = "versionedDeployment";
 }

@@ -25,6 +25,8 @@ import org.apache.axis2.deployment.Deployer;
 import org.apache.axis2.deployment.DeploymentEngine;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.axis2.util.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.Bundle;
@@ -36,6 +38,7 @@ import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.integrator.core.services.CarbonServerConfigurationService;
 import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,6 +49,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -56,14 +63,15 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 import javax.xml.namespace.QName;
 
 public final class AppDeployerUtils {
-	
+
 	private static final Log log = LogFactory.getLog(AppDeployerUtils.class);
-	
+
 	private static final AppDeployerUtils INSTANCE = new AppDeployerUtils();
-	
+
 	private static String APP_UNZIP_DIR;
 	private static final String INTERNAL_ARTIFACTS_DIR = "internal-artifacts";
 	private static volatile boolean isAppDirCreated = false;
@@ -75,11 +83,12 @@ public final class AppDeployerUtils {
 	private static final String LOCAL_REGISTRY_PATH = "/_system/local";
 	private static final String LOCAL_REGISTRY_PREFIX = "local:";
 	private static final String RESOURCES_PREFIX = "resources:";
+	public static final String DEPENDENCIES_DIR = "dependencies/";
 
 	private AppDeployerUtils() {
 		// hide utility class
-		
-		
+
+
 	}
 
     static {
@@ -116,7 +125,7 @@ public final class AppDeployerUtils {
         }
 
         isAppDirCreated = true;
-		
+
 	}
 
 
@@ -233,12 +242,12 @@ public final class AppDeployerUtils {
             try {
                 if (fis != null) {
                 	fis.close();
-                }                
+                }
             } catch (IOException e) {
                 log.error("Error occured while closing the streams", e);
             }
-            
-            try {                
+
+            try {
                 if (fos != null) {
                 	fos.close();
                 }
@@ -254,7 +263,7 @@ public final class AppDeployerUtils {
      * @param artifactEle - artifact OMElement
      * @return created Artifact object
      */
-    public static Artifact populateArtifact(OMElement artifactEle) {
+    public static Artifact populateArtifact(CarbonApplication parentApp, OMElement artifactEle) {
         if (artifactEle == null) {
             return null;
         }
@@ -262,6 +271,9 @@ public final class AppDeployerUtils {
         Artifact artifact = new Artifact();
         // read top level attributes
         artifact.setName(readAttribute(artifactEle, Artifact.NAME));
+        if (parentApp != null) {
+            artifact.setArtifactIdentifier(parentApp.getAppConfig().getAppArtifactIdentifier());
+        }
         artifact.setVersion(readAttribute(artifactEle, Artifact.VERSION));
         artifact.setMainSequence(readAttribute(artifactEle, Artifact.MAIN_SEQUENCE));
         artifact.setType(readAttribute(artifactEle, Artifact.TYPE));
@@ -287,7 +299,7 @@ public final class AppDeployerUtils {
             Iterator subArtItr = subArtifactsElement.getChildrenWithLocalName(Artifact.ARTIFACT);
             while (subArtItr.hasNext()) {
                 // as this is also an artifact, use recursion
-                Artifact subArtifact = populateArtifact((OMElement) subArtItr.next());
+                Artifact subArtifact = populateArtifact(parentApp, (OMElement) subArtItr.next());
                 artifact.addSubArtifact(subArtifact);
             }
         }
@@ -299,10 +311,15 @@ public final class AppDeployerUtils {
             CappFile tempFile = new CappFile();
             tempFile.setName(fileElement.getText());
             tempFile.setVersion(readAttribute(fileElement, Artifact.VERSION));
-            artifact.addFile(tempFile);            
+            artifact.addFile(tempFile);
         }
 
         return artifact;
+    }
+
+    public static Artifact populateArtifact(OMElement artifactEle) {
+
+        return populateArtifact(null, artifactEle);
     }
 
     /**
@@ -477,7 +494,7 @@ public final class AppDeployerUtils {
         createDir(dest);
 
         try {
-            extract(appCarPath, dest);
+            extractPossiblyNested(appCarPath, dest);
         } catch (IOException e) {
             throw new CarbonException("Error while extracting Carbon Application : " + fileName, e);
         }
@@ -540,7 +557,7 @@ public final class AppDeployerUtils {
 
     /**
      * Checks whether the given dependencies has library type artifacts
-     * 
+     *
      * @param deps - list of dependencies
      * @return - true if found..
      */
@@ -620,14 +637,54 @@ public final class AppDeployerUtils {
         return "{super-tenant}";
     }
 
-    public static String computeResourcePath(String basePath, String resourceName) {
+    public static String computeResourcePath(String basePath, String resourceName, RegistryConfig registryConfig) {
         String fullResourcePath;
+        if (StringUtils.isNotBlank(registryConfig.getArtifactIdentifier())) {
+            resourceName = registryConfig.getArtifactIdentifier() + "__" + resourceName;
+        }
         if (basePath.endsWith("/")) {
             fullResourcePath = basePath + resourceName;
         } else {
             fullResourcePath = basePath + "/" + resourceName;
         }
         return fullResourcePath;
+    }
+
+    /**
+     * Extracts the given sourcePath to the destination directory. If the sourcePath is a file,
+     * extracts the file. If the sourcePath is not a file, assumes it is a Fat CAR and tries to
+     * find the outer CAR and the inner CAR to be extracted.
+     *
+     * @param sourcePath Path of the source CAR or Fat CAR
+     * @param destDir    Destination directory to which the source CAR should be extracted
+     * @throws IOException
+     */
+    private static void extractPossiblyNested(String sourcePath, String destDir) throws IOException {
+        Path src = Paths.get(sourcePath);
+        if (Files.isRegularFile(src)) {
+            extract(src.toString(), destDir);
+            return;
+        }
+
+        // Fat CAR case: find the outer *.car segment and the dependency entry path
+        String sp = src.toString();
+        int idx = sp.indexOf(".car" + File.separator);
+        if (idx == -1) {
+            throw new FileNotFoundException("Not a regular CAR file or a Fat CAR: " + sourcePath);
+        }
+
+        String fatCarPath = sp.substring(0, idx + 4);
+        String dependentCARPath = sp.substring(idx + 5 /* skip ".car/" */).replace(File.separatorChar, '/');
+
+        try (ZipFile outer = new ZipFile(fatCarPath)) {
+            ZipEntry inner = outer.getEntry(dependentCARPath);
+            if (inner == null) {
+                throw new FileNotFoundException("Embedded CAR not found: " + dependentCARPath + " in " + fatCarPath);
+            }
+             try (InputStream in = outer.getInputStream(inner)) {
+                 extractFromZipInputStream(in, Paths.get(destDir));
+             }
+        }
     }
 
     private static void extract(String sourcePath, String destPath) throws IOException {
@@ -643,6 +700,10 @@ public final class AppDeployerUtils {
             if (entry.getName().startsWith("META-INF/")) {
                 continue;
             }
+            // we don't need to copy the dependencies since it will be extracted as separate cApps
+            if (entry.getName().startsWith(DEPENDENCIES_DIR)) {
+                continue;
+            }
             // if the entry is a directory, create a new dir
             if (entry.isDirectory()) {
                 createDir(destPath + entry.getName());
@@ -653,6 +714,39 @@ public final class AppDeployerUtils {
                             new BufferedOutputStream(new FileOutputStream(destPath + entry.getName())));
         }
         zipFile.close();
+    }
+
+    private static void extractFromZipInputStream(InputStream zipStream, Path destRoot) throws IOException {
+
+        Files.createDirectories(destRoot);
+        try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(zipStream))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                String name = entry.getName();
+                if (name.startsWith("META-INF/")) {
+                    zis.closeEntry();
+                    continue;
+                }
+                // we don't need to copy the dependencies since it will be extracted as separate cApps
+                if (name.startsWith(DEPENDENCIES_DIR)) {
+                    zis.closeEntry();
+                    continue;
+                }
+                Path entryPath = destRoot.resolve(name).normalize();
+                if (!entryPath.startsWith(destRoot))
+                    throw new IOException("Zip Slip blocked: " + name);
+
+                if (entry.isDirectory()) {
+                    Files.createDirectories(entryPath);
+                } else {
+                    Files.createDirectories(entryPath.getParent());
+                    try (OutputStream os = Files.newOutputStream(entryPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+                        IOUtils.copy(zis, os, false);
+                    }
+                }
+                zis.closeEntry();
+            }
+        }
     }
 
     /**

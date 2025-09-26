@@ -22,6 +22,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.xml.AbstractMediatorFactory;
+import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.config.xml.SequenceMediatorFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -337,7 +338,7 @@ public class CacheMediatorFactory extends AbstractMediatorFactory {
                 if (onCacheHitElem != null) {
                     OMAttribute sequenceAttr = onCacheHitElem.getAttribute(ATT_SEQUENCE);
                     if (sequenceAttr != null && sequenceAttr.getAttributeValue() != null) {
-                        cache.setOnCacheHitRef(sequenceAttr.getAttributeValue());
+                        cache.setOnCacheHitRef(FactoryUtils.getFullyQualifiedName(properties, sequenceAttr.getAttributeValue()));
                     } else if (onCacheHitElem.getFirstElement() != null) {
                         cache.setOnCacheHitSequence(new SequenceMediatorFactory()
                                                             .createAnonymousSequence(onCacheHitElem, properties));

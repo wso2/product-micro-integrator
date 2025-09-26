@@ -53,6 +53,9 @@ public class CarbonApplication {
     }
 
     public String getAppNameWithVersion() {
+        if (appConfig.isVersionedDeployment()) {
+            return appConfig.getAppArtifactIdentifier();
+        }
         if (getAppName() != null) {
             if (getAppVersion() != null) {
                 return getAppName() + "_" + getAppVersion();

@@ -43,6 +43,7 @@ public class CAppDescriptor {
     private File cAppFile;
     private String cAppId;
     private List<String> cAppDependencies;
+    private boolean isFatCAR;
 
     public CAppDescriptor(File cAppFile) {
 
@@ -55,6 +56,11 @@ public class CAppDescriptor {
     public void setCAppId(String cAppId) {
 
         this.cAppId = cAppId;
+    }
+
+    public void setCAppFile(File cAppFile) {
+
+        this.cAppFile = cAppFile;
     }
 
     public void addDependency(String dependency) {
@@ -95,6 +101,10 @@ public class CAppDescriptor {
                 if (idElements.getLength() > 0) {
                     setCAppId(idElements.item(0).getTextContent());
                 }
+                NodeList isFatCARElements = document.getElementsByTagName(org.apache.axis2.Constants.FAT_CAR_ENABLED);
+                if (isFatCARElements.getLength() > 0) {
+                    setFatCAR(true);
+                }
 
                 NodeList dependencyNodes = document.getElementsByTagName(Constants.DEPENDENCY);
                 for (int i = 0; i < dependencyNodes.getLength(); i++) {
@@ -103,7 +113,7 @@ public class CAppDescriptor {
                     String artifactId = dependencyNode.getAttributes().getNamedItem(Constants.CAPP_ARTIFACT_ID).getNodeValue();
                     String version = dependencyNode.getAttributes().getNamedItem(Constants.CAPP_VERSION).getNodeValue();
                     if (StringUtils.isNotEmpty(groupId) && StringUtils.isNotEmpty(artifactId) && StringUtils.isNotEmpty(version)) {
-                        addDependency(groupId + Constants.UNDERSCORE + artifactId + Constants.UNDERSCORE + version);
+                        addDependency(groupId + Constants.DOUBLE_UNDERSCORE + artifactId + Constants.DOUBLE_UNDERSCORE + version);
                     } else {
                         log.warn("Skipping dependency with missing attributes in descriptor.xml for CApp: "
                                 + this.cAppFile.getName());
@@ -128,5 +138,15 @@ public class CAppDescriptor {
                     + this.cAppFile.getName() + ". A dependency element may lack groupId, artifactId, or version. Details: "
                     + e.getMessage(), e);
         }
+    }
+
+    public boolean isFatCAR() {
+
+        return isFatCAR;
+    }
+
+    public void setFatCAR(boolean fatCAR) {
+
+        isFatCAR = fatCAR;
     }
 }

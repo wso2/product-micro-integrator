@@ -59,6 +59,7 @@ public class RegistryConfig {
     private String parentArtifactName;
     private String configFileName;
     private String appName;
+    private String appArtifactIdentifier;
 
     public RegistryConfig() {
         resources = new ArrayList<Resourse>();
@@ -198,6 +199,16 @@ public class RegistryConfig {
 
     public void setAppName(String appName) {
         this.appName = appName;
+    }
+
+    public String getArtifactIdentifier() {
+
+        return appArtifactIdentifier;
+    }
+
+    public void setArtifactIdentifier(String appArtifactIdentifier) {
+
+        this.appArtifactIdentifier = appArtifactIdentifier;
     }
 
     /**

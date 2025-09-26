@@ -21,17 +21,30 @@ package org.wso2.micro.integrator.initializer.utils;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
+import org.apache.axis2.util.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.api.API;
 import org.apache.synapse.api.version.VersionStrategy;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.wso2.micro.application.deployer.AppDeployerUtils;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,17 +52,25 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import static org.wso2.micro.integrator.initializer.utils.Constants.CAR_FILE_EXTENSION;
 import static org.wso2.micro.integrator.initializer.utils.Constants.DESCRIPTOR_XML_FILE_NAME;
 
 public class DeployerUtil {
+
+    private static final Log log = LogFactory.getLog(DeployerUtil.class);
 
     /**
      * Partially build a synapse API for deployment purposes.
@@ -155,17 +176,52 @@ public class DeployerUtil {
         if (cAppFiles == null) {
             return 0;
         }
-        int count = 0;
+
+        AtomicInteger count = new AtomicInteger();
+
         for (File carFile : cAppFiles) {
+            if (!Files.isRegularFile(carFile.toPath())) {
+                continue;
+            }
             try (ZipFile zip = new ZipFile(carFile)) {
+                // Check top-level descriptor
                 if (zip.getEntry(DESCRIPTOR_XML_FILE_NAME) != null) {
-                    count++;
+                    count.incrementAndGet();
                 }
+
+                // Check nested CARs under dependencies/
+                zip.stream()
+                        .filter(e -> !e.isDirectory())
+                        .filter(e -> e.getName().startsWith(AppDeployerUtils.DEPENDENCIES_DIR))
+                        .filter(e -> e.getName().toLowerCase(Locale.ROOT).endsWith(".car"))
+                        .forEach(entry -> {
+                            File tmp = null;
+                            try (InputStream in = zip.getInputStream(entry)) {
+                                tmp = File.createTempFile("dependent-capp-", ".car");
+                                Files.copy(in, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+                                try (ZipFile nestedZip = new ZipFile(tmp)) {
+                                    if (nestedZip.getEntry(DESCRIPTOR_XML_FILE_NAME) != null) {
+                                        count.incrementAndGet();
+                                    }
+                                }
+                            } catch (IOException exception) {
+                                throw new UncheckedDeploymentException(
+                                        "Failed to read dependent Carbon Application '" + entry.getName() + "' in " + carFile, exception);
+                            } finally {
+                                if (tmp != null && tmp.exists()) {
+                                    tmp.delete();
+                                }
+                            }
+                        });
+
+            } catch (UncheckedDeploymentException ude) {
+                log.warn("Failed to read a dependent Carbon Application in " + carFile, ude);
             } catch (IOException e) {
-                // Ignore files that cannot be read
+                log.warn("Error scanning Fat Carbon Application: " + carFile, e);
             }
         }
-        return count;
+        return count.get();
     }
 
     /**
@@ -174,12 +230,57 @@ public class DeployerUtil {
      * @param cAppFiles An array of `File` objects representing the CApp files.
      * @return A list of `CAppDescriptor` objects corresponding to the provided CApp files.
      */
-    public static List<CAppDescriptor> getCAppDescriptors(File[] cAppFiles) {
+    public static List<CAppDescriptor> getCAppDescriptors(File[] cAppFiles) throws DeploymentException {
         List<CAppDescriptor> cAppDescriptors = new ArrayList<>();
         for (File cAppFile : cAppFiles) {
-            cAppDescriptors.add(new CAppDescriptor(cAppFile));
+            if (cAppFile.getPath().contains(AppDeployerUtils.DEPENDENCIES_DIR)) {
+                continue;
+            }
+            CAppDescriptor descriptor = new CAppDescriptor(cAppFile);
+            cAppDescriptors.add(descriptor);
+
+            if (!descriptor.isFatCAR()) {
+                continue;
+            }
+
+            // Scan for nested CARs under dependencies/
+            try (ZipFile zipFile = new ZipFile(cAppFile)) {
+                zipFile.stream()
+                        .filter(entry -> !entry.isDirectory())
+                        .filter(entry -> entry.getName().startsWith(AppDeployerUtils.DEPENDENCIES_DIR))
+                        .filter(entry -> entry.getName().toLowerCase(Locale.ROOT).endsWith(".car"))
+                        .forEach(entry -> {
+                            File tmp = null;
+                            try (InputStream in = zipFile.getInputStream(entry)) {
+                                // Write to a temp .car on disk for CAppDescriptor to read
+                                tmp = Files.createTempFile("dependent-capp-", ".car").toFile();
+                                try (OutputStream out = new FileOutputStream(tmp)) {
+                                    IOUtils.copy(in, out, false);
+                                }
+                                CAppDescriptor dep = new CAppDescriptor(tmp);
+                                dep.setCAppFile(new File(cAppFile.getPath(), entry.getName()));
+                                cAppDescriptors.add(dep);
+                            } catch (IOException exception) {
+                                throw new UncheckedDeploymentException(
+                                        "Failed to read dependent Carbon Application '" + entry.getName() + "' in " + cAppFile, exception);
+                            } finally {
+                                if (tmp != null && tmp.exists()) {
+                                    tmp.delete();
+                                }
+                            }
+                        });
+            } catch (UncheckedDeploymentException ude) {
+                throw new DeploymentException(ude.getMessage(), ude.getCause());
+            } catch (IOException e) {
+                throw new DeploymentException("Error scanning Fat Carbon Application: " + cAppFile, e);
+            }
         }
         return cAppDescriptors;
+    }
+
+    /** Local unchecked wrapper to use inside streams. */
+    private static final class UncheckedDeploymentException extends RuntimeException {
+        UncheckedDeploymentException(String msg, Throwable cause) { super(msg, cause); }
     }
 
     /**
