@@ -47,8 +47,6 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
     protected boolean coordination;
     protected boolean startInPausedMode;
 
-    private OneTimeTriggerInboundRunner inboundRunner;
-    private Thread runningThread;
     private static final Log log = LogFactory.getLog(InboundOneTimeTriggerRequestProcessor.class);
 
     protected final static String COMMON_ENDPOINT_POSTFIX = "--SYNAPSE_INBOUND_ENDPOINT";
@@ -64,38 +62,28 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
     protected void start(OneTimeTriggerInboundTask task, String endpointPostfix) {
         log.info("Starting the inbound endpoint " + name + ", with coordination " + coordination + ". Type : "
                          + endpointPostfix);
-        if (coordination) {
-            try {
-                TaskDescription taskDescription = new TaskDescription();
-                taskDescription.setName(name + "-" + endpointPostfix);
-                taskDescription.setTaskGroup(endpointPostfix);
-                taskDescription.setInterval(TASK_THRESHOLD_INTERVAL);
-                taskDescription.setIntervalInMs(true);
-                taskDescription.addResource(TaskDescription.INSTANCE, task);
-                taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
-                startUpController = new StartUpController();
-                startUpController.setTaskDescription(taskDescription);
-                startUpController.init(synapseEnvironment);
-                // registering a listener to identify task removal or deletions.
-                if (task instanceof RabbitMQTask) {
-                    TaskManager taskManagerImpl = synapseEnvironment.getTaskManager().getTaskManagerImpl();
-                    if (taskManagerImpl instanceof NTaskTaskManager) {
-                        ((NTaskTaskManager) taskManagerImpl).registerListener((RabbitMQTask) task,
-                                                                              taskDescription.getName());
-                    }
+        try {
+            TaskDescription taskDescription = new TaskDescription();
+            taskDescription.setName(name + "-" + endpointPostfix);
+            taskDescription.setTaskGroup(endpointPostfix);
+            taskDescription.setInterval(TASK_THRESHOLD_INTERVAL);
+            taskDescription.setIntervalInMs(true);
+            taskDescription.addResource(TaskDescription.INSTANCE, task);
+            taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
+            startUpController = new StartUpController();
+            startUpController.setTaskDescription(taskDescription);
+            startUpController.init(synapseEnvironment);
+            // registering a listener to identify task removal or deletions.
+            if (task instanceof RabbitMQTask) {
+                TaskManager taskManagerImpl = synapseEnvironment.getTaskManager().getTaskManagerImpl();
+                if (taskManagerImpl instanceof NTaskTaskManager) {
+                    ((NTaskTaskManager) taskManagerImpl).registerListener((RabbitMQTask) task,
+                            taskDescription.getName());
                 }
-            } catch (Exception e) {
-                log.error("Error starting the inbound endpoint " + name + ". Unable to schedule the task. " + e
-                        .getLocalizedMessage(), e);
             }
-        } else {
-
-            inboundRunner = new OneTimeTriggerInboundRunner(task, SUPER_TENANT_DOMAIN_NAME);
-            if (task.getCallback() != null) {
-                task.getCallback().setInboundRunnerMode(true);
-            }
-            runningThread = new Thread(inboundRunner);
-            runningThread.start();
+        } catch (Exception e) {
+            log.error("Error starting the inbound endpoint " + name + ". Unable to schedule the task. " + e
+                    .getLocalizedMessage(), e);
         }
     }
 
@@ -113,16 +101,6 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
 
         if (startUpController != null) {
             startUpController.destroy(removeTask);
-        } else if (runningThread != null) {
-            try {
-                //this is introduced where the thread is suspended due to external server is not
-                //up and running and waiting connection to be completed.
-                //thread join waits until that suspension is removed where inbound endpoint
-                //is undeployed that will eventually lead to completion of this thread
-                runningThread.join();
-            } catch (InterruptedException e) {
-                log.error("Error while stopping the inbound thread.");
-            }
         }
     }
 
@@ -178,8 +156,6 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
 
         if (Objects.nonNull(startUpController)) {
             return !startUpController.isTaskActive();
-        } else if (Objects.nonNull(runningThread)) {
-            return !runningThread.isAlive();
         }
         return true;
     }
