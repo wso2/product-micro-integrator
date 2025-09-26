@@ -21,6 +21,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.wso2.carbon.inbound.endpoint.protocol.jms.factory.CachedJMSConnectionFactory;
+import org.wso2.carbon.inbound.endpoint.protocol.jms.jakarta.CachedJakartaConnectionFactory;
+import org.wso2.carbon.inbound.endpoint.protocol.jms.jakarta.JakartaInjectHandler;
+import org.wso2.carbon.inbound.endpoint.protocol.jms.jakarta.JakartaUtils;
 
 import java.util.Date;
 import java.util.Properties;
@@ -39,7 +42,6 @@ public class JMSPollingConsumer {
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = rwLock.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLock = rwLock.writeLock();
-
     private volatile boolean destroyed = false;
 
     /* Contents used for the process of reconnection */
@@ -50,7 +52,9 @@ public class JMSPollingConsumer {
     private static final int SCALE_FACTOR = 1000;
 
     private CachedJMSConnectionFactory jmsConnectionFactory;
+    private CachedJakartaConnectionFactory jakartaConnectionFactory;
     private JMSInjectHandler injectHandler;
+    private JakartaInjectHandler jakartaInjectHandler;
     private long scanInterval;
     private Long lastRanTime;
     private String strUserName;
@@ -66,10 +70,15 @@ public class JMSPollingConsumer {
     private int retryIteration;
 
     private Connection connection = null;
+    private jakarta.jms.Connection jakartaConnection = null;
     private Session session = null;
+    private jakarta.jms.Session jakartaSession = null;
     private Destination destination = null;
+    private jakarta.jms.Destination jakartaDestination = null;
     private MessageConsumer messageConsumer = null;
+    private jakarta.jms.MessageConsumer jakartaMessageConsumer = null;
     private Destination replyDestination = null;
+    private jakarta.jms.Destination jakartaReplyDestination = null;
 
     private int currentNegativeCommitOrAckCount = 0;
     private boolean pollingSuspended = false;
@@ -79,9 +88,16 @@ public class JMSPollingConsumer {
     // resets the JMS connection after the polling suspension is enabled.
     // This will create a new subscription
     private boolean resetConnectionAfterPollingSuspension = false;
+    private boolean isJmsSpec31 = false;
 
     public JMSPollingConsumer(Properties jmsProperties, long scanInterval, String name) {
-        this.jmsConnectionFactory = new CachedJMSConnectionFactory(jmsProperties);
+        isJmsSpec31 = JMSConstants.JMS_SPEC_VERSION_3_1.equals(jmsProperties.
+                getProperty(JMSConstants.PARAM_JMS_SPEC_VER));
+        if (isJmsSpec31) {
+            this.jakartaConnectionFactory = new CachedJakartaConnectionFactory(jmsProperties);
+        } else {
+            this.jmsConnectionFactory = new CachedJMSConnectionFactory(jmsProperties);
+        }
         strUserName = jmsProperties.getProperty(JMSConstants.PARAM_JMS_USERNAME);
         strPassword = jmsProperties.getProperty(JMSConstants.PARAM_JMS_PASSWORD);
         this.name = name;
@@ -173,6 +189,15 @@ public class JMSPollingConsumer {
     }
 
     /**
+     * Register a handler to implement injection of the retrieved jakarta message
+     *
+     * @param injectHandler
+     */
+    public void registerJakartaHandler(JakartaInjectHandler injectHandler) {
+        this.jakartaInjectHandler = injectHandler;
+    }
+
+    /**
      * This will be called by the task scheduler. If a cycle execution takes
      * more than the schedule interval, tasks will call this method ignoring the
      * interval. Timestamp based check is done to avoid that.
@@ -207,7 +232,11 @@ public class JMSPollingConsumer {
 
             if (lastRanTime == null || ((lastRanTime + (scanInterval)) <= currentTime)) {
                 lastRanTime = currentTime;
-                poll();
+                if (isJmsSpec31) {
+                    pollForJakarta();
+                } else {
+                    poll();
+                }
             } else if (logger.isDebugEnabled()) {
                 logger.debug("Skip cycle since concurrent rate is higher than the scan interval : JMS Inbound EP ");
             }
@@ -226,7 +255,11 @@ public class JMSPollingConsumer {
     private void resetConnection() {
         logger.info("Resetting the JMS connection.");
         destroy();
-        jmsConnectionFactory.createConnection(strUserName, strPassword);
+        if (isJmsSpec31) {
+            jakartaConnectionFactory.createConnection(strUserName, strPassword);
+        } else {
+            jmsConnectionFactory.createConnection(strUserName, strPassword);
+        }
     }
 
     /**
@@ -427,6 +460,203 @@ public class JMSPollingConsumer {
     }
 
     /**
+     * Create connection with broker and retrieve the messages. Then inject
+     * according to the registered handler
+     */
+    public jakarta.jms.Message pollForJakarta() {
+        logger.debug("Polling JMS messages.");
+
+        try {
+            readLock.lock();
+            if (destroyed) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Polling skipped since consumer is already destroyed for Inbound Endpoint: " + name);
+                }
+                return null;
+            }
+            jakartaConnection = jakartaConnectionFactory.getConnection(strUserName, strPassword);
+            if (jakartaConnection == null) {
+                logger.warn("Inbound JMS endpoint unable to get a connection.");
+                isConnected = false;
+                return null;
+            }
+            if (retryIteration != DEFAULT_RETRY_ITERATION) {
+                logger.info("Reconnection attempt: " + retryIteration + " for the JMS Inbound: " + name
+                        + " was successful!");
+                this.retryIteration = DEFAULT_RETRY_ITERATION;
+                this.retryDuration = DEFAULT_RETRY_DURATION;
+            }
+            isConnected = true;
+            jakartaSession = jakartaConnectionFactory.getSession(jakartaConnection);
+            //Fixing ESBJAVA-4446
+            //Closing the connection if we cannot get a session.
+            //Then in the next poll iteration it will create a new connection
+            //instead of using cached connection
+            if (jakartaSession == null) {
+                logger.warn("Inbound JMS endpoint unable to get a session.");
+                jakartaConnectionFactory.closeConnection();
+                return null;
+            }
+            jakartaDestination = jakartaConnectionFactory.getDestination(jakartaSession);
+            if (replyDestinationName != null && !replyDestinationName.trim().equals("")) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Using the reply destination as " + replyDestinationName + " in inbound endpoint.");
+                }
+                jakartaReplyDestination = jakartaConnectionFactory.createDestination(jakartaSession, replyDestinationName);
+            }
+            jakartaMessageConsumer = jakartaConnectionFactory.getMessageConsumer(jakartaSession, jakartaDestination);
+            if (jakartaMessageConsumer == null) {
+                logger.debug("Inbound JMS Endpoint. No JMS consumer initialized. No JMS message received.");
+                if (jakartaSession != null) {
+                    jakartaConnectionFactory.closeSession(jakartaSession, true);
+                }
+                if (jakartaConnection != null) {
+                    jakartaConnectionFactory.closeConnection(jakartaConnection, true);
+                }
+                return null;
+            }
+            jakarta.jms.Message msg = receiveJakartaMessage(jakartaMessageConsumer);
+            if (msg == null) {
+                logger.debug("Inbound JMS Endpoint. No JMS message received.");
+                return null;
+            }
+            while (msg != null) {
+                if (JakartaUtils.inferJMSMessageType(msg) == null) {
+                    logger.error("Invalid JMS Message type.");
+                    return null;
+                }
+
+                if (jakartaInjectHandler != null) {
+
+                    boolean commitOrAck = true;
+                    // Set the reply destination and connection
+                    if (replyDestination != null) {
+                        jakartaInjectHandler.setReplyDestination(jakartaReplyDestination);
+                    }
+                    jakartaInjectHandler.setConnection(jakartaConnection);
+                    commitOrAck = jakartaInjectHandler.invoke(msg, name);
+
+                    // if client acknowledgement is selected, and processing
+                    // requested ACK
+                    if (jakartaConnectionFactory.getSessionAckMode() == Session.CLIENT_ACKNOWLEDGE) {
+                        if (commitOrAck) {
+                            try {
+                                msg.acknowledge();
+                                if (logger.isDebugEnabled()) {
+                                    logger.debug("Message : " + msg.getJMSMessageID() + " acknowledged");
+                                }
+                            } catch (jakarta.jms.JMSException e) {
+                                logger.error("Error acknowledging message : " + msg.getJMSMessageID(), e);
+                            }
+                        } else {
+                            // recoverSession method is used only in non transacted session
+                            if (!jakartaConnectionFactory.isTransactedSession()) {
+                                jakartaConnectionFactory.recoverSession(jakartaSession, false);
+                            }
+
+                            // Need to create a new consumer and session since
+                            // we need to rollback the message
+                            if (jakartaMessageConsumer != null) {
+                                jakartaConnectionFactory.closeConsumer(jakartaMessageConsumer);
+                            }
+                            if (jakartaSession != null) {
+                                jakartaConnectionFactory.closeSession(jakartaSession);
+                            }
+                            jakartaSession = jakartaConnectionFactory.getSession(jakartaConnection);
+                            jakartaMessageConsumer = jakartaConnectionFactory.getMessageConsumer(jakartaSession, jakartaDestination);
+                        }
+                    }
+                    // if session was transacted, commit it or rollback
+                    if (jakartaConnectionFactory.isTransactedSession()) {
+                        try {
+                            if (jakartaSession.getTransacted()) {
+                                if (commitOrAck) {
+                                    jakartaSession.commit();
+                                    if (logger.isDebugEnabled()) {
+                                        logger.debug("Session for message : " + msg.getJMSMessageID() + " committed");
+                                    }
+                                } else {
+                                    jakartaSession.rollback();
+                                    if (logger.isDebugEnabled()) {
+                                        logger.debug("Session for message : " + msg.getJMSMessageID() + " rolled back");
+                                    }
+                                }
+                            }
+                        } catch (jakarta.jms.JMSException e) {
+                            logger.error("Error " + (commitOrAck ? "committing" : "rolling back")
+                                    + " local session txn for message : " + msg.getJMSMessageID(), e);
+                        }
+                    }
+
+                    if (pollingSuspensionEnabled) {
+                        if (!commitOrAck) {
+                            currentNegativeCommitOrAckCount++;
+                            if (currentNegativeCommitOrAckCount >= pollingSuspensionLimit) {
+                                pollingSuspended = true;
+                                currentNegativeCommitOrAckCount = 0;
+                                logger.info(
+                                        "Suspending polling as the pollingSuspensionLimit of " + pollingSuspensionLimit
+                                                + " reached. Polling will be re-started after "
+                                                + pollingSuspensionPeriod + " milliseconds");
+                                if (resetConnectionAfterPollingSuspension) {
+                                    resetConnection();
+                                }
+                                break;
+                            }
+                        } else {
+                            currentNegativeCommitOrAckCount = 0;
+                        }
+                    }
+
+                } else {
+                    return msg;
+                }
+                msg = receiveJakartaMessage(jakartaMessageConsumer);
+            }
+
+        } catch (jakarta.jms.JMSException e) {
+            logger.error("Error while receiving JMS message for " + name, e);
+            releaseResources(true);
+        } catch (Exception e) {
+            logger.error("Error while receiving JMS message for " + name, e);
+        } finally {
+            if (!isConnected) {
+                if (reconnectDuration != null) {
+                    retryDuration = reconnectDuration;
+                    logger.error("Reconnection attempt : " + (retryIteration++) + " for JMS Inbound : " + name
+                            + " failed. Next retry in " + (retryDuration / SCALE_FACTOR)
+                            + " seconds. (Fixed Interval)");
+                } else {
+                    retryDuration = (long) (retryDuration * RECONNECTION_PROGRESSION_FACTOR);
+                    if (retryDuration > MAX_RECONNECTION_DURATION) {
+                        retryDuration = MAX_RECONNECTION_DURATION;
+                        logger.info("InitialReconnectDuration reached to MaxReconnectDuration.");
+                    }
+                    logger.error("Reconnection attempt : " + (retryIteration++) + " for JMS Inbound : " + name
+                            + " failed. Next retry in " + (retryDuration / SCALE_FACTOR) + " seconds");
+                }
+                try {
+                    Thread.sleep(retryDuration);
+                } catch (InterruptedException ignore) {
+                    Thread.currentThread().interrupt();
+                    /* Occurs when the owner of this thread sets the Interrupted flag to TRUE. Inside the sleep method
+                       this flag will be checked occasionally and throw an InterruptedException (and reset the flag)
+                       whenever its set to true. Ideally, after catching this we should wrap up the work and exist.
+                       Since this can only happen during an ESB shutdown it can be ignored here. But as a good
+                       practice the Interrupted flag is set back to TRUE in this thread. */
+                }
+            }
+            try {
+                releaseResources(false);
+            } catch (Exception e) {
+                //ignore
+            }
+            readLock.unlock();
+        }
+        return null;
+    }
+
+    /**
      * Release the JMS connection, session and consumer to the pool or forcefully close the resource.
      *
      * @param forcefullyClose false if the resource needs to be released to the pool and true other wise
@@ -441,31 +671,55 @@ public class JMSPollingConsumer {
         if (connection != null) {
             jmsConnectionFactory.closeConnection(connection, forcefullyClose);
         }
+        if (jakartaMessageConsumer != null) {
+            jakartaConnectionFactory.closeConsumer(jakartaMessageConsumer, forcefullyClose);
+        }
+        if (jakartaSession != null) {
+            jakartaConnectionFactory.closeSession(jakartaSession, forcefullyClose);
+        }
+        if (jakartaConnection != null) {
+            jakartaConnectionFactory.closeConnection(jakartaConnection, forcefullyClose);
+        }
     }
 
     public void destroy() {
-        synchronized (jmsConnectionFactory) {
-            if (destroyed) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("PollingConsumer already destroyed for Inbound Endpoint: " + name);
+        if (isJmsSpec31) {
+            synchronized (jakartaConnectionFactory) {
+                writeLock.lock();
+                logger.info("Destroying JMS PollingConsumer hence polling is stopped for Inbound Endpoint: " + name);
+                try {
+                    destroyed = true;
+                    if (jakartaMessageConsumer != null) {
+                        jakartaConnectionFactory.closeConsumer(jakartaMessageConsumer, true);
+                    }
+                    if (session != null) {
+                        jakartaConnectionFactory.closeSession(jakartaSession, true);
+                    }
+                    if (connection != null) {
+                        jakartaConnectionFactory.closeConnection(jakartaConnection, true);
+                    }
+                } finally {
+                    writeLock.unlock();
                 }
-                return;
             }
-            writeLock.lock();
-            logger.info("Destroying JMS PollingConsumer hence polling is stopped for Inbound Endpoint: " + name);
-            try {
-                destroyed = true;
-                if (messageConsumer != null) {
-                    jmsConnectionFactory.closeConsumer(messageConsumer, true);
+        } else {
+            synchronized (jmsConnectionFactory) {
+                writeLock.lock();
+                logger.info("Destroying JMS PollingConsumer hence polling is stopped for Inbound Endpoint: " + name);
+                try {
+                    destroyed = true;
+                    if (messageConsumer != null) {
+                        jmsConnectionFactory.closeConsumer(messageConsumer, true);
+                    }
+                    if (session != null) {
+                        jmsConnectionFactory.closeSession(session, true);
+                    }
+                    if (connection != null) {
+                        jmsConnectionFactory.closeConnection(connection, true);
+                    }
+                } finally {
+                    writeLock.unlock();
                 }
-                if (session != null) {
-                    jmsConnectionFactory.closeSession(session, true);
-                }
-                if (connection != null) {
-                    jmsConnectionFactory.closeConnection(connection, true);
-                }
-            } finally {
-                writeLock.unlock();
             }
         }
     }
@@ -477,6 +731,19 @@ public class JMSPollingConsumer {
 
     private Message receiveMessage(MessageConsumer messageConsumer) throws JMSException {
         Message msg = null;
+        if (iReceiveTimeout == null) {
+            msg = messageConsumer.receive(1);
+        } else if (iReceiveTimeout > 0) {
+            msg = messageConsumer.receive(iReceiveTimeout);
+        } else {
+            msg = messageConsumer.receive();
+        }
+        return msg;
+    }
+
+    private jakarta.jms.Message receiveJakartaMessage(jakarta.jms.MessageConsumer messageConsumer)
+            throws jakarta.jms.JMSException {
+        jakarta.jms.Message msg = null;
         if (iReceiveTimeout == null) {
             msg = messageConsumer.receive(1);
         } else if (iReceiveTimeout > 0) {

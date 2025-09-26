@@ -204,6 +204,7 @@
                         <configuration>
                             <outputDirectory>${basedir}/src/test/resources/keystores/products
                             </outputDirectory>
+                            <overwrite>true</overwrite>
                             <resources>
                                 <resource>
                                     <directory>
@@ -225,6 +226,7 @@
                         <configuration>
                             <outputDirectory>${basedir}/src/test/resources/keystores/stratos
                             </outputDirectory>
+                            <overwrite>true</overwrite>
                             <resources>
                                 <resource>
                                     <directory>

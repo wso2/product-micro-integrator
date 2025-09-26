@@ -180,6 +180,10 @@
             <artifactId>log4j-api</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>jakarta.jms</groupId>
+            <artifactId>jakarta.jms-api</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
