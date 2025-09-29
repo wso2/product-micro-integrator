@@ -26,7 +26,6 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.inbound.DynamicControlOperationResult;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -284,22 +283,24 @@ public class InboundEndpointResource extends APIResource {
         }
 
         if (INACTIVE_STATUS.equalsIgnoreCase(status)) {
-            DynamicControlOperationResult result = inboundEndpoint.deactivate();
-            if (result.isSuccess()) {
+            boolean success = inboundEndpoint.deactivate();
+            if (success) {
                 jsonResponse.put(Constants.MESSAGE_JSON_ATTRIBUTE, name + " : is deactivated");
                 AuditLogger.logAuditMessage(performedBy, Constants.AUDIT_LOG_TYPE_INBOUND_ENDPOINT,
                         Constants.AUDIT_LOG_ACTION_DISABLED, info);
             } else {
-                jsonResponse = Utils.createJsonError(result.getMessage(), axis2MessageContext, Constants.INTERNAL_SERVER_ERROR);
+                jsonResponse = Utils.createJsonError("Failed to deactivate the inbound endpoint : " + name,
+                        axis2MessageContext, Constants.INTERNAL_SERVER_ERROR);
             }
         } else if (ACTIVE_STATUS.equalsIgnoreCase(status)) {
-            DynamicControlOperationResult result = inboundEndpoint.activate();
-            if (result.isSuccess()) {
+            boolean success = inboundEndpoint.activate();
+            if (success) {
                 jsonResponse.put(Constants.MESSAGE_JSON_ATTRIBUTE, name + " : is activated");
                 AuditLogger.logAuditMessage(performedBy, Constants.AUDIT_LOG_TYPE_MESSAGE_PROCESSOR,
                         Constants.AUDIT_LOG_ACTION_ENABLE, info);
             } else {
-                jsonResponse = Utils.createJsonError(result.getMessage(), axis2MessageContext, Constants.INTERNAL_SERVER_ERROR);
+                jsonResponse = Utils.createJsonError("Failed to activate the inbound endpoint : " + name,
+                        axis2MessageContext, Constants.INTERNAL_SERVER_ERROR);
             }
         } else {
             jsonResponse = Utils.createJsonError("Provided state is not valid", axis2MessageContext, Constants.BAD_REQUEST);

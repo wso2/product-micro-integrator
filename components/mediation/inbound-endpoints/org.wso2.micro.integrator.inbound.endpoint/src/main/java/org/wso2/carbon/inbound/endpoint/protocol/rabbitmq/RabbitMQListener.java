@@ -82,8 +82,20 @@ public class RabbitMQListener extends InboundOneTimeTriggerRequestProcessor {
 
     @Override
     public void init() {
-        log.info("RABBITMQ inbound endpoint [" + name + "] is initializing"
-                + (this.startInPausedMode ? " but will remain in suspended mode..." : "..."));
+        /*
+         * The activate/deactivate functionality for the RabbitMQ Inbound Endpoint is not currently implemented.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability for RabbitMQ listener is implemented.
+         */
+        if (startInPausedMode) {
+            log.info("Inbound endpoint [" + name + "] is currently suspended.");
+            return;
+        }
+        log.info("RABBITMQ inbound endpoint " + name + " initializing ...");
         rabbitMQConsumer = new RabbitMQConsumer(rabbitMQConnectionFactory, rabbitmqProperties, injectHandler);
         rabbitMQConsumer.setInboundName(name);
         start();
@@ -94,15 +106,4 @@ public class RabbitMQListener extends InboundOneTimeTriggerRequestProcessor {
         start(rabbitMQTask, ENDPOINT_POSTFIX);
     }
 
-    @Override
-    public boolean activate() {
-        rabbitMQConsumer.execute();
-        return super.activate();
-    }
-
-    @Override
-    public boolean deactivate() {
-        rabbitMQConsumer.close();
-        return super.deactivate();
-    }
 }

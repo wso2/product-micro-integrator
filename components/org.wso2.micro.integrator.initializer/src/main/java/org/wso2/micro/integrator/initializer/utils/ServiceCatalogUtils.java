@@ -780,18 +780,6 @@ public class ServiceCatalogUtils {
             if (!extractCApp(file, targetDir, md5MapOfAllService)) {
                 return false;
             }
-        } catch (IOException e) {
-            log.error("Error occurred while processing the metadata files", e);
-            return false;
-        } catch (CarbonException e) {
-            log.error("Error occurred when extracting the carbon application", e);
-            return false;
-        } catch (ResolverException e) {
-            log.error("Environment variables are not configured correctly", e);
-            return false;
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Could not generate the MD5 sum", e);
-            return false;
         }
         return true;
     }

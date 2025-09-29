@@ -82,10 +82,9 @@ public class GenericTask extends InboundTask implements LocalTaskActionListener 
     public void notifyLocalTaskResume(String taskName) {
         try {
             pollingConsumer.resume();
-        } catch (AbstractMethodError e) {
-            logger.warn( "Task [" + taskName + "] : Unsupported operation 'resume()' for this version of PollingConsumer" +
-                    "If using a WSO2-released inbound, please upgrade to the latest version. " +
-                    "If this is a custom inbound, implement the 'resume' logic accordingly.");
+        } catch (NoSuchMethodError e) {
+            logger.warn("resume() method not available in this version of PollingConsumer. Update to the latest " +
+                    "server version immediately Task: " + taskName);
         }
     }
 

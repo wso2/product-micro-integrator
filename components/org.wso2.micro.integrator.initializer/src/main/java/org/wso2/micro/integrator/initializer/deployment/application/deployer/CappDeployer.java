@@ -136,12 +136,7 @@ public class CappDeployer extends AbstractDeployer {
 
         if (ServiceCatalogUtils.isServiceCatalogEnabled()) {
             serviceCatalogConfiguration = ServiceCatalogUtils.readConfiguration(secretCallbackHandlerService);
-<<<<<<< HEAD
             serviceCatalogExecutor = Executors.newSingleThreadExecutor();
-=======
-            serviceCatalogExecutor = Executors.newSingleThreadExecutor();
-            initialServiceCatalogExecutor = Executors.newSingleThreadExecutor();
->>>>>>> e55a5787f1 (Add fix for creation of huge amount of temporary files when service catalogue feature enabled.)
             initialServiceCatalogExecutor = Executors.newSingleThreadExecutor();
         }
     }

@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Generic callback implementation for one time trigger inbound endpoints. In this case
- * Message injection is happening in a separate thread ( Callback ) per message.
+ * Message injection is happens in a separate thread ( Callback ) per message.
  */
 public abstract class OneTimeTriggerAbstractCallback {
 

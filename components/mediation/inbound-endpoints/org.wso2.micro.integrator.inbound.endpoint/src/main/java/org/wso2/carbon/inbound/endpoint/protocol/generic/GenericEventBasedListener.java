@@ -80,8 +80,21 @@ public class GenericEventBasedListener extends InboundOneTimeTriggerEventBasedPr
     }
 
     public void init() {
-        log.info("Inbound event based listener [" + name + "]" + " for class [" + classImpl + "] is initializing"
-                + (this.startInPausedMode ? " but will remain in suspended mode..." : "..."));
+        /*
+         * The activate/deactivate functionality is not currently implemented
+         * for this Inbound Endpoint type.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability is implemented.
+         */
+        if (startInPausedMode) {
+            log.info("Inbound endpoint [" + name + "] is currently suspended.");
+            return;
+        }
+        log.info("Inbound event based listener " + name + " for class " + classImpl + " starting ...");
         Map<String, ClassLoader> libClassLoaders = SynapseConfiguration.getLibraryClassLoaders();
         Class c = null;
         if (libClassLoaders != null) {
@@ -147,34 +160,6 @@ public class GenericEventBasedListener extends InboundOneTimeTriggerEventBasedPr
 
     public void update() {
         start();
-    }
-
-    public boolean activate() {
-        try {
-            eventConsumer.resume();
-        } catch (AbstractMethodError e) {
-            throw new UnsupportedOperationException("Unsupported operation 'resume()' for Inbound Endpoint: " + getName() +
-                    "If using a WSO2-released inbound, please upgrade to the latest version. " +
-                    "If this is a custom inbound, implement the 'resume' logic accordingly.");
-        }
-        return super.activate();
-    }
-
-    @Override
-    public boolean deactivate() {
-        boolean isTaskDeactivated = super.deactivate();
-
-        if (isTaskDeactivated) {
-            try {
-                eventConsumer.pause();
-            } catch (AbstractMethodError e) {
-                throw new UnsupportedOperationException("Unsupported operation 'pause()' for Inbound Endpoint: " + getName() +
-                        "If using a WSO2-released inbound, please upgrade to the latest version. " +
-                        "If this is a custom inbound, implement the 'pause' logic accordingly.");
-            }
-        }
-
-        return isTaskDeactivated;
     }
 
 }

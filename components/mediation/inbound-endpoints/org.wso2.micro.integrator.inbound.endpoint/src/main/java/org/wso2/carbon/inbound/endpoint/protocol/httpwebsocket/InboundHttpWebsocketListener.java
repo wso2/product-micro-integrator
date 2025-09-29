@@ -22,7 +22,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.inbound.InboundProcessorParams;
 import org.apache.synapse.inbound.InboundRequestProcessor;
-import org.wso2.carbon.inbound.endpoint.protocol.http.management.HTTPEndpointManager;
 import org.wso2.carbon.inbound.endpoint.protocol.httpwebsocket.management.HttpWebsocketEndpointManager;
 
 public class InboundHttpWebsocketListener implements InboundRequestProcessor {
@@ -51,10 +50,19 @@ public class InboundHttpWebsocketListener implements InboundRequestProcessor {
     @Override
     public void init() {
 
-        LOGGER.info("HTTP WebSocket inbound endpoint [" + name + "] is initializing"
-                + (startInPausedMode ? " but will remain in suspended mode..." : "..."));
-
-        if (!startInPausedMode) {
+        /*
+         * The activate/deactivate functionality for the HTTP-WS protocol is not currently implemented
+         * for Inbound Endpoints.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability for HTTP-WS listener is implemented.
+         */
+        if (startInPausedMode) {
+            LOGGER.info("Inbound endpoint [" + name + "] is currently suspended.");
+        } else {
             HttpWebsocketEndpointManager.getInstance().startEndpoint(port, name, processorParams);
         }
     }
@@ -67,37 +75,14 @@ public class InboundHttpWebsocketListener implements InboundRequestProcessor {
 
     @Override
     public boolean activate() {
-        boolean isSuccessfullyActivated = false;
-        try {
-            isSuccessfullyActivated = HttpWebsocketEndpointManager.getInstance()
-                    .startEndpoint(port, name, processorParams);
 
-        } catch (SynapseException e) {
-            LOGGER.error("Error while activating HTTP WebSocket inbound endpoint [" + name + "] on port " + port, e);
-        }
-
-        if (isSuccessfullyActivated) {
-            LOGGER.info("HTTP WebSocket inbound endpoint [" + name + "] is activated successfully on port " + port);
-        } else {
-            LOGGER.warn("HTTP WebSocket inbound endpoint [" + name + "] activation failed on port " + port);
-        }
-
-        return isSuccessfullyActivated;
+        return false;
     }
 
     @Override
     public boolean deactivate() {
-        boolean isSuccessfullyDeactivated = false;
-        HttpWebsocketEndpointManager manager = HttpWebsocketEndpointManager.getInstance();
-        manager.closeEndpoint(port);
 
-        if (!manager.isEndpointRunning(name, port)) {
-            LOGGER.info("HTTP/HTTPs WebSocket inbound endpoint [" + name + "] is deactivated successfully.");
-            isSuccessfullyDeactivated = true;
-        } else {
-            LOGGER.warn("HTTP/HTTPS WebSocket inbound endpoint [" + name + "] deactivation failed on port " + port);
-        }
-        return isSuccessfullyDeactivated;
+        return false;
     }
 
     @Override

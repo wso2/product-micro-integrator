@@ -19,7 +19,6 @@ package org.wso2.carbon.inbound.endpoint.protocol.httpssecurewebsocket;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.SynapseException;
 import org.apache.synapse.inbound.InboundProcessorParams;
 import org.wso2.carbon.inbound.endpoint.protocol.httpwebsocket.InboundHttpWebsocketListener;
 import org.wso2.carbon.inbound.endpoint.protocol.httpwebsocket.management.HttpWebsocketEndpointManager;
@@ -36,31 +35,20 @@ public class InboundHttpsSecureWebsocketListener extends InboundHttpWebsocketLis
     @Override
     public void init() {
 
-        LOGGER.info("HTTPS WebSocket inbound endpoint [" + name + "] is initializing"
-                + (this.startInPausedMode ? " but will remain in suspended mode..." : "..."));
-
-        if (!startInPausedMode) {
+        /*
+         * The activate/deactivate functionality for the HTTPS-WSS protocol is not currently implemented
+         * for Inbound Endpoints.
+         *
+         * Therefore, the following check has been added to immediately return if the "suspend"
+         * attribute is set to true in the inbound endpoint configuration.
+         *
+         * Note: This implementation is temporary and should be revisited and improved once
+         * the activate/deactivate capability for HTTPS-WSS listeners is implemented.
+         */
+        if (startInPausedMode) {
+            LOGGER.info("Inbound endpoint [" + name + "] is currently suspended.");
+        } else {
             HttpWebsocketEndpointManager.getInstance().startSSLEndpoint(port, name, processorParams);
         }
-    }
-
-    @Override
-    public boolean activate() {
-        boolean isSuccessfullyActivated = false;
-        try {
-            isSuccessfullyActivated = HttpWebsocketEndpointManager.getInstance()
-                    .startSSLEndpoint(port, name, processorParams);
-
-        } catch (SynapseException e) {
-            LOGGER.error("Error while activating HTTPS WebSocket inbound endpoint [" + name + "] on port " + port, e);
-        }
-
-        if (isSuccessfullyActivated) {
-            LOGGER.info("HTTPS WebSocket inbound endpoint [" + name + "] is activated successfully on port " + port);
-        } else {
-            LOGGER.warn("HTTPS WebSocket inbound endpoint [" + name + "] activation failed on port " + port);
-        }
-
-        return isSuccessfullyActivated;
     }
 }
