@@ -39,6 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.wso2.micro.integrator.initializer.utils.Constants.DOUBLE_UNDERSCORE;
 
 public class DeployerUtilTest {
 
@@ -70,7 +71,7 @@ public class DeployerUtilTest {
             zos.putNextEntry(new ZipEntry("descriptor.xml"));
             StringBuilder descriptor = new StringBuilder();
             descriptor.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project>\n<id>")
-                    .append(groupId).append("_").append(artifactId).append("_").append(version)
+                    .append(groupId).append(DOUBLE_UNDERSCORE).append(artifactId).append(DOUBLE_UNDERSCORE).append(version)
                     .append("</id>\n<dependencies>\n");
             for (String dep : dependencies) {
                 descriptor.append(dep).append("\n");
@@ -108,10 +109,10 @@ public class DeployerUtilTest {
         writeDescriptorToExistingCarFile(carFile, "com.example", "a", "1.0.0", depB, depC);
 
         CAppDescriptor cAppDescriptor = new CAppDescriptor(carFile);
-        assertEquals("com.example_a_1.0.0", cAppDescriptor.getCAppId());
+        assertEquals("com.example__a__1.0.0", cAppDescriptor.getCAppId());
         assertNotNull(cAppDescriptor.getCAppDependencies());
-        assertTrue(cAppDescriptor.getCAppDependencies().contains("com.example_c_1.0.0"));
-        assertTrue(cAppDescriptor.getCAppDependencies().contains("com.example_c_1.0.0"));
+        assertTrue(cAppDescriptor.getCAppDependencies().contains("com.example__c__1.0.0"));
+        assertTrue(cAppDescriptor.getCAppDependencies().contains("com.example__c__1.0.0"));
     }
 
     @Test
@@ -207,7 +208,7 @@ public class DeployerUtilTest {
             fail("Expected DeploymentException due to missing CApp");
         } catch (DeploymentException e) {
             assertTrue(e.getMessage().contains("Some CApps are missing:"));
-            assertTrue(e.getMessage().contains("com.example_b_1.0.0"));
+            assertTrue(e.getMessage().contains("com.example__b__1.0.0"));
         }
     }
 
