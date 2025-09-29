@@ -61,14 +61,24 @@ public abstract class GenericEventBasedConsumer {
     }
 
     /**
-     * This methods needs to be implemented when implementing the custom inbound
+     * This method needs to be implemented when implementing the custom inbound.
      */
     public abstract void listen();
 
     /**
-     * This methods needs to be implemented when terminating the inbound
+     * This method needs to be implemented when terminating the inbound.
      */
     public abstract void destroy();
+
+    /**
+     * This method needs to be implemented when activating the inbound.
+     */
+    public abstract void resume();
+
+    /**
+     * This method needs to be implemented when deactivating the inbound.
+     */
+    public abstract void pause();
 
     protected boolean injectMessage(String strMessage, String contentType) {
         InputStream in = new AutoCloseInputStream(new ByteArrayInputStream(strMessage.getBytes()));
@@ -129,7 +139,7 @@ public abstract class GenericEventBasedConsumer {
     }
 
     /**
-     * Create the initial message context for the file
+     * Create the initial message context for the file.
      */
     private org.apache.synapse.MessageContext createMessageContext() {
         org.apache.synapse.MessageContext msgCtx = synapseEnvironment.createMessageContext();
@@ -141,16 +151,16 @@ public abstract class GenericEventBasedConsumer {
     }
 
     /**
-     * States whether generic endpoint is a eventBased
+     * States whether generic endpoint is a eventBased.
      * Return true; if eventBased
      *
      * @param inboundParameters Inbound Parameters for endpoint
      * @return boolean
      */
     public static boolean isEventBasedInboundEndpoint(InboundProcessorParams inboundParameters) {
-        return inboundParameters.getProperties().containsKey(GenericInboundListener.PARAM_INBOUND_ENDPOINT_BEHAVIOR)
+        return inboundParameters.getProperties().containsKey(GenericConstants.PARAM_INBOUND_ENDPOINT_BEHAVIOR)
                 && PARAM_INBOUND_ENDPOINT_BEHAVIOR_EVENT_BASED.equals(inboundParameters.getProperties().getProperty(
-                GenericInboundListener.PARAM_INBOUND_ENDPOINT_BEHAVIOR));
+                GenericConstants.PARAM_INBOUND_ENDPOINT_BEHAVIOR));
     }
 
 }
