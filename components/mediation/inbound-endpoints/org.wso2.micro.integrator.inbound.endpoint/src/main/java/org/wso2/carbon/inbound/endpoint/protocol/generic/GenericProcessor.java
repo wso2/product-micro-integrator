@@ -36,6 +36,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.wso2.carbon.inbound.endpoint.protocol.generic.GenericConstants.CRON_EXPRESSION;
+
 public class GenericProcessor extends InboundRequestProcessorImpl implements TaskStartupObserver {
 
     private GenericPollingConsumer pollingConsumer;
@@ -46,6 +48,7 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
     private StartUpController startUpController;
     private String classImpl;
     private boolean sequential;
+    private String cronExpression;
 
     private static final String ENDPOINT_POSTFIX = "CLASS" + COMMON_ENDPOINT_POSTFIX;
 
@@ -63,10 +66,44 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
         this.sequential = sequential;
     }
 
+    public GenericProcessor(String name, String classImpl, Properties properties, long scanInterval,
+                            String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment,
+                            boolean coordination, boolean sequential, boolean startInPauseMode) {
+        this.name = name;
+        this.properties = properties;
+        this.interval = scanInterval;
+        this.injectingSeq = injectingSeq;
+        this.onErrorSeq = onErrorSeq;
+        this.synapseEnvironment = synapseEnvironment;
+        this.classImpl = classImpl;
+        this.coordination = coordination;
+        this.sequential = sequential;
+        this.startInPausedMode = startInPauseMode;
+
+    }
+
+    public GenericProcessor(String name, String classImpl, Properties properties, String cronExpression,
+                            String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment,
+                            boolean coordination, boolean sequential) {
+        this.name = name;
+        this.properties = properties;
+        this.injectingSeq = injectingSeq;
+        this.onErrorSeq = onErrorSeq;
+        this.synapseEnvironment = synapseEnvironment;
+        this.classImpl = classImpl;
+        this.coordination = coordination;
+        this.sequential = sequential;
+        this.cronExpression = cronExpression;
+    }
+
     public GenericProcessor(InboundProcessorParams params) {
         this.name = params.getName();
         this.properties = params.getProperties();
-        this.interval = Long.parseLong(properties.getProperty(PollingConstants.INBOUND_ENDPOINT_INTERVAL));
+        if (properties.getProperty(PollingConstants.INBOUND_ENDPOINT_INTERVAL) != null) {
+            this.interval = Long.parseLong(properties.getProperty(PollingConstants.INBOUND_ENDPOINT_INTERVAL));
+        } else if (properties.getProperty(CRON_EXPRESSION) != null) {
+            this.cronExpression = properties.getProperty(CRON_EXPRESSION);
+        }
         this.coordination = true;
         if (properties.getProperty(PollingConstants.INBOUND_COORDINATION) != null) {
             this.coordination = Boolean.parseBoolean(properties.getProperty(PollingConstants.INBOUND_COORDINATION));
@@ -84,21 +121,8 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
     }
 
     public void init() {
-        /*
-         * The activate/deactivate functionality is not currently implemented
-         * for this Inbound Endpoint type.
-         *
-         * Therefore, the following check has been added to immediately return if the "suspend"
-         * attribute is set to true in the inbound endpoint configuration.
-         *
-         * Note: This implementation is temporary and should be revisited and improved once
-         * the activate/deactivate capability is implemented.
-         */
-        if (startInPausedMode) {
-            log.info("Inbound endpoint [" + name + "] is currently suspended.");
-            return;
-        }
-        log.info("Inbound listener " + name + " for class " + classImpl + " starting ...");
+        log.info("Inbound listener [" + name + "] is initializing"
+                + (this.startInPausedMode ? " but will remain in suspended mode..." : "..."));
         Map<String, ClassLoader> libClassLoaders = SynapseConfiguration.getLibraryClassLoaders();
         Class c = null;
         if (libClassLoaders != null) {
@@ -124,12 +148,19 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
             }
         }
         try {
-            Constructor cons = c
-                    .getConstructor(Properties.class, String.class, SynapseEnvironment.class, long.class, String.class,
-                            String.class, boolean.class, boolean.class);
-            pollingConsumer = (GenericPollingConsumer) cons
-                    .newInstance(properties, name, synapseEnvironment, interval, injectingSeq, onErrorSeq, coordination,
-                            sequential);
+            Constructor cons;
+            if (cronExpression != null && !cronExpression.trim().isEmpty() && !cronExpression.equals("null")) {
+                cons = c.getConstructor(Properties.class, String.class, SynapseEnvironment.class, String.class,
+                        String.class, String.class, boolean.class, boolean.class);
+                pollingConsumer = (GenericPollingConsumer) cons.newInstance(properties, name, synapseEnvironment,
+                        cronExpression, injectingSeq, onErrorSeq, coordination, sequential);
+            } else {
+                cons = c.getConstructor(Properties.class, String.class, SynapseEnvironment.class, long.class,
+                        String.class, String.class, boolean.class, boolean.class);
+                pollingConsumer = (GenericPollingConsumer) cons.newInstance(properties, name, synapseEnvironment,
+                        interval, injectingSeq, onErrorSeq, coordination, sequential);
+            }
+
         } catch (NoSuchMethodException e) {
             handleException("Required constructor is not implemented.", e);
         } catch (InvocationTargetException e) {
@@ -179,13 +210,29 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
 
     @Override
     public boolean activate() {
-
-        return false;
+        try {
+            pollingConsumer.resume();
+        } catch (AbstractMethodError e) {
+            throw new UnsupportedOperationException("Unsupported operation 'resume()' for Inbound Endpoint: " + getName() +
+                    "If using a WSO2-released inbound, please upgrade to the latest version. " +
+                    "If this is a custom inbound, implement the 'resume' logic accordingly.");
+        }
+        return super.activate();
     }
 
     @Override
     public boolean deactivate() {
+        boolean isTaskDeactivated = super.deactivate();
 
-        return false;
+        if (isTaskDeactivated) {
+            try {
+                pollingConsumer.pause();
+            } catch (AbstractMethodError e) {
+                throw new UnsupportedOperationException("Unsupported operation 'pause()' for Inbound Endpoint: " + getName() +
+                        "If using a WSO2-released inbound, please upgrade to the latest version. " +
+                        "If this is a custom inbound, implement the 'pause' logic accordingly.");
+            }
+        }
+        return isTaskDeactivated;
     }
 }
