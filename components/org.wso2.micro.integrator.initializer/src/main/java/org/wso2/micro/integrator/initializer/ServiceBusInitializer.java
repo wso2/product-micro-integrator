@@ -17,6 +17,9 @@
  */
 package org.wso2.micro.integrator.initializer;
 
+import java.util.Map;
+import javax.xml.stream.XMLInputFactory;
+import org.apache.axiom.om.util.StAXUtils;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.AxisServiceGroup;
@@ -118,6 +121,9 @@ public class ServiceBusInitializer {
             log.debug(ServiceBusInitializer.class.getName() + "#activate() BEGIN - " + System.currentTimeMillis());
         }
         log.debug("Activating Micro Integrator...");
+
+        // Check XMLInputFactory properties for XXE safe configuration
+        checkInputFactoryProperties();
 
         if (taskService != null && !taskService.isServerInit()) {
             log.debug("Initialize Task Service");
@@ -642,5 +648,36 @@ public class ServiceBusInitializer {
             transactionCounterEnabled = Boolean.parseBoolean(object.toString());
         }
         return transactionCounterEnabled;
+    }
+
+    /**
+     * Check XMLInputFactory properties for XXE safe configuration.
+     * Shutdown the server if unsafe properties are found.
+     */
+    private void checkInputFactoryProperties() {
+        log.debug("Checking XMLInputFactory properties for unsafe configurations");
+        Map<?, ?> props = StAXUtils.loadFactoryProperties("XMLInputFactory.properties");
+        boolean propsFound = false;
+        if (props != null) {
+            log.debug("Found XMLInputFactory properties file, checking for unsafe configurations");
+            for (Map.Entry<?, ?> entry : props.entrySet()) {
+                String key = String.valueOf(entry.getKey());
+                String value = String.valueOf(entry.getValue());
+                if ((XMLInputFactory.SUPPORT_DTD.equals(key) && Boolean.parseBoolean(value)) ||
+                    (XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES.equals(key)
+                        && Boolean.parseBoolean(value))) {
+                    propsFound = true;
+                    break;
+                }
+            }
+        }
+        if (propsFound) {
+            log.error(
+                "The XMLInputFactory.properties file contains properties which can lead to "
+                    + "XXE attacks. Please remove the properties '" + XMLInputFactory.SUPPORT_DTD
+                    + "' and '" + XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES
+                    + "' from the file and restart the server.");
+            System.exit(1);
+        }
     }
 }
