@@ -28,7 +28,7 @@ import java.util.Properties;
 public class GenericTask extends InboundTask implements LocalTaskActionListener {
     private static final Log logger = LogFactory.getLog(GenericTask.class.getName());
 
-    private GenericPollingConsumer pollingConsumer;
+    private final GenericPollingConsumer pollingConsumer;
 
     public GenericTask(GenericPollingConsumer pollingConsumer, long interval) {
         logger.debug("Generic Task initalize.");
@@ -87,5 +87,9 @@ public class GenericTask extends InboundTask implements LocalTaskActionListener 
                     "If using a WSO2-released inbound, please upgrade to the latest version. " +
                     "If this is a custom inbound, implement the 'resume' logic accordingly.");
         }
+    }
+
+    public GenericPollingConsumer getPollingConsumer() {
+        return pollingConsumer;
     }
 }
