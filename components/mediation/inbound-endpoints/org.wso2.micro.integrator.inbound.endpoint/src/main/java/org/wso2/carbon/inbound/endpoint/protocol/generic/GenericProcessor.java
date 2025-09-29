@@ -79,6 +79,7 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
         this.coordination = coordination;
         this.sequential = sequential;
         this.startInPausedMode = startInPauseMode;
+
     }
 
     public GenericProcessor(String name, String classImpl, Properties properties, String cronExpression,
@@ -155,7 +156,7 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
                         cronExpression, injectingSeq, onErrorSeq, coordination, sequential);
             } else {
                 cons = c.getConstructor(Properties.class, String.class, SynapseEnvironment.class, long.class,
-                                String.class, String.class, boolean.class, boolean.class);
+                        String.class, String.class, boolean.class, boolean.class);
                 pollingConsumer = (GenericPollingConsumer) cons.newInstance(properties, name, synapseEnvironment,
                         interval, injectingSeq, onErrorSeq, coordination, sequential);
             }
