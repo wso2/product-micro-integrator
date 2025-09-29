@@ -658,9 +658,9 @@ public class ServiceBusInitializer {
     private void checkInputFactoryProperties() {
         log.debug("Checking XMLInputFactory properties for XXE vulnerabilities");
         Map<?, ?> props = StAXUtils.loadFactoryProperties("XMLInputFactory.properties");
+        if (props != null) {
+            log.debug("Found XMLInputFactory properties file, checking for unsafe configurations");
             for (Map.Entry<?, ?> entry : props.entrySet()) {
-                String key = String.valueOf(entry.getKey());
-                String value = String.valueOf(entry.getValue());
                 if ((XMLInputFactory.SUPPORT_DTD.equals(key) && Boolean.parseBoolean(value)) ||
                     (XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES.equals(key)
                         && Boolean.parseBoolean(value))) {
