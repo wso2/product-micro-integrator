@@ -1665,7 +1665,7 @@
         <org.objenesis.version>2.1</org.objenesis.version>
 
         <!-- Apache Axis2 -->
-        <axis2.wso2.version>1.6.1-wso2v105</axis2.wso2.version>
+        <axis2.wso2.version>1.6.1-wso2v106</axis2.wso2.version>
         <!-- Please unify axis2 versions in future -->
         <axis2.wso2.integration.test.version>1.6.1-wso2v105</axis2.wso2.integration.test.version>
         <imp.pkg.version.axis2>[1.6.1, 1.7.0)</imp.pkg.version.axis2>
