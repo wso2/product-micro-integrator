@@ -655,9 +655,9 @@ public class ServiceBusInitializer {
      * Shutdown the server if unsafe properties are found.
      */
     private void checkInputFactoryProperties() {
+    private void checkInputFactoryProperties() {
+        log.debug("Checking XMLInputFactory properties for XXE vulnerabilities");
         Map<?, ?> props = StAXUtils.loadFactoryProperties("XMLInputFactory.properties");
-        boolean propsFound = false;
-        if (props != null) {
             for (Map.Entry<?, ?> entry : props.entrySet()) {
                 String key = String.valueOf(entry.getKey());
                 String value = String.valueOf(entry.getValue());
