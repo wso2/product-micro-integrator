@@ -1964,7 +1964,7 @@
         <wrapper.version>3.2.3</wrapper.version>
         <nimbus-jose.orbit.version>9.22.0.wso2v1</nimbus-jose.orbit.version>
         <nimbus-jose.orbit.imp.pkg.version>[9.22,10.0)</nimbus-jose.orbit.imp.pkg.version>
-        <grpc.version>1.59.0</grpc.version>
+        <grpc.version>1.75.0</grpc.version>
         <axis2-java2wsdl.version>1.6.2</axis2-java2wsdl.version>
         <!-- Prometheus Library versions-->
         <prometheus.version>0.8.1</prometheus.version>
