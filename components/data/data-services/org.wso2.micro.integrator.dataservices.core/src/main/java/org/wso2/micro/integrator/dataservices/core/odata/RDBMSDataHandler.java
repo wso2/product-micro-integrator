@@ -31,11 +31,9 @@ import org.wso2.micro.integrator.dataservices.core.DataServiceFault;
 import org.wso2.micro.integrator.dataservices.core.engine.DataEntry;
 
 import javax.sql.DataSource;
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -404,12 +402,15 @@ public class RDBMSDataHandler implements ODataDataHandler {
 
     @Override
     public List<ODataEntry> readTable(String tableName) throws ODataServiceFault {
+        validateTableName(tableName);
         ResultSet resultSet = null;
         Connection connection = null;
         PreparedStatement statement = null;
         try {
             connection = initializeConnection();
-            String query = "select * from " + tableName;
+            StringBuilder sql = new StringBuilder();
+            sql.append("SELECT * FROM ").append(tableName);
+            String query = sql.toString();
             statement = connection.prepareStatement(query);
             resultSet = statement.executeQuery();
             return createDataEntryCollectionFromRS(tableName, resultSet);
@@ -427,6 +428,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
     }
 
     public int getEntityCountWithKeys(String tableName, ODataEntry keys) throws ODataServiceFault {
+        validateTableName(tableName);
         ResultSet resultSet = null;
         Connection connection = null;
         PreparedStatement statement = null;
@@ -456,6 +458,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
     }
 
     public int getEntityCount(String tableName) throws ODataServiceFault {
+        validateTableName(tableName);
         ResultSet resultSet = null;
         Connection connection = null;
         PreparedStatement statement = null;
@@ -477,6 +480,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
     }
 
     public List<ODataEntry> streamTable(String tableName) throws ODataServiceFault {
+        validateTableName(tableName);
         try {
             if (this.initializeStream) {
                 this.initializeStream = false;
@@ -546,11 +550,15 @@ public class RDBMSDataHandler implements ODataDataHandler {
 
     public List<ODataEntry> streamTableWithOrder(String tableName, OrderByOption orderByOption)
             throws ODataServiceFault {
+        validateTableName(tableName);
         try {
             if (this.initializeStream) {
                 this.initializeStream = false;
                 this.streamConnection = initializeConnection();
-                String query = "SELECT * FROM " + tableName + " " + getSortStatement(orderByOption);
+                StringBuilder sql = new StringBuilder();
+                sql.append("SELECT * FROM ").append(tableName).append(" ")
+                        .append(buildOrderByClause(tableName, orderByOption));
+                String query = sql.toString();
                 this.preparedStatement = this.streamConnection.prepareStatement(query,
                                                                                 ResultSet.TYPE_SCROLL_INSENSITIVE,
                                                                                 ResultSet.CONCUR_READ_ONLY);
@@ -593,27 +601,68 @@ public class RDBMSDataHandler implements ODataDataHandler {
     }
 
     /**
-     * This method creates the sort statement for the query.
+     * This method generates the SQL query for sorting the result set.
      *
-     * @param orderByOption List of keys to consider when sorting
-     * @return Sort statement
+     * @param table the table name for column validation
+     * @param orderBy the order by option
+     * @return SQL ORDER BY clause
+     * @throws ODataServiceFault
+     * @throws SQLException
      */
-    private String getSortStatement(OrderByOption orderByOption) throws SQLException {
-        String orderBy = "ORDER BY ";
-        for (int i = 0; i < orderByOption.getOrders().size(); i++) {
-            if (i != 0) {
-                orderBy += ", ";
-            }
-            final OrderByItem item = orderByOption.getOrders().get(i);
-            String expression = String.valueOf(item.getExpression()).replaceAll("\\[", "(").replaceAll("\\]", ")")
-                    .replaceAll("[\\{\\}]", "");
-            if (this.streamConnection.getMetaData().getDatabaseProductName().toLowerCase().contains(MSSQL_SERVER)) {
-                expression = expression.replace("length", "len");
-            }
-            orderBy += expression;
-            orderBy += item.isDescending() ? " DESC" : " ASC";
+    private String buildOrderByClause(String table, OrderByOption orderBy)
+            throws ODataServiceFault, SQLException {
+        
+        if (orderBy == null || orderBy.getOrders().isEmpty()) {
+            return "";
         }
-        return orderBy;
+        
+        StringBuilder sb = new StringBuilder("ORDER BY ");
+        
+        for (int i = 0; i < orderBy.getOrders().size(); i++) {
+            OrderByItem item = orderBy.getOrders().get(i);
+            String expr = String.valueOf(item.getExpression()).trim();
+            
+            if (i > 0) {
+                sb.append(", ");
+            }
+            
+            // Handle different expression types
+            String processedExpr = processOrderByExpression(table, expr);
+            sb.append(processedExpr);
+            sb.append(item.isDescending() ? " DESC" : " ASC");
+        }
+        
+        return sb.toString();
+    }
+
+    /**
+     * Processes ORDER BY expressions, handling both simple columns and complex expressions
+     * @throws ODataServiceFault 
+     */
+    private String processOrderByExpression(String table, String expr) throws SQLException, ODataServiceFault {
+        String cleaned = expr.replaceAll("\\[", "(")
+                            .replaceAll("\\]", ")")
+                            .replaceAll("[\\{\\}]", "");
+        
+        if (this.streamConnection != null && 
+            this.streamConnection.getMetaData().getDatabaseProductName().toLowerCase().contains("microsoft")) {
+            cleaned = cleaned.replace("length(", "len(");
+        }
+        
+        if (isSimpleColumnReference(cleaned)) {
+            String col = cleaned.contains(".") ? 
+                cleaned.substring(cleaned.lastIndexOf('.') + 1) : cleaned;
+            validateColumnName(table, col);
+            return col;
+        }
+        return cleaned;
+    }
+
+    /**
+     * Determines if an expression is a simple column reference
+     */
+    private boolean isSimpleColumnReference(String expr) {
+        return expr.matches("^[a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*)?$");
     }
 
     @Override
@@ -640,6 +689,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
 
     @Override
     public ODataEntry insertEntityToTable(String tableName, ODataEntry entry) throws ODataServiceFault {
+        validateTableName(tableName);
         Connection connection = null;
         PreparedStatement statement = null;
         try {
@@ -706,6 +756,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
 
     @Override
     public List<ODataEntry> readTableWithKeys(String tableName, ODataEntry keys) throws ODataServiceFault {
+        validateTableName(tableName);
         ResultSet resultSet = null;
         Connection connection = null;
         PreparedStatement statement = null;
@@ -734,6 +785,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
     }
 
     public List<ODataEntry> streamTableWithKeys(String tableName, ODataEntry keys) throws ODataServiceFault {
+        validateTableName(tableName);
         try {
             if (this.initializeStream) {
                 this.initializeStream = false;
@@ -957,6 +1009,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
 
     @Override
     public boolean updateEntityInTable(String tableName, ODataEntry newProperties) throws ODataServiceFault {
+        validateTableName(tableName);
         List<String> pKeys = this.primaryKeys.get(tableName);
         Connection connection = null;
         PreparedStatement statement = null;
@@ -1001,6 +1054,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
 
     public boolean updateEntityInTableTransactional(String tableName, ODataEntry oldProperties,
                                                     ODataEntry newProperties) throws ODataServiceFault {
+        validateTableName(tableName);
         List<String> pKeys = this.primaryKeys.get(tableName);
         PreparedStatement statement = null;
         Connection connection = null;
@@ -1045,6 +1099,7 @@ public class RDBMSDataHandler implements ODataDataHandler {
 
     @Override
     public boolean deleteEntityInTable(String tableName, ODataEntry entry) throws ODataServiceFault {
+        validateTableName(tableName);
         List<String> pKeys = this.primaryKeys.get(tableName);
         Connection connection = null;
         PreparedStatement statement = null;
@@ -1720,6 +1775,49 @@ public class RDBMSDataHandler implements ODataDataHandler {
             } catch (Exception ignore) {
                 // ignore
             }
+        }
+    }
+
+    private void validateTableName(String tableName) throws ODataServiceFault {
+        if (tableName == null || tableName.trim().isEmpty()) {
+            throw new ODataServiceFault("Table name cannot be null or empty");
+        }
+        
+        if (tableList.contains(tableName)) {
+            return;
+        }
+
+        String lowerTableName = tableName.toLowerCase();
+        boolean found = tableList.stream()
+            .anyMatch(table -> table.toLowerCase().equals(lowerTableName));
+        
+        if (!found) {
+            String tableOnly = tableName.contains(".") ? 
+                tableName.substring(tableName.lastIndexOf('.') + 1) : tableName;
+            
+            found = tableList.stream()
+                .anyMatch(table -> table.equalsIgnoreCase(tableOnly));
+        }
+        
+        if (!found) {
+            throw new ODataServiceFault("Table not found in available tables: " + tableName);
+        }
+    }
+
+    private void validateColumnName(String table, String column) throws ODataServiceFault {
+        if (column == null || column.trim().isEmpty()) {
+            throw new ODataServiceFault("Column name cannot be null or empty");
+        }
+        
+        Map<String, Integer> cols = rdbmsDataTypes.get(table);
+        if (cols == null) {
+            throw new ODataServiceFault("Table metadata not found: " + table);
+        }
+        
+        String cleanColumn = column.replaceAll("^[\"\\[]|[\"\\]]$", "");
+        
+        if (!cols.containsKey(cleanColumn)) {
+            throw new ODataServiceFault("Column not found in table " + table + ": " + column);
         }
     }
 }
