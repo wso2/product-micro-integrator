@@ -560,7 +560,8 @@ public class KeyStoreBasedExternalCryptoProvider implements ExternalCryptoProvid
         } else {
             cipher.init(Cipher.DECRYPT_MODE, decryptionKey, hybridEncryptionOutput.getParameterSpec());
         }
-        if ((hybridEncryptionOutput.getAuthData() != null) && (hybridEncryptionOutput.getAuthTag() != null)) {
+        if (hybridEncryptionOutput.getAuthData() != null && hybridEncryptionOutput.getAuthData().length> 0
+                && hybridEncryptionOutput.getAuthTag() != null &&  hybridEncryptionOutput.getAuthTag().length > 0) {
             cipher.updateAAD(hybridEncryptionOutput.getAuthData());
             byte[] encryptedDataWithTag = concatByteArrays(
                     new byte[][] { hybridEncryptionOutput.getCipherData(), hybridEncryptionOutput.getAuthTag() });

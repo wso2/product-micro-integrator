@@ -414,14 +414,15 @@ public class ServiceCatalogUtils {
 
             // Read the response if debug enabled.
             if (log.isDebugEnabled()) {
-                StringBuilder response = new StringBuilder();
-                BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                String strCurrentLine;
-                while ((strCurrentLine = br.readLine()) != null) {
-                    response.append(strCurrentLine);
+                try (BufferedReader br = new BufferedReader(new BufferedReader(new InputStreamReader(
+                        connection.getInputStream())))) {
+                    StringBuilder response = new StringBuilder();
+                    String strCurrentLine;
+                    while ((strCurrentLine = br.readLine()) != null) {
+                        response.append(strCurrentLine);
+                    }
+                    log.debug("Response from APIM : " + response);
                 }
-                br.close();
-                log.debug("Response from APIM : " + response);
             }
             return connection.getResponseCode();
         } catch (MalformedURLException e) {
