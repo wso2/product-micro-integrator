@@ -177,4 +177,9 @@ public class GenericEventBasedListener extends InboundOneTimeTriggerEventBasedPr
         return isTaskDeactivated;
     }
 
+    @Override
+    public void suspend() {
+
+        eventConsumer.stop();
+    }
 }

@@ -128,6 +128,13 @@ public class JMSProcessor extends InboundRequestProcessorImpl implements TaskSta
         super.destroy();
     }
 
+    @Override
+    public void suspend() {
+        for (JMSPollingConsumer pollingConsumer : pollingConsumers) {
+            pollingConsumer.stopPolling();
+        }
+    }
+
     /**
      * Register/start the schedule service
      */
@@ -176,4 +183,5 @@ public class JMSProcessor extends InboundRequestProcessorImpl implements TaskSta
 
         return false;
     }
+
 }

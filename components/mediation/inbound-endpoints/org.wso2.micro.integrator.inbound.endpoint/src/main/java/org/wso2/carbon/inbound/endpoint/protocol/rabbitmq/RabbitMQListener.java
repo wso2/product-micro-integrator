@@ -80,6 +80,12 @@ public class RabbitMQListener extends InboundOneTimeTriggerRequestProcessor {
         super.destroy(removeTask);
     }
 
+    public void stop() {
+        if (Objects.nonNull(rabbitMQConsumer)) {
+            rabbitMQConsumer.stopDeliver();
+        }
+    }
+
     @Override
     public void init() {
         log.info("RABBITMQ inbound endpoint [" + name + "] is initializing"

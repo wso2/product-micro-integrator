@@ -163,4 +163,5 @@ public abstract class GenericEventBasedConsumer {
                 GenericConstants.PARAM_INBOUND_ENDPOINT_BEHAVIOR));
     }
 
+    public abstract void stop();
 }

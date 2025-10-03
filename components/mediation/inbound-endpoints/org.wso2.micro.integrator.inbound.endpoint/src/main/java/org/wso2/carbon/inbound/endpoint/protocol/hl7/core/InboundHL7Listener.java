@@ -84,6 +84,12 @@ public class InboundHL7Listener implements InboundRequestProcessor {
     }
 
     @Override
+    public void suspend() {
+        // This is supposed to called during server shutdown.
+        // Ignored as the HL7 reactor has already been paused.
+    }
+
+    @Override
     public boolean activate() {
 
         return false;

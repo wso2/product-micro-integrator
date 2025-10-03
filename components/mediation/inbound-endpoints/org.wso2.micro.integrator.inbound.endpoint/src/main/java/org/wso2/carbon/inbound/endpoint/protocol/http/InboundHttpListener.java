@@ -85,6 +85,11 @@ public class InboundHttpListener implements InboundRequestProcessor {
     }
 
     @Override
+    public void suspend() {
+        destroy();
+    }
+
+    @Override
     public boolean activate() {
         boolean isSuccessfullyActivated = false;
         try {

@@ -18,8 +18,13 @@
 package org.wso2.carbon.inbound.endpoint.protocol.grpc;
 
 import com.google.protobuf.Empty;
+import io.grpc.Metadata;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,6 +38,7 @@ import org.wso2.carbon.inbound.endpoint.protocol.grpc.util.Event;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class InboundGRPCListener implements InboundRequestProcessor {
     private int port;
@@ -41,6 +47,7 @@ public class InboundGRPCListener implements InboundRequestProcessor {
     private static final Log log = LogFactory.getLog(InboundGRPCListener.class.getName());
     private Server server;
     private boolean startInPausedMode;
+    PausingInterceptor interceptor;
 
     public InboundGRPCListener(InboundProcessorParams params) {
         String injectingSeq = params.getInjectingSeq();
@@ -83,10 +90,15 @@ public class InboundGRPCListener implements InboundRequestProcessor {
 
     public void destroy() {
         try {
-            this.stop();
+            this.stopServer();
         } catch (InterruptedException e) {
             throw new SynapseException("Failed to stop gRPC server: " +e.getMessage());
         }
+    }
+
+    @Override
+    public void suspend() {
+        interceptor.pause();
     }
 
     @Override
@@ -113,6 +125,7 @@ public class InboundGRPCListener implements InboundRequestProcessor {
         if (server != null) {
             throw new IllegalStateException("gRPC Listener Server already started");
         }
+        interceptor = new PausingInterceptor();
         server = ServerBuilder.forPort(port).addService(new EventServiceGrpc.EventServiceImplBase() {
             @Override
             public void process(Event request, StreamObserver<Event> responseObserver) {
@@ -131,12 +144,12 @@ public class InboundGRPCListener implements InboundRequestProcessor {
                 responseObserver.onNext(Empty.getDefaultInstance());
                 responseObserver.onCompleted();
             }
-        }).build();
+        }).intercept(interceptor).build();
         server.start();
         log.debug("gRPC Listener Server started");
     }
 
-    public void stop() throws InterruptedException {
+    public void stopServer() throws InterruptedException {
         Server s = server;
         if (s == null) {
             throw new IllegalStateException("gRPC Listener Server is already stopped");
@@ -152,5 +165,25 @@ public class InboundGRPCListener implements InboundRequestProcessor {
             return;
         }
         throw new RuntimeException("Unable to shutdown gRPC Listener Server");
+    }
+
+    public class PausingInterceptor implements ServerInterceptor {
+        private final AtomicBoolean paused = new AtomicBoolean(false);
+
+        public void pause() { paused.set(true); }
+        public void resume() { paused.set(false); }
+
+        @Override
+        public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
+                ServerCall<ReqT, RespT> call,
+                Metadata headers,
+                ServerCallHandler<ReqT, RespT> next) {
+
+            if (paused.get()) {
+                call.close(Status.UNAVAILABLE.withDescription("Server temporarily paused"), new Metadata());
+                return new ServerCall.Listener<ReqT>() {}; // reject new requests
+            }
+            return next.startCall(call, headers);
+        }
     }
 }

@@ -113,6 +113,20 @@ public class HL7EndpointManager extends AbstractInboundEndpointManager {
         }
     }
 
+    /**
+     * Pauses all HL7 inbound endpoints in the server.
+     * <p>
+     * This operation triggers a pause on the shared HL7 IO Reactor.
+     * It should typically be invoked during server shutdown or maintenance
+     * procedures to ensure that no new HL7 connections or messages are accepted
+     * once paused.
+     * </p>
+     */
+    public void pauseAllEndpoints() {
+        log.info("Pausing HL7 IO Reactor.");
+        InboundHL7IOReactor.pause();
+    }
+
     private void validateParameters(InboundProcessorParams params, Map<String, Object> parameters) {
         if (!params.getProperties().getProperty(MLLPConstants.PARAM_HL7_AUTO_ACK).equalsIgnoreCase("true") && !params
                 .getProperties().getProperty(MLLPConstants.PARAM_HL7_AUTO_ACK).equalsIgnoreCase("false")) {

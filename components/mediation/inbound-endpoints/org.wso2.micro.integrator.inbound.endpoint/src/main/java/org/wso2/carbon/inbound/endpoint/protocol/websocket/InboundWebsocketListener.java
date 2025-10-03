@@ -70,6 +70,11 @@ public class InboundWebsocketListener implements InboundRequestProcessor {
     }
 
     @Override
+    public void suspend() {
+        destroy();
+    }
+
+    @Override
     public boolean activate() {
         boolean isSuccessfullyActivated = false;
         try {

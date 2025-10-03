@@ -17,17 +17,25 @@ package org.wso2.micro.core;
 
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.deployment.DeploymentEngine;
+import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.transport.TransportListener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.transport.passthru.api.PassThroughInboundEndpointHandler;
+import org.apache.synapse.transport.passthru.core.PassThroughListeningIOReactorManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.util.tracker.ServiceTracker;
+import org.wso2.carbon.inbound.endpoint.protocol.hl7.management.HL7EndpointManager;
 import org.wso2.micro.integrator.core.internal.CarbonCoreDataHolder;
 import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 
 import java.lang.management.ManagementPermission;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +88,7 @@ public class ServerManagement {
         }
         log.info("Starting to switch to maintenance mode...");
         stopTransportListeners();
+        suspendInboundEndpoints();
         destroyTransportListeners();
         waitForRequestCompletion();
     }
@@ -106,6 +115,60 @@ public class ServerManagement {
         }
         transportListenerShutdownPool.shutdown();
         log.info("Stopped all transport listeners");
+    }
+
+    /**
+     * Suspends all inbound endpoints in the server to stop accepting new requests.
+     * <p>
+     * This method explicitly suspends HTTP/S and HL7 endpoints that rely on shared I/O reactors.
+     * After pausing the shared I/O reactors, it also suspends all other inbound endpoints defined
+     * in the Synapse configuration. Each endpoint is suspended in a separate task using a thread pool,
+     * and this method waits until all endpoints are fully suspended before returning.
+     * <p>
+     * This ensures that no new requests are accepted in inbound endpoints during server shutdown
+     * or maintenance activities.
+     * <p>
+     * Any errors encountered while suspending individual endpoints are logged but do not halt the suspension
+     * process for other endpoints.
+     */
+    private void suspendInboundEndpoints() {
+        MicroIntegratorBaseUtils.checkSecurity();
+        log.info("Suspending all Inbound Endpoints...");
+
+        // Suspend HTTP/S Inbound endpoints to stop accepting new requests.
+        PassThroughListeningIOReactorManager.getInstance().pauseSharedIOReactor();
+
+        // Suspend HL7 Inbound endpoints to stop accepting new requests.
+        HL7EndpointManager.getInstance().pauseAllEndpoints();
+
+        Parameter synCfgParam =
+                serverConfigContext.getAxisConfiguration().getParameter(SynapseConstants.SYNAPSE_CONFIG);
+        if (synCfgParam == null) {
+            log.error("Unable to suspend Inbound Endpoints. Synapse configuration not found.");
+        } else {
+            SynapseConfiguration synapseConfiguration = (SynapseConfiguration) synCfgParam.getValue();
+            Collection<InboundEndpoint> inboundEndpoints =  synapseConfiguration.getInboundEndpoints();
+
+            ExecutorService inboundEndpointShutdownPool = Executors.newFixedThreadPool(inboundEndpoints.size());
+            List<Future<Void>> listenerShutdownFutures = new ArrayList<>();
+
+            for (InboundEndpoint inboundEndpoint : inboundEndpoints) {
+                Future<Void> future = inboundEndpointShutdownPool.submit(new InboundEndpointShutdownTask(inboundEndpoint));
+                listenerShutdownFutures.add(future);
+            }
+
+            // Wait until suspending the inbound endpoints before proceeding
+            for (Future<Void> future : listenerShutdownFutures) {
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    log.error("Error occurred while waiting for all inbound endpoints to suspend during shutdown", e);
+                }
+            }
+            inboundEndpointShutdownPool.shutdown();
+        }
+
+        log.info("Suspended all Inbound Endpoints");
     }
 
     /**
@@ -262,6 +325,23 @@ public class ServerManagement {
                 transport.stop();
             } catch (Exception e) {
                 log.error("Error while stopping Transport Listener", e);
+            }
+            return null;
+        }
+    }
+
+    private class InboundEndpointShutdownTask implements Callable<Void> {
+        private InboundEndpoint inboundEndpoint;
+
+        public InboundEndpointShutdownTask(InboundEndpoint inboundEndpoint) {
+            this.inboundEndpoint = inboundEndpoint;
+        }
+
+        public Void call() throws Exception {
+            try {
+                inboundEndpoint.suspend();
+            } catch (Exception e) {
+                log.error("Error while stopping Inbound Endpoint: " + inboundEndpoint.getName(), e);
             }
             return null;
         }
