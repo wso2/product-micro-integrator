@@ -181,10 +181,13 @@ public class HttpCachingFilter {
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
         String cacheControlHeaderValue = null;
 
-        //Copying All TRANSPORT_HEADERS to headerProperties Map.
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            headerProperties.put(entry.getKey(), entry.getValue());
+        if(headers != null) {
+            //Copying All TRANSPORT_HEADERS to headerProperties Map.
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                headerProperties.put(entry.getKey(), entry.getValue());
+            }
         }
+
         if (headerProperties.get(HttpHeaders.CACHE_CONTROL) != null) {
             cacheControlHeaderValue = String.valueOf(headerProperties.get(HttpHeaders.CACHE_CONTROL));
         }
