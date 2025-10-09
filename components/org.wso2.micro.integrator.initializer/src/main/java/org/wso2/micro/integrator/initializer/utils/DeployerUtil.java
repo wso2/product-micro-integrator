@@ -131,6 +131,10 @@ public class DeployerUtil {
         List<CAppDescriptor> cAppDescriptors = getCAppDescriptors(cAppFiles);
         Map<String, List<String>> cAppDependencyGraph = createCAppDependencyGraph(cAppDescriptors);
         List<String> graphProcessingOrder = getDependencyGraphProcessingOrder(cAppDependencyGraph);
+        if (log.isDebugEnabled()) {
+            log.debug("CApp processing order: " + String.join(", ", graphProcessingOrder));
+        }
+
         File[] orderedFiles = new File[cAppFiles.length];
         int index = 0;
         List<String> missingCAppInfos = new ArrayList<>();
