@@ -85,8 +85,7 @@ public class DataServiceCallMediatorFactory extends AbstractMediatorFactory {
 
         DataServiceCallMediator mediator = new DataServiceCallMediator();
         processAuditStatus(mediator, elem);
-        String dsName = FactoryUtils.getFullyQualifiedName(properties,
-                elem.getAttributeValue(new QName(DataServiceCallMediatorConstants.SERVICE_NAME)), FactoryUtils.TYPE_DATA_SERVICE);
+        String dsName = elem.getAttributeValue(new QName(DataServiceCallMediatorConstants.SERVICE_NAME));
         if (dsName == null) {
             handleException("The 'serviceName' attribute in 'dataServicesCall' element  is missing " +
                     "in the configuration.");

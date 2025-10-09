@@ -29,10 +29,12 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.api.API;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.wso2.carbon.securevault.SecretCallbackHandlerService;
 import org.wso2.micro.application.deployer.AppDeployerUtils;
 import org.wso2.micro.application.deployer.CarbonApplication;
@@ -541,7 +543,8 @@ public class CappDeployer extends AbstractDeployer {
                                     byte[] bytes = Files.readAllBytes(Paths.get(swaggerFile.getPath()));
                                     String artifactName = artifact.getName()
                                             .substring(0, artifact.getName().indexOf(SWAGGER_SUBSTRING));
-                                    if (parentApp.getAppConfig().isVersionedDeployment()) {
+                                    if (SynapsePropertiesLoader.getBooleanProperty(SynapseConstants.EXPOSE_VERSIONED_SERVICES, false)
+                                            && parentApp.getAppConfig().isVersionedDeployment()) {
                                         artifactName = artifact.getFullyQualifiedName()
                                                 .substring(0, artifact.getFullyQualifiedName().indexOf(SWAGGER_SUBSTRING));
                                     }
@@ -569,7 +572,8 @@ public class CappDeployer extends AbstractDeployer {
                     String apiName = getApiNameFromFile(new FileInputStream(apiXmlPath));
                     if (!StringUtils.isEmpty(apiName)) {
                         // Re-constructing swagger table with API name since artifact name is not unique
-                        if (parentApp.getAppConfig().isVersionedDeployment()) {
+                        if (SynapsePropertiesLoader.getBooleanProperty(SynapseConstants.EXPOSE_VERSIONED_SERVICES, false)
+                                && parentApp.getAppConfig().isVersionedDeployment()) {
                             apiName = parentApp.getAppConfig().getAppArtifactIdentifier() + Constants.DOUBLE_UNDERSCORE + apiName;
                             apiArtifactMap.put(artifact.getFullyQualifiedName(), apiName);
                         } else {

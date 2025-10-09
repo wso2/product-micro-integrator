@@ -25,7 +25,6 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.application.deployer.AppDeployerConstants;
 import org.wso2.micro.application.deployer.AppDeployerUtils;
-import org.wso2.micro.integrator.core.Constants;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
@@ -51,7 +50,7 @@ public class ApplicationConfiguration {
     public static final String DESCRIPTOR_XML = "descriptor.xml";
     public static final String FEATURE_POSTFIX = ".feature.group";
 
-    private static final QName Q_DEPLOYMENT_TYPE = new QName("deploymentType");
+    private static final QName Q_VERSIONED_DEPLOYMENT = new QName("versionedDeployment");
     private static final QName Q_ID = new QName("id");
     private static final QName Q_DEPENDENCIES = new QName("dependencies");
     private static final QName Q_DEPENDENCY = new QName("dependency");
@@ -239,6 +238,7 @@ public class ApplicationConfiguration {
     private void populateArtifactIdentifiers(OMElement descriptorElement) throws CarbonException {
 
         if (isVersionedDeploymentEnabled(descriptorElement)) {
+            this.isVersionedDeployment = true;
             this.appArtifactIdentifier = getRequiredElementText(descriptorElement, Q_ID,
                     "Invalid descriptor.xml. Artifact id is missing for a versioned deployment");
 
@@ -260,25 +260,17 @@ public class ApplicationConfiguration {
      * Checks if versioned deployment is enabled.
      * <p>
      * This method determines whether versioned deployment is enabled by checking
-     * the system property `enableVersionedCAppDeployment` or the deployment type
-     * specified in the provided descriptor element.
+     * the property `versionedDeployment` in the provided descriptor element.
      *
      * @param descriptorElement The descriptor element to check for deployment type
      * @return true if versioned deployment is enabled, false otherwise
      */
     private boolean isVersionedDeploymentEnabled(OMElement descriptorElement) {
 
-        String systemProperty = System.getProperty(Constants.ENABLE_VERSIONED_CAPP_DEPLOYMENT);
-        if ("true".equals(systemProperty != null ? systemProperty.trim() : null)) {
-            return isVersionedDeployment = true;
-        }
-
-        OMElement deploymentElement = descriptorElement.getFirstChildWithName(Q_DEPLOYMENT_TYPE);
+        OMElement deploymentElement = descriptorElement.getFirstChildWithName(Q_VERSIONED_DEPLOYMENT);
         if (deploymentElement != null) {
-            String deploymentType = deploymentElement.getText().trim();
-            if (AppDeployerConstants.VERSIONED_DEPLOYMENT.equals(deploymentType)) {
-                return isVersionedDeployment = true;
-            }
+            String versionedDeploymentStr = deploymentElement.getText().trim();
+            return Boolean.parseBoolean(versionedDeploymentStr);
         }
         return false;
     }
