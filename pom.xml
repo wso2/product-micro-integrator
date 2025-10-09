@@ -1793,7 +1793,7 @@
         <diagnostics.tool.version>1.1.1</diagnostics.tool.version>
         <jsch.version>0.2.24</jsch.version>
 
-        <config.mapper.version>1.0.26</config.mapper.version>
+        <config.mapper.version>1.0.25</config.mapper.version>
         <javax.xml.parsers.import.pkg.version>[0.0.0, 1.0.0)</javax.xml.parsers.import.pkg.version>
         <imp.pkg.version.javax.servlet>[2.6.0, 3.0.0)</imp.pkg.version.javax.servlet>
         <import.package.version.commons.logging>[1.2.0,2.0.0)</import.package.version.commons.logging>
