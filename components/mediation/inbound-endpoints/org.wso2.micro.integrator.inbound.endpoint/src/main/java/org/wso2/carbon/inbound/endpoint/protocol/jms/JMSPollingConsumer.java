@@ -724,6 +724,11 @@ public class JMSPollingConsumer {
         }
     }
 
+    public void stopPolling() {
+        logger.info("JMS PollingConsumer stopped hence polling is stopped for Inbound Endpoint: " + name);
+        destroyed = true;
+    }
+
     public void enablePolling() {
         logger.info("JMS PollingConsumer resumed hence polling is started for Inbound Endpoint: " + name);
         destroyed = false;
