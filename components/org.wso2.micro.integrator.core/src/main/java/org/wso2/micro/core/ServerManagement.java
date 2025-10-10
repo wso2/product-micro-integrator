@@ -134,10 +134,13 @@ public class ServerManagement {
         Parameter synCfgParam =
                 serverConfigContext.getAxisConfiguration().getParameter(SynapseConstants.SYNAPSE_CONFIG);
         if (synCfgParam == null) {
-            log.error("Unable to pause Inbound Endpoints. Synapse configuration not found!");
+            log.error("Unable to pause inbound endpoints. Synapse configuration not found!");
         } else {
             SynapseConfiguration synapseConfiguration = (SynapseConfiguration) synCfgParam.getValue();
             Collection<InboundEndpoint> inboundEndpoints =  synapseConfiguration.getInboundEndpoints();
+            if (log.isDebugEnabled()) {
+                log.debug("Found " + inboundEndpoints.size() + " inbound endpoints to pause");
+            }
 
             ExecutorService inboundEndpointShutdownPool = Executors.newFixedThreadPool(inboundEndpoints.size());
             List<Future<Void>> listenerShutdownFutures = new ArrayList<>();
@@ -145,6 +148,9 @@ public class ServerManagement {
             for (InboundEndpoint inboundEndpoint : inboundEndpoints) {
                 Future<Void> future = inboundEndpointShutdownPool.submit(new InboundEndpointShutdownTask(inboundEndpoint));
                 listenerShutdownFutures.add(future);
+                if (log.isDebugEnabled()) {
+                    log.debug("Submitted pause task for inbound endpoint: " + inboundEndpoint.getName());
+                }
             }
 
             // Wait until suspending the inbound endpoints before proceeding
