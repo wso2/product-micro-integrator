@@ -547,11 +547,15 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
                         synLog.auditWarn("Error occurred while parsing the date." + e.getMessage());
                     }
                 }
-                //Individually copying All TRANSPORT_HEADERS to headerProperties Map instead putting whole
-                //TRANSPORT_HEADERS map as single Key/Value pair to fix hazelcast serialization issue.
-                for (Map.Entry<String, String> entry : headers.entrySet()) {
-                    headerProperties.put(entry.getKey(), entry.getValue());
+
+                if(headers != null) {
+                    //Individually copying All TRANSPORT_HEADERS to headerProperties Map instead putting whole
+                    //TRANSPORT_HEADERS map as single Key/Value pair to fix hazelcast serialization issue.
+                    for (Map.Entry<String, String> entry : headers.entrySet()) {
+                        headerProperties.put(entry.getKey(), entry.getValue());
+                    }
                 }
+
                 headerProperties.put(Constants.Configuration.MESSAGE_TYPE, messageType);
                 headerProperties.put(CachingConstants.CACHE_KEY, response.getRequestHash());
                 response.setHeaderProperties(headerProperties);
