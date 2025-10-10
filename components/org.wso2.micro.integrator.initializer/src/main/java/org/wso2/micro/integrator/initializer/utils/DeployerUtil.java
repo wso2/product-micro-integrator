@@ -131,9 +131,13 @@ public class DeployerUtil {
         List<CAppDescriptor> cAppDescriptors = getCAppDescriptors(cAppFiles);
         Map<String, List<String>> cAppDependencyGraph = createCAppDependencyGraph(cAppDescriptors);
         List<String> graphProcessingOrder = getDependencyGraphProcessingOrder(cAppDependencyGraph);
+        if (log.isDebugEnabled()) {
+            log.debug("CApp processing order: " + String.join(", ", graphProcessingOrder));
+        }
+
         File[] orderedFiles = new File[cAppFiles.length];
         int index = 0;
-        StringBuilder missingMsg = new StringBuilder();
+        List<String> missingCAppInfos = new ArrayList<>();
 
         for (String fileIdentifier : graphProcessingOrder) {
             boolean fileFound = false;
@@ -156,12 +160,11 @@ public class DeployerUtil {
             }
             if (!fileFound) {
                 List<String> dependents = cAppDependencyGraph.getOrDefault(fileIdentifier, Collections.emptyList());
-                missingMsg.append("Missing CApp: ").append(fileIdentifier)
-                        .append(" (required by: ").append(String.join(", ", dependents)).append(")\n");
+                missingCAppInfos.add(fileIdentifier + " (required by: " + String.join(", ", dependents) + ")");
             }
         }
-        if (missingMsg.length() > 0) {
-            throw new DeploymentException("Some CApps are missing:\n" + missingMsg);
+        if (!missingCAppInfos.isEmpty()) {
+            throw new DeploymentException("Some CApps are missing: " + missingCAppInfos);
         }
         return orderedFiles;
     }

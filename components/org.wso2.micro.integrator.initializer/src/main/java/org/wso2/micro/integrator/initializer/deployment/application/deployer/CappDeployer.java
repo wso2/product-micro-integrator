@@ -902,8 +902,8 @@ public class CappDeployer extends AbstractDeployer {
                     return cAppOrderMap.getOrDefault(name, Integer.MAX_VALUE); // unknown files go last
                 }));
             } catch (DeploymentException e) {
-                log.warn("Error while getting the CApp processing order according to dependencies. " +
-                                "CApps will be sorted alphabetically instead.", e);
+                log.warn("Unable to determine the CApp processing order based on dependencies. " +
+                                "CApps will be deployed in alphabetical order instead. " + e.getMessage());
                 super.sort(filesToDeploy, startIndex, toIndex);
             }
         }
