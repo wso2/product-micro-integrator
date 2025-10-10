@@ -1349,6 +1349,16 @@
                 <artifactId>jackson-datatype-jsr310</artifactId>
                 <version>${fasterxml.jackson.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jdk8</artifactId>
+                <version>${fasterxml.jackson.datatype.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.hubspot.immutables</groupId>
+                <artifactId>immutables-exceptions</artifactId>
+                <version>${com.hubspot.immutables.version}</version>
+            </dependency>
             <!-- End of OAS 3 feature dependencies-->
             <dependency>
                 <groupId>org.powermock</groupId>
@@ -1683,6 +1693,8 @@
         <carbon.analytics.common.version>5.2.64</carbon.analytics.common.version>
         <carbon.analytics.common.imp.pkg.version>[5.2.0, 6.0.0)</carbon.analytics.common.imp.pkg.version>
         <fasterxml.jackson.version>2.16.1</fasterxml.jackson.version>
+        <fasterxml.jackson.datatype.version>2.20.0</fasterxml.jackson.datatype.version>
+        <com.hubspot.immutables.version>1.11.2</com.hubspot.immutables.version>
         <carbon.commons.version>4.7.55</carbon.commons.version>
         <carbon.rule.version>4.5.3</carbon.rule.version>
         <carbon.deployment.version>4.9.11</carbon.deployment.version>
@@ -1793,7 +1805,7 @@
         <diagnostics.tool.version>1.1.1</diagnostics.tool.version>
         <jsch.version>0.2.24</jsch.version>
 
-        <config.mapper.version>1.0.25</config.mapper.version>
+        <config.mapper.version>1.0.26</config.mapper.version>
         <javax.xml.parsers.import.pkg.version>[0.0.0, 1.0.0)</javax.xml.parsers.import.pkg.version>
         <imp.pkg.version.javax.servlet>[2.6.0, 3.0.0)</imp.pkg.version.javax.servlet>
         <import.package.version.commons.logging>[1.2.0,2.0.0)</import.package.version.commons.logging>
