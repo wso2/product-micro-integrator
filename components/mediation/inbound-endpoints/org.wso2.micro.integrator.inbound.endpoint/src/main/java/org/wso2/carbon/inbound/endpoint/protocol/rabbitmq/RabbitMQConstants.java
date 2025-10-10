@@ -26,6 +26,7 @@ public class RabbitMQConstants {
     public static final String SET_REQUEUE_ON_ROLLBACK = "SET_REQUEUE_ON_ROLLBACK";
     public static final String MESSAGE_REQUEUE_DELAY = "rabbitmq.message.requeue.delay";
     public static final String RABBITMQ_CON_FAC = "rabbitmq.connection.factory";
+    public static final String UNDEPLOYMENT_GRACE_TIMEOUT = "rabbitmq.undeployment.grace.timeout";
 
     public static final String SERVER_HOST_NAME = "rabbitmq.server.host.name";
     public static final String SERVER_PORT = "rabbitmq.server.port";

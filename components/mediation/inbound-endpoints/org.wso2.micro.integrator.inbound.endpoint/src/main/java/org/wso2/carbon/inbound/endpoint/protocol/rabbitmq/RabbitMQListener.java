@@ -81,6 +81,13 @@ public class RabbitMQListener extends InboundOneTimeTriggerRequestProcessor {
     }
 
     @Override
+    public void pause() {
+        if (Objects.nonNull(rabbitMQConsumer)) {
+            rabbitMQConsumer.stopDeliver();
+        }
+    }
+
+    @Override
     public void init() {
         log.info("RABBITMQ inbound endpoint [" + name + "] is initializing"
                 + (this.startInPausedMode ? " but will remain in suspended mode..." : "..."));

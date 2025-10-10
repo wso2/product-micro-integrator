@@ -29,6 +29,7 @@ import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.engine.ListenerManager;
 import org.apache.axis2.transport.base.threads.ThreadCleanupContainer;
 import org.apache.axis2.transport.http.HTTPConstants;
+import org.apache.axis2.util.GracefulShutdownTimer;
 import org.apache.commons.collections.bidimap.TreeBidiMap;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
@@ -62,6 +63,7 @@ import java.net.SocketException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.servlet.ServletException;
 
 import static org.apache.axis2.transport.TransportListener.HOST_ADDRESS;
@@ -398,6 +400,11 @@ public class CoreServerInitializer {
         }
         try {
             log.info("Gracefully shutting down " + serverName + "...");
+
+            if (isGracefulShutdownEnabled()) {
+                log.info("Starting graceful shutdown timer...");
+                startGracefulShutdownTimer();
+            }
             Map<String, TransportInDescription> inTransports = serverConfigContext.getAxisConfiguration()
                     .getTransportsIn();
             new ServerManagement(inTransports, serverConfigContext).startMaintenanceForShutDown();
@@ -406,6 +413,34 @@ public class CoreServerInitializer {
             log.error(msg, e);
         }
         shutdown();
+    }
+
+    private boolean isGracefulShutdownEnabled() {
+        String isGracefulShutdownEnabled = System.getProperty("gracefulShutdown");
+        if (Objects.isNull(isGracefulShutdownEnabled)) {
+            isGracefulShutdownEnabled = CarbonServerConfigurationService.getInstance()
+                    .getFirstProperty("GracefulShutdown.Enabled");
+        }
+        if (Objects.isNull(isGracefulShutdownEnabled)) {
+            isGracefulShutdownEnabled = "true";
+        }
+        return Boolean.parseBoolean(isGracefulShutdownEnabled);
+    }
+
+    private void startGracefulShutdownTimer() {
+        int gracefulShutdownTimeout;
+        try {
+            gracefulShutdownTimeout = Integer.parseInt(CarbonServerConfigurationService.getInstance()
+                    .getFirstProperty("GracefulShutdown.Timeout"));
+            if (log.isDebugEnabled()) {
+                log.debug("Graceful shutdown timeout configured as: " + gracefulShutdownTimeout + " ms");
+            }
+        } catch (NumberFormatException e) {
+            gracefulShutdownTimeout = 180000; // default value
+            log.warn("Invalid graceful shutdown timeout configuration. Using default value: 180000 ms");
+        }
+        GracefulShutdownTimer gracefulShutdownTimer = GracefulShutdownTimer.getInstance();
+        gracefulShutdownTimer.start(gracefulShutdownTimeout);
     }
 
     private ConfigurationContext getClientConfigurationContext() throws AxisFault {

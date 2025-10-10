@@ -7,6 +7,8 @@
 
   "server.blocking.enable_mtom": "server.blocking.enableMTOM",
   "server.blocking.enable_swa": "server.blocking.enableSwA",
+  "server.graceful_shutdown_enabled": "server.gracefulShutdownEnabled",
+  "server.graceful_shutdown_timeout": "server.gracefulShutdownTimeout",
 
   "user_store.read_only":"user_store.properties.ReadOnly",
   "user_store.write_groups":"user_store.properties.WriteGroups",

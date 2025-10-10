@@ -123,31 +123,28 @@ public class MqttListener extends InboundOneTimeTriggerRequestProcessor {
     public void destroy(boolean removeTask) {
         log.info("Mqtt Inbound endpoint: " + name + " Started destroying context.");
         MqttClientManager clientManager = MqttClientManager.getInstance();
-        String inboundIdentifier = clientManager
-                .buildIdentifier(mqttAsyncClient.getClientId(), confac.getServerHost(), confac.getServerPort());
-        //we should ignore the case of manually loading of tenant
-        //we maintain a flag for cases where we load the tenant manually
-        if (!clientManager.isInboundTenantLoadingFlagSet(inboundIdentifier)) {
-            //release the thread from suspension
-            //this will release thread suspended thread for completion
-            connectionConsumer.shutdown();
-            mqttAsyncCallback.shutdown();
-            confac.shutdown(mqttAsyncClient.isConnected());
-            try {
-                if (mqttAsyncClient.isConnected()) {
-                    mqttAsyncClient.unsubscribe(confac.getTopic());
-                    mqttAsyncClient.disconnect();
-                }
-                mqttAsyncClient.close();
 
-                String nameIdentifier = clientManager.buildNameIdentifier(name, String.valueOf(SUPER_TENANT_ID));
-                //here we unregister it because this is not a case of tenant loading
-                MqttClientManager.getInstance().unregisterMqttClient(inboundIdentifier, nameIdentifier);
-
-                log.info("Disconnected from the remote MQTT server.");
-            } catch (MqttException e) {
-                log.error("Error while disconnecting from the remote server.");
+        //release the thread from suspension
+        //this will release thread suspended thread for completion
+        connectionConsumer.shutdown();
+        mqttAsyncCallback.shutdown();
+        confac.shutdown(mqttAsyncClient.isConnected());
+        try {
+            if (mqttAsyncClient.isConnected()) {
+                mqttAsyncClient.unsubscribe(confac.getTopic());
+                mqttAsyncClient.disconnect();
             }
+            mqttAsyncClient.close();
+
+            String inboundIdentifier = clientManager
+                    .buildIdentifier(mqttAsyncClient.getClientId(), confac.getServerHost(), confac.getServerPort());
+            String nameIdentifier = clientManager.buildNameIdentifier(name, String.valueOf(SUPER_TENANT_ID));
+            //here we unregister it because this is not a case of tenant loading
+            MqttClientManager.getInstance().unregisterMqttClient(inboundIdentifier, nameIdentifier);
+
+            log.info("Disconnected from the remote MQTT server.");
+        } catch (MqttException e) {
+            log.error("Error while disconnecting from the remote server.");
         }
         super.destroy(removeTask);
     }
@@ -234,4 +231,15 @@ public class MqttListener extends InboundOneTimeTriggerRequestProcessor {
         this.name = name;
     }
 
+    @Override
+    public void pause() {
+
+        try {
+            if (mqttAsyncClient != null && mqttAsyncClient.isConnected()) {
+                mqttAsyncClient.disconnect();
+            }
+        } catch (MqttException e) {
+            log.error("Error while disconnecting the mqtt listener", e);
+        }
+    }
 }
