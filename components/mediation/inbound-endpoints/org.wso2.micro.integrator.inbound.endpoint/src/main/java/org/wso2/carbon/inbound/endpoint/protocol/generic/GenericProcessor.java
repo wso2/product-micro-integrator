@@ -235,7 +235,7 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
             } catch (AbstractMethodError e) {
                 throw new UnsupportedOperationException("Unsupported operation 'destroy()' for Inbound Endpoint: "
                         + getName() + "If using a WSO2-released inbound, please upgrade to the latest version. "
-                        + "If this is a custom inbound, implement the 'pause' logic accordingly.");
+                        + "If this is a custom inbound, implement the 'destroy' logic accordingly.");
             }
         }
         return isTaskDeactivated;

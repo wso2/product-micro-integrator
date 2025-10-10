@@ -106,12 +106,10 @@ public class InboundGRPCListener implements InboundRequestProcessor {
         try {
             GracefulShutdownTimer gracefulShutdownTimer = GracefulShutdownTimer.getInstance();
             if (gracefulShutdownTimer.isStarted()) {
-                if (gracefulShutdownTimer.isStarted()) {
-                    log.info("Waiting for " + inFlightMessages.get() + " in-flight messages to be processed before " +
-                            "shutting down gRPC listener for inbound endpoint: " + name);
-                    Utils.waitForGracefulTaskCompletion(gracefulShutdownTimer, inFlightMessages, name,
-                            DEFAULT_GRACEFUL_SHUTDOWN_POLL_INTERVAL_MS);
-                }
+                log.info("Waiting for " + inFlightMessages.get() + " in-flight messages to be processed before " +
+                        "shutting down gRPC listener for inbound endpoint: " + name);
+                Utils.waitForGracefulTaskCompletion(gracefulShutdownTimer, inFlightMessages, name,
+                        DEFAULT_GRACEFUL_SHUTDOWN_POLL_INTERVAL_MS);
             } else {
                 long waitUntil = System.currentTimeMillis() + unDeploymentWaitTimeout;
                 while (inFlightMessages.get() > 0 && System.currentTimeMillis() < waitUntil) {
