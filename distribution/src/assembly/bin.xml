@@ -666,6 +666,8 @@
                 <include>com.fasterxml.jackson.core:jackson-databind:jar</include>
                 <include>com.fasterxml.jackson.core:jackson-annotations:jar</include>
                 <include>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar</include>
+                <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar</include>
+                <include>com.hubspot.immutables:immutables-exceptions:jar</include>
                 <include>commons-codec:commons-codec:jar</include>
                 <include>com.hubspot.jinjava:jinjava:jar</include>
                 <include>org.slf4j:slf4j-api:jar</include>
