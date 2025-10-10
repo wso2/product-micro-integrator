@@ -20,6 +20,10 @@ package org.wso2.micro.integrator.dataservices.core;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.repository.util.DeploymentFileData;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.wso2.micro.integrator.dataservices.common.DBConstants;
 import org.wso2.micro.integrator.dataservices.common.DBConstants.AuthorizationProviderConfig;
 import org.wso2.micro.integrator.dataservices.common.DBConstants.BoxcarringOps;
@@ -54,12 +58,20 @@ import java.util.List;
  */
 public class DataServiceFactory {
 
+    private static final Log log = LogFactory.getLog(DataServiceFactory.class);
+
     public static DataService createDataService(DeploymentFileData deploymentFileData, OMElement dbsElement,
                                                 String dsLocation) throws DataServiceFault {
 
         String serviceName = dbsElement.getAttributeValue(new QName(DBSFields.NAME));
-        if (deploymentFileData.isVersionedDeployment()) {
-            serviceName = deploymentFileData.getArtifactIdentifier() + "/" + serviceName;
+        if (SynapsePropertiesLoader.getBooleanProperty(SynapseConstants.EXPOSE_VERSIONED_SERVICES, false)) {
+            if (deploymentFileData.isVersionedDeployment()) {
+                serviceName = deploymentFileData.getArtifactIdentifier() + "/" + serviceName;
+            } else {
+                String warnMessage = "The DataService '" + serviceName + "' is not included in a versioned CApp. " +
+                        "Versioned service exposure is skipped; deploying as a regular DataService.";
+                log.warn(warnMessage);
+            }
         }
         return populateDataService(serviceName, dbsElement, dsLocation);
     }

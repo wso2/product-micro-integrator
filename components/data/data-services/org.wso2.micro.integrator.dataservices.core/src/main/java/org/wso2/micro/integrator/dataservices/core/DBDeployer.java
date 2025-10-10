@@ -56,6 +56,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.neethi.Policy;
 import org.apache.neethi.PolicyEngine;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.FactoryUtils;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.Value;
@@ -199,14 +200,21 @@ public class DBDeployer extends AbstractDeployer {
             String serviceGroupName = serviceHierarchy +
                     this.getServiceNameFromDSContents(deploymentFileData.getFile());
 
-			if (deploymentFileData.isVersionedDeployment()) {
-				serviceGroupName = deploymentFileData.getArtifactIdentifier() + "/" + serviceGroupName;
+			if (SynapsePropertiesLoader.getBooleanProperty(SynapseConstants.EXPOSE_VERSIONED_SERVICES, false)) {
+				if (deploymentFileData.isVersionedDeployment()) {
+					serviceGroupName = deploymentFileData.getArtifactIdentifier() + "/" + serviceGroupName;
+				}
 			}
 
 			if (DBUtils.isAvailableDSServiceGroup(axisConfig, serviceGroupName)) {
-				throw new DataServiceFault("Data Service name is already exists. Please choose different name for \'" +
-				                           this.getServiceNameFromDSContents(deploymentFileData.getFile()) +
-				                           "\' data service.");
+				String error = "Data Service name is already exists. Please choose different name for \'" +
+						this.getServiceNameFromDSContents(deploymentFileData.getFile()) +
+						"\' data service.";
+				if (deploymentFileData.isVersionedDeployment()) {
+					error = "Data Service named : " + this.getServiceNameFromDSContents(deploymentFileData.getFile()) + " already exists. To deploy " +
+							"multiple versions of a Data Service, please enable service versioning.";
+				}
+				throw new DataServiceFault(error);
 			}
 
 			/* service active property */
