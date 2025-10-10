@@ -141,4 +141,7 @@ public abstract class GenericInboundListener implements InboundRequestProcessor 
 
         return false;
     }
+
+    @Override
+    public abstract void pause();
 }
