@@ -226,8 +226,6 @@ public class MqttConnectionFactory {
             uniqueClientId = MqttAsyncClient.generateClientId();
         }
 
-        name = clientManager.buildNameIdentifier(name, String.valueOf(SUPER_TENANT_ID));
-
         if (clientManager.hasInboundEndpoint(name)) {
             inboundIdentifier = clientManager.getInboundEndpointIdentifier(name);
         } else {
