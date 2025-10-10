@@ -105,6 +105,11 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
     }
 
     @Override
+    public void pause() {
+
+    }
+
+    @Override
     public boolean activate() {
         log.info("Activating the Inbound Endpoint [" + name + "].");
 

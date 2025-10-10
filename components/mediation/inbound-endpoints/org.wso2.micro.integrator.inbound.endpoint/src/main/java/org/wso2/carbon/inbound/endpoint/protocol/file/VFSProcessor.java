@@ -121,4 +121,9 @@ public class VFSProcessor extends InboundRequestProcessorImpl implements TaskSta
             fileScanner.destroy();
         }
     }
+
+    @Override
+    public void pause() {
+        fileScanner.close();  // stop polling new files
+    }
 }
