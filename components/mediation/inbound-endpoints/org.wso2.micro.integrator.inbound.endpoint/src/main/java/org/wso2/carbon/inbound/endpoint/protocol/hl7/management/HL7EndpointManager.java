@@ -113,6 +113,10 @@ public class HL7EndpointManager extends AbstractInboundEndpointManager {
         }
     }
 
+    public void pauseEndpoint(int port) {
+        InboundHL7IOReactor.pauseEndpoint(port);
+    }
+
     private void validateParameters(InboundProcessorParams params, Map<String, Object> parameters) {
         if (!params.getProperties().getProperty(MLLPConstants.PARAM_HL7_AUTO_ACK).equalsIgnoreCase("true") && !params
                 .getProperties().getProperty(MLLPConstants.PARAM_HL7_AUTO_ACK).equalsIgnoreCase("false")) {

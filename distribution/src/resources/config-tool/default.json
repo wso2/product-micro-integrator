@@ -38,6 +38,8 @@
   "server.blocking.service_path": "services",
   "server.blocking.rest_path": "rest",
   "server.blocking.disable_rest": false,
+  "server.gracefulShutdownEnabled": true,
+  "server.gracefulShutdownTimeout": "180000",
 
   "encryption.internal_crypto_provider": "org.wso2.micro.integrator.crypto.provider.KeyStoreBasedInternalCryptoProvider",
   "encryption.key": "SECRET_KEY",

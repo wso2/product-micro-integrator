@@ -84,6 +84,11 @@ public class InboundHL7Listener implements InboundRequestProcessor {
     }
 
     @Override
+    public void pause() {
+        HL7EndpointManager.getInstance().pauseEndpoint(port);
+    }
+
+    @Override
     public boolean activate() {
 
         return false;

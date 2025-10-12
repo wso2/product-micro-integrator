@@ -66,7 +66,7 @@ public abstract class GenericEventBasedConsumer {
     public abstract void listen();
 
     /**
-     * This method needs to be implemented when terminating the inbound.
+     * This method needs to be implemented when terminating/deactivating the inbound.
      */
     public abstract void destroy();
 
@@ -76,7 +76,7 @@ public abstract class GenericEventBasedConsumer {
     public abstract void resume();
 
     /**
-     * This method needs to be implemented when deactivating the inbound.
+     * This method needs to be implemented when pausing the inbound.
      */
     public abstract void pause();
 

@@ -28,4 +28,5 @@ public class InboundGRPCConstants {
     public static final String HEADER_MAP_SEQUENCE_PARAMETER_NAME = "sequence";
     public static final String HEADER_MAP_CONTENT_TYPE_PARAMETER_NAME = "Content-Type";
     public static final int DEFAULT_INBOUND_ENDPOINT_GRPC_PORT = 8888;
+    public static final String UNDEPLOYMENT_GRACE_TIMEOUT = "undeployment.grace.timeout";
 }

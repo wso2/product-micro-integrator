@@ -17,7 +17,9 @@
  */
 package org.wso2.carbon.inbound.endpoint.protocol.file;
 
+import org.apache.axis2.util.GracefulShutdownTimer;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.FileContent;
@@ -35,6 +37,7 @@ import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSParamDTO;
 import org.apache.synapse.commons.vfs.VFSUtils;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.wso2.carbon.inbound.endpoint.protocol.Utils;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -44,6 +47,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static org.wso2.carbon.inbound.endpoint.common.Constants.DEFAULT_GRACEFUL_SHUTDOWN_POLL_INTERVAL_MS;
 
 /**
  * This class implement the processing logic related to inbound file protocol.
@@ -64,6 +71,7 @@ public class FilePollingConsumer {
     private FileInjectHandler injectHandler;
     private Long waitTimeBeforeRead;
     private double fileSizeLimit = VFSConstants.DEFAULT_TRANSPORT_FILE_SIZE_LIMIT;
+    public static final String UNDEPLOYMENT_GRACE_TIMEOUT = "undeployment.grace.timeout";
 
     private FileObject fileObject;
     private Integer iFileProcessingInterval = null;
@@ -77,7 +85,7 @@ public class FilePollingConsumer {
     private boolean distributedLock;
     private Long distributedLockTimeout;
     private FileSystemOptions fso;
-    private boolean isClosed;
+    private volatile boolean isClosed;
 
     private boolean readSubDirectories = false;
     private String fileURI;
@@ -89,12 +97,18 @@ public class FilePollingConsumer {
     private String actionAfterFailure;
     private boolean moveFailureFilesToSubDirectories = false;
     private String moveFailureFileURI;
+    private final long unDeploymentWaitTimeout;
 
     // The symbol to include sub directories will be either '/*' or '\*' depending on the Operating system.
     private final int INCLUDE_SUB_DIR_SYMBOL_LENGTH = 2;
 
     private final String MOVE = "MOVE";
     private final String RELATIVE_PATH = "RELATIVE_PATH";
+
+    private final AtomicInteger inFlightMessages = new AtomicInteger(0);
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLock = rwLock.readLock();
+    private final ReentrantReadWriteLock.WriteLock writeLock = rwLock.writeLock();
 
     public FilePollingConsumer(Properties vfsProperties, String name, SynapseEnvironment synapseEnvironment,
                                long scanInterval) {
@@ -103,6 +117,7 @@ public class FilePollingConsumer {
         this.synapseEnvironment = synapseEnvironment;
         this.scanInterval = scanInterval;
         this.lastRanTime = null;
+        this.unDeploymentWaitTimeout = NumberUtils.toLong(vfsProperties.getProperty(UNDEPLOYMENT_GRACE_TIMEOUT), 0);
 
         setupParams();
         try {
@@ -181,6 +196,16 @@ public class FilePollingConsumer {
             return null;
         }
 
+        readLock.lock();
+        try {
+            if (isClosed) {
+                return null;
+            }
+            inFlightMessages.incrementAndGet();
+        } finally {
+            readLock.unlock();
+        }
+
         // If file/folder found proceed to the processing stage
         try {
             lastCycle = 0;
@@ -249,6 +274,7 @@ public class FilePollingConsumer {
                 log.error("Unable to close the file system. " + e.getMessage());
                 log.error(e);
             }
+            inFlightMessages.decrementAndGet();
         }
         if (log.isDebugEnabled()) {
             log.debug("End : Scanning directory or file : " + VFSUtils.maskURLPassword(fileURI));
@@ -529,6 +555,9 @@ public class FilePollingConsumer {
         }
 
         for (FileObject child : children) {
+            if (isClosed) {
+                return null;
+            }
             // skipping *.lock / *.fail file
             if (child.getName().getBaseName().endsWith(".lock") || child.getName().getBaseName().endsWith(".fail")) {
                 continue;
@@ -653,6 +682,13 @@ public class FilePollingConsumer {
             } catch (Exception e) {
             }
 
+            if (isClosed) {
+                // in a server shutting down scenario or in a inbound endpoint undeployment, it is unnecessary
+                // to continue the below logic, such as waiting for file processing interval,
+                // checking file processing count as the file polling will be stopped soon.
+                return null;
+            }
+
             // Manage throttling of file processing
             if (iFileProcessingInterval != null && iFileProcessingInterval > 0) {
                 try {
@@ -710,6 +746,9 @@ public class FilePollingConsumer {
             }
             if (wasError) {
                 try {
+                    if (isClosed) {
+                        return false;
+                    }
                     Thread.sleep(reconnectionTimeout);
                 } catch (InterruptedException e2) {
                     Thread.currentThread().interrupt();
@@ -1012,8 +1051,39 @@ public class FilePollingConsumer {
     }
 
     void destroy() {
+        writeLock.lock();
+        try {
+            if (!isClosed) {
+                this.close();
+            }
+        } finally {
+            writeLock.unlock();
+        }
+
+        GracefulShutdownTimer gracefulShutdownTimer = GracefulShutdownTimer.getInstance();
+        if (gracefulShutdownTimer.isStarted()) {
+            // Wait for in-flight messages to be processed before shutting down the file polling consumer
+            Utils.waitForGracefulTaskCompletion(gracefulShutdownTimer, inFlightMessages, name,
+                    DEFAULT_GRACEFUL_SHUTDOWN_POLL_INTERVAL_MS);
+        } else {
+            log.info("Waiting for file processing to finish for inbound endpoint: " + name
+                    + " before shutdown.");
+            long waitUntil = System.currentTimeMillis() + unDeploymentWaitTimeout;
+            while (inFlightMessages.get() > 0 && System.currentTimeMillis() < waitUntil) {
+                try {
+                    Thread.sleep(DEFAULT_GRACEFUL_SHUTDOWN_POLL_INTERVAL_MS); // wait until all in-flight messages are done
+                } catch (InterruptedException e) {}
+            }
+        }
+
         fsManager.close();
-        this.close();
+
+        if (inFlightMessages.get() > 0) {
+            log.warn("File Polling Consumer: " + name + " stopped with "
+                    + inFlightMessages.get() + " in-flight messages still being processed");
+        } else {
+            log.info("Successfully stopped the File Polling Consumer: " + name);
+        }
     }
 
     void close() {

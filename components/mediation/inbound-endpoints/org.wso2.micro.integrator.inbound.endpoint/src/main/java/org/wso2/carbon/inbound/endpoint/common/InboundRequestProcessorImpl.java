@@ -228,4 +228,9 @@ public abstract class InboundRequestProcessorImpl implements InboundRequestProce
         }
         return true;
     }
+
+    @Override
+    public void pause() {
+
+    }
 }

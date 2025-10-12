@@ -17,10 +17,14 @@ package org.wso2.micro.core;
 
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.deployment.DeploymentEngine;
+import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.transport.TransportListener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.osgi.framework.BundleContext;
 import org.osgi.util.tracker.ServiceTracker;
 import org.wso2.micro.integrator.core.internal.CarbonCoreDataHolder;
@@ -28,6 +32,7 @@ import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 
 import java.lang.management.ManagementPermission;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +85,7 @@ public class ServerManagement {
         }
         log.info("Starting to switch to maintenance mode...");
         stopTransportListeners();
+        pauseInboundEndpoints();
         destroyTransportListeners();
         waitForRequestCompletion();
     }
@@ -106,6 +112,59 @@ public class ServerManagement {
         }
         transportListenerShutdownPool.shutdown();
         log.info("Stopped all transport listeners");
+    }
+
+    /**
+     * Pauses all inbound endpoints in the server to stop accepting new requests.
+     * <p>
+     * This method pauses all the inbound endpoints defined in the Synapse configuration.
+     * Each endpoint is paused in a separate task using a thread pool,
+     * and this method waits until all endpoints are fully paused before returning.
+     * <p>
+     * This ensures that no new requests are accepted in inbound endpoints during server shutdown
+     * or maintenance activities.
+     * <p>
+     * Any errors encountered while pausing individual endpoints are logged but do not halt the suspension
+     * process for other endpoints.
+     */
+    private void pauseInboundEndpoints() {
+        MicroIntegratorBaseUtils.checkSecurity();
+        log.info("Pausing all Inbound Endpoints...");
+
+        Parameter synCfgParam =
+                serverConfigContext.getAxisConfiguration().getParameter(SynapseConstants.SYNAPSE_CONFIG);
+        if (synCfgParam == null) {
+            log.error("Unable to pause inbound endpoints. Synapse configuration not found!");
+        } else {
+            SynapseConfiguration synapseConfiguration = (SynapseConfiguration) synCfgParam.getValue();
+            Collection<InboundEndpoint> inboundEndpoints =  synapseConfiguration.getInboundEndpoints();
+            if (log.isDebugEnabled()) {
+                log.debug("Found " + inboundEndpoints.size() + " inbound endpoints to pause");
+            }
+
+            ExecutorService inboundEndpointShutdownPool = Executors.newFixedThreadPool(inboundEndpoints.size());
+            List<Future<Void>> listenerShutdownFutures = new ArrayList<>();
+
+            for (InboundEndpoint inboundEndpoint : inboundEndpoints) {
+                Future<Void> future = inboundEndpointShutdownPool.submit(new InboundEndpointShutdownTask(inboundEndpoint));
+                listenerShutdownFutures.add(future);
+                if (log.isDebugEnabled()) {
+                    log.debug("Submitted pause task for inbound endpoint: " + inboundEndpoint.getName());
+                }
+            }
+
+            // Wait until suspending the inbound endpoints before proceeding
+            for (Future<Void> future : listenerShutdownFutures) {
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    log.error("An error occurred while pausing an inbound endpoint during graceful shutdown.", e);
+                }
+            }
+            inboundEndpointShutdownPool.shutdown();
+        }
+
+        log.info("Completed pausing of all inbound endpoints during graceful shutdown.");
     }
 
     /**
@@ -262,6 +321,23 @@ public class ServerManagement {
                 transport.stop();
             } catch (Exception e) {
                 log.error("Error while stopping Transport Listener", e);
+            }
+            return null;
+        }
+    }
+
+    private class InboundEndpointShutdownTask implements Callable<Void> {
+        private InboundEndpoint inboundEndpoint;
+
+        public InboundEndpointShutdownTask(InboundEndpoint inboundEndpoint) {
+            this.inboundEndpoint = inboundEndpoint;
+        }
+
+        public Void call() throws Exception {
+            try {
+                inboundEndpoint.pause();
+            } catch (Exception e) {
+                log.error("Error while stopping Inbound Endpoint: " + inboundEndpoint.getName(), e);
             }
             return null;
         }

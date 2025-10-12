@@ -290,8 +290,7 @@ public class HTTPEndpointManager extends AbstractInboundEndpointManager {
         removeDispatchPattern(SUPER_TENANT_DOMAIN_NAME, port);
 
         if (!PassThroughInboundEndpointHandler.isEndpointRunning(port)) {
-            log.info("Listener Endpoint is not started");
-            return;
+            log.info("HTTP Listener endpoint on port " + port + " is not started or has already been closed.");
         } else if (dataStore.isEndpointRegistryEmpty(port)) {
             // if no other endpoint is working on this port. close the http listening endpoint
             PassThroughInboundEndpointHandler.closeEndpoint(port);

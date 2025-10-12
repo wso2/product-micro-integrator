@@ -66,6 +66,11 @@ public class InboundHttpWebsocketListener implements InboundRequestProcessor {
     }
 
     @Override
+    public void pause() {
+        // need to implement
+    }
+
+    @Override
     public boolean activate() {
         boolean isSuccessfullyActivated = false;
         try {

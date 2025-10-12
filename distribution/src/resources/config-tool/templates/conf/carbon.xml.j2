@@ -222,6 +222,12 @@
     <!-- The Max time a thread should take for execution in seconds -->
     <MaxThreadExecutionTime>600</MaxThreadExecutionTime>
 
+    <!-- Graceful shutdown timeout in seconds -->
+    <GracefulShutdown>
+        <Enabled>{{server.gracefulShutdownEnabled}}</Enabled>
+        <Timeout>{{server.gracefulShutdownTimeout}}</Timeout>
+    </GracefulShutdown>
+
     <!--
      Caching related configurations
     -->

@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class InboundHL7IOReactor {
@@ -143,6 +144,20 @@ public class InboundHL7IOReactor {
         ep.close();
 
         return true;
+    }
+
+    /**
+     * Pauses the listener endpoint associated with the specified port.
+     * This closes the endpoint, effectively stopping it from accepting new connections.
+     *
+     * @param port the port number of the endpoint to pause
+     */
+    public static void pauseEndpoint(int port) {
+        log.info("Pausing HL7 Endpoint Listener for port " + port);
+        ListenerEndpoint ep = endpointMap.get(port);
+        if (ep != null) {
+            ep.close();
+        }
     }
 
     /**

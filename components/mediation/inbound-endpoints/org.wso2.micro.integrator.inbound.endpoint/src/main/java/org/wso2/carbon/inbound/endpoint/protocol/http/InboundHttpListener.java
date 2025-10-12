@@ -85,6 +85,11 @@ public class InboundHttpListener implements InboundRequestProcessor {
     }
 
     @Override
+    public void pause() {
+        HTTPEndpointManager.getInstance().closeEndpoint(port);
+    }
+
+    @Override
     public boolean activate() {
         boolean isSuccessfullyActivated = false;
         try {

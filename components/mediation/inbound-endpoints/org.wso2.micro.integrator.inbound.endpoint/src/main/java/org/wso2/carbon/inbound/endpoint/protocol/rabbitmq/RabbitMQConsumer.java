@@ -26,18 +26,24 @@ import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.Recoverable;
 import com.rabbitmq.client.ShutdownSignalException;
 import org.apache.axis2.transport.rabbitmq.RabbitMQUtils;
+import org.apache.axis2.util.GracefulShutdownTimer;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.inbound.endpoint.protocol.Utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+
+import static org.wso2.carbon.inbound.endpoint.common.Constants.DEFAULT_GRACEFUL_SHUTDOWN_POLL_INTERVAL_MS;
 
 /**
  * The actual tasks that perform message consuming
@@ -55,12 +61,22 @@ public class RabbitMQConsumer implements Consumer {
     private long requeueDelay;
     private boolean autoAck;
     private String inboundName;
+    private String consumerTag;
+    private long unDeploymentWaitTimeout;
+
+    private volatile boolean isShuttingDown;
+    private final AtomicInteger inFlightMessages = new AtomicInteger(0);
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLock = rwLock.readLock();
+    private final ReentrantReadWriteLock.WriteLock writeLock = rwLock.writeLock();
 
     public RabbitMQConsumer(RabbitMQConnectionFactory rabbitMQConnectionFactory, Properties properties,
                             RabbitMQInjectHandler injectHandler) {
         this.rabbitMQConnectionFactory = rabbitMQConnectionFactory;
         this.injectHandler = injectHandler;
         properties.forEach((key, value) -> rabbitMQProperties.put(key.toString(), value.toString()));
+        this.unDeploymentWaitTimeout = NumberUtils.toLong(rabbitMQProperties.get(
+                RabbitMQConstants.UNDEPLOYMENT_GRACE_TIMEOUT), 0);
     }
 
     /**
@@ -125,9 +141,9 @@ public class RabbitMQConsumer implements Consumer {
                 .get(RabbitMQConstants.QUEUE_AUTO_ACK)), true);
 
         if (StringUtils.isNotEmpty(consumerTag)) {
-            channel.basicConsume(queueName, autoAck, consumerTag, this);
+            this.consumerTag = channel.basicConsume(queueName, autoAck, consumerTag, this);
         } else {
-            channel.basicConsume(queueName, autoAck, this);
+            this.consumerTag = channel.basicConsume(queueName, autoAck, this);
         }
     }
 
@@ -210,47 +226,77 @@ public class RabbitMQConsumer implements Consumer {
     @Override
     public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
             throws IOException {
-        new RabbitMQMessageContext(properties, body,
-                connection.getAddress() != null ? connection.getAddress().getHostName() : null,
-                String.valueOf(connection.getPort()), queueName);
-        AcknowledgementMode acknowledgementMode = injectHandler.onMessage(properties, body, inboundName);
-        switch (acknowledgementMode) {
-            case REQUEUE_TRUE:
+        readLock.lock();
+        try {
+            if (isShuttingDown) {
+                /*
+                 * The server is shutting down. We attempt to reject the message with requeue=true
+                 * so that it goes back to the queue for redelivery.
+                 *
+                 * However, if the channel is already closed or closing due to shutdown,
+                 * basicReject may throw an exception (e.g., NullPointerException or AlreadyClosedException).
+                 *
+                 * This is safe to ignore because:
+                 * - The message is still unacked.
+                 * - RabbitMQ will automatically requeue it once the consumer connection is closed.
+                 */
                 try {
-                    Thread.sleep(requeueDelay);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    channel.basicReject(envelope.getDeliveryTag(), true);
+                    log.info("The rejected message with message id: " + properties.getMessageId() + " and " +
+                            "delivery tag: " + envelope.getDeliveryTag() + " on the queue: " +
+                            queueName + " since the consumer is shutting down.");
+                } catch (Exception e) {
+                    log.debug("Failed to reject message during shutdown (likely due to closed channel).", e);
                 }
-                channel.basicReject(envelope.getDeliveryTag(), true);
-                break;
-            case REQUEUE_FALSE:
-                List<HashMap<String, Object>> xDeathHeader =
-                        (ArrayList<HashMap<String, Object>>) properties.getHeaders().get("x-death");
-                // check if message has been already dead-lettered
-                if (xDeathHeader != null && xDeathHeader.size() > 0 && maxDeadLetteredCount != -1) {
-                    Long count = (Long) xDeathHeader.get(0).get("count");
-                    if (count <= maxDeadLetteredCount) {
+                return;
+            }
+            inFlightMessages.incrementAndGet();
+        } finally {
+            readLock.unlock();
+        }
+
+        try {
+            AcknowledgementMode acknowledgementMode = injectHandler.onMessage(properties, body, inboundName);
+            switch (acknowledgementMode) {
+                case REQUEUE_TRUE:
+                    try {
+                        Thread.sleep(requeueDelay);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    channel.basicReject(envelope.getDeliveryTag(), true);
+                    break;
+                case REQUEUE_FALSE:
+                    List<HashMap<String, Object>> xDeathHeader =
+                            (ArrayList<HashMap<String, Object>>) properties.getHeaders().get("x-death");
+                    // check if message has been already dead-lettered
+                    if (xDeathHeader != null && xDeathHeader.size() > 0 && maxDeadLetteredCount != -1) {
+                        Long count = (Long) xDeathHeader.get(0).get("count");
+                        if (count <= maxDeadLetteredCount) {
+                            channel.basicReject(envelope.getDeliveryTag(), false);
+                            log.info("The rejected message with message id: " + properties.getMessageId() + " and " +
+                                    "delivery tag: " + envelope.getDeliveryTag() + " on the queue: " +
+                                    queueName + " is dead-lettered " + count + " time(s).");
+                        } else {
+                            // handle the message after exceeding the max dead-lettered count
+                            proceedAfterMaxDeadLetteredCount(envelope, properties, body);
+                        }
+                    } else {
+                        // the message might be dead-lettered or discard if an error occurred in the mediation flow
                         channel.basicReject(envelope.getDeliveryTag(), false);
                         log.info("The rejected message with message id: " + properties.getMessageId() + " and " +
                                 "delivery tag: " + envelope.getDeliveryTag() + " on the queue: " +
-                                queueName + " is dead-lettered " + count + " time(s).");
-                    } else {
-                        // handle the message after exceeding the max dead-lettered count
-                        proceedAfterMaxDeadLetteredCount(envelope, properties, body);
+                                queueName + " will discard or dead-lettered.");
                     }
-                } else {
-                    // the message might be dead-lettered or discard if an error occurred in the mediation flow
-                    channel.basicReject(envelope.getDeliveryTag(), false);
-                    log.info("The rejected message with message id: " + properties.getMessageId() + " and " +
-                            "delivery tag: " + envelope.getDeliveryTag() + " on the queue: " +
-                            queueName + " will discard or dead-lettered.");
-                }
-                break;
-            default:
-                if (!autoAck) {
-                    channel.basicAck(envelope.getDeliveryTag(), false);
-                }
-                break;
+                    break;
+                default:
+                    if (!autoAck) {
+                        channel.basicAck(envelope.getDeliveryTag(), false);
+                    }
+                    break;
+            }
+        } finally {
+            inFlightMessages.decrementAndGet();
         }
     }
 
@@ -296,6 +342,31 @@ public class RabbitMQConsumer implements Consumer {
      * Return connection back to the pool when undeploying the listener proxy
      */
     public void close() {
+        writeLock.lock();
+        try {
+            if (!isShuttingDown) {
+                isShuttingDown = true;
+            }
+        } finally {
+            writeLock.unlock();
+        }
+
+        GracefulShutdownTimer gracefulShutdownTimer = GracefulShutdownTimer.getInstance();
+        if (gracefulShutdownTimer.isStarted()) {
+            // Wait for in-flight messages to be processed before shutting down the file polling consumer
+            Utils.waitForGracefulTaskCompletion(gracefulShutdownTimer, inFlightMessages, inboundName,
+                    DEFAULT_GRACEFUL_SHUTDOWN_POLL_INTERVAL_MS);
+        } else {
+            log.info("Awaiting completion of in-flight messages for RabbitMQ Inbound Endpoint: "
+                    + inboundName + " before shutdown.");
+            long waitUntil = System.currentTimeMillis() + unDeploymentWaitTimeout;
+            while (inFlightMessages.get() > 0 && System.currentTimeMillis() < waitUntil) {
+                try {
+                    Thread.sleep(DEFAULT_GRACEFUL_SHUTDOWN_POLL_INTERVAL_MS); // wait until all in-flight messages are done
+                } catch (InterruptedException e) {}
+            }
+        }
+
         if (connection != null) {
             try {
                 connection.abort();
@@ -305,6 +376,26 @@ public class RabbitMQConsumer implements Consumer {
             connection = null;
         }
         channel = null;
+
+        if (inFlightMessages.get() > 0) {
+            log.warn("Rabbitmq Inbound Endpoint: " + inboundName + " stopped with "
+                    + inFlightMessages.get() + " in-flight messages still being processed");
+        } else {
+            log.info("Successfully stopped the Rabbitmq Inbound Endpoint: " + inboundName);
+        }
+    }
+
+    public void stopDeliver() {
+        isShuttingDown = true;
+
+        if (channel != null && channel.isOpen() && consumerTag != null) {
+            try {
+                channel.basicCancel(consumerTag);
+                log.info("Successfully cancelled consumer: " + consumerTag);
+            } catch (IOException e) {
+                log.warn("Failed to cancel consumer cleanly, proceeding to shutdown.", e);
+            }
+        }
     }
 
     public String getInboundName() {
