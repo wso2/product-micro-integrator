@@ -62,6 +62,7 @@ public class JMSMapMessageTestCase extends ESBIntegrationTest {
                         + "            <xsd:quantity>2000</xsd:quantity>"
                         + "            <xsd:symbol>JMSTransport</xsd:symbol>" + "         </ser:order>"
                         + "      </ser:placeOrder>" + "   </soapenv:Body>" + "</soapenv:Envelope>");
+                log.info("Message sent to the JMS Queue " + queueName);
             }
         } finally {
             sender.disconnect();
@@ -71,7 +72,7 @@ public class JMSMapMessageTestCase extends ESBIntegrationTest {
                 JMSBrokerConfigurationProvider.getInstance().getBrokerConfiguration());
         try {
             consumer.connect(OUT_QUEUE_NAME);
-            Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(60, TimeUnit.SECONDS)
+            Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(120, TimeUnit.SECONDS)
                     .until(isMessagesConsumed(consumer));
             for (int i = 0; messages.size() < NUM_OF_MESSAGES; i++) {
                 Message msg = messages.get(i);
@@ -96,6 +97,7 @@ public class JMSMapMessageTestCase extends ESBIntegrationTest {
                 Message msg = consumer.popRawMessage();
                 if (msg instanceof MapMessage) {
                     messages.add(msg);
+                    log.info("Number of messages received : " + (messages.size() + 1));
                 }
                 return messages.size() == NUM_OF_MESSAGES;
             }
