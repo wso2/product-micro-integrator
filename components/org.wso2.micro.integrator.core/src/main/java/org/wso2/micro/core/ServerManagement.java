@@ -138,8 +138,11 @@ public class ServerManagement {
         } else {
             SynapseConfiguration synapseConfiguration = (SynapseConfiguration) synCfgParam.getValue();
             Collection<InboundEndpoint> inboundEndpoints =  synapseConfiguration.getInboundEndpoints();
-            if (log.isDebugEnabled()) {
-                log.debug("Found " + inboundEndpoints.size() + " inbound endpoints to pause");
+
+            log.info("Found " + inboundEndpoints.size() + " inbound endpoints to pause");
+
+            if (inboundEndpoints.isEmpty()) {
+                return;
             }
 
             ExecutorService inboundEndpointShutdownPool = Executors.newFixedThreadPool(inboundEndpoints.size());
