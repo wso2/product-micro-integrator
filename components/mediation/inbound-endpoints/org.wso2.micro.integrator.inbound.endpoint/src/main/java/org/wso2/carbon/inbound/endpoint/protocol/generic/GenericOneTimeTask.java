@@ -71,12 +71,14 @@ public class GenericOneTimeTask extends OneTimeTriggerInboundTask implements Loc
 
     @Override
     public void notifyLocalTaskPause(String taskName) {
+        logger.info("Pausing Generic One Time task: " + taskName);
         logger.info("Close connections of the Generic One Time task upon pause of task: " + taskName);
         eventBasedConsumer.destroy();
     }
 
     @Override
     public void notifyLocalTaskResume(String taskName) {
+        logger.info("Resuming Generic One Time task: " + taskName);
         try {
             eventBasedConsumer.resume();
         } catch (NoSuchMethodError e) {
