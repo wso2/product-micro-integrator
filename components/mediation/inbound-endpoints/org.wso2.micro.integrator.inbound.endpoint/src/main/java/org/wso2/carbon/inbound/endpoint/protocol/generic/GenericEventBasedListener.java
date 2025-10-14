@@ -150,31 +150,12 @@ public class GenericEventBasedListener extends InboundOneTimeTriggerEventBasedPr
     }
 
     public boolean activate() {
-        try {
-            eventConsumer.resume();
-        } catch (AbstractMethodError e) {
-            throw new UnsupportedOperationException("Unsupported operation 'resume()' for Inbound Endpoint: " + getName() +
-                    "If using a WSO2-released inbound, please upgrade to the latest version. " +
-                    "If this is a custom inbound, implement the 'resume' logic accordingly.");
-        }
         return super.activate();
     }
 
     @Override
     public boolean deactivate() {
-        boolean isTaskDeactivated = super.deactivate();
-
-        if (isTaskDeactivated) {
-            try {
-                eventConsumer.destroy();
-            } catch (AbstractMethodError e) {
-                throw new UnsupportedOperationException("Unsupported operation 'pause()' for Inbound Endpoint: " + getName() +
-                        "If using a WSO2-released inbound, please upgrade to the latest version. " +
-                        "If this is a custom inbound, implement the 'pause' logic accordingly.");
-            }
-        }
-
-        return isTaskDeactivated;
+        return super.deactivate();
     }
 
     @Override
