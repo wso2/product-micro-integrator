@@ -73,8 +73,7 @@ public class GenericOneTimeTask extends OneTimeTriggerInboundTask implements Loc
     public void notifyLocalTaskPause(String taskName) {
         logger.info("Pausing Generic One Time task: " + taskName);
         try {
-        eventBasedConsumer.pause();
-
+            eventBasedConsumer.pause();
         } catch (AbstractMethodError e) {
             throw new UnsupportedOperationException("Unsupported operation 'pause()' for Inbound Endpoint: " + getName() +
                     "If using a WSO2-released inbound, please upgrade to the latest version. " +
