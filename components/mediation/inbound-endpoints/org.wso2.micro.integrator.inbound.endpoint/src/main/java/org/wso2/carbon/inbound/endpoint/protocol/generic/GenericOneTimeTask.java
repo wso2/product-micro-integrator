@@ -58,7 +58,7 @@ public class GenericOneTimeTask extends OneTimeTriggerInboundTask implements Loc
      */
     @Override
     public void notifyLocalTaskRemoval(String taskName) {
-        logger.info("Close connections of the Generic One Time task upon deletion of task: " + taskName);
+        logger.info("Removing Generic One Time task: " + taskName);
         eventBasedConsumer.destroy();
     }
 
@@ -72,8 +72,14 @@ public class GenericOneTimeTask extends OneTimeTriggerInboundTask implements Loc
     @Override
     public void notifyLocalTaskPause(String taskName) {
         logger.info("Pausing Generic One Time task: " + taskName);
-        logger.info("Close connections of the Generic One Time task upon pause of task: " + taskName);
-        eventBasedConsumer.destroy();
+        try {
+        eventBasedConsumer.pause();
+
+        } catch (AbstractMethodError e) {
+            throw new UnsupportedOperationException("Unsupported operation 'pause()' for Inbound Endpoint: " + getName() +
+                    "If using a WSO2-released inbound, please upgrade to the latest version. " +
+                    "If this is a custom inbound, implement the 'resume' logic accordingly.");
+        }
     }
 
     @Override
@@ -81,9 +87,10 @@ public class GenericOneTimeTask extends OneTimeTriggerInboundTask implements Loc
         logger.info("Resuming Generic One Time task: " + taskName);
         try {
             eventBasedConsumer.resume();
-        } catch (NoSuchMethodError e) {
-            logger.warn("resume() method not available in this version of eventBased Consumer. Update to the latest " +
-                    "server version immediately Task: " + taskName);
+        } catch (AbstractMethodError e) {
+            throw new UnsupportedOperationException("Unsupported operation 'resume()' for Inbound Endpoint: " + getName() +
+                    "If using a WSO2-released inbound, please upgrade to the latest version. " +
+                    "If this is a custom inbound, implement the 'resume' logic accordingly.");
         }
     }
 
