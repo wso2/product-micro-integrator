@@ -26,6 +26,7 @@ import org.apache.axis2.context.MessageContext;
 import org.apache.commons.collections4.iterators.IteratorEnumeration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.util.MessageHelper;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
@@ -56,9 +57,11 @@ public class ODataServletRequest implements HttpServletRequest {
 
     private MessageContext axis2MessageContext;
     private static final String DEFAULT_CONTEXT_PATH = "/odata";
+    private final Map axis2TransportHeaders;
 
     ODataServletRequest(MessageContext messageContext) {
         this.axis2MessageContext = messageContext;
+        this.axis2TransportHeaders = MessageHelper.getClonedTransportHeaders(messageContext);
     }
 
     @Override
@@ -78,22 +81,19 @@ public class ODataServletRequest implements HttpServletRequest {
 
     @Override
     public String getHeader(String s) {
-        Map transportHeaders = (Map) axis2MessageContext.getProperty(MessageContext.TRANSPORT_HEADERS);
-        return (String)transportHeaders.get(s);
+        return (String)axis2TransportHeaders.get(s);
     }
 
     @Override
     public Enumeration getHeaders(String s) {
-        Map transportHeaders = (Map) axis2MessageContext.getProperty(MessageContext.TRANSPORT_HEADERS);
         List headerValues = new ArrayList();
-        headerValues.add(transportHeaders.get(s));
+        headerValues.add(axis2TransportHeaders.get(s));
         return new IteratorEnumeration(headerValues.iterator());
     }
 
     @Override
     public Enumeration getHeaderNames() {
-        Map transportHeaders = (Map) axis2MessageContext.getProperty(MessageContext.TRANSPORT_HEADERS);
-        return new IteratorEnumeration(transportHeaders.keySet().iterator());
+        return new IteratorEnumeration(axis2TransportHeaders.keySet().iterator());
     }
 
     @Override
