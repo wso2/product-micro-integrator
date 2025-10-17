@@ -81,6 +81,8 @@ public abstract class GenericPollingConsumer {
 
     public abstract void pause();
 
+    public abstract void pause(boolean destroyConsumer);
+
     public void destroy() {
         log.info("Default destroy invoked. Not overwritten.");
     }

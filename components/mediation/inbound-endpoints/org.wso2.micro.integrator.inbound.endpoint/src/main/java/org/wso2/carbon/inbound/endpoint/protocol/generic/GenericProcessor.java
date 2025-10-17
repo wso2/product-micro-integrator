@@ -198,7 +198,14 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
 
     @Override
     public void pause() {
-
+        try {
+            pollingConsumer.pause(false);
+        } catch (AbstractMethodError e) {
+            log.warn("Unsupported operation 'pause(boolean destroyConsumer)' for Inbound Endpoint: " + getName()
+                    + ". If you are using a WSO2-released inbound, please upgrade to the latest version. For custom "
+                    + "inbound implementations, ensure the 'pause(boolean destroyConsumer)' method is implemented "
+                    + "with destroyConsumer = false to support graceful pausing of the Polling Inbound Endpoint.");
+        }
     }
 
     public String getName() {
@@ -231,11 +238,11 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
 
         if (isTaskDeactivated) {
             try {
-                pollingConsumer.destroy();
+                pollingConsumer.pause();
             } catch (AbstractMethodError e) {
-                throw new UnsupportedOperationException("Unsupported operation 'destroy()' for Inbound Endpoint: "
+                throw new UnsupportedOperationException("Unsupported operation 'pause()' for Inbound Endpoint: "
                         + getName() + "If using a WSO2-released inbound, please upgrade to the latest version. "
-                        + "If this is a custom inbound, implement the 'destroy' logic accordingly.");
+                        + "If this is a custom inbound, implement the 'pause' logic accordingly.");
             }
         }
         return isTaskDeactivated;
