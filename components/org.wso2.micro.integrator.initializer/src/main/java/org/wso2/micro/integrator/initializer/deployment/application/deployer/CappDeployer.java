@@ -272,6 +272,7 @@ public class CappDeployer extends AbstractDeployer {
             if (e.getMessage() != null && e.getMessage().startsWith(REG_DEP_FAILURE_IDENTIFIER)){
                 handleDeployException(e, cAppName, currentApp);
             }
+            throw e;
         }
 
         // Initial execution of Service catalog Deployer at server startup when last CApp get deployed
@@ -604,7 +605,8 @@ public class CappDeployer extends AbstractDeployer {
         for (String artifactName : swaggerTable.keySet()) {
             String apiname = apiArtifactMap.get(artifactName);
             if (!StringUtils.isEmpty(apiname)) {
-                synapseConfiguration.addSwaggerDefinition(apiname, swaggerTable.get(artifactName));
+                synapseConfiguration.addSwaggerDefinition(apiname, swaggerTable.get(artifactName),
+                        parentApp.getAppConfig().isVersionedDeployment());
             }
         }
     }
