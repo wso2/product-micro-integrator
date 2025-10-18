@@ -69,6 +69,9 @@ public class Utils {
     }
 
     public static boolean checkMethodImplementation(Class<?> clazz, String methodName, Class<?>... paramTypes) {
+        if (log.isDebugEnabled()) {
+            log.debug("Checking method implementation for: " + methodName + " in class: " + clazz.getName());
+        }
         try {
             Method method = clazz.getDeclaredMethod(methodName, paramTypes);
             return !Modifier.isAbstract(method.getModifiers());
