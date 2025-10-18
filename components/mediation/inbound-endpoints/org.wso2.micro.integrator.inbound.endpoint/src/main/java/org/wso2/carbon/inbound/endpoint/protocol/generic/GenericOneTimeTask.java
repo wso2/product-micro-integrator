@@ -63,7 +63,7 @@ public class GenericOneTimeTask extends OneTimeTriggerInboundTask implements Loc
             eventBasedConsumer.destroy();
         } catch (AbstractMethodError e) {
             logger.warn("Task [" + taskName + "] : Unsupported operation 'destroy()' for Inbound Endpoint: "
-                    + getName() + "If using a WSO2-released inbound, please upgrade to the latest version. "
+                    + getName() + ". If using a WSO2-released inbound, please upgrade to the latest version. "
                     + "If this is a custom inbound, implement the 'destroy' logic accordingly.");
         }
     }
@@ -75,7 +75,7 @@ public class GenericOneTimeTask extends OneTimeTriggerInboundTask implements Loc
             eventBasedConsumer.destroy();
         } catch (AbstractMethodError e) {
             logger.warn("Task [" + taskName + "] : Unsupported operation 'destroy()' for Inbound Endpoint: "
-                    + getName() + "If using a WSO2-released inbound, please upgrade to the latest version. "
+                    + getName() + ". If using a WSO2-released inbound, please upgrade to the latest version. "
                     + "If this is a custom inbound, implement the 'destroy' logic accordingly.");
         }
     }
@@ -87,7 +87,7 @@ public class GenericOneTimeTask extends OneTimeTriggerInboundTask implements Loc
             eventBasedConsumer.resume();
         } catch (AbstractMethodError e) {
             logger.warn("Unsupported operation 'resume()' for Inbound Endpoint: " + getName() +
-                    "If using a WSO2-released inbound, please upgrade to the latest version. " +
+                    ". If using a WSO2-released inbound, please upgrade to the latest version. " +
                     "If this is a custom inbound, implement the 'resume' logic accordingly.");
         }
     }

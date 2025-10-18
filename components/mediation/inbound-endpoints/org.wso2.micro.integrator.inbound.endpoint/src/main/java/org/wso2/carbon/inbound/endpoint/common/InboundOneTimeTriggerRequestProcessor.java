@@ -81,7 +81,7 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
                     ((NTaskTaskManager) taskManagerImpl).registerListener((RabbitMQTask) task,
                             taskDescription.getName());
                 }
-            } else if ( task instanceof GenericOneTimeTask){
+            } else if (task instanceof GenericOneTimeTask) {
                 if (taskManagerImpl instanceof NTaskTaskManager) {
                     ((NTaskTaskManager) taskManagerImpl).registerListener((GenericOneTimeTask) task,
                             taskDescription.getName());
