@@ -27,11 +27,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.api.API;
 import org.apache.synapse.api.version.VersionStrategy;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 import org.wso2.micro.application.deployer.AppDeployerUtils;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import org.wso2.micro.integrator.initializer.deployment.DuplicateCAppDescriptorException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,7 +38,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -57,13 +53,9 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import static org.wso2.micro.integrator.initializer.utils.Constants.CAR_FILE_EXTENSION;
 import static org.wso2.micro.integrator.initializer.utils.Constants.DESCRIPTOR_XML_FILE_NAME;
@@ -240,6 +232,7 @@ public class DeployerUtil {
                 continue;
             }
             CAppDescriptor descriptor = new CAppDescriptor(cAppFile);
+            validateDuplicateCAppDescriptor(cAppDescriptors, descriptor);
             cAppDescriptors.add(descriptor);
 
             if (!descriptor.isFatCAR()) {
@@ -262,6 +255,7 @@ public class DeployerUtil {
                                 }
                                 CAppDescriptor dep = new CAppDescriptor(tmp);
                                 dep.setCAppFile(new File(cAppFile.getPath(), entry.getName()));
+                                validateDuplicateCAppDescriptor(cAppDescriptors, dep);
                                 cAppDescriptors.add(dep);
                             } catch (IOException exception) {
                                 throw new UncheckedDeploymentException(
@@ -279,6 +273,26 @@ public class DeployerUtil {
             }
         }
         return cAppDescriptors;
+    }
+
+    /**
+     * This method checks for duplicate CApp descriptors in the provided list.
+     * If a duplicate is found, it throws a DeploymentException.
+     *
+     * @param cAppDescriptors CApp descriptor list
+     * @param descriptor      CApp descriptor to be validated
+     * @throws DeploymentException if a duplicate CApp descriptor is found
+     */
+    private static void validateDuplicateCAppDescriptor(List<CAppDescriptor> cAppDescriptors, CAppDescriptor descriptor)
+            throws DuplicateCAppDescriptorException {
+
+        for (CAppDescriptor existingDescriptor : cAppDescriptors) {
+            if (existingDescriptor.getCAppId().equals(descriptor.getCAppId())) {
+                throw new DuplicateCAppDescriptorException("Duplicate Carbon Application: " + descriptor.getCAppId() +
+                        " found in files: " + existingDescriptor.getCAppFile().getAbsolutePath() + " and " +
+                        descriptor.getCAppFile().getAbsolutePath());
+            }
+        }
     }
 
     /** Local unchecked wrapper to use inside streams. */

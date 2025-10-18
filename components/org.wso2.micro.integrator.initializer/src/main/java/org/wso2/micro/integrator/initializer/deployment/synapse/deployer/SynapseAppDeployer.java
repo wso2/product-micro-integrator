@@ -39,6 +39,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.api.API;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.EntryFactory;
 import org.apache.synapse.config.xml.SynapseImportFactory;
 import org.apache.synapse.config.xml.SynapseImportSerializer;
@@ -280,7 +281,9 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                 String artifactName = artifact.getName();
                 if (carbonApplication.getAppConfig().isVersionedDeployment()) {
                     if (artifact.getType().equals("synapse/proxy-service")) {
-                        artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + "/" + artifactName;
+                        if (SynapsePropertiesLoader.getBooleanProperty(SynapseConstants.EXPOSE_VERSIONED_SERVICES, false)) {
+                            artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + "/" + artifactName;
+                        }
                     } else {
                         artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + Constants.DOUBLE_UNDERSCORE + artifactName;
                     }
@@ -316,7 +319,8 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
                                     new StAXOMBuilder(new FileInputStream(new File(artifactPath))).getDocumentElement();
                             API api = DeployerUtil.partiallyBuildAPI(apiElement);
                             artifactName = api.getName();
-                            if (carbonApplication.getAppConfig().isVersionedDeployment()) {
+                            if (SynapsePropertiesLoader.getBooleanProperty(SynapseConstants.EXPOSE_VERSIONED_SERVICES, false) &&
+                                    carbonApplication.getAppConfig().isVersionedDeployment()) {
                                 artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + Constants.DOUBLE_UNDERSCORE + artifactName;
                             }
                         }

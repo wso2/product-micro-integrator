@@ -102,7 +102,7 @@ public class CAppDescriptor {
                     setCAppId(idElements.item(0).getTextContent());
                 }
                 NodeList isFatCARElements = document.getElementsByTagName(org.apache.axis2.Constants.FAT_CAR_ENABLED);
-                if (isFatCARElements.getLength() > 0) {
+                if (isFatCARElements.getLength() > 0 && "true".equals(isFatCARElements.item(0).getTextContent())) {
                     setFatCAR(true);
                 }
 
