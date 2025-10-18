@@ -26,6 +26,7 @@ import org.apache.synapse.inbound.InboundTaskProcessor;
 import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
+import org.wso2.carbon.inbound.endpoint.protocol.generic.GenericOneTimeTask;
 import org.wso2.carbon.inbound.endpoint.protocol.rabbitmq.RabbitMQTask;
 import org.wso2.micro.integrator.mediation.ntask.NTaskTaskManager;
 
@@ -74,10 +75,15 @@ public abstract class InboundOneTimeTriggerRequestProcessor implements InboundRe
             startUpController.setTaskDescription(taskDescription);
             startUpController.init(synapseEnvironment);
             // registering a listener to identify task removal or deletions.
+            TaskManager taskManagerImpl = synapseEnvironment.getTaskManager().getTaskManagerImpl();
             if (task instanceof RabbitMQTask) {
-                TaskManager taskManagerImpl = synapseEnvironment.getTaskManager().getTaskManagerImpl();
                 if (taskManagerImpl instanceof NTaskTaskManager) {
                     ((NTaskTaskManager) taskManagerImpl).registerListener((RabbitMQTask) task,
+                            taskDescription.getName());
+                }
+            } else if ( task instanceof GenericOneTimeTask){
+                if (taskManagerImpl instanceof NTaskTaskManager) {
+                    ((NTaskTaskManager) taskManagerImpl).registerListener((GenericOneTimeTask) task,
                             taskDescription.getName());
                 }
             }

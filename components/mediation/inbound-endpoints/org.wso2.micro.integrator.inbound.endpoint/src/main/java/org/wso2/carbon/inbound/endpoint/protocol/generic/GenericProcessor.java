@@ -223,14 +223,17 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
 
     @Override
     public boolean activate() {
-        try {
-            pollingConsumer.resume();
-        } catch (AbstractMethodError e) {
+
+        if (Utils.checkMethodImplementation(pollingConsumer.getClass(), "resume")) {
+            // After the task is resumed via super.activate(), the resume() method of the corresponding polling
+            // consumer (where the task is scheduled) will be invoked within the 'GenericTask.notifyLocalTaskResume' method.
+
+            return super.activate();
+        } else {
             throw new UnsupportedOperationException("Activation is not supported for Inbound Endpoint '" + getName()
                     + "'. To enable this functionality, ensure that the 'destroy()' and 'resume()' methods are "
                     + "properly implemented. If using a WSO2-released inbound, please upgrade to the latest version.");
         }
-        return super.activate();
     }
 
     @Override
@@ -238,17 +241,17 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
 
         if (Utils.checkMethodImplementation(pollingConsumer.getClass(), "destroy")
                 && Utils.checkMethodImplementation(pollingConsumer.getClass(), "resume")) {
-            boolean isTaskDeactivated = super.deactivate();
+            // We check that both 'destroy' and 'resume' are implemented to ensure that existing customers who only
+            // implemented 'destroy' do not end up in an inconsistent state due to a missing 'resume' implementation.
 
-            if (isTaskDeactivated) {
-                pollingConsumer.destroy();
-                return true;
-            }
+            // After the task is paused via super.deactivate(), the destroy() method of the corresponding polling
+            // consumer (where the task is scheduled) will be invoked within the 'GenericTask.notifyLocalTaskPause' method.
+
+            return super.deactivate();
         } else {
             throw new UnsupportedOperationException("Deactivation is not supported for Inbound Endpoint '"
                     + getName() + "'. To enable this functionality, ensure that the 'destroy()' and 'resume()' methods "
                     + "are properly implemented. If using a WSO2-released inbound, please upgrade to the latest version.");
         }
-        return false;
     }
 }

@@ -151,14 +151,13 @@ public class GenericEventBasedListener extends InboundOneTimeTriggerEventBasedPr
     }
 
     public boolean activate() {
-        try {
-            eventConsumer.resume();
-        } catch (AbstractMethodError e) {
+        if (Utils.checkMethodImplementation(eventConsumer.getClass(), "resume")) {
+            return super.activate();
+        } else {
             throw new UnsupportedOperationException("Deactivation is not supported for Inbound Endpoint '" + getName()
                     + "'. To enable this functionality, ensure that the 'destroy()' and 'resume()' methods are "
                     + "properly implemented. If using a WSO2-released inbound, please upgrade to the latest version.");
         }
-        return super.activate();
     }
 
     @Override
