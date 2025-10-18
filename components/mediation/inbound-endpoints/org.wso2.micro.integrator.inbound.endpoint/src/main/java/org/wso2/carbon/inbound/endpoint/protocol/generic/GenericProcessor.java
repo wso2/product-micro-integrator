@@ -29,6 +29,7 @@ import org.apache.synapse.task.TaskStartupObserver;
 import org.wso2.carbon.inbound.endpoint.common.InboundRequestProcessorImpl;
 import org.wso2.carbon.inbound.endpoint.common.InboundTask;
 import org.wso2.carbon.inbound.endpoint.protocol.PollingConstants;
+import org.wso2.carbon.inbound.endpoint.protocol.Utils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -198,7 +199,14 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
 
     @Override
     public void pause() {
-
+        try {
+            pollingConsumer.pause();
+        } catch (AbstractMethodError e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Implement the 'pause()' method to enable graceful shutdown in your custom "
+                        + "inbound endpoint: " + getName());
+            }
+        }
     }
 
     public String getName() {
@@ -215,29 +223,35 @@ public class GenericProcessor extends InboundRequestProcessorImpl implements Tas
 
     @Override
     public boolean activate() {
-        try {
-            pollingConsumer.resume();
-        } catch (AbstractMethodError e) {
-            throw new UnsupportedOperationException("Unsupported operation 'resume()' for Inbound Endpoint: " + getName() +
-                    "If using a WSO2-released inbound, please upgrade to the latest version. " +
-                    "If this is a custom inbound, implement the 'resume' logic accordingly.");
+
+        if (Utils.checkMethodImplementation(pollingConsumer.getClass(), "resume")) {
+            // After the task is resumed via super.activate(), the resume() method of the corresponding polling
+            // consumer (where the task is scheduled) will be invoked within the 'GenericTask.notifyLocalTaskResume' method.
+
+            return super.activate();
+        } else {
+            throw new UnsupportedOperationException("Activation is not supported for Inbound Endpoint '" + getName()
+                    + "'. To enable this functionality, ensure that the 'destroy()' and 'resume()' methods are "
+                    + "properly implemented. If using a WSO2-released inbound, please upgrade to the latest version.");
         }
-        return super.activate();
     }
 
     @Override
     public boolean deactivate() {
-        boolean isTaskDeactivated = super.deactivate();
 
-        if (isTaskDeactivated) {
-            try {
-                pollingConsumer.destroy();
-            } catch (AbstractMethodError e) {
-                throw new UnsupportedOperationException("Unsupported operation 'destroy()' for Inbound Endpoint: "
-                        + getName() + "If using a WSO2-released inbound, please upgrade to the latest version. "
-                        + "If this is a custom inbound, implement the 'destroy' logic accordingly.");
-            }
+        if (Utils.checkMethodImplementation(pollingConsumer.getClass(), "destroy")
+                && Utils.checkMethodImplementation(pollingConsumer.getClass(), "resume")) {
+            // We check that both 'destroy' and 'resume' are implemented to ensure that existing customers who only
+            // implemented 'destroy' do not end up in an inconsistent state due to a missing 'resume' implementation.
+
+            // After the task is paused via super.deactivate(), the destroy() method of the corresponding polling
+            // consumer (where the task is scheduled) will be invoked within the 'GenericTask.notifyLocalTaskPause' method.
+
+            return super.deactivate();
+        } else {
+            throw new UnsupportedOperationException("Deactivation is not supported for Inbound Endpoint '"
+                    + getName() + "'. To enable this functionality, ensure that the 'destroy()' and 'resume()' methods "
+                    + "are properly implemented. If using a WSO2-released inbound, please upgrade to the latest version.");
         }
-        return isTaskDeactivated;
     }
 }

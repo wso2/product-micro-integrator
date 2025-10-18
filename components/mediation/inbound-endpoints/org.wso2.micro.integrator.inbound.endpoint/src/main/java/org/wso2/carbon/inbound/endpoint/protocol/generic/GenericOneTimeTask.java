@@ -21,8 +21,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.wso2.carbon.inbound.endpoint.common.OneTimeTriggerInboundTask;
+import org.wso2.micro.integrator.ntask.core.impl.LocalTaskActionListener;
 
-public class GenericOneTimeTask extends OneTimeTriggerInboundTask {
+public class GenericOneTimeTask extends OneTimeTriggerInboundTask implements LocalTaskActionListener {
 
     private static final Log logger = LogFactory.getLog(GenericOneTimeTask.class.getName());
     private GenericEventBasedConsumer eventBasedConsumer;
@@ -49,4 +50,45 @@ public class GenericOneTimeTask extends OneTimeTriggerInboundTask {
         return eventBasedConsumer;
     }
 
+    /**
+     * Method to notify when a local task is removed, it can be due to pause or delete.
+     * Destroys the Generic task upon removal of the local task.
+     *
+     * @param taskName the name of the task that was deleted
+     */
+    @Override
+    public void notifyLocalTaskRemoval(String taskName) {
+        logger.info("Removing Generic One Time task: " + taskName);
+        try {
+            eventBasedConsumer.destroy();
+        } catch (AbstractMethodError e) {
+            logger.warn("Task [" + taskName + "] : Unsupported operation 'destroy()' for Inbound Endpoint: "
+                    + getName() + ". If using a WSO2-released inbound, please upgrade to the latest version. "
+                    + "If this is a custom inbound, implement the 'destroy' logic accordingly.");
+        }
+    }
+
+    @Override
+    public void notifyLocalTaskPause(String taskName) {
+        logger.info("Pausing Generic One Time task: " + taskName);
+        try {
+            eventBasedConsumer.destroy();
+        } catch (AbstractMethodError e) {
+            logger.warn("Task [" + taskName + "] : Unsupported operation 'destroy()' for Inbound Endpoint: "
+                    + getName() + ". If using a WSO2-released inbound, please upgrade to the latest version. "
+                    + "If this is a custom inbound, implement the 'destroy' logic accordingly.");
+        }
+    }
+
+    @Override
+    public void notifyLocalTaskResume(String taskName) {
+        logger.info("Resuming Generic One Time task: " + taskName);
+        try {
+            eventBasedConsumer.resume();
+        } catch (AbstractMethodError e) {
+            logger.warn("Unsupported operation 'resume()' for Inbound Endpoint: " + getName() +
+                    ". If using a WSO2-released inbound, please upgrade to the latest version. " +
+                    "If this is a custom inbound, implement the 'resume' logic accordingly.");
+        }
+    }
 }

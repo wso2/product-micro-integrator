@@ -22,6 +22,8 @@ import org.apache.axis2.util.GracefulShutdownTimer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Utils {
@@ -63,6 +65,42 @@ public class Utils {
                         + "indefinite blocking.");
                 break;
             }
+        }
+    }
+
+    /**
+     * Checks whether the specified method is implemented (i.e., not abstract) in the given class.
+     *
+     * <p>This utility method attempts to locate a method with the provided name and parameter types
+     * in the given class. If the method exists and is not declared as {@code abstract}, it is
+     * considered implemented and the method returns {@code true}. Otherwise, it returns {@code false}.
+     * </p>
+     *
+     * <p>This check can be useful for verifying whether a custom class provides concrete
+     * implementations for required interface or superclass methods before invoking them,
+     * avoiding runtime {@link UnsupportedOperationException}s.</p>
+     *
+     * @param clazz       the {@link Class} object to inspect
+     * @param methodName  the name of the method to check
+     * @param paramTypes  the parameter types of the method (if any)
+     * @return {@code true} if the method exists and is not abstract, {@code false} otherwise
+     */
+    public static boolean checkMethodImplementation(Class<?> clazz, String methodName, Class<?>... paramTypes) {
+        if (log.isDebugEnabled()) {
+            log.debug("Checking method implementation for: " + methodName + " in class: " + clazz.getName());
+        }
+        try {
+            Method method = clazz.getDeclaredMethod(methodName, paramTypes);
+            boolean isImplemented = !Modifier.isAbstract(method.getModifiers());
+            if (log.isDebugEnabled()) {
+                log.debug("Method " + methodName + " implementation status: " + isImplemented);
+            }
+            return isImplemented;
+        } catch (NoSuchMethodException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Method " + methodName + " not found in class " + clazz.getName(), e);
+            }
+            return false;
         }
     }
 }
