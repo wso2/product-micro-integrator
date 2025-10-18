@@ -56,6 +56,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.math.BigDecimal;
 import java.sql.Array;
 import java.sql.Blob;
@@ -83,6 +85,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+
+import static org.wso2.micro.integrator.dataservices.core.DBUtils.unwrap;
 
 /**
  * This class represents an SQL query in a data service.
@@ -805,6 +809,7 @@ public class SQLQuery extends ExpressionQuery implements BatchRequestParticipant
             throw new DataServiceFault(e, FaultCodes.INCOMPATIBLE_PARAMETERS_ERROR,
                                        "Error in 'SQLQuery.processPreNormalQuery': " + e.getMessage());
         } catch (Throwable e) {
+            e = unwrap(e);
             isError = true;
             throw new DataServiceFault(e, FaultCodes.DATABASE_ERROR,
                                        "Error in 'SQLQuery.processPreNormalQuery': " + e.getMessage());

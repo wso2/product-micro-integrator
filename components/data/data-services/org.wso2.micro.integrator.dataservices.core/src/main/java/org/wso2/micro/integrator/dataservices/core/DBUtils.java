@@ -74,6 +74,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -275,6 +277,24 @@ public class DBUtils {
     /** pre-fetch the OMFactory */
     static {
         omFactory = OMAbstractFactory.getOMFactory();
+    }
+
+    /**
+     * Recursively unwraps common reflective wrapper exceptions to reveal the original cause.
+     * This method traverses through {@link InvocationTargetException} and
+     * {@link UndeclaredThrowableException} instances until the root cause is found.
+     *
+     * @param e the throwable to unwrap
+     * @return the root cause if {@code e} is wrapped, or {@code e} itself if not
+     */
+    public static Throwable unwrap(Throwable e) {
+        if (log.isDebugEnabled()) {
+            log.debug("Unwrapping throwable: " + e.getClass().getName());
+        }
+        if (e instanceof InvocationTargetException || e instanceof UndeclaredThrowableException) {
+            return unwrap(e.getCause());
+        }
+        return e;
     }
 
     public static XMLOutputFactory getXMLOutputFactory() {
