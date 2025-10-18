@@ -22,6 +22,8 @@ import org.apache.axis2.util.GracefulShutdownTimer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Utils {
@@ -63,6 +65,18 @@ public class Utils {
                         + "indefinite blocking.");
                 break;
             }
+        }
+    }
+
+    public static boolean checkMethodImplementation(Class<?> clazz, String methodName, Class<?>... paramTypes) {
+        try {
+            Method method = clazz.getDeclaredMethod(methodName, paramTypes);
+            return !Modifier.isAbstract(method.getModifiers());
+        } catch (NoSuchMethodException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Method " + methodName + " not found in class " + clazz.getName(), e);
+            }
+            return false;
         }
     }
 }
