@@ -74,7 +74,11 @@ public class Utils {
         }
         try {
             Method method = clazz.getDeclaredMethod(methodName, paramTypes);
-            return !Modifier.isAbstract(method.getModifiers());
+            boolean isImplemented = !Modifier.isAbstract(method.getModifiers());
+            if (log.isDebugEnabled()) {
+                log.debug("Method " + methodName + " implementation status: " + isImplemented);
+            }
+            return isImplemented;
         } catch (NoSuchMethodException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Method " + methodName + " not found in class " + clazz.getName(), e);
