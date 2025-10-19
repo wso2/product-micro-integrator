@@ -84,6 +84,15 @@ public class RabbitMQConsumer implements Consumer {
      */
     public void execute() {
         try {
+            // Reset shutdown state before initialization
+            // This is to handle the consumer initialization after a deactivation where graceful shutdown is enabled.
+            writeLock.lock();
+            try {
+                isShuttingDown = false;
+            } finally {
+                writeLock.unlock();
+            }
+
             initConsumer();
         } catch (IOException | RabbitMQException e) {
             log.error("Error occurred while initializing the consumer.", e);
