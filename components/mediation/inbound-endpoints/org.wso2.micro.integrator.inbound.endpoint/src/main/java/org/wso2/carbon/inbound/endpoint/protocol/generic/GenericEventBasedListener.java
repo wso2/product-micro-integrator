@@ -152,6 +152,9 @@ public class GenericEventBasedListener extends InboundOneTimeTriggerEventBasedPr
 
     public boolean activate() {
         if (Utils.checkMethodImplementation(eventConsumer.getClass(), "resume")) {
+            // After the task is resumed via super.activate(), the resume() method of the corresponding event based
+            // consumer (where the task is scheduled) will be invoked within the 'GenericOneTimeTask.notifyLocalTaskResume' method.
+
             return super.activate();
         } else {
             throw new UnsupportedOperationException("Deactivation is not supported for Inbound Endpoint '" + getName()
@@ -164,18 +167,16 @@ public class GenericEventBasedListener extends InboundOneTimeTriggerEventBasedPr
     public boolean deactivate() {
         if (Utils.checkMethodImplementation(eventConsumer.getClass(), "destroy")
                 && Utils.checkMethodImplementation(eventConsumer.getClass(), "resume")) {
-            boolean isTaskDeactivated = super.deactivate();
+            // After the task is paused via super.deactivate(), the destroy() method of the corresponding event based
+            // consumer (where the task is scheduled) will be invoked within the 'GenericOneTimeTask.notifyLocalTaskPause' method.
 
-            if (isTaskDeactivated) {
-                eventConsumer.destroy();
-                return true;
-            }
+            return super.deactivate();
+
         } else {
             throw new UnsupportedOperationException("Deactivation is not supported for Inbound Endpoint '" + getName()
                     + "'. To enable this functionality, ensure that the 'destroy()' and 'resume()' methods are "
                     + "properly implemented. If using a WSO2-released inbound, please upgrade to the latest version.");
         }
-        return false;
     }
 
     @Override
