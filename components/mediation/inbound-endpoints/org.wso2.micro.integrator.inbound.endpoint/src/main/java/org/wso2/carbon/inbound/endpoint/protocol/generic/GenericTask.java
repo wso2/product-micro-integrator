@@ -80,6 +80,7 @@ public class GenericTask extends InboundTask implements LocalTaskActionListener 
 
     @Override
     public void notifyLocalTaskResume(String taskName) {
+        logger.info("Resuming Generic One Time task: " + taskName);
         try {
             pollingConsumer.resume();
         } catch (AbstractMethodError e) {
