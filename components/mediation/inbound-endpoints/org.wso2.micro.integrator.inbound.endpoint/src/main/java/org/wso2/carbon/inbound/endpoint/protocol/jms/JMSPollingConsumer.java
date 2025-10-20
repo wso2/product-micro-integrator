@@ -414,6 +414,9 @@ public class JMSPollingConsumer {
                 } else {
                     return msg;
                 }
+                if (destroyed) {
+                    break;
+                }
                 msg = receiveMessage(messageConsumer);
             }
 

@@ -340,7 +340,7 @@ public class ServerManagement {
             try {
                 inboundEndpoint.pause();
             } catch (Exception e) {
-                log.error("Error while stopping Inbound Endpoint: " + inboundEndpoint.getName(), e);
+                log.error("Error while pausing Inbound Endpoint: " + inboundEndpoint.getName(), e);
             }
             return null;
         }
