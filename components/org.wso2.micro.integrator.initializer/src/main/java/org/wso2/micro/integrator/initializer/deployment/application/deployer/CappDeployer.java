@@ -44,6 +44,7 @@ import org.wso2.micro.application.deployer.handler.AppDeploymentHandler;
 import org.wso2.micro.core.CarbonAxisConfigurator;
 import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.core.util.FileManipulator;
+import org.wso2.micro.integrator.initializer.deployment.DuplicateCAppDescriptorException;
 import org.wso2.micro.integrator.initializer.serviceCatalog.ServiceCatalogDeployer;
 import org.wso2.micro.integrator.initializer.utils.Constants;
 import org.wso2.micro.integrator.initializer.utils.DeployerUtil;
@@ -907,6 +908,8 @@ public class CappDeployer extends AbstractDeployer {
                     String name = dfd.getFile().getName();
                     return cAppOrderMap.getOrDefault(name, Integer.MAX_VALUE); // unknown files go last
                 }));
+            } catch (DuplicateCAppDescriptorException e) {
+                log.warn("Duplicate CApp descriptors found while determining the CApp processing order: " + e.getMessage());
             } catch (DeploymentException e) {
                 log.warn("Unable to determine the CApp processing order based on dependencies. " +
                                 "CApps will be deployed in alphabetical order instead. " + e.getMessage());
