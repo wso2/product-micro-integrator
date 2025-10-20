@@ -29,6 +29,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.wso2.carbon.inbound.endpoint.common.OneTimeTriggerAbstractCallback;
 
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * MQTT Asynchronous call back handler
@@ -48,6 +49,8 @@ public class MqttAsyncCallback extends OneTimeTriggerAbstractCallback implements
     private MqttConnectOptions connectOptions;
     private MqttConnectionConsumer connectionConsumer;
     private MqttConnectionListener connectionListener;
+
+    public final AtomicInteger inFlightMessages = new AtomicInteger(0);
 
     public MqttAsyncCallback(MqttAsyncClient mqttAsyncClient, MqttInjectHandler injectHandler,
                              MqttConnectionFactory confac, MqttConnectOptions connectOptions,
@@ -104,8 +107,10 @@ public class MqttAsyncCallback extends OneTimeTriggerAbstractCallback implements
         if (log.isDebugEnabled()) {
             log.debug("Received Message: Topic:" + topic + "  Message: " + mqttMessage);
         }
+        inFlightMessages.incrementAndGet();
         injectHandler.invoke(new MqttMessageContext(mqttMessage, topic, confac.getServerHost(),
                 confac.getServerPort()), name);
+        inFlightMessages.decrementAndGet();
     }
 
     @Override
