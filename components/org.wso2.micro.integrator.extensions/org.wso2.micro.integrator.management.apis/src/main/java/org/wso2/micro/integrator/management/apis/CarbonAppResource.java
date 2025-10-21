@@ -104,8 +104,10 @@ public class CarbonAppResource extends APIResource {
      * @return true if it's an actual connector, false if it's a dependency
      */
     private boolean isActualConnector(String artifactName) {
+        if (log.isDebugEnabled()) {
+            log.debug("Checking if artifact is an actual connector: " + artifactName);
+        }
         // Actual connectors typically start with "mi-connector-" or "mi-inbound-"
-        if (artifactName.startsWith("mi-connector-") || 
             artifactName.startsWith("mi-inbound-") ||
             artifactName.startsWith("org.wso2.carbon.connector")) {
             return true;
