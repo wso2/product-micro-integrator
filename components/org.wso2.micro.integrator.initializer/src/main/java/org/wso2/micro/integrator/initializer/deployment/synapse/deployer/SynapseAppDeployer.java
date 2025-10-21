@@ -280,7 +280,9 @@ public class SynapseAppDeployer implements AppDeploymentHandler {
 
                 String artifactName = artifact.getName();
                 if (carbonApplication.getAppConfig().isVersionedDeployment()) {
-                    if (artifact.getType().equals("synapse/proxy-service")) {
+                    if (artifact.getType().equals("synapse/inbound-endpoint")) {
+                        // skip versioning for inbound endpoints as they don't support versioning
+                    } else if (artifact.getType().equals("synapse/proxy-service")) {
                         if (SynapsePropertiesLoader.getBooleanProperty(SynapseConstants.EXPOSE_VERSIONED_SERVICES, false)) {
                             artifactName = carbonApplication.getAppConfig().getAppArtifactIdentifier() + "/" + artifactName;
                         }
