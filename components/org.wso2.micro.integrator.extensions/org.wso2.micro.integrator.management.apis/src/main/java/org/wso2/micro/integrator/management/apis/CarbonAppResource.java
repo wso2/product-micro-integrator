@@ -97,6 +97,61 @@ public class CarbonAppResource extends APIResource {
         return methods;
     }
 
+    /**
+     * Check if an artifact is an actual connector or just a dependency.
+     * 
+     * @param artifactName The name of the artifact
+     * @return true if it's an actual connector, false if it's a dependency
+     */
+    private boolean isActualConnector(String artifactName) {
+        // Actual connectors typically start with "mi-connector-" or "mi-inbound-"
+        if (artifactName.startsWith("mi-connector-") || 
+            artifactName.startsWith("mi-inbound-") ||
+            artifactName.startsWith("org.wso2.carbon.connector")) {
+            return true;
+        }
+        
+        // Common dependency patterns to exclude
+        String[] dependencyPatterns = {
+            "kafka-schema-registry-client",
+            "kafka-avro-serializer",
+            "kafka-clients",
+            "kafka-schema-serializer",
+            "avro-",
+            "jedis-",
+            "scala-library",
+            "common-config",
+            "jackson-",
+            "netty-",
+            "slf4j-",
+            "log4j-",
+            "commons-",
+            "guava-",
+            "protobuf-",
+            "bson-",
+            "mongo-java-driver"
+        };
+        
+        // Check if artifact name matches any dependency pattern
+        for (String pattern : dependencyPatterns) {
+            if (artifactName.startsWith(pattern)) {
+                return false;
+            }
+        }
+        
+        // If artifact name contains "-connector" or ends with ".connector", it's likely a connector
+        if (artifactName.contains("-connector") || artifactName.endsWith(".connector")) {
+            return true;
+        }
+        
+        // Default: if it has version numbers (e.g., "library-1.2.3"), treat as dependency
+        if (artifactName.matches(".*-\\d+\\.\\d+.*")) {
+            return false;
+        }
+        
+        return true;
+    }
+
     @Override
     public boolean invoke(MessageContext messageContext) {
 
@@ -443,6 +498,14 @@ public class CarbonAppResource extends APIResource {
 
             // if the artifactName is null, artifact deployment has failed..
             if (Objects.isNull(artifactName)) {
+                continue;
+            }
+
+            // Filter out dependency JARs for synapse/lib type
+            if ("lib".equals(type) && !isActualConnector(artifactName)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Filtering out dependency artifact: " + artifactName);
+                }
                 continue;
             }
 
