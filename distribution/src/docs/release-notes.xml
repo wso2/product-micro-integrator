@@ -30,15 +30,15 @@
         </div>
 
         <div id="main-content">
-            <h1>WSO2 Micro Integrator (MI) @product.version@ Released!</h1>
+            <h1>WSO2 Integrator: MI @product.version@ Released!</h1>
 
             <p>
-                WSO2 MI team is pleased to announce the release of version @product.version@ of
-                the Open Source Micro Integrator (MI).
+                WSO2 Integration team is pleased to announce the release of version @product.version@ of
+                the Open Source WSO2 Integrator: MI.
             </p>
 
             <p>
-                Micro Integrator @product.version@ brings you the best from the both worlds of centralized deployments and containers.
+                WSO2 Integrator: MI @product.version@ brings you the best from the both worlds of centralized deployments and containers.
                 The renowned synapse engine which it is based on brings in all the required integration capabilities
                 and its adaptable nature makes it easier to use for Micro services.
             </p>
@@ -59,7 +59,7 @@
                 <li>Run the micro-integrator.sh or micro-integrator.bat as appropriate</li>
             </ol>
 
-            <h2>Key Features of WSO2 MI</h2>
+            <h2>Key Features of WSO2 Integrator: MI</h2>
             <ul>
                 <li>Proxy services - facilitating synchronous/asynchronous transport, interface
                     (WSDL/Schema/Policy), message format (SOAP 1.1/1.2, POX/REST, Text, Binary),
@@ -93,30 +93,45 @@
             </ul>
 
             <h2>What's new in this release</h2>
-            <p>WSO2 MI @product.version@ is shipped with the following new features:</p>
+            <p>WSO2 Integrator: MI @product.version@ is shipped with the following new features:</p>
             <ul>
-                <li>New mediators
+                <li>Versioned Artifacts Support</li>
+                <li>Per API CORS Configuration Support</li>
+                <li>Enable/ Disable Capability for Inbound Endpoints</li>
+                <li>Graceful Transport Shutdown</li>
+                <li>Manage Dependencies Across Integration Projects</li>
+                <li>VSCode extension Features/Improvements:
                     <ul>
-                        <li>Scatter-Gather: Clones a message into several and aggregates the responses into a single message. Supports parallel or sequential execution, with output to a variable or message body.</li>
-                        <li>Foreach v2: Supports parallel or sequential iteration and allows updating the original array or outputting results to a variable.</li>
-                        <li>ThrowError: Enables throwing an error from the mediation flow.</li>
+                        <li>Multi-Project Support</li>
+                        <li>MI Copilot / AI-Assisted Development Experience Enhancements</li>
+                        <li>Improved Unit Testing UI</li>
+                        <li>Kubernetes Configuration Support</li>
                     </ul>
                 </li>
-                <li>Enhanced mediator functionality
+                <li>Support for New Connectors / Protocols:
                     <ul>
-                        <li>Inline expression support for PayloadFactory Mediator and Log Mediator.</li>
-                        <li>UI Enhancements for the commonly used mediators.</li>
+                        <li>Jakarta Messaging 3.1 Support</li>
+                        <li>gRPC support</li>
+                        <li>Salesforce Marketing Cloud</li>
+                        <li>Apache Pulsar</li>
+                        <li>Intelligent Document Processing (IDP)</li>
+                        <li>Salesforce PubSub</li>
                     </ul>
                 </li>
-                <li>Mediator tryout functionality</li>
-                <li>Simplified onboard experience via VSCode Extension</li>
-                <li>Simplified Synapse expression</li>
-                <li>Environment variable injection for all environment-specific parameters</li>
-                <li>JDK 21 support</li>
-                <li>Dependency management for connectors</li>
+                <li>Enhanced Connectors:
+                    <ul>
+                        <li>Kafka connector</li>
+                        <li>File Connector &amp; Listener</li>
+                        <li>Facebook &amp; Google Ads</li>
+                    </ul>
+                </li>
             </ul>
 
-            <p>View the full list of bug fixes and improvements <a href="https://github.com/wso2/product-micro-integrator/issues?q=is%3Aissue+closed%3A2024-07-24..2025-01-31+">here</a></p>
+            <p>Following are the improvements and bug fixes done on each component of WSO2 Integrator: MI version 4.5.0.</p>
+            <ul>
+                <li>Runtime - Improvements and bug fixes <a href="https://github.com/wso2/product-micro-integrator/issues?q=is%3Aissue%20is%3Aclosed%20closed%3A2025-02-20..2025-10-21">here</a></li>
+                <li>VSCode extension - Improvements and bug fixes <a href="https://github.com/wso2/mi-vscode/issues?q=is%3Aissue%20is%3Aclosed%20closed%3A2025-02-20..2025-10-21">here</a></li>
+            </ul>
 
             <h2>Known Issues</h2>
             <p>
@@ -148,8 +163,8 @@
                 Reporting Issues
             </h3>
             <p>
-                We encourage you to report issues, improvements and feature requests regarding WSO2 Micro Integrator
-                through our public repository <a href="https://github.com/wso2/micro-integrator/issues">WSO2 Micro Integrator GIT Issues</a>.
+                We encourage you to report issues, improvements and feature requests regarding WSO2 Integrator: MI
+                through our public repository <a href="https://github.com/wso2/micro-integrator/issues">WSO2 Integrator: MI GIT Issues</a>.
             </p>
 
             <h2>Support</h2>
