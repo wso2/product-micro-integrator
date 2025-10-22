@@ -19,6 +19,9 @@ package org.wso2.micro.integrator.ntask.core.impl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.util.MiscellaneousUtil;
+import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.message.processor.MessageProcessor;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
@@ -37,6 +40,7 @@ import org.quartz.TriggerKey;
 import org.quartz.TriggerListener;
 import org.quartz.impl.matchers.GroupMatcher;
 import org.quartz.spi.OperableTrigger;
+import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 import org.wso2.micro.integrator.ntask.common.TaskConstants;
 import org.wso2.micro.integrator.ntask.common.TaskException;
 import org.wso2.micro.integrator.ntask.coordination.TaskCoordinationException;
@@ -178,6 +182,15 @@ public abstract class AbstractQuartzTaskManager implements TaskManager {
             LocalTaskActionListener listener = localTaskActionListeners.get(taskName);
             if (null != listener) {
                 listener.notifyLocalTaskPause(taskName);
+            }
+            if (MiscellaneousUtil.isTaskOfMessageProcessor(taskName)) {
+                SynapseEnvironment synapseEnvironment = MicroIntegratorBaseUtils.getSynapseEnvironment();
+                String messageProcessorName = MiscellaneousUtil.getMessageProcessorName(taskName);
+                MessageProcessor messageProcessor = synapseEnvironment.getSynapseConfiguration()
+                        .getMessageProcessors().get(messageProcessorName);
+                if (messageProcessor != null) {
+                    messageProcessor.pauseMessageProcessorTemporarily();
+                }
             }
             log.info("Task temporarily paused: [" + this.getTaskType() + "][" + taskName + "]");
         } catch (SchedulerException e) {
