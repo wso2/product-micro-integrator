@@ -1,0 +1,259 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+    {
+        "type": "java",
+        "name": "Attach to Remote Program",
+        "request": "attach",
+        "hostName": "localhost",
+        "port": "5005"
+    },
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "Base64",
+            "request": "launch",
+            "mainClass": "org.wso2.carbon.dataservices.samples.Base64",
+            "projectName": "dataservice-client-samples"
+        },
+        {
+            "type": "java",
+            "name": "BatchRequestSample",
+            "request": "launch",
+            "mainClass": "org.wso2.carbon.dataservices.samples.BatchRequestSample",
+            "projectName": "dataservice-client-samples"
+        },
+        {
+            "type": "java",
+            "name": "CSVSample",
+            "request": "launch",
+            "mainClass": "org.wso2.carbon.dataservices.samples.CSVSample",
+            "projectName": "dataservice-client-samples"
+        },
+        {
+            "type": "java",
+            "name": "ExcelSample",
+            "request": "launch",
+            "mainClass": "org.wso2.carbon.dataservices.samples.ExcelSample",
+            "projectName": "dataservice-client-samples"
+        },
+        {
+            "type": "java",
+            "name": "FileServiceApp",
+            "request": "launch",
+            "mainClass": "org.wso2.carbon.dataservices.samples.FileServiceApp",
+            "projectName": "dataservice-client-samples"
+        },
+        {
+            "type": "java",
+            "name": "GSpreadSample",
+            "request": "launch",
+            "mainClass": "org.wso2.carbon.dataservices.samples.GSpreadSample",
+            "projectName": "dataservice-client-samples"
+        },
+        {
+            "type": "java",
+            "name": "RDBMSSample",
+            "request": "launch",
+            "mainClass": "org.wso2.carbon.dataservices.samples.RDBMSSample",
+            "projectName": "dataservice-client-samples"
+        },
+        {
+            "type": "java",
+            "name": "SecureSample",
+            "request": "launch",
+            "mainClass": "org.wso2.carbon.dataservices.samples.SecureSample",
+            "projectName": "dataservice-client-samples"
+        },
+        {
+            "type": "java",
+            "name": "TestCoverageGenerator",
+            "request": "launch",
+            "mainClass": "org.wso2.esb.integration.common.utils.coverage.TestCoverageGenerator",
+            "projectName": "integration-test-utils"
+        },
+        {
+            "type": "java",
+            "name": "ESBJAVA1857TestCase",
+            "request": "launch",
+            "mainClass": "org.wso2.carbon.esb.mediator.test.switchMediator.ESBJAVA1857TestCase",
+            "projectName": "org.wso2.carbon.ei.tests.mediator-1"
+        },
+        {
+            "type": "java",
+            "name": "ESBJAVA1857TestCase(1)",
+            "request": "launch",
+            "mainClass": "org.wso2.carbon.esb.mediator.test.switchMediator.ESBJAVA1857TestCase",
+            "projectName": "org.wso2.carbon.ei.tests.mediator-2"
+        },
+        {
+            "type": "java",
+            "name": "TestConnector",
+            "request": "launch",
+            "mainClass": "org.wso2.ei.dataservice.integration.test.datasource.TestConnector",
+            "projectName": "org.wso2.ei.integration.test"
+        },
+        {
+            "type": "java",
+            "name": "AMQPConsumer",
+            "request": "launch",
+            "mainClass": "samples.userguide.AMQPConsumer",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "EventSender",
+            "request": "launch",
+            "mainClass": "samples.userguide.EventSender",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "EventSubscriber",
+            "request": "launch",
+            "mainClass": "samples.userguide.EventSubscriber",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "FIXClient",
+            "request": "launch",
+            "mainClass": "samples.userguide.FIXClient",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "GenericJMSClient",
+            "request": "launch",
+            "mainClass": "samples.userguide.GenericJMSClient",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "JSONClient",
+            "request": "launch",
+            "mainClass": "samples.userguide.JSONClient",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "LoadbalanceFailoverClient",
+            "request": "launch",
+            "mainClass": "samples.userguide.LoadbalanceFailoverClient",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "MDDConsumer",
+            "request": "launch",
+            "mainClass": "samples.userguide.MDDConsumer",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "MDDProducer",
+            "request": "launch",
+            "mainClass": "samples.userguide.MDDProducer",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "MTOMSwAClient",
+            "request": "launch",
+            "mainClass": "samples.userguide.MTOMSwAClient",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "StockQuoteClient",
+            "request": "launch",
+            "mainClass": "samples.userguide.StockQuoteClient",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "ThreadedClient",
+            "request": "launch",
+            "mainClass": "samples.userguide.ThreadedClient",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "Bootstrap",
+            "request": "launch",
+            "mainClass": "samples.util.Bootstrap",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "SampleAxis2Server",
+            "request": "launch",
+            "mainClass": "samples.util.SampleAxis2Server",
+            "projectName": "org.wso2.mi.samples"
+        },
+        {
+            "type": "java",
+            "name": "Bootstrap(1)",
+            "request": "launch",
+            "mainClass": "org.wso2.micro.integrator.bootstrap.Bootstrap",
+            "projectName": "org.wso2.micro.integrator.bootstrap"
+        },
+        {
+            "type": "java",
+            "name": "CheckinClientBootstrap",
+            "request": "launch",
+            "mainClass": "org.wso2.micro.integrator.bootstrap.CheckinClientBootstrap",
+            "projectName": "org.wso2.micro.integrator.bootstrap"
+        },
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "org.wso2.micro.integrator.server.Main",
+            "projectName": "org.wso2.micro.integrator.bootstrap"
+        },
+        {
+            "type": "java",
+            "name": "VaultTool",
+            "request": "launch",
+            "mainClass": "org.wso2.micro.integrator.security.vault.VaultTool",
+            "projectName": "org.wso2.micro.integrator.security"
+        },
+        {
+            "type": "java",
+            "name": "Extensions",
+            "request": "launch",
+            "mainClass": "org.wso2.micro.integrator.server.Extensions",
+            "projectName": "org.wso2.micro.integrator.server"
+        },
+        {
+            "type": "java",
+            "name": "Main(1)",
+            "request": "launch",
+            "mainClass": "org.wso2.micro.integrator.server.Main",
+            "projectName": "org.wso2.micro.integrator.server"
+        },
+        {
+            "type": "java",
+            "name": "PasswordUpdater",
+            "request": "launch",
+            "mainClass": "org.wso2.micro.integrator.utils.PasswordUpdater",
+            "projectName": "org.wso2.micro.integrator.utils"
+        },
+        {
+            "type": "java",
+            "name": "Server",
+            "request": "launch",
+            "mainClass": "org.wso2.esb.integration.services.jaxrs.musicsample.Server",
+            "projectName": "service-samples"
+        }
+    ]
+}

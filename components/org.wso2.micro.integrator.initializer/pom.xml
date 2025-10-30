@@ -121,6 +121,10 @@
             <groupId>org.wso2.ei</groupId>
             <artifactId>org.wso2.micro.integrator.utils</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -142,6 +146,10 @@
                             org.wso2.micro.integrator.initializer.*;version="${project.version}"
                         </Export-Package>
                         <Import-Package>
+                            com.nimbusds.jose;version="${nimbus-jose.orbit.imp.pkg.version}",
+                            com.nimbusds.jose.jwk;version="${nimbus-jose.orbit.imp.pkg.version}",
+                            com.nimbusds.jose.crypto;version="${nimbus-jose.orbit.imp.pkg.version}",
+                            com.nimbusds.jwt;version="${nimbus-jose.orbit.imp.pkg.version}",
                             org.wso2.micro.integrator.core.*;version="${project.version}",
                             *;resolution:=optional
                         </Import-Package>
