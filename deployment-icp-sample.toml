@@ -1,0 +1,62 @@
+# ========================================
+# WSO2 Micro Integrator - ICP Configuration Sample
+# ========================================
+
+# ----------------------------------------
+# New ICP Integration Configuration
+# ----------------------------------------
+[server]
+hostname = "localhost"
+# offset  = 10
+
+[user_store]
+type = "read_only_ldap"
+
+[keystore.primary]
+file_name = "repository/resources/security/wso2carbon.jks"
+password = "wso2carbon"
+alias = "wso2carbon"
+key_password = "wso2carbon"
+
+[truststore]
+file_name = "repository/resources/security/client-truststore.jks"
+password = "wso2carbon"
+alias = "symmetric.key.value"
+algorithm = "AES"
+
+# ----------------------------------------
+# ICP Configuration
+# ----------------------------------------
+[icp_config]
+# Enable new ICP integration (set to false to use legacy Dashboard)
+enabled = true
+environment = "prod"
+project = "sample-project"
+integration = "sample-mi-integration"
+# ----------------------------------------
+# Heartbeat Configuration
+# ----------------------------------------
+# Interval between heartbeat transmissions (in seconds)
+# Default: 5 seconds
+# heartbeat_interval = 10
+# ----------------------------------------
+# Advanced - JWT Authentication Configuration
+# ----------------------------------------
+#jwt_issuer = "icp-runtime-jwt-issuer"
+#jwt_audience = "icp-server"
+#jwt_scope = "runtime_agent"
+# Token validity in seconds (default: 3600 = 1 hour)
+#jwt_expiry_seconds = 3600
+#jwt_hmac_secret = "default-secret-key-at-least-32-characters-long-for-hs256"
+
+# ----------------------------------------
+# Legacy Dashboard Configuration (Optional)
+# Keep this for backward compatibility or fallback
+# ----------------------------------------
+#[dashboard_config]
+#dashboard_url = "https://dashboard-host:9743/dashboard/api/"
+#group_id = "default"
+#node_id = "node1"
+#heartbeat_interval = 5
+#management_hostname = "mi-host.example.com"
+#management_port = 9154
