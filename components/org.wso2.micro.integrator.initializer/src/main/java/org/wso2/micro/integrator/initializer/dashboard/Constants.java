@@ -15,6 +15,40 @@ public class Constants {
     public static final String DASHBOARD_CONFIG_MANAGEMENT_HOSTNAME = "dashboard_config.management_hostname";
     public static final String DASHBOARD_CONFIG_MANAGEMENT_PORT = "dashboard_config.management_port";
 
+    // New ICP Configuration
+    public static final String ICP_API_DEFAULT_HOST = "localhost";
+    public static final int ICP_API_DEFAULT_PORT = 9164;
+    public static final String PORT_OFFSET = "server.offset";
+    public static final String HOSTNAME = "server.hostname";
+    public static final String ICP_CONFIG_URL = "icp_config.icp_url";
+    public static final String ICP_CONFIG_ENVIRONMENT = "icp_config.environment";
+    public static final String ICP_CONFIG_PROJECT = "icp_config.project";
+    public static final String ICP_CONFIG_COMPONENT = "icp_config.integration";
+    public static final String ICP_CONFIG_RUNTIME = "icp_config.runtime";
+    public static final String ICP_CONFIG_ENABLED = "icp_config.enabled";
+    public static final String  ICP_CONFIG_HEARTBEAT_INTERVAL = "icp_config.heartbeat_interval";
+
+    // JWT Configuration
+    public static final String ICP_JWT_ISSUER = "icp_config.jwt_issuer";
+    public static final String ICP_JWT_AUDIENCE = "icp_config.jwt_audience";
+    public static final String ICP_JWT_SCOPE = "icp_config.jwt_scope";
+    public static final String ICP_JWT_EXPIRY_SECONDS = "icp_config.jwt_expiry_seconds";
+    public static final String ICP_JWT_HMAC_SECRET = "icp_config.jwt_hmac_secret";
+    
+    // Default ICP Configuration
+    public static final String DEFAULT_ENVIRONMENT = "production";
+    public static final String DEFAULT_PROJECT = "default";
+    public static final String DEFAULT_COMPONENT = "default";
+    public static final String DEFAULT_ICP_URL = "https://localhost:9445";
+
+    public static final String DEFAULT_JWT_ISSUER = "icp-runtime-jwt-issuer";
+    public static final String DEFAULT_JWT_AUDIENCE = "icp-server";
+    public static final String DEFAULT_JWT_SCOPE = "runtime_agent";
+    public static final long DEFAULT_JWT_EXPIRY_SECONDS = 3600;
+    public static final String DEFAULT_JWT_HMAC_SECRET = "default-secret-key-at-least-32-characters-long-for-hs256";
+    public static final String RUNTIME_TYPE_MI = "MI";
+    public static final String RUNTIME_STATUS_RUNNING = "RUNNING";
+
     public static final String DEFAULT_GROUP_ID = "default";
     public static final long DEFAULT_HEARTBEAT_INTERVAL = 5;
 
@@ -23,4 +57,11 @@ public class Constants {
     public static final String COLON = ":";
     public static final String HTTPS_PREFIX = "https://";
     public static final String MANAGEMENT = "management";
+    
+    // ICP Endpoints
+    public static final String ICP_HEARTBEAT_ENDPOINT = "/icp/heartbeat";
+    public static final String ICP_DELTA_HEARTBEAT_ENDPOINT = "/icp/deltaHeartbeat";
+
+    public static final String ENDPOINT_TEMPLATE_TYPE = "endpoint";
+    public static final String SEQUENCE_TEMPLATE_TYPE = "sequence";
 }

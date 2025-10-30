@@ -222,6 +222,26 @@ public class Utils {
         return response;
     }
 
+    /**
+     * Public wrapper method for handling tracing operations.
+     */
+    public static JSONObject handleTracing(String performedBy, String type, String resourceType, JSONObject info,
+                                           AspectConfiguration config, String artifactName,
+                                           org.apache.axis2.context.MessageContext axisMsgCtx) throws IOException {
+        JsonObject payload = getJsonPayload(axisMsgCtx);
+        return handleTracing(performedBy, type, info, config, artifactName, axisMsgCtx, payload);
+    }
+
+    /**
+     * Public wrapper method for handling statistics operations.
+     */
+    public static JSONObject handleStatistics(String performedBy, String type, String resourceType, JSONObject info,
+                                              AspectConfiguration config, String artifactName,
+                                              org.apache.axis2.context.MessageContext axisMsgCtx) throws IOException {
+        JsonObject payload = getJsonPayload(axisMsgCtx);
+        return handleStatistics(performedBy, type, info, config, artifactName, axisMsgCtx, payload);
+    }
+
     public static JSONObject createJSONList(int count) {
 
         JSONObject jsonBody = new JSONObject();
