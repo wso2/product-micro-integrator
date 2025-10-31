@@ -1,4 +1,4 @@
-# WSO2 Micro Integrator wso2mi-4.4.0 Performance Test Results
+# WSO2 Micro Integrator wso2mi-4.5.0 Performance Test Results
 
 During each release, we execute various automated performance test scenarios and publish the results.
 
@@ -21,8 +21,8 @@ delays.
 
 The main performance metrics:
 
-1. **Throughput**: The number of requests that the WSO2 Micro Integrator wso2mi-4.4.0 processes during a specific time interval (e.g. per second).
-2. **Response Time**: The end-to-end latency for an operation of invoking a service in WSO2 Micro Integrator wso2mi-4.4.0 . The complete distribution of response times was recorded.
+1. **Throughput**: The number of requests that the WSO2 Micro Integrator wso2mi-4.5.0 processes during a specific time interval (e.g. per second).
+2. **Response Time**: The end-to-end latency for an operation of invoking a service in WSO2 Micro Integrator wso2mi-4.5.0 . The complete distribution of response times was recorded.
 
 In addition to the above metrics, we measure the load average and several memory-related metrics.
 
@@ -36,28 +36,28 @@ The following are the test parameters.
 | Message Size (Bytes) | The request payload size in Bytes. | 500, 1000, 10000, 100000 |
 | Back-end Delay (ms) | The delay added by the Back-end service. | 0 |
 
-The duration of each test is **360 seconds**. The warm-up period is **120 seconds**.
+The duration of each test is **300 seconds**. The warm-up period is **120 seconds**.
 The measurement results are collected after the warm-up period.
 
 The performance tests were executed on 1 AWS CloudFormation stack.
 
 
-System information for WSO2 Micro Integrator wso2mi-4.4.0 in 1st AWS CloudFormation stack.
+System information for WSO2 Micro Integrator wso2mi-4.5.0 in 1st AWS CloudFormation stack.
 
 | Class | Subclass | Description | Value |
 | --- | --- | --- | --- |
-| AWS | EC2 | AMI-ID | ami-055744c75048d8296 |
-| AWS | EC2 | Instance Type | c5.xlarge |
-| System | Processor | CPU(s) | 4 |
+| AWS | EC2 | AMI-ID | ami-0c398cb65a93047f2 |
+| AWS | EC2 | Instance Type | c5.large |
+| System | Processor | CPU(s) | 2 |
 | System | Processor | Thread(s) per core | 2 |
-| System | Processor | Core(s) per socket | 2 |
+| System | Processor | Core(s) per socket | 1 |
 | System | Processor | Socket(s) | 1 |
-| System | Processor | Model name | Intel(R) Xeon(R) Platinum 8275CL CPU @ 3.00GHz |
+| System | Processor | Model name | Intel(R) Xeon(R) Platinum 8124M CPU @ 3.00GHz |
 | System | Memory | BIOS | 64 KiB |
-| System | Memory | System Memory | 8 GiB |
+| System | Memory | System Memory | 4 GiB |
 | System | Storage | Block Device: nvme0n1 | 8G |
-| Operating System | Distribution | Release | Ubuntu 18.04.6 LTS |
-| Operating System | Distribution | Kernel | Linux ip-10-0-1-43 5.4.0-1103-aws #111~18.04.1-Ubuntu SMP Tue May 23 20:04:10 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux |
+| Operating System | Distribution | Release | Ubuntu 22.04.5 LTS |
+| Operating System | Distribution | Kernel | Linux ip-10-0-1-68 6.8.0-1040-aws #42~22.04.1-Ubuntu SMP Wed Sep 24 10:26:57 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux |
 
 
 The following are the measurements collected from each performance test conducted for a given combination of
@@ -74,69 +74,69 @@ test parameters.
 
 The following is the summary of performance test results collected for the measurement period.
 
-|  Scenario Name | Heap Size | Concurrent Users | Message Size (Bytes) | Back-end Service Delay (ms) | Error % | Throughput (Requests/sec) | Average Response Time (ms) | Standard Deviation of Response Time (ms) | 99th Percentile of Response Time (ms) | WSO2 Micro Integrator wso2mi-4.4.0 GC Throughput (%) | Average WSO2 Micro Integrator wso2mi-4.4.0 Memory Footprint After Full GC (M) |
+|  Scenario Name | Heap Size | Concurrent Users | Message Size (Bytes) | Back-end Service Delay (ms) | Error % | Throughput (Requests/sec) | Average Response Time (ms) | Standard Deviation of Response Time (ms) | 99th Percentile of Response Time (ms) | WSO2 Micro Integrator wso2mi-4.5.0 GC Throughput (%) | Average WSO2 Micro Integrator wso2mi-4.5.0 Memory Footprint After Full GC (M) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-|  CBR Proxy | 2G | 100 | 500 | 0 | 0 | 6644.93 | 14.97 | 19.59 | 123 | N/A | N/A |
-|  CBR Proxy | 2G | 100 | 1000 | 0 | 0 | 5646.16 | 17.63 | 21.84 | 134 | N/A | N/A |
-|  CBR Proxy | 2G | 100 | 10000 | 0 | 0 | 1557.29 | 64.1 | 56.28 | 265 | N/A | N/A |
-|  CBR Proxy | 2G | 100 | 100000 | 0 | 0 | 121.19 | 824.05 | 283.63 | 1607 | N/A | N/A |
-|  CBR Proxy | 2G | 200 | 500 | 0 | 0 | 7194.27 | 27.71 | 26.01 | 142 | N/A | N/A |
-|  CBR Proxy | 2G | 200 | 1000 | 0 | 0 | 6267.36 | 31.82 | 28.85 | 155 | N/A | N/A |
-|  CBR Proxy | 2G | 200 | 10000 | 0 | 0 | 1601.19 | 124.77 | 97.43 | 457 | N/A | N/A |
-|  CBR Proxy | 2G | 200 | 100000 | 0 | 0 | 115.03 | 1732.99 | 600.88 | 3375 | N/A | N/A |
-|  CBR Proxy | 2G | 500 | 500 | 0 | 0 | 7374.33 | 67.67 | 47.25 | 236 | N/A | N/A |
-|  CBR Proxy | 2G | 500 | 1000 | 0 | 0 | 6314.3 | 79.05 | 54.38 | 273 | N/A | N/A |
-|  CBR Proxy | 2G | 500 | 10000 | 0 | 0 | 1563 | 319.73 | 188.3 | 919 | N/A | N/A |
-|  CBR Proxy | 2G | 500 | 100000 | 0 | 0 | 80.42 | 6106.48 | 1969.62 | 11007 | N/A | N/A |
-|  CBR Proxy | 2G | 1000 | 500 | 0 | 0 | 6904.32 | 144.53 | 78.27 | 395 | N/A | N/A |
-|  CBR Proxy | 2G | 1000 | 1000 | 0 | 0 | 6082.43 | 164.04 | 85.35 | 435 | N/A | N/A |
-|  CBR Proxy | 2G | 1000 | 10000 | 0 | 0 | 1120.91 | 889.93 | 449.09 | 2207 | N/A | N/A |
-|  CBR Proxy | 2G | 1000 | 100000 | 0 | 0 | 50.27 | 19282.28 | 4206.26 | 29183 | N/A | N/A |
-|  Direct API | 2G | 100 | 500 | 0 | 0 | 8973.29 | 11.07 | 17.17 | 110 | N/A | N/A |
-|  Direct API | 2G | 100 | 1000 | 0 | 0 | 8997.33 | 11.04 | 17.33 | 111 | N/A | N/A |
-|  Direct API | 2G | 100 | 10000 | 0 | 0 | 7344.85 | 13.54 | 18.14 | 113 | N/A | N/A |
-|  Direct API | 2G | 100 | 100000 | 0 | 0 | 2668.33 | 37.36 | 11.45 | 72 | N/A | N/A |
-|  Direct API | 2G | 200 | 500 | 0 | 0 | 9802.64 | 20.31 | 21.2 | 120 | N/A | N/A |
-|  Direct API | 2G | 200 | 1000 | 0 | 0 | 9569.93 | 20.81 | 20.68 | 117 | N/A | N/A |
-|  Direct API | 2G | 200 | 10000 | 0 | 0 | 7933.35 | 25.11 | 22.34 | 123 | N/A | N/A |
-|  Direct API | 2G | 200 | 100000 | 0 | 0 | 2619.18 | 76.2 | 20.35 | 136 | N/A | N/A |
-|  Direct API | 2G | 500 | 500 | 0 | 0 | 10364.58 | 48.11 | 33.73 | 171 | N/A | N/A |
-|  Direct API | 2G | 500 | 1000 | 0 | 0 | 10392.06 | 47.99 | 34.6 | 176 | N/A | N/A |
-|  Direct API | 2G | 500 | 10000 | 0 | 0 | 8150.34 | 61.2 | 37.28 | 189 | N/A | N/A |
-|  Direct API | 2G | 500 | 100000 | 0 | 0 | 2464.76 | 202.64 | 43.29 | 331 | N/A | N/A |
-|  Direct API | 2G | 1000 | 500 | 0 | 0 | 10331.15 | 96.35 | 55.71 | 285 | N/A | N/A |
-|  Direct API | 2G | 1000 | 1000 | 0 | 0 | 10925.54 | 91.17 | 53.88 | 279 | N/A | N/A |
-|  Direct API | 2G | 1000 | 10000 | 0 | 0 | 8181.11 | 121.77 | 58.44 | 305 | N/A | N/A |
-|  Direct API | 2G | 1000 | 100000 | 0 | 0 | 2329.26 | 428.75 | 76.77 | 659 | N/A | N/A |
-|  Direct Proxy | 2G | 100 | 500 | 0 | 0 | 10206.18 | 9.72 | 16.48 | 104 |  |  |
-|  Direct Proxy | 2G | 100 | 1000 | 0 | 0 | 10541.08 | 9.42 | 16.12 | 102 | N/A | N/A |
-|  Direct Proxy | 2G | 100 | 10000 | 0 | 0 | 8603.81 | 11.54 | 16.88 | 103 | N/A | N/A |
-|  Direct Proxy | 2G | 100 | 100000 | 0 | 0 | 2949.08 | 33.78 | 10.23 | 65 | N/A | N/A |
-|  Direct Proxy | 2G | 200 | 500 | 0 | 0 | 10799.81 | 18.43 | 19.92 | 112 | N/A | N/A |
-|  Direct Proxy | 2G | 200 | 1000 | 0 | 0 | 10830.49 | 18.38 | 19.67 | 112 | N/A | N/A |
-|  Direct Proxy | 2G | 200 | 10000 | 0 | 0 | 8317 | 23.95 | 20.81 | 110 | N/A | N/A |
-|  Direct Proxy | 2G | 200 | 100000 | 0 | 0 | 2754.62 | 72.46 | 23.75 | 141 | N/A | N/A |
-|  Direct Proxy | 2G | 500 | 500 | 0 | 0 | 11313.47 | 44.08 | 30.85 | 154 | N/A | N/A |
-|  Direct Proxy | 2G | 500 | 1000 | 0 | 0 | 11212.37 | 44.47 | 30.96 | 154 | N/A | N/A |
-|  Direct Proxy | 2G | 500 | 10000 | 0 | 0 | 8664.3 | 57.56 | 34.88 | 174 | N/A | N/A |
-|  Direct Proxy | 2G | 500 | 100000 | 0 | 0 | 2526.88 | 197.66 | 51.36 | 341 | N/A | N/A |
-|  Direct Proxy | 2G | 1000 | 500 | 0 | 0 | 11128.01 | 89.66 | 50.66 | 261 | N/A | N/A |
-|  Direct Proxy | 2G | 1000 | 1000 | 0 | 0 | 10874.57 | 91.6 | 50.78 | 261 | N/A | N/A |
-|  Direct Proxy | 2G | 1000 | 10000 | 0 | 0 | 8488.01 | 117.5 | 55.72 | 289 | N/A | N/A |
-|  Direct Proxy | 2G | 1000 | 100000 | 0 | 0 | 2401.32 | 415.32 | 91.82 | 675 | N/A | N/A |
-|  XSLT Proxy | 2G | 100 | 500 | 0 | 0 | 3602.16 | 27.22 | 259.74 | 161 | N/A | N/A |
-|  XSLT Proxy | 2G | 100 | 1000 | 0 | 0 | 2642.65 | 37.43 | 154.95 | 188 | N/A | N/A |
-|  XSLT Proxy | 2G | 100 | 10000 | 0 | 0 | 445.55 | 223.68 | 139.08 | 631 | N/A | N/A |
-|  XSLT Proxy | 2G | 100 | 100000 | 0 | 0 | 35.12 | 2819.85 | 448.26 | 3967 | N/A | N/A |
-|  XSLT Proxy | 2G | 200 | 500 | 0 | 0 | 3821.63 | 52.24 | 132.12 | 215 | N/A | N/A |
-|  XSLT Proxy | 2G | 200 | 1000 | 0 | 0 | 2833.23 | 69.96 | 156.23 | 285 | N/A | N/A |
-|  XSLT Proxy | 2G | 200 | 10000 | 0 | 0 | 439.79 | 454.72 | 268.04 | 1247 | N/A | N/A |
-|  XSLT Proxy | 2G | 200 | 100000 | 0 | 0 | 30.72 | 6392.51 | 1018.76 | 8895 | N/A | N/A |
-|  XSLT Proxy | 2G | 500 | 500 | 0 | 0 | 3871.77 | 128.98 | 84.07 | 415 | N/A | N/A |
-|  XSLT Proxy | 2G | 500 | 1000 | 0 | 0 | 2685.63 | 185.95 | 116.72 | 575 | N/A | N/A |
-|  XSLT Proxy | 2G | 500 | 10000 | 0 | 0 | 313.68 | 1584.14 | 919.68 | 4447 | N/A | N/A |
-|  XSLT Proxy | 2G | 500 | 100000 | 0 | 0 | 28.6 | 16657.53 | 2856.76 | 23807 | N/A | N/A |
-|  XSLT Proxy | 2G | 1000 | 500 | 0 | 0 | 2846.39 | 351.18 | 199.42 | 1019 | N/A | N/A |
-|  XSLT Proxy | 2G | 1000 | 1000 | 0 | 0 | 2140.35 | 466.43 | 250.95 | 1327 | N/A | N/A |
-|  XSLT Proxy | 2G | 1000 | 10000 | 0 | 0 | 337.94 | 2934.12 | 1179.31 | 6239 | N/A | N/A |
-|  XSLT Proxy | 2G | 1000 | 100000 | 0 | 0 | 26.89 | 33762.09 | 3299.29 | 41215 | N/A | N/A |
+|  CBR Proxy | 2G | 100 | 500 | 0 | 0 | 5032.02 | 19.81 | 27.79 | 119 |  |  |
+|  CBR Proxy | 2G | 100 | 1000 | 0 | 0 | 4252.25 | 23.45 | 34.37 | 153 |  |  |
+|  CBR Proxy | 2G | 100 | 10000 | 0 | 0 | 1157.28 | 86.29 | 75.97 | 287 |  |  |
+|  CBR Proxy | 2G | 100 | 100000 | 0 | 0 | 69.68 | 1429.68 | 430.92 | 2639 |  |  |
+|  CBR Proxy | 2G | 200 | 500 | 0 | 0 | 5038.83 | 39.61 | 72.6 | 339 |  |  |
+|  CBR Proxy | 2G | 200 | 1000 | 0 | 0 | 4270.05 | 46.76 | 90.58 | 405 |  |  |
+|  CBR Proxy | 2G | 200 | 10000 | 0 | 0 | 1132.58 | 176.17 | 134.61 | 643 |  |  |
+|  CBR Proxy | 2G | 200 | 100000 | 0 | 0 | 58.79 | 3366.22 | 931.36 | 5727 |  |  |
+|  CBR Proxy | 2G | 500 | 500 | 0 | 0 | 5146.91 | 96.98 | 212.79 | 1007 |  |  |
+|  CBR Proxy | 2G | 500 | 1000 | 0 | 0 | 4202.34 | 118.64 | 259.82 | 1167 |  |  |
+|  CBR Proxy | 2G | 500 | 10000 | 0 | 0 | 1090.54 | 457.49 | 274.23 | 1463 |  |  |
+|  CBR Proxy | 2G | 500 | 100000 | 0 | 0 | 46.74 | 10354.3 | 3156.27 | 17791 |  |  |
+|  CBR Proxy | 2G | 1000 | 500 | 0 | 0 | 4944.32 | 201.84 | 223.29 | 1135 |  |  |
+|  CBR Proxy | 2G | 1000 | 1000 | 0 | 0 | 4084.15 | 244.19 | 268.6 | 1311 |  |  |
+|  CBR Proxy | 2G | 1000 | 10000 | 0 | 0 | 710.71 | 1399.14 | 869.3 | 4703 |  |  |
+|  CBR Proxy | 2G | 1000 | 100000 | 0 | 0 | 37.81 | 24522.49 | 5845.16 | 31487 | N/A | N/A |
+|  Direct API | 2G | 100 | 500 | 0 | 0 | 8743.17 | 11.37 | 7.53 | 30 |  |  |
+|  Direct API | 2G | 100 | 1000 | 0 | 0 | 8528.08 | 11.67 | 7.31 | 30 |  |  |
+|  Direct API | 2G | 100 | 10000 | 0 | 0 | 6390.17 | 15.58 | 9.13 | 39 |  |  |
+|  Direct API | 2G | 100 | 100000 | 0 | 0 | 1844.74 | 54.07 | 14.4 | 99 |  |  |
+|  Direct API | 2G | 200 | 500 | 0 | 0 | 8632.96 | 23.1 | 13.76 | 63 |  |  |
+|  Direct API | 2G | 200 | 1000 | 0 | 0 | 8480.87 | 23.51 | 13.66 | 61 |  |  |
+|  Direct API | 2G | 200 | 10000 | 0 | 0 | 6310.01 | 31.61 | 17.61 | 79 |  |  |
+|  Direct API | 2G | 200 | 100000 | 0 | 0 | 1814.3 | 110.03 | 27.73 | 200 |  |  |
+|  Direct API | 2G | 500 | 500 | 0 | 0 | 8052.57 | 61.98 | 31.01 | 169 |  |  |
+|  Direct API | 2G | 500 | 1000 | 0 | 0 | 7851.16 | 63.57 | 32.67 | 192 |  |  |
+|  Direct API | 2G | 500 | 10000 | 0 | 0 | 6143.78 | 81.26 | 35.25 | 190 |  |  |
+|  Direct API | 2G | 500 | 100000 | 0 | 0 | 1621.07 | 308.37 | 64.84 | 509 |  |  |
+|  Direct API | 2G | 1000 | 500 | 0 | 0 | 7983.47 | 125.07 | 46.73 | 273 |  |  |
+|  Direct API | 2G | 1000 | 1000 | 0 | 0 | 7942.12 | 125.67 | 47.3 | 275 |  |  |
+|  Direct API | 2G | 1000 | 10000 | 0 | 0 | 6059.59 | 164.79 | 58.31 | 343 |  |  |
+|  Direct API | 2G | 1000 | 100000 | 0 | 0 | 1568.8 | 636.06 | 116.97 | 975 |  |  |
+|  Direct Proxy | 2G | 100 | 500 | 0 | 0 | 9324.51 | 10.67 | 8.07 | 29 |  |  |
+|  Direct Proxy | 2G | 100 | 1000 | 0 | 0 | 9292.42 | 10.7 | 7.59 | 28 |  |  |
+|  Direct Proxy | 2G | 100 | 10000 | 0 | 0 | 6533.58 | 15.23 | 10.4 | 38 |  |  |
+|  Direct Proxy | 2G | 100 | 100000 | 0 | 0 | 1876.85 | 53.15 | 14.06 | 98 |  |  |
+|  Direct Proxy | 2G | 200 | 500 | 0 | 0 | 9290.57 | 21.45 | 13.59 | 58 |  |  |
+|  Direct Proxy | 2G | 200 | 1000 | 0 | 0 | 9159.91 | 21.76 | 12.21 | 55 |  |  |
+|  Direct Proxy | 2G | 200 | 10000 | 0 | 0 | 6499.38 | 30.69 | 17.1 | 79 |  |  |
+|  Direct Proxy | 2G | 200 | 100000 | 0 | 0 | 1839.48 | 108.51 | 27.21 | 200 |  |  |
+|  Direct Proxy | 2G | 500 | 500 | 0 | 0 | 8431.11 | 59.21 | 29.61 | 168 |  |  |
+|  Direct Proxy | 2G | 500 | 1000 | 0 | 0 | 8503.39 | 58.68 | 28.01 | 157 |  |  |
+|  Direct Proxy | 2G | 500 | 10000 | 0 | 0 | 6418.14 | 77.76 | 35.44 | 210 |  |  |
+|  Direct Proxy | 2G | 500 | 100000 | 0 | 0 | 1647 | 303.51 | 63.85 | 507 |  |  |
+|  Direct Proxy | 2G | 1000 | 500 | 0 | 0 | 8211.91 | 121.56 | 45.78 | 263 |  |  |
+|  Direct Proxy | 2G | 1000 | 1000 | 0 | 0 | 8278.2 | 120.64 | 47.04 | 273 |  |  |
+|  Direct Proxy | 2G | 1000 | 10000 | 0 | 0 | 6381.97 | 156.48 | 60.25 | 365 |  |  |
+|  Direct Proxy | 2G | 1000 | 100000 | 0 | 0 | 1575.26 | 633.41 | 116.24 | 967 |  |  |
+|  XSLT Proxy | 2G | 100 | 500 | 0 | 0 | 2395.33 | 41.67 | 60.85 | 247 |  |  |
+|  XSLT Proxy | 2G | 100 | 1000 | 0 | 0 | 1712.82 | 58.18 | 67.97 | 269 |  |  |
+|  XSLT Proxy | 2G | 100 | 10000 | 0 | 0 | 272.58 | 366.69 | 287.83 | 2111 |  |  |
+|  XSLT Proxy | 2G | 100 | 100000 | 0 | 0 | 21.17 | 4650.19 | 998.32 | 7551 |  |  |
+|  XSLT Proxy | 2G | 200 | 500 | 0 | 0 | 2367.18 | 84.32 | 149.36 | 627 |  |  |
+|  XSLT Proxy | 2G | 200 | 1000 | 0 | 0 | 1679.11 | 118.97 | 169.28 | 767 |  |  |
+|  XSLT Proxy | 2G | 200 | 10000 | 0 | 0 | 266.17 | 748.81 | 568.74 | 3615 |  |  |
+|  XSLT Proxy | 2G | 200 | 100000 | 0 | 0 | 17.32 | 10976.5 | 4879.64 | 24447 |  |  |
+|  XSLT Proxy | 2G | 500 | 500 | 0 | 0 | 2064.12 | 241.32 | 469.85 | 1887 |  |  |
+|  XSLT Proxy | 2G | 500 | 1000 | 0 | 0 | 1536.3 | 324.63 | 548.43 | 2223 |  |  |
+|  XSLT Proxy | 2G | 500 | 10000 | 0 | 0 | 207.4 | 2395.91 | 1364.88 | 6879 |  |  |
+|  XSLT Proxy | 2G | 500 | 100000 | 0 | 0 | 15.49 | 27886.4 | 15197.86 | 70655 |  |  |
+|  XSLT Proxy | 2G | 1000 | 500 | 0 | 0 | 1643.43 | 605.96 | 597.63 | 2591 |  |  |
+|  XSLT Proxy | 2G | 1000 | 1000 | 0 | 0 | 1432.72 | 694.11 | 622.24 | 2831 |  |  |
+|  XSLT Proxy | 2G | 1000 | 10000 | 0 | 0 | 190.52 | 5170.79 | 2415.73 | 12287 |  |  |
+|  XSLT Proxy | 2G | 1000 | 100000 | 0 | 0 | 15.52 | 54651.93 | 5176.38 | 66047 | N/A | N/A |
