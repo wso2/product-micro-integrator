@@ -61,6 +61,11 @@ public class JWTAuthorizationProvider implements AuthorizationProvider {
     private static final String CLAIM_VALUE_SEPARATOR = "\":\"";
     private static final String ESCAPED_DOUBLE_QUOTATION = "\"";
     private static final String USERNAME = "username";
+    private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
+    private static final String PRIMARY_KEY_STORE_TYPE_PROPERTY = "primary.key.type";
+    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
+    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
+    public static final String BCFKS = "BCFKS";
 
     private static ConcurrentHashMap<KeyStore, Certificate> publicCerts = new ConcurrentHashMap<KeyStore, Certificate>();
     private static ConcurrentHashMap<Integer, KeyStore> keyStores = new ConcurrentHashMap<Integer, KeyStore>();
@@ -243,7 +248,7 @@ public class JWTAuthorizationProvider implements AuthorizationProvider {
         MessageDigest sha = null;
 
         try {
-            sha = MessageDigest.getInstance("SHA-1");
+            sha = MessageDigest.getInstance(getAlgorithm());
         } catch (NoSuchAlgorithmException e1) {
             throw new AxisFault("noSHA1availabe");
         }
@@ -298,5 +303,13 @@ public class JWTAuthorizationProvider implements AuthorizationProvider {
         }
 
         return buf.toString();
+    }
+
+    private static String getAlgorithm() {
+        if (StringUtils.isNotEmpty(System.getProperty(SECURITY_JCE_PROVIDER))) {
+            return "SHA-256";
+        } else {
+            return "SHA-1";
+        }
     }
 }

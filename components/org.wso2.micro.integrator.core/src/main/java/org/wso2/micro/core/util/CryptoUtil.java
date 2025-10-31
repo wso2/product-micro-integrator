@@ -47,6 +47,7 @@ public class CryptoUtil {
     private String primaryKeyStoreKeyPass;
     private String internalKeyStoreKeyPass;
     private CarbonServerConfigurationService serverConfigService;
+    private static final String JCE_PROVIDER = "security.jce.provider";
     private Gson gson = new Gson();
     private static CryptoUtil instance = null;
     private static final char[] HEX_CHARACTERS = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
@@ -135,13 +136,13 @@ public class CryptoUtil {
                     if (log.isDebugEnabled()) {
                         log.debug("Cipher transformation for encryption : " + cipherTransformation);
                     }
-                    keyStoreCipher = Cipher.getInstance(cipherTransformation, getJceProvider());
+                    keyStoreCipher = Cipher.getInstance(cipherTransformation);
                     isCipherTransformEnabled = true;
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug("Default Cipher transformation for encryption : RSA");
                     }
-                    keyStoreCipher = Cipher.getInstance("RSA", getJceProvider());
+                    keyStoreCipher = Cipher.getInstance("RSA");
                 }
 
                 keyStoreCipher.init(Cipher.ENCRYPT_MODE, certs[0].getPublicKey());
@@ -243,17 +244,17 @@ public class CryptoUtil {
                         if (log.isDebugEnabled()) {
                             log.debug("Cipher transformation for decryption : " + cipherHolder.getTransformation());
                         }
-                        keyStoreCipher = Cipher.getInstance(cipherHolder.getTransformation(), getJceProvider());
+                        keyStoreCipher = Cipher.getInstance(cipherHolder.getTransformation());
                         cipherTextBytes = cipherHolder.getCipherBase64Decoded();
                         isCipherTransformEnabled = true;
                     } else {
-                        keyStoreCipher = Cipher.getInstance(cipherTransformation, getJceProvider());
+                        keyStoreCipher = Cipher.getInstance(cipherTransformation);
                         isCipherTransformEnabled = true;
                     }
                 } else {
                     // This will reach if the user have removed org.wso2.CipherTransformation from the carbon.properties
                     // or delete carbon.properties file
-                    keyStoreCipher = Cipher.getInstance("RSA", getJceProvider());
+                    keyStoreCipher = Cipher.getInstance("RSA");
                 }
 
                 keyStoreCipher.init(Cipher.DECRYPT_MODE, privateKey);
@@ -308,9 +309,9 @@ public class CryptoUtil {
                     privateKey = (PrivateKey) keyStore.getKey(primaryKeyStoreAlias, primaryKeyStoreKeyPass.toCharArray());
                 }
                 if (cipherTransformation != null) {
-                    keyStoreCipher = Cipher.getInstance(cipherTransformation, getJceProvider());
+                    keyStoreCipher = Cipher.getInstance(cipherTransformation);
                 } else {
-                    keyStoreCipher = Cipher.getInstance("RSA", getJceProvider());
+                    keyStoreCipher = Cipher.getInstance("RSA");
                 }
 
                 keyStoreCipher.init(Cipher.DECRYPT_MODE, privateKey);
@@ -407,7 +408,8 @@ public class CryptoUtil {
         CipherHolder cipherHolder = new CipherHolder();
         cipherHolder.setCipherText(Base64.encode(originalCipher));
         cipherHolder.setTransformation(transformation);
-        cipherHolder.setThumbPrint(calculateThumbprint(certificate, "SHA-1"), "SHA-1");
+        String algorithm  = getAlgorithm();
+        cipherHolder.setThumbPrint(calculateThumbprint(certificate, algorithm), algorithm);
         String cipherWithMetadataStr = gson.toJson(cipherHolder);
         if (log.isDebugEnabled()) {
             log.debug("Cipher with meta data : " + cipherWithMetadataStr);
@@ -453,17 +455,13 @@ public class CryptoUtil {
         return strBuffer.toString();
     }
 
-    /**
-     * Get the JCE provider to be used for encryption/decryption
-     *
-     * @return
-     */
-    private String getJceProvider() {
-        String provider = CarbonServerConfigurationService.getInstance().getFirstProperty("JCEProvider");
-        if (provider == null && provider.equalsIgnoreCase(Constants.BOUNCY_CASTLE_FIPS_PROVIDER)) {
-            return Constants.BOUNCY_CASTLE_FIPS_PROVIDER;
+    private static String getAlgorithm() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return "SHA-256";
+        } else {
+            return "SHA-1";
         }
-        return Constants.BOUNCY_CASTLE_PROVIDER;
     }
 }
 

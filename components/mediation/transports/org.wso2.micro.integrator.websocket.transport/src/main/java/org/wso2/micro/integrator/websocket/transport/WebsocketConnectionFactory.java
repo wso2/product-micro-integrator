@@ -59,6 +59,7 @@ public class WebsocketConnectionFactory {
     private static final Log log = LogFactory.getLog(WebsocketConnectionFactory.class);
 
     private final TransportOutDescription transportOut;
+    private static String trustStoreType = "JKS";
     private ConcurrentHashMap<String, ConcurrentHashMap<String, WebSocketClientHandler>> channelHandlerPool = new ConcurrentHashMap<String, ConcurrentHashMap<String, WebSocketClientHandler>>();
 
     public WebsocketConnectionFactory(TransportOutDescription transportOut) throws AxisFault {
@@ -72,7 +73,13 @@ public class WebsocketConnectionFactory {
                 OMElement trustStorePasswordElem = trustParam.getParameterElement().
                         getFirstChildWithName(new QName(WebsocketConstants.
                                                                 TRUST_STORE_PASSWORD));
-
+                OMElement trustStoreTypeElem = trustParam.getParameterElement().getFirstChildWithName(
+                        new QName(WebsocketConstants.TRUST_STORE_TYPE));
+                if (trustStoreTypeElem != null) {
+                    trustStoreType = trustStoreTypeElem.getText();
+                } else {
+                    trustStoreType = "JKS";
+                }
                 if (trustStoreLocationElem == null || trustStorePasswordElem == null) {
                     handleWssTrustStoreParameterError(
                             "Unable to read parameter(s) " + WebsocketConstants.TRUST_STORE_LOCATION + " and/or "
@@ -171,11 +178,17 @@ public class WebsocketConnectionFactory {
                     OMElement trustStorePasswordElem = trustParam.getParameterElement().
                             getFirstChildWithName(new QName(WebsocketConstants.
                                                                     TRUST_STORE_PASSWORD));
-
+                    OMElement trustStoreTypeElem = trustParam.getParameterElement().getFirstChildWithName(
+                            new QName(WebsocketConstants.TRUST_STORE_TYPE));
                     final String location = trustStoreLocationElem.getText();
                     final String storePassword = trustStorePasswordElem.getText();
-                    sslCtx = SslContextBuilder.forClient()
-                            .trustManager(SSLUtil.createTrustmanager(location, storePassword)).build();
+                    if (trustStoreTypeElem != null) {
+                        trustStoreType = trustStoreTypeElem.getText();
+                    } else {
+                        trustStoreType = "JKS";
+                    }
+                    sslCtx = SslContextBuilder.forClient().trustManager(SSLUtil.createTrustmanager(location,
+                            storePassword)).build();
                 } else {
                     sslCtx = null;
                 }
@@ -318,6 +331,10 @@ public class WebsocketConnectionFactory {
             handlerMap.clear();
             channelHandlerPool.remove(sourceIdentifier);
         }
+    }
+
+    public static String getTrustStoreType() {
+        return trustStoreType;
     }
 
 }

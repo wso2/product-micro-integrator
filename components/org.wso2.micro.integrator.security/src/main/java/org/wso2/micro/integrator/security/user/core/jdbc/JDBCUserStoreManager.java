@@ -93,6 +93,7 @@ public class JDBCUserStoreManager extends AbstractUserStoreManager {
     private static final char SQL_FILTER_CHAR_ESCAPE = '\\';
     private static final String CASE_INSENSITIVE_USERNAME = "CaseInsensitiveUsername";
     private static final String SHA_1_PRNG = "SHA1PRNG";
+    private static final String DRBG = "DRBG";
 
     protected DataSource jdbcds = null;
     protected Random random = new Random();
@@ -102,6 +103,7 @@ public class JDBCUserStoreManager extends AbstractUserStoreManager {
     private static final String ORACLE = "oracle";
     private static final String MYSQL = "mysql";
     private boolean fileBasedUserStoreMode = false;
+    private static final String JCE_PROVIDER = "security.jce.provider";
     public JDBCUserStoreManager() {
 
     }
@@ -2405,7 +2407,7 @@ public class JDBCUserStoreManager extends AbstractUserStoreManager {
     private String generateSaltValue() {
         String saltValue = null;
         try {
-            SecureRandom secureRandom = SecureRandom.getInstance(SHA_1_PRNG);
+            SecureRandom secureRandom = SecureRandom.getInstance(getAlgorithm());
             byte[] bytes = new byte[16];
             //secureRandom is automatically seeded by calling nextBytes
             secureRandom.nextBytes(bytes);
@@ -4336,5 +4338,13 @@ public class JDBCUserStoreManager extends AbstractUserStoreManager {
             throw new UserStoreException("The sql statement for retrieving user roles is null");
         }
         return sqlStmt;
+    }
+
+    private static String getAlgorithm() {
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(System.getProperty(JCE_PROVIDER))) {
+            return DRBG;
+        } else {
+            return SHA_1_PRNG;
+        }
     }
 }

@@ -54,6 +54,8 @@ public class RabbitMQConnectionFactory {
     private int retryInterval;
     private int retryCount;
     private Address[] addresses;
+    private static final String PKIX = "PKIX";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     /**
      * Digest a AMQP CF definition from the configuration and construct
@@ -183,15 +185,14 @@ public class RabbitMQConnectionFactory {
                     KeyStore ks = KeyStore.getInstance(keyStoreType);
                     ks.load(new FileInputStream(keyStoreLocation), keyPassphrase);
 
-                    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    KeyManagerFactory kmf = KeyManagerFactory.getInstance(getKeyManagerType());
                     kmf.init(ks, keyPassphrase);
 
                     char[] trustPassphrase = trustStorePassword.toCharArray();
                     KeyStore tks = KeyStore.getInstance(trustStoreType);
                     tks.load(new FileInputStream(trustStoreLocation), trustPassphrase);
 
-                    TrustManagerFactory tmf = TrustManagerFactory
-                            .getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                    TrustManagerFactory tmf = TrustManagerFactory.getInstance(getTrustManagerType());
                     tmf.init(tks);
 
                     SSLContext c = SSLContext.getInstance(sslVersion);
@@ -255,4 +256,21 @@ public class RabbitMQConnectionFactory {
         return connection;
     }
 
+    private static String getKeyManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        } else {
+            return KeyManagerFactory.getDefaultAlgorithm();
+        }
+    }
+
+    private static String getTrustManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        } else {
+            return TrustManagerFactory.getDefaultAlgorithm();
+        }
+    }
 }

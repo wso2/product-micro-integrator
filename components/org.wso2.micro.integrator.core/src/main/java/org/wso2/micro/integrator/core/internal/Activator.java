@@ -37,9 +37,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementPermission;
-import java.security.Provider;
-import java.security.Security;
-
 public class Activator implements BundleActivator {
 
     private static Log log = LogFactory.getLog(Activator.class);
@@ -70,19 +67,6 @@ public class Activator implements BundleActivator {
 
             initializeCarbonServerConfigurationService(bundleContext);
 
-            String jceProvider = CarbonServerConfigurationService.getInstance().getFirstProperty("JCEProvider");
-            String providerClass;
-            if (BOUNCY_CASTLE_FIPS_PROVIDER.equals(jceProvider)) {
-                providerClass = "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider";
-            } else {
-                providerClass = "org.bouncycastle.jce.provider.BouncyCastleProvider";
-            }
-            Security.addProvider((Provider) Class.forName(providerClass).getDeclaredConstructor().newInstance());
-
-
-            if (log.isDebugEnabled()){
-                log.debug("BouncyCastle security provider is successfully registered in JVM.");
-            }
 //            bundleContext.registerService(CarbonCoreInitializedEvent.class.getName(), new CarbonCoreInitializedEventImpl(), null);
 //            GhostServiceMetaArtifactsLoader serviceMetaArtifactsLoader = new GhostServiceMetaArtifactsLoader();
 //            bundleContext.registerService(GhostMetaArtifactsLoader.class.getName(), serviceMetaArtifactsLoader, null);
