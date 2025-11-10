@@ -25,6 +25,7 @@ import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMProcessingInstruction;
 import org.apache.axiom.om.OMText;
 import org.apache.axis2.context.MessageContext;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.mediator.cache.CachingException;
@@ -55,6 +56,8 @@ public class DOMHASHGenerator implements DigestGenerator {
      * String representing the MD5 digest algorithm.
      */
     public static final String MD5_DIGEST_ALGORITHM = "MD5";
+    public static final String SHA_256_DIGEST_ALGORITHM = "SHA-256";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     /**
      * String representing the SHA digest algorithm.
@@ -91,7 +94,12 @@ public class DOMHASHGenerator implements DigestGenerator {
 
         OMNode request = msgContext.getEnvelope().getBody();
         if (request != null) {
-            byte[] digest = getDigest(request, MD5_DIGEST_ALGORITHM);
+            byte[] digest;
+            if(StringUtils.isNotEmpty(System.getProperty(JCE_PROVIDER))) {
+                digest = getDigest(request, SHA_256_DIGEST_ALGORITHM);
+            } else {
+                digest = getDigest(request, MD5_DIGEST_ALGORITHM);
+            }
             return digest != null ? getStringRepresentation(digest) : null;
         } else {
             return null;

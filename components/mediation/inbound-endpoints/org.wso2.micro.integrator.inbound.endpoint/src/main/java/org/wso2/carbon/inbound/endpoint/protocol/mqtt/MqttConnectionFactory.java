@@ -51,6 +51,8 @@ public class MqttConnectionFactory {
     private SSLSocketFactory socketFactory;
     private static final int PORT_MIN_BOUND = 0;
     private static final int PORT_MAX_BOUND = 65535;
+    private static final String PKIX = "PKIX";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     public MqttConnectionFactory(Properties passedInParameter) {
 
@@ -333,21 +335,38 @@ public class MqttConnectionFactory {
         KeyStore keyStore = KeyStore.getInstance(keyStoreType);
         keyStore.load(new FileInputStream(keyStoreLocation), keyPassphrase);
 
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(getKeyManagerType());
         keyManagerFactory.init(keyStore, keyPassphrase);
 
         char[] trustPassphrase = trustStorePassword.toCharArray();
         KeyStore trustStore = KeyStore.getInstance(trustStoreType);
         trustStore.load(new FileInputStream(trustStoreLocation), trustPassphrase);
 
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory
-                .getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(getTrustManagerType());
         trustManagerFactory.init(trustStore);
 
         SSLContext sslContext = SSLContext.getInstance(sslVersion);
         sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
 
         return sslContext.getSocketFactory();
+    }
+
+    private static String getKeyManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        } else {
+            return KeyManagerFactory.getDefaultAlgorithm();
+        }
+    }
+
+    private static String getTrustManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        } else {
+            return TrustManagerFactory.getDefaultAlgorithm();
+        }
     }
 
 }
