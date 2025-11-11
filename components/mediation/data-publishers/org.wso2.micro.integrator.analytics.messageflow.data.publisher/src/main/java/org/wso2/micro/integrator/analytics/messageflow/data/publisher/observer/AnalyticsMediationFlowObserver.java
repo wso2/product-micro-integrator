@@ -20,9 +20,11 @@ package org.wso2.micro.integrator.analytics.messageflow.data.publisher.observer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.ei.EIStatisticsPublisher;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.StatisticsPublisher;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.ElasticStatisticsPublisher;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.moesif.MoesifStatisticsPublisher;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.util.MediationDataPublisherConstants;
 
 import java.util.ArrayList;
@@ -36,17 +38,34 @@ public class AnalyticsMediationFlowObserver implements MessageFlowObserver, Tena
     private final Collection<StatisticsPublisher> statPublishers = new ArrayList<>();
 
     public AnalyticsMediationFlowObserver(List<String> publisherTypes) {
-        if (publisherTypes != null && !publisherTypes.isEmpty() &&
-                (publisherTypes.contains(MediationDataPublisherConstants.DATABRIDGE_PUBLISHER_TYPE )
-                        || publisherTypes.contains(MediationDataPublisherConstants.LOG_PUBLISHER_TYPE))) {
+        if (publisherTypes == null || publisherTypes.isEmpty()) {
+            statPublishers.add(ElasticStatisticsPublisher.GetInstance());
+        } else {
+            boolean hasAnyPublisher = false;
+
             if (publisherTypes.contains(MediationDataPublisherConstants.DATABRIDGE_PUBLISHER_TYPE)) {
                 statPublishers.add(EIStatisticsPublisher.GetInstance());
+                hasAnyPublisher = true;
             }
             if (publisherTypes.contains(MediationDataPublisherConstants.LOG_PUBLISHER_TYPE)) {
                 statPublishers.add(ElasticStatisticsPublisher.GetInstance());
+                hasAnyPublisher = true;
             }
-        } else {
-            statPublishers.add(ElasticStatisticsPublisher.GetInstance());
+            if (publisherTypes.contains(MediationDataPublisherConstants.MOESIF_PUBLISHER_TYPE)) {
+                String moesifApplicationId = SynapsePropertiesLoader.getPropertyValue(
+                        MediationDataPublisherConstants.MOESIF_APPLICATION_ID, null);
+                if (null == moesifApplicationId) {
+                    log.error("Moesif analytics publisher was not enabled as the Moesif application ID was" +
+                            " not found");
+                    return;
+                    //TODO: Re-think how to handle this scenario
+                }
+                statPublishers.add(MoesifStatisticsPublisher.GetInstance());
+                hasAnyPublisher = true;
+            }
+            if (!hasAnyPublisher) {
+                statPublishers.add(ElasticStatisticsPublisher.GetInstance());
+            }
         }
     }
 

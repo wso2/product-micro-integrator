@@ -26,7 +26,9 @@ public class MediationDataPublisherConstants {
     public static final String CONFIG_STREAM_VERSION = "1.0.0";
     public static final String DATABRIDGE_PUBLISHER_TYPE = "databridge";
     public static final String LOG_PUBLISHER_TYPE = "log";
+    public static final String MOESIF_PUBLISHER_TYPE = "moesif";
     public static final String ANALYTICS_TYPE = "analytics.publisher";
-
-
+    public static final String MOESIF_REPORTER_URL = "analytics.reporter_url";
+    public static final String DEFAULT_MOESIF_REPORTER_URL = "https://api.moesif.net";
+    public static final String MOESIF_APPLICATION_ID = "analytics.application_id";
 }
