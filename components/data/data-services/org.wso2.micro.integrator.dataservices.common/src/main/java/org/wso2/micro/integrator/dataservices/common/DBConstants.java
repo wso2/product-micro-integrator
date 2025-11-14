@@ -896,6 +896,7 @@ public final class DBConstants {
         public static final String ESCAPE_NON_PRINTABLE_CHAR = "escapeNonPrintableChar";
         public static final String STRUCT_TYPE = "structType";
         public static final String SWAGGER_LOCATION = "publishSwagger";
+        public static final String ENABLE_SETTING_EMPTY_DEFAULT_NAMESPACE = "enableSettingEmptyDefaultNamespace";
     }
 
     /**

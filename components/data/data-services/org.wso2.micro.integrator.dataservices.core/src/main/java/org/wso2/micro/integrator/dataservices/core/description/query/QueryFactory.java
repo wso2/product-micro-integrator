@@ -686,8 +686,14 @@ public class QueryFactory {
 		}
 
 		String namespace = resEl.getAttributeValue(new QName(DBSFields.DEFAULT_NAMESPACE));
-		if (namespace == null || namespace.trim().length() == 0) {
-			namespace = dataService.getDefaultNamespace();
+		if (namespace == null || namespace.trim().isEmpty()) {
+            boolean enableEmptyDefaultNamespace = Boolean.parseBoolean(resEl.getAttributeValue(
+                    new QName(DBSFields.ENABLE_SETTING_EMPTY_DEFAULT_NAMESPACE)));
+            if (enableEmptyDefaultNamespace) {
+                namespace = "";
+            } else {
+			    namespace = dataService.getDefaultNamespace();
+            }
 		}
 
         String xsltPath = resEl.getAttributeValue(new QName(DBSFields.XSLT_PATH));
