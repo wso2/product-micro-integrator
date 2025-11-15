@@ -564,77 +564,20 @@ public class ICPHeartBeatComponent {
      */
     private static String generateOrGetCachedJwtToken() throws Exception {
         long currentTime = System.currentTimeMillis();
-        
         // Return cached token if it's still valid (with 5 minute buffer)
         if (cachedJwtToken != null && currentTime < (jwtTokenExpiry - 300000)) {
             return cachedJwtToken;
         }
-        
-        // Generate new token
-        cachedJwtToken = generateJwtToken();
-        jwtTokenExpiry = currentTime + (getJwtExpirySeconds() * 1000);
-        
-        return cachedJwtToken;
-    }
-
-    /**
-     * Generates a JWT token signed with RS256 algorithm using built-in Java libraries.
-     */
-    private static String generateJwtToken() throws Exception {
-        String keystorePath = getConfigValue(ICP_JWT_KEYSTORE_PATH, 
-                "repository/resources/security/wso2carbon.jks");
-        String keystorePassword = getConfigValue(ICP_JWT_KEYSTORE_PASSWORD, "ballerina");
-        String keyAlias = getConfigValue(ICP_JWT_KEY_ALIAS, "ballerina");
-        String keyPassword = getConfigValue(ICP_JWT_KEY_PASSWORD, keystorePassword);
+        String jwtHmacSecret = getConfigValue(ICP_JWT_HMAC_SECRET, DEFAULT_JWT_HMAC_SECRET);
+        HMACJWTTokenGenerator hmacJWTTokenGenerator = new HMACJWTTokenGenerator(jwtHmacSecret);
         String issuer = getConfigValue(ICP_JWT_ISSUER, DEFAULT_JWT_ISSUER);
         String audience = getConfigValue(ICP_JWT_AUDIENCE, DEFAULT_JWT_AUDIENCE);
+        String scope = getConfigValue(ICP_JWT_SCOPE, DEFAULT_JWT_SCOPE);
         long expirySeconds = getJwtExpirySeconds();
-        
-        // Resolve keystore path relative to carbon.home if not absolute
-        if (!keystorePath.startsWith("/")) {
-            String carbonHome = System.getProperty("carbon.home");
-            keystorePath = carbonHome + "/" + keystorePath;
-        }
-        
-        // Load keystore
-        KeyStore keyStore = KeyStore.getInstance("JKS");
-        try (FileInputStream fis = new FileInputStream(keystorePath)) {
-            keyStore.load(fis, keystorePassword.toCharArray());
-        }
-        
-        // Get private key
-        PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword.toCharArray());
-        
-        // Create JWT manually using built-in Java (matching Ballerina jwt:issue() output)
-        long currentTimeSeconds = System.currentTimeMillis() / 1000;
-        long expirationTime = currentTimeSeconds + expirySeconds;
-        
-        // JWT Header
-        JsonObject header = new JsonObject();
-        header.addProperty("alg", "RS256");
-        header.addProperty("typ", "JWT");
-        String encodedHeader = Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(header.toString().getBytes("UTF-8"));
-        
-        // JWT Payload (matching Ballerina structure)
-        JsonObject payload = new JsonObject();
-        payload.addProperty("iss", issuer);
-        payload.addProperty("aud", audience);
-        payload.addProperty("scope", "runtime_agent");
-        payload.addProperty("iat", currentTimeSeconds);
-        payload.addProperty("exp", expirationTime);
-        String encodedPayload = Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(payload.toString().getBytes("UTF-8"));
-        
-        // Create signature
-        String signingInput = encodedHeader + "." + encodedPayload;
-        java.security.Signature signature = java.security.Signature.getInstance("SHA256withRSA");
-        signature.initSign(privateKey);
-        signature.update(signingInput.getBytes("UTF-8"));
-        byte[] signatureBytes = signature.sign();
-        String encodedSignature = Base64.getUrlEncoder().withoutPadding().encodeToString(signatureBytes);
-        
-        return signingInput + "." + encodedSignature;
+        // Generate new token
+        cachedJwtToken = hmacJWTTokenGenerator.generateToken(issuer, audience, scope, expirySeconds);
+        jwtTokenExpiry = currentTime + (expirySeconds * 1000);
+        return cachedJwtToken;
     }
 
     /**
@@ -1437,14 +1380,14 @@ public class ICPHeartBeatComponent {
             // HTTP Listener
             JsonObject httpListener = new JsonObject();
             httpListener.addProperty("protocol", "http");
-            httpListener.addProperty("port", Integer.toString(ConfigurationLoader.getInternalInboundHttpPort()));
+            httpListener.addProperty("port", ConfigurationLoader.getInternalInboundHttpPort());
             httpListener.addProperty("host", "0.0.0.0");
             listeners.add(httpListener);
             
             // HTTPS Listener
             JsonObject httpsListener = new JsonObject();
             httpsListener.addProperty("protocol", "https");
-            httpsListener.addProperty("port", Integer.toString(ConfigurationLoader.getInternalInboundHttpsPort()));
+            httpsListener.addProperty("port", ConfigurationLoader.getInternalInboundHttpsPort());
             httpsListener.addProperty("host", "0.0.0.0");
             listeners.add(httpsListener);
         } catch (Exception e) {

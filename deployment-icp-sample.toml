@@ -47,7 +47,7 @@ project = "sample_project"
 
 # Component Identification
 # Specific component or service area within the project
-component = "sample_mi_component"
+component = "sample-mi-component"
 
 # Heartbeat Configuration
 # Interval between heartbeat transmissions (in seconds)
@@ -57,18 +57,12 @@ heartbeat_interval = 10
 # ----------------------------------------
 # JWT Authentication Configuration
 # ----------------------------------------
-# Keystore Configuration
-# Path can be relative to $MI_HOME or absolute
-jwt_keystore_path = "repository/resources/security/wso2carbon.jks"
-jwt_keystore_password = "wso2carbon"
-jwt_key_alias = "wso2carbon"
-jwt_key_password = "wso2carbon"
-
-# JWT Token Settings
 jwt_issuer = "icp-runtime-jwt-issuer"
 jwt_audience = "icp-server"
+jwt_scope = "runtime_agent"
 # Token validity in seconds (default: 3600 = 1 hour)
 jwt_expiry_seconds = 3600
+jwt_hmac_secret = "default-secret-key-at-least-32-characters-long-for-hs256"
 
 # ----------------------------------------
 # Legacy Dashboard Configuration (Optional)
