@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.config.mapper.ConfigParser;
 import org.wso2.micro.integrator.observability.metric.handler.MetricReporter;
 import org.wso2.micro.integrator.observability.metric.handler.prometheus.reporter.PrometheusReporter;
+import org.wso2.micro.integrator.observability.metric.handler.prometheus.reporter.PrometheusReporterV1;
 
 import java.util.Map;
 
@@ -71,7 +72,20 @@ public class MetricUtils {
     }
 
     private static MetricReporter loadDefaultPrometheusReporter() {
-        MetricReporter reporterInstance = new PrometheusReporter();
+        boolean enablePrometheusLegacy = Boolean.parseBoolean(
+            System.getProperty(MetricConstants.ENABLE_LEGACY_PROMETHEUS));
+        MetricReporter reporterInstance;
+        if (enablePrometheusLegacy) {
+            if (log.isDebugEnabled()) {
+                log.debug("Switched to legacy Prometheus API version (0.x) for metrics exposure.");
+            }
+            reporterInstance = new PrometheusReporter();
+        } else {
+            reporterInstance = new PrometheusReporterV1();
+            if (log.isDebugEnabled()) {
+                log.debug("Switched to Prometheus API version 1.x for metrics exposure.");
+            }
+        }
         if (log.isDebugEnabled()) {
             log.debug("The class org.wso2.micro.integrator.obsrvability.handler.metrics.publisher.prometheus." +
                     "reporter.PrometheusReporter was loaded successfully");

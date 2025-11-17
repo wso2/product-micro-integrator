@@ -18,6 +18,11 @@
 package org.wso2.micro.integrator.observability.metric.publisher;
 
 import io.prometheus.client.CollectorRegistry;
+import io.prometheus.metrics.expositionformats.PrometheusTextFormatWriter;
+import io.prometheus.metrics.model.registry.PrometheusRegistry;
+import io.prometheus.metrics.model.snapshots.MetricSnapshots;
+import java.io.ByteArrayOutputStream;
+import java.util.function.Predicate;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.Constants;
@@ -27,6 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.APIResource;
+import org.wso2.micro.integrator.observability.util.MetricConstants;
 
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -37,6 +43,7 @@ public class MetricResource extends APIResource {
 
     private static Log log = LogFactory.getLog(MetricResource.class);
     public static final String NO_ENTITY_BODY = "NO_ENTITY_BODY";
+    private PrometheusRegistry newRegistry = PrometheusRegistry.defaultRegistry;
     private CollectorRegistry registry = CollectorRegistry.defaultRegistry;
 
     public MetricResource(String urlTemplate) {
@@ -55,17 +62,29 @@ public class MetricResource extends APIResource {
     public boolean invoke(MessageContext synCtx) {
         buildMessage(synCtx);
         synCtx.setProperty("Success", true);
-        String query = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOptions().getTo().getAddress();
-        OMElement textRootElem = OMAbstractFactory.getOMFactory().createOMElement(BaseConstants.DEFAULT_TEXT_WRAPPER);
+        String query = ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+            .getOptions().getTo().getAddress();
+        OMElement textRootElem = OMAbstractFactory.getOMFactory()
+            .createOMElement(BaseConstants.DEFAULT_TEXT_WRAPPER);
 
         log.debug("Retrieving metric data to be published to Prometheus");
-
         try {
-            String formattedMetric = MetricFormatter.formatMetrics(registry.
-                    filteredMetricFamilySamples(parseQuery(query)));
-            textRootElem.setText(formattedMetric);
+            Set<String> filteredNames = parseQuery(query);
+            boolean enablePrometheusLegacyAPI = Boolean.parseBoolean(
+                System.getProperty(MetricConstants.ENABLE_LEGACY_PROMETHEUS));
+            if (enablePrometheusLegacyAPI) {
+                String formattedMetric = MetricFormatter.formatMetrics(registry.
+                    filteredMetricFamilySamples(filteredNames));
+                textRootElem.setText(formattedMetric);
+            } else {
+                MetricSnapshots snapshots = newRegistry.scrape(isInSet(filteredNames));
+                PrometheusTextFormatWriter writer = PrometheusTextFormatWriter.create();
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                writer.write(stream, snapshots);
+                textRootElem.setText(stream.toString());
+            }
         } catch (IOException e) {
-            log.error("Error in parsing metrics.", e);
+            log.error("Error occurred while retrieving metrics data", e);
         }
 
         synCtx.getEnvelope().getBody().addChild(textRootElem);
@@ -101,5 +120,14 @@ public class MetricResource extends APIResource {
             }
         }
         return names;
+    }
+
+    // Predicate to check if a metric name is in the provided set
+    private static Predicate<String> isInSet(Set<String> validNames) {
+        // If no filters, return all metrics
+        if (validNames.isEmpty()) {
+            return name -> true;
+        }
+        return validNames::contains;
     }
 }
