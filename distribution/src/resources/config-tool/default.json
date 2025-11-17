@@ -96,7 +96,6 @@
   "synapse_properties.'analytics.sequence_analytics.enabled'": true,
   "synapse_properties.'analytics.endpoint_analytics.enabled'": true,
   "synapse_properties.'analytics.inbound_endpoint_analytics.enabled'": true,
-  "synapse_properties.'analytics.reporter_url'": "https://api.moesif.net",
 
   "synapse_properties.'limit_java_class_access_in_scripts.enable'": true,
   "synapse_properties.'limit_java_class_access_in_scripts.list_type'": "BLOCK_LIST",
