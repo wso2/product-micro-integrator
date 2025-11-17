@@ -11,4 +11,5 @@ public class MoesifConstants {
     public static final String REQUEST = "request";
     public static final String METADATA = "metadata";
     public static final String MOESIF_ACTIONS_ENDPOINT = "v1/actions";
+    public static final String MOESIF_DEFAULT_PREFIX = "MOESIF_METRICS_DATA";
 }

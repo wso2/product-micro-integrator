@@ -52,14 +52,6 @@ public class AnalyticsMediationFlowObserver implements MessageFlowObserver, Tena
                 hasAnyPublisher = true;
             }
             if (publisherTypes.contains(MediationDataPublisherConstants.MOESIF_PUBLISHER_TYPE)) {
-                String moesifApplicationId = SynapsePropertiesLoader.getPropertyValue(
-                        MediationDataPublisherConstants.MOESIF_APPLICATION_ID, null);
-                if (null == moesifApplicationId) {
-                    log.error("Moesif analytics publisher was not enabled as the Moesif application ID was" +
-                            " not found");
-                    return;
-                    //TODO: Re-think how to handle this scenario
-                }
                 statPublishers.add(MoesifStatisticsPublisher.GetInstance());
                 hasAnyPublisher = true;
             }

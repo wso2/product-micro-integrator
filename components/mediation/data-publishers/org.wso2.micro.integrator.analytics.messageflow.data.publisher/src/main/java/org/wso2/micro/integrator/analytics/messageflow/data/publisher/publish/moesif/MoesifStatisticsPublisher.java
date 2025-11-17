@@ -38,7 +38,6 @@ import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.netty.BridgeConstants;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.StatisticsPublisher;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.ElasticConstants;
-import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.ElasticStatisticsPublisher;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.moesif.schema.MoesifDataSchema;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.moesif.schema.MoesifDataSchemaElement;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.util.MediationDataPublisherConstants;
@@ -64,7 +63,7 @@ public class MoesifStatisticsPublisher implements StatisticsPublisher {
     private boolean analyticsDisabledForEndpoints;
     private boolean analyticsDisabledForInboundEndpoints;
     private String analyticsDataPrefix;
-    private final Log log = LogFactory.getLog(ElasticStatisticsPublisher.class);
+    private final Log log = LogFactory.getLog(MoesifStatisticsPublisher.class);
 
     protected MoesifStatisticsPublisher() {
         loadConfigurations();
@@ -111,7 +110,7 @@ public class MoesifStatisticsPublisher implements StatisticsPublisher {
         analyticsDisabledForInboundEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
                 ElasticConstants.SynapseConfigKeys.INBOUND_ENDPOINT_ANALYTICS_ENABLED, true);
         analyticsDataPrefix = SynapsePropertiesLoader.getPropertyValue(
-                ElasticConstants.SynapseConfigKeys.ELASTICSEARCH_PREFIX, ElasticConstants.ELASTIC_DEFAULT_PREFIX);
+                ElasticConstants.SynapseConfigKeys.ELASTICSEARCH_PREFIX, MoesifConstants.MOESIF_DEFAULT_PREFIX);
         enabled = SynapsePropertiesLoader.getBooleanProperty(
                 ElasticConstants.SynapseConfigKeys.ELASTICSEARCH_ENABLED, false);
     }
