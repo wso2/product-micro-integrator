@@ -22,6 +22,7 @@ import io.prometheus.metrics.expositionformats.PrometheusTextFormatWriter;
 import io.prometheus.metrics.model.registry.PrometheusRegistry;
 import io.prometheus.metrics.model.snapshots.MetricSnapshots;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Predicate;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
@@ -81,7 +82,7 @@ public class MetricResource extends APIResource {
                 PrometheusTextFormatWriter writer = PrometheusTextFormatWriter.create();
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 writer.write(stream, snapshots);
-                textRootElem.setText(stream.toString());
+                textRootElem.setText(new String(stream.toByteArray(), StandardCharsets.UTF_8));
             }
         } catch (IOException e) {
             log.error("Error occurred while retrieving metrics data", e);

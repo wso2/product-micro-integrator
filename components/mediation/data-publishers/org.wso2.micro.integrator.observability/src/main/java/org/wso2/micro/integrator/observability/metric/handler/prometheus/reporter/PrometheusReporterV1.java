@@ -65,26 +65,31 @@ public class PrometheusReporterV1 implements MetricReporter {
     private double[] dataServiceLatencyBuckets;
 
     private Map<String, Object> metricMap = new HashMap();
+    private volatile boolean initialized = false;
+    Map<String, Object> configs;
+
+    private synchronized void initializeOnce() {
+        if (initialized) {
+            return;
+        }
+        initialized = true;
+        configs = ConfigParser.getParsedConfigs();
+        createBuckets(configs);
+        JvmMetrics.builder().register();
+    }
 
     @Override
     public void createMetrics(String serviceType, String type, String metricName, String metricHelp,
         String[] properties) {
 
-        proxyLatencyBuckets = new double[]{0.19, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50, 0.60, 1, 5};
-        apiLatencyBuckets = new double[]{0.19, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50, 0.60, 1, 5};
-        inboundEndpointLatencyBuckets = new double[]{0.19, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50, 0.60,
-            1, 5};
-        dataServiceLatencyBuckets = new double[]{0.19, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50, 0.60, 1,
-            5};
-
-        Map<String, Object> configs = ConfigParser.getParsedConfigs();
-        createBuckets(configs);
-        JvmMetrics.builder().register();
+        if (!initialized) {
+            initializeOnce();
+        }
 
         //Read the label names from the map
         String[] labels = properties;
 
-        if (serviceType.equalsIgnoreCase(PrometheusReporter.SERVICE.PROXY.name())) {
+        if (serviceType.equalsIgnoreCase(SERVICE.PROXY.name())) {
             if (type.equals(MetricConstants.COUNTER)) {
                 TOTAL_REQUESTS_RECEIVED_PROXY_SERVICE = Counter.builder()
                     .name(MetricConstants.PROXY_REQUEST_COUNT_TOTAL)
@@ -109,8 +114,7 @@ public class PrometheusReporterV1 implements MetricReporter {
                     .labelNames(labels).classicUpperBounds(apiLatencyBuckets).register();
                 metricMap.put(metricName, API_LATENCY_HISTOGRAM);
             }
-        } else if (serviceType.equalsIgnoreCase(
-            PrometheusReporter.SERVICE.INBOUND_ENDPOINT.name())) {
+        } else if (serviceType.equalsIgnoreCase(SERVICE.INBOUND_ENDPOINT.name())) {
             if (type.equals(MetricConstants.COUNTER)) {
                 TOTAL_REQUESTS_RECEIVED_INBOUND_ENDPOINT = Counter.builder()
                     .name(MetricConstants.INBOUND_ENDPOINT_REQUEST_COUNT_TOTAL).help(metricHelp)
@@ -123,7 +127,7 @@ public class PrometheusReporterV1 implements MetricReporter {
                     .register();
                 metricMap.put(metricName, INBOUND_ENDPOINT_LATENCY_HISTOGRAM);
             }
-        } else if (serviceType.equalsIgnoreCase(PrometheusReporter.SERVICE.DATA_SERVICE.name())) {
+        } else if (serviceType.equalsIgnoreCase(SERVICE.DATA_SERVICE.name())) {
             if (type.equals(MetricConstants.COUNTER)) {
                 TOTAL_REQUESTS_RECEIVED_DATA_SERVICE = Counter.builder()
                     .name(MetricConstants.DATA_SERVICE_REQUEST_COUNT_TOTAL).help(metricHelp)
@@ -171,17 +175,17 @@ public class PrometheusReporterV1 implements MetricReporter {
                 .name(MetricConstants.API_REQUEST_COUNT_ERROR_TOTAL).help(metricHelp)
                 .labelNames(properties).register();
             metricMap.put(metricName, ERROR_REQUESTS_RECEIVED_API);
-        } else if (serviceType.equals(PrometheusReporter.SERVICE.PROXY.name())) {
+        } else if (serviceType.equals(SERVICE.PROXY.name())) {
             ERROR_REQUESTS_RECEIVED_PROXY_SERVICE = Counter.builder()
                 .name(MetricConstants.PROXY_REQUEST_COUNT_ERROR_TOTAL).help(metricHelp).
                 labelNames(properties).register();
             metricMap.put(metricName, ERROR_REQUESTS_RECEIVED_PROXY_SERVICE);
-        } else if (serviceType.equals(PrometheusReporter.SERVICE.INBOUND_ENDPOINT.name())) {
+        } else if (serviceType.equals(SERVICE.INBOUND_ENDPOINT.name())) {
             ERROR_REQUESTS_RECEIVED_INBOUND_ENDPOINT = Counter.builder()
                 .name(MetricConstants.INBOUND_ENDPOINT_REQUEST_COUNT_ERROR_TOTAL).help(metricHelp)
                 .labelNames(properties).register();
             metricMap.put(metricName, ERROR_REQUESTS_RECEIVED_INBOUND_ENDPOINT);
-        } else if (serviceType.equals(PrometheusReporter.SERVICE.DATA_SERVICE.name())) {
+        } else if (serviceType.equals(SERVICE.DATA_SERVICE.name())) {
             ERROR_REQUESTS_RECEIVED_DATA_SERVICE = Counter.builder()
                 .name(MetricConstants.DATA_SERVICE_REQUEST_COUNT_ERROR_TOTAL)
                 .help(metricHelp).labelNames(properties).register();
@@ -192,6 +196,10 @@ public class PrometheusReporterV1 implements MetricReporter {
     @Override
     public void incrementCount(String metricName, String[] properties) {
         Counter counter = (Counter) metricMap.get(metricName);
+        if (counter == null) {
+            log.error("Counter metric not found: " + metricName);
+            return;
+        }
         counter.labelValues(properties).inc();
     }
 
@@ -203,6 +211,10 @@ public class PrometheusReporterV1 implements MetricReporter {
     @Override
     public Object getTimer(String metricName, String[] properties) {
         Histogram timer = (Histogram) metricMap.get(metricName);
+        if (timer == null) {
+            log.error("Timer metric not found: " + metricName);
+            return null;
+        }
         return timer.labelValues(properties).startTimer();
     }
 
@@ -400,33 +412,47 @@ public class PrometheusReporterV1 implements MetricReporter {
             List<Object> list = Arrays.asList(proxyConfigBuckets);
             int size = list.size();
             List<Object> bucketList = (ArrayList) list.get(0);
+            proxyLatencyBuckets = new double[size];
             for (int i = 0; i < size; i++) {
                 proxyLatencyBuckets[i] = (double) bucketList.get(i);
             }
+        } else {
+            proxyLatencyBuckets = new double[]{0.19, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50, 0.60, 1, 5};
         }
         if (null != apiConfigBuckets) {
             List<Object> list = Arrays.asList(apiConfigBuckets);
             int size = list.size();
             List<Object> bucketList = (ArrayList) list.get(0);
+            apiLatencyBuckets = new double[size];
             for (int i = 0; i < size; i++) {
                 apiLatencyBuckets[i] = (double) bucketList.get(i);
             }
+        } else {
+            apiLatencyBuckets = new double[]{0.19, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50, 0.60, 1, 5};
         }
         if (null != inboundEndpointConfigBuckets) {
             List<Object> list = Arrays.asList(inboundEndpointConfigBuckets);
             int size = list.size();
             List<Object> bucketList = (ArrayList) list.get(0);
+            inboundEndpointLatencyBuckets = new double[size];
             for (int i = 0; i < size; i++) {
                 inboundEndpointLatencyBuckets[i] = (double) bucketList.get(i);
             }
+        } else {
+            inboundEndpointLatencyBuckets = new double[]{0.19, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50, 0.60,
+                1, 5};
         }
         if (null != dataServiceConfigBuckets) {
             List<Object> list = Arrays.asList(dataServiceConfigBuckets);
             int size = list.size();
             List<Object> bucketList = (ArrayList) list.get(0);
+            dataServiceLatencyBuckets = new double[size];
             for (int i = 0; i < size; i++) {
                 dataServiceLatencyBuckets[i] = (double) bucketList.get(i);
             }
+        } else {
+            dataServiceLatencyBuckets = new double[]{0.19, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50, 0.60, 1,
+                5};
         }
     }
 
