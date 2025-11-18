@@ -17,9 +17,9 @@
  */
 package org.wso2.micro.integrator.initializer.dashboard;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -71,7 +71,13 @@ public class HeartBeatComponent {
     private static final Map<String, Object> configs = ConfigParser.getParsedConfigs();
 
     public static void invokeHeartbeatExecutorService() {
-
+        // Check if new ICP is configured
+        if (ICPHeartBeatComponent.isICPConfigured()) {
+            log.info("New ICP configuration detected. Starting ICP heartbeat service.");
+            ICPHeartBeatComponent.invokeICPHeartbeatExecutorService();
+            return;
+        }
+        // Fall back to old dashboard heartbeat
         String heartbeatApiUrl = configs.get(DASHBOARD_CONFIG_URL)  + "/heartbeat";
         String groupId = getGroupId();
         String nodeId = getNodeId();
@@ -174,14 +180,16 @@ public class HeartBeatComponent {
     }
 
     public static boolean isDashboardConfigured() {
-        return configs.get(DASHBOARD_CONFIG_URL) != null;
+        // Check for either old dashboard config or new ICP config
+        return configs.get(DASHBOARD_CONFIG_URL) != null || ICPHeartBeatComponent.isICPConfigured();
     }
 
     public static JsonObject getJsonResponse(CloseableHttpResponse response) {
         String stringResponse = getStringResponse(response);
         JsonObject responseObject = null;
         try {
-            responseObject = new JsonParser().parse(stringResponse).getAsJsonObject();
+            Gson gson = new Gson();
+            responseObject = gson.fromJson(stringResponse, JsonObject.class);
         } catch (JsonParseException e) {
             log.debug("Error occurred while parsing the heartbeat response.", e);
         }
