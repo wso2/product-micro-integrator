@@ -1403,6 +1403,48 @@
                 <artifactId>simpleclient_servlet</artifactId>
                 <version>${prometheus.version}</version>
             </dependency>
+            <!--Prometheus new Dependencies-->
+            <dependency>
+              <groupId>io.prometheus</groupId>
+              <artifactId>prometheus-metrics-core</artifactId>
+              <version>${prometheus.v1.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>io.prometheus</groupId>
+              <artifactId>prometheus-metrics-instrumentation-jvm</artifactId>
+              <version>${prometheus.v1.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>io.prometheus</groupId>
+              <artifactId>prometheus-metrics-exporter-httpserver</artifactId>
+              <version>${prometheus.v1.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>io.prometheus</groupId>
+              <artifactId>prometheus-metrics-config</artifactId>
+              <version>${prometheus.v1.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>io.prometheus</groupId>
+              <artifactId>prometheus-metrics-exposition-formats</artifactId>
+              <version>${prometheus.v1.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>io.prometheus</groupId>
+              <artifactId>prometheus-metrics-model</artifactId>
+              <version>${prometheus.v1.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>io.prometheus</groupId>
+              <artifactId>prometheus-metrics-tracer-initializer</artifactId>
+              <version>${prometheus.v1.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>io.prometheus</groupId>
+              <artifactId>prometheus-metrics-exposition-textformats</artifactId>
+              <version>${prometheus.v1.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>com.bettercloud</groupId>
                 <artifactId>vault-java-driver</artifactId>
@@ -1986,6 +2028,8 @@
         <axis2-java2wsdl.version>1.6.2</axis2-java2wsdl.version>
         <!-- Prometheus Library versions-->
         <prometheus.version>0.8.1</prometheus.version>
+        <!-- Prometheus API version 1.x-->
+        <prometheus.v1.version>1.4.3</prometheus.v1.version>
         <version.equinox.platform>3.14.0</version.equinox.platform>
         <!-- OAS3 Versions -->
         <swagger.parser.orbit.version>2.1.18.wso2v3</swagger.parser.orbit.version>
