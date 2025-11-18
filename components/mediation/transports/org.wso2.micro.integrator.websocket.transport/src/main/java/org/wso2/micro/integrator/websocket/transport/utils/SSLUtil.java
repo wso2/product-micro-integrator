@@ -18,8 +18,10 @@
 
 package org.wso2.micro.integrator.websocket.transport.utils;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.micro.integrator.websocket.transport.WebsocketConnectionFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -35,11 +37,9 @@ import javax.net.ssl.TrustManagerFactory;
 
 public class SSLUtil {
 
-    private static String KEY_STORE_TYPE = "JKS";
-    private static String TRUST_STORE_TYPE = "JKS";
-    private static String KEY_MANAGER_TYPE = "SunX509";
-    private static String TRUST_MANAGER_TYPE = "SunX509";
-    private static String PROTOCOL = "TLS";
+    private static final String PROTOCOL = "TLS";
+    private static final String PKIX = "PKIX";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     private static SSLContext serverSSLCtx = null;
     private static SSLContext clientSSLCtx = null;
@@ -49,9 +49,9 @@ public class SSLUtil {
     public static SSLContext createServerSSLContext(final String keyStoreLocation, final String keyStorePwd) {
         try {
             if (serverSSLCtx == null) {
-                KeyStore keyStore = KeyStore.getInstance(KEY_STORE_TYPE);
+                KeyStore keyStore = KeyStore.getInstance(WebsocketConnectionFactory.getTrustStoreType());
                 keyStore.load(new FileInputStream(keyStoreLocation), keyStorePwd.toCharArray());
-                KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KEY_MANAGER_TYPE);
+                KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(getKeyManagerType());
                 keyManagerFactory.init(keyStore, keyStorePwd.toCharArray());
                 serverSSLCtx = SSLContext.getInstance(PROTOCOL);
                 serverSSLCtx.init(keyManagerFactory.getKeyManagers(), null, null);
@@ -66,9 +66,9 @@ public class SSLUtil {
     public static SSLContext createClientSSLContext(final String trustStoreLocation, final String trustStorePwd) {
         try {
             if (clientSSLCtx == null) {
-                KeyStore trustStore = KeyStore.getInstance(TRUST_STORE_TYPE);
+                KeyStore trustStore = KeyStore.getInstance(WebsocketConnectionFactory.getTrustStoreType());
                 trustStore.load(new FileInputStream(trustStoreLocation), trustStorePwd.toCharArray());
-                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TRUST_MANAGER_TYPE);
+                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(getTrustManagerType());
                 trustManagerFactory.init(trustStore);
                 clientSSLCtx = SSLContext.getInstance(PROTOCOL);
                 clientSSLCtx.init(null, trustManagerFactory.getTrustManagers(), null);
@@ -85,15 +85,33 @@ public class SSLUtil {
         TrustManagerFactory trustManagerFactory = null;
         try {
             if (clientSSLCtx == null) {
-                KeyStore trustStore = KeyStore.getInstance(TRUST_STORE_TYPE);
+                KeyStore trustStore = KeyStore.getInstance(WebsocketConnectionFactory.getTrustStoreType());
                 trustStore.load(new FileInputStream(trustStoreLocation), trustStorePwd.toCharArray());
-                trustManagerFactory = TrustManagerFactory.getInstance(TRUST_MANAGER_TYPE);
+                trustManagerFactory = TrustManagerFactory.getInstance(getTrustManagerType());
                 trustManagerFactory.init(trustStore);
             }
         } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
             LOGGER.error("Exception was thrown while building the client SSL Context", e);
         }
         return trustManagerFactory;
+    }
+
+    private static String getTrustManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        } else {
+            return TrustManagerFactory.getDefaultAlgorithm();
+        }
+    }
+
+    private static String getKeyManagerType() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (StringUtils.isNotEmpty(provider)) {
+            return PKIX;
+        } else {
+            return KeyManagerFactory.getDefaultAlgorithm();
+        }
     }
 
 }

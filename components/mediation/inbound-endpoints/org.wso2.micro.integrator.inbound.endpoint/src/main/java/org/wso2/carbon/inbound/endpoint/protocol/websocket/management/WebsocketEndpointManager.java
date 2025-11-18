@@ -50,6 +50,8 @@ import static org.wso2.carbon.inbound.endpoint.common.Constants.SUPER_TENANT_DOM
 public class WebsocketEndpointManager extends AbstractInboundEndpointManager {
 
     private static WebsocketEndpointManager instance = null;
+    private String keyStoreType = "JKS";
+    private String trustStoreType = "JKS";
 
     private InboundWebsocketSourceHandler sourceHandler;
 
@@ -273,6 +275,8 @@ public class WebsocketEndpointManager extends AbstractInboundEndpointManager {
     }
 
     public InboundWebsocketSSLConfiguration buildSSLConfiguration(InboundProcessorParams params) {
+        keyStoreType = params.getProperties().getProperty(InboundWebsocketConstants.INBOUND_SSL_KEY_STORE_TYPE);
+        trustStoreType = params.getProperties().getProperty(InboundWebsocketConstants.INBOUND_SSL_TRUST_STORE_TYPE);
         return new InboundWebsocketSSLConfiguration.SSLConfigurationBuilder(
                 params.getProperties().getProperty(InboundWebsocketConstants.INBOUND_SSL_KEY_STORE_FILE),
                 params.getProperties().getProperty(InboundWebsocketConstants.INBOUND_SSL_KEY_STORE_PASS),
@@ -317,5 +321,13 @@ public class WebsocketEndpointManager extends AbstractInboundEndpointManager {
             return WebsocketEventExecutorManager.getInstance().isRegisteredExecutor(port);
         }
         return false;
+    }
+
+    public String getTrustStoreType() {
+        return trustStoreType;
+    }
+
+    public String getKeyStoreType() {
+        return keyStoreType;
     }
 }
