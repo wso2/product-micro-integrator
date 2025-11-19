@@ -1,7 +1,7 @@
 /*
- * Copyright (c) (2017-2022), WSO2 Inc. (http://www.wso2.com).
+ * Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
@@ -19,15 +19,11 @@
 package org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.moesif;
 
 import com.google.gson.JsonObject;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ServerConfigurationInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.api.API;
 import org.apache.synapse.aspects.flow.statistics.elasticsearch.ElasticMetadata;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingEvent;
-import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.axis2.ProxyService;
@@ -35,30 +31,21 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTConstants;
-import org.apache.synapse.transport.netty.BridgeConstants;
-import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.StatisticsPublisher;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.AbstractStatisticsPublisher;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.ElasticConstants;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.moesif.schema.MoesifDataSchema;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.moesif.schema.MoesifDataSchemaElement;
-import org.wso2.micro.integrator.analytics.messageflow.data.publisher.util.MediationDataPublisherConstants;
 import org.wso2.micro.integrator.initializer.ServiceBusInitializer;
 
 import java.time.Instant;
 import java.util.Map;
 
-public class MoesifStatisticsPublisher implements StatisticsPublisher {
+public class MoesifStatisticsPublisher extends AbstractStatisticsPublisher {
     private static MoesifStatisticsPublisher instance = null;
-    protected boolean enabled = false;
-    private boolean analyticsDisabledForAPI;
-    private boolean analyticsDisabledForSequences;
-    private boolean analyticsDisabledForProxyServices;
-    private boolean analyticsDisabledForEndpoints;
-    private boolean analyticsDisabledForInboundEndpoints;
     private String analyticsDataPrefix;
-    private final Log log = LogFactory.getLog(MoesifStatisticsPublisher.class);
 
     protected MoesifStatisticsPublisher() {
-        loadConfigurations();
+        super();
     }
 
     public static MoesifStatisticsPublisher GetInstance() {
@@ -67,44 +54,11 @@ public class MoesifStatisticsPublisher implements StatisticsPublisher {
         }
         return instance;
     }
-    @Override
-    public void process(PublishingFlow publishingFlow, int tenantId) {
-        if (!enabled) {
-            return;
-        }
-        publishingFlow.getEvents().forEach(event -> {
-            if (event.getElasticMetadata() == null || !event.getElasticMetadata().isValid()) {
-                return;
-            }
-            if (StatisticsConstants.FLOW_STATISTICS_API.equals(event.getComponentType())) {
-                publishApiAnalytics(event);
-            } else if (StatisticsConstants.FLOW_STATISTICS_SEQUENCE.equals(event.getComponentType())) {
-                publishSequenceMediatorAnalytics(event);
-            } else if (StatisticsConstants.FLOW_STATISTICS_ENDPOINT.equals(event.getComponentType())) {
-                publishEndpointAnalytics(event);
-            } else if (StatisticsConstants.FLOW_STATISTICS_INBOUNDENDPOINT.equals(event.getComponentType())) {
-                publishInboundEndpointAnalytics(event);
-            } else if (StatisticsConstants.FLOW_STATISTICS_PROXYSERVICE.equals(event.getComponentType())) {
-                publishProxyServiceAnalytics(event);
-            }
-        });
-    }
 
-    private void loadConfigurations() {
-        analyticsDisabledForAPI = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.API_ANALYTICS_ENABLED, true);
-        analyticsDisabledForSequences = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.SEQUENCE_ANALYTICS_ENABLED, true);
-        analyticsDisabledForProxyServices = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.PROXY_SERVICE_ANALYTICS_ENABLED, true);
-        analyticsDisabledForEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.ENDPOINT_ANALYTICS_ENABLED, true);
-        analyticsDisabledForInboundEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.INBOUND_ENDPOINT_ANALYTICS_ENABLED, true);
+    @Override
+    protected void loadPublisherSpecificConfigurations() {
         analyticsDataPrefix = SynapsePropertiesLoader.getPropertyValue(
-                ElasticConstants.SynapseConfigKeys.ELASTICSEARCH_PREFIX, MoesifConstants.MOESIF_DEFAULT_PREFIX);
-        enabled = SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.ELASTICSEARCH_ENABLED, false);
+                ElasticConstants.SynapseConfigKeys.ANALYTICS_PREFIX, MoesifConstants.MOESIF_DEFAULT_PREFIX);
     }
 
     private MoesifDataSchemaElement generateAnalyticsMetadataObject(PublishingEvent event, Class<?> entityClass) {
@@ -133,14 +87,15 @@ public class MoesifStatisticsPublisher implements StatisticsPublisher {
 
         for (Map.Entry<String, Object> entry : metadata.getAnalyticsMetadata().entrySet()) {
             if (entry.getValue() == null) {
-                continue; // Logstash fails at null
+                continue;
             }
             metadataElement.setAttribute(entry.getKey(), entry.getValue());
         }
-
         return analyticPayload;
     }
-    private void publishApiAnalytics(PublishingEvent event) {
+
+    @Override
+    protected void publishApiAnalytics(PublishingEvent event) {
         if (analyticsDisabledForAPI) {
             return;
         }
@@ -163,7 +118,8 @@ public class MoesifStatisticsPublisher implements StatisticsPublisher {
         publishAnalytic(moesifPayload);
     }
 
-    private void publishSequenceMediatorAnalytics(PublishingEvent event) {
+    @Override
+    protected void publishSequenceMediatorAnalytics(PublishingEvent event) {
         if (analyticsDisabledForSequences) {
             return;
         }
@@ -179,7 +135,8 @@ public class MoesifStatisticsPublisher implements StatisticsPublisher {
         publishAnalytic(moesifPayload);
     }
 
-    private void publishProxyServiceAnalytics(PublishingEvent event) {
+    @Override
+    protected void publishProxyServiceAnalytics(PublishingEvent event) {
         if (analyticsDisabledForProxyServices) {
             return;
         }
@@ -201,7 +158,8 @@ public class MoesifStatisticsPublisher implements StatisticsPublisher {
         publishAnalytic(moesifPayload);
     }
 
-    private void publishEndpointAnalytics(PublishingEvent event) {
+    @Override
+    protected void publishEndpointAnalytics(PublishingEvent event) {
         if (analyticsDisabledForEndpoints) {
             return;
         }
@@ -221,7 +179,8 @@ public class MoesifStatisticsPublisher implements StatisticsPublisher {
         publishAnalytic(moesifPayload);
     }
 
-    private void publishInboundEndpointAnalytics(PublishingEvent event) {
+    @Override
+    protected void publishInboundEndpointAnalytics(PublishingEvent event) {
         if (analyticsDisabledForInboundEndpoints) {
             return;
         }
@@ -247,16 +206,7 @@ public class MoesifStatisticsPublisher implements StatisticsPublisher {
         publishAnalytic(moesifPayload);
     }
 
-    private void attachHttpProperties(MoesifDataSchemaElement payload, ElasticMetadata metadata) {
-        payload.setAttribute(ElasticConstants.EnvelopDef.REMOTE_HOST,
-                metadata.getProperty(BridgeConstants.REMOTE_HOST));
-        payload.setAttribute(ElasticConstants.EnvelopDef.CONTENT_TYPE,
-                metadata.getProperty(BridgeConstants.CONTENT_TYPE_HEADER));
-        payload.setAttribute(ElasticConstants.EnvelopDef.HTTP_METHOD,
-                metadata.getProperty(BridgeConstants.HTTP_METHOD));
-    }
-
-    void publishAnalytic(JsonObject metadataPayload) {
+    protected void publishAnalytic(JsonObject metadataPayload) {
         log.info(String.format("%s %s", analyticsDataPrefix, metadataPayload.toString()));
     }
 
@@ -264,7 +214,6 @@ public class MoesifStatisticsPublisher implements StatisticsPublisher {
         MoesifDataSchemaElement request = setupRequest(event);
         MoesifDataSchema dataSchemaInst = new MoesifDataSchema(actionName, request, metadataPayload);
         return dataSchemaInst.getJsonObject();
-
     }
 
     public String getStartTime(long startTime) {

@@ -19,29 +19,17 @@
 package org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.schema;
 
 import com.google.gson.JsonObject;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.PublisherDataSchemaElement;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 
-public class ElasticDataSchemaElement {
-    private final Map<String, Object> attributes = new HashMap<>();
+public class ElasticDataSchemaElement extends PublisherDataSchemaElement {
+
     private long startTime;
 
-    public void setAttribute(String key, Object value) {
-        attributes.put(key, value);
-    }
-
-    private <T> T getAttribute(String key, T defaultValue) {
-        if (!attributes.containsKey(key)) {
-            return defaultValue;
-        }
-
-        try {
-            return (T) attributes.get(key);
-        } catch (ClassCastException e) {
-            return defaultValue;
-        }
+    public ElasticDataSchemaElement() {
+        super();
     }
 
     public String getStartTime() {
@@ -57,7 +45,7 @@ public class ElasticDataSchemaElement {
 
     public JsonObject toJsonObject() {
         JsonObject json = new JsonObject();
-        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+        for (Map.Entry<String, Object> entry : getAttributes().entrySet()) {
             if (entry.getValue() == null) {
                 continue;
             }

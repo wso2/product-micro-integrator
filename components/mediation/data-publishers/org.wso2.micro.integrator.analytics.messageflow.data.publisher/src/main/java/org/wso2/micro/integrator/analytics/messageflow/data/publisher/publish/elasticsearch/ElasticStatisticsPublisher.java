@@ -18,14 +18,10 @@
 
 package org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.api.API;
 import org.apache.synapse.aspects.flow.statistics.elasticsearch.ElasticMetadata;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingEvent;
-import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.commons.CorrelationConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.axis2.ProxyService;
@@ -33,27 +29,19 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTConstants;
-import org.apache.synapse.transport.netty.BridgeConstants;
-import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.StatisticsPublisher;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.AbstractStatisticsPublisher;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.schema.ElasticDataSchema;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.schema.ElasticDataSchemaElement;
 
 import java.util.Map;
 
-public class ElasticStatisticsPublisher implements StatisticsPublisher {
+public class ElasticStatisticsPublisher extends AbstractStatisticsPublisher {
     private static ElasticStatisticsPublisher instance = null;
-    private final Log log = LogFactory.getLog(ElasticStatisticsPublisher.class);
-    protected boolean enabled = false;
-    private boolean analyticsDisabledForAPI;
-    private boolean analyticsDisabledForSequences;
-    private boolean analyticsDisabledForProxyServices;
-    private boolean analyticsDisabledForEndpoints;
-    private boolean analyticsDisabledForInboundEndpoints;
     private String analyticsDataPrefix;
 
     protected ElasticStatisticsPublisher() {
+        super();
         ElasticDataSchema.init();
-        loadConfigurations();
     }
 
     public static ElasticStatisticsPublisher GetInstance() {
@@ -63,46 +51,9 @@ public class ElasticStatisticsPublisher implements StatisticsPublisher {
         return instance;
     }
 
-    private void loadConfigurations() {
-        analyticsDisabledForAPI = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.API_ANALYTICS_ENABLED, true);
-        analyticsDisabledForSequences = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.SEQUENCE_ANALYTICS_ENABLED, true);
-        analyticsDisabledForProxyServices = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.PROXY_SERVICE_ANALYTICS_ENABLED, true);
-        analyticsDisabledForEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.ENDPOINT_ANALYTICS_ENABLED, true);
-        analyticsDisabledForInboundEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.INBOUND_ENDPOINT_ANALYTICS_ENABLED, true);
+    protected void loadPublisherSpecificConfigurations() {
         analyticsDataPrefix = SynapsePropertiesLoader.getPropertyValue(
-                ElasticConstants.SynapseConfigKeys.ELASTICSEARCH_PREFIX, ElasticConstants.ELASTIC_DEFAULT_PREFIX);
-        enabled = SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.ELASTICSEARCH_ENABLED, false);
-    }
-
-    @Override
-    public void process(PublishingFlow publishingFlow, int tenantId) {
-        if (!enabled) {
-            return;
-        }
-
-        publishingFlow.getEvents().forEach(event -> {
-            if (event.getElasticMetadata() == null || !event.getElasticMetadata().isValid()) {
-                return;
-            }
-
-            if (StatisticsConstants.FLOW_STATISTICS_API.equals(event.getComponentType())) {
-                publishApiAnalytics(event);
-            } else if (StatisticsConstants.FLOW_STATISTICS_SEQUENCE.equals(event.getComponentType())) {
-                publishSequenceMediatorAnalytics(event);
-            } else if (StatisticsConstants.FLOW_STATISTICS_ENDPOINT.equals(event.getComponentType())) {
-                publishEndpointAnalytics(event);
-            } else if (StatisticsConstants.FLOW_STATISTICS_INBOUNDENDPOINT.equals(event.getComponentType())) {
-                publishInboundEndpointAnalytics(event);
-            } else if (StatisticsConstants.FLOW_STATISTICS_PROXYSERVICE.equals(event.getComponentType())) {
-                publishProxyServiceAnalytics(event);
-            }
-        });
+                ElasticConstants.SynapseConfigKeys.ANALYTICS_PREFIX, ElasticConstants.ELASTIC_DEFAULT_PREFIX);
     }
 
     void publishAnalytic(ElasticDataSchemaElement payload) {
@@ -110,7 +61,8 @@ public class ElasticStatisticsPublisher implements StatisticsPublisher {
         log.info(String.format("%s %s", analyticsDataPrefix, dataSchemaInst.getJsonString()));
     }
 
-    private void publishApiAnalytics(PublishingEvent event) {
+    @Override
+    protected void publishApiAnalytics(PublishingEvent event) {
         if (analyticsDisabledForAPI) {
             return;
         }
@@ -135,7 +87,8 @@ public class ElasticStatisticsPublisher implements StatisticsPublisher {
         publishAnalytic(analyticPayload);
     }
 
-    private void publishSequenceMediatorAnalytics(PublishingEvent event) {
+    @Override
+    protected void publishSequenceMediatorAnalytics(PublishingEvent event) {
         if (analyticsDisabledForSequences) {
             return;
         }
@@ -153,7 +106,8 @@ public class ElasticStatisticsPublisher implements StatisticsPublisher {
         publishAnalytic(analyticsPayload);
     }
 
-    private void publishProxyServiceAnalytics(PublishingEvent event) {
+    @Override
+    protected void publishProxyServiceAnalytics(PublishingEvent event) {
         if (analyticsDisabledForProxyServices) {
             return;
         }
@@ -175,7 +129,8 @@ public class ElasticStatisticsPublisher implements StatisticsPublisher {
         publishAnalytic(analyticsPayload);
     }
 
-    private void publishEndpointAnalytics(PublishingEvent event) {
+    @Override
+    protected void publishEndpointAnalytics(PublishingEvent event) {
         if (analyticsDisabledForEndpoints) {
             return;
         }
@@ -195,7 +150,8 @@ public class ElasticStatisticsPublisher implements StatisticsPublisher {
         publishAnalytic(analyticsPayload);
     }
 
-    private void publishInboundEndpointAnalytics(PublishingEvent event) {
+    @Override
+    protected void publishInboundEndpointAnalytics(PublishingEvent event) {
         if (analyticsDisabledForInboundEndpoints) {
             return;
         }
@@ -251,15 +207,6 @@ public class ElasticStatisticsPublisher implements StatisticsPublisher {
         }
 
         return analyticPayload;
-    }
-
-    private void attachHttpProperties(ElasticDataSchemaElement payload, ElasticMetadata metadata) {
-        payload.setAttribute(ElasticConstants.EnvelopDef.REMOTE_HOST,
-                metadata.getProperty(BridgeConstants.REMOTE_HOST));
-        payload.setAttribute(ElasticConstants.EnvelopDef.CONTENT_TYPE,
-                metadata.getProperty(BridgeConstants.CONTENT_TYPE_HEADER));
-        payload.setAttribute(ElasticConstants.EnvelopDef.HTTP_METHOD,
-                metadata.getProperty(BridgeConstants.HTTP_METHOD));
     }
 
 }

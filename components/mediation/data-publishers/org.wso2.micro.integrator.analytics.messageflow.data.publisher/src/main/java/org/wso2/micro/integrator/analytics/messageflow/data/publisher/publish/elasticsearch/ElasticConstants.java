@@ -63,15 +63,15 @@ public class ElasticConstants {
         public static final String INBOUND_ENDPOINT_ANALYTICS_ENABLED = "analytics.inbound_endpoint_analytics.enabled";
 
         /**
-         * Name of the Synapse configuration used to determine the prefix Elasticsearch analytics are published with.
+         * Name of the Synapse configuration used to determine the prefix analytics are published with.
          * The purpose of this prefix is to distinguish log lines which hold analytics data from others.
          */
-        public static final String ELASTICSEARCH_PREFIX = "analytics.prefix";
+        public static final String ANALYTICS_PREFIX = "analytics.prefix";
 
         /**
-         * Name of the Synapse configuration used to determine if the Elasticsearch service is enabled.
+         * Name of the Synapse configuration used to determine if the analytics service is enabled.
          */
-        public static final String ELASTICSEARCH_ENABLED = "analytics.enabled";
+        public static final String ANALYTICS_ENABLED = "analytics.enabled";
 
         /**
          * Name of the custom data provider class that can add new properties to the elastic search properties.
