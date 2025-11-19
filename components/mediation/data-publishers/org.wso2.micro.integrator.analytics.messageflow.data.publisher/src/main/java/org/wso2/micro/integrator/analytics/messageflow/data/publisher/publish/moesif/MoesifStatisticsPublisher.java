@@ -43,14 +43,6 @@ import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.mo
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.util.MediationDataPublisherConstants;
 import org.wso2.micro.integrator.initializer.ServiceBusInitializer;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
 
@@ -266,91 +258,6 @@ public class MoesifStatisticsPublisher implements StatisticsPublisher {
 
     void publishAnalytic(JsonObject metadataPayload) {
         log.info(String.format("%s %s", analyticsDataPrefix, metadataPayload.toString()));
-        String moesifReporterUrl = SynapsePropertiesLoader.getPropertyValue(
-                MediationDataPublisherConstants.MOESIF_REPORTER_URL,
-                MediationDataPublisherConstants.DEFAULT_MOESIF_REPORTER_URL);
-        String moesifApplicationId = SynapsePropertiesLoader.getPropertyValue(
-                MediationDataPublisherConstants.MOESIF_APPLICATION_ID, null);
-        if (!moesifReporterUrl.endsWith("/")) {
-            moesifReporterUrl = moesifReporterUrl + "/";
-        }
-        moesifReporterUrl = moesifReporterUrl + MoesifConstants.MOESIF_ACTIONS_ENDPOINT;
-        HttpsURLConnection connection = null;
-
-        try {
-            connection = (HttpsURLConnection) new URL(moesifReporterUrl).openConnection();
-            connection.setRequestMethod("POST");
-            connection.setDoOutput(true);
-            connection.setDoInput(true);
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Accept", "application/json");
-            connection.addRequestProperty("X-Moesif-Application-Id", moesifApplicationId);
-            connection.setHostnameVerifier(getHostnameVerifier());
-
-            // Convert JsonObject to String
-            byte[] jsonBytes = metadataPayload.toString().getBytes(StandardCharsets.UTF_8);
-
-            // Set content length
-            connection.setRequestProperty("Content-Length", String.valueOf(jsonBytes.length));
-
-            // Write JSON payload to output stream
-            try (OutputStream os = connection.getOutputStream()) {
-                os.write(jsonBytes);
-                os.flush();
-            }
-
-            // Get response code
-            int responseCode = connection.getResponseCode();
-
-            // Read response
-            String responseBody = readResponse(connection);
-            if (responseCode >= 200 && responseCode < 300) {
-                // Success
-                System.out.println("Successfully sent data to Moesif. Response: " + responseCode);
-            } else {
-                // Error
-                System.err.println("Failed to send data to Moesif. Response code: " + responseCode);
-                System.err.println("Response body: " + responseBody);
-            }
-
-        } catch (IOException e) {
-            System.err.println("Error sending data to Moesif: " + e.getMessage());
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
-    }
-
-    private String readResponse(HttpsURLConnection connection) throws IOException {
-        BufferedReader reader = null;
-        StringBuilder response = new StringBuilder();
-
-        try {
-            // Try to read from input stream (for 2xx responses)
-            if (connection.getResponseCode() >= 200 && connection.getResponseCode() < 300) {
-                reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
-            } else {
-                // Read from error stream (for 4xx, 5xx responses)
-                reader = new BufferedReader(new InputStreamReader(connection.getErrorStream(), StandardCharsets.UTF_8));
-            }
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
-            }
-
-        } finally {
-            if (reader != null) {
-                reader.close();
-            }
-        }
-
-        return response.toString();
-    }
-
-    private static HostnameVerifier getHostnameVerifier() {
-        return (s, sslSession) -> true;
     }
 
     JsonObject generateMoesifPayload(String actionName, MoesifDataSchemaElement metadataPayload, PublishingEvent event) {

@@ -24,8 +24,6 @@ import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.ElasticConstants;
 import org.wso2.micro.integrator.initializer.ServiceBusInitializer;
 
-import java.time.Instant;
-
 public class ElasticDataSchema {
     private static String hostname;
     private static String serverName;
