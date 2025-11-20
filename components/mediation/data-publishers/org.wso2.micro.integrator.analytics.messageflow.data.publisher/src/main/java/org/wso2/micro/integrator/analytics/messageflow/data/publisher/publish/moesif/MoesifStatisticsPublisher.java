@@ -43,9 +43,14 @@ import java.util.Map;
 public class MoesifStatisticsPublisher extends AbstractStatisticsPublisher {
     private static MoesifStatisticsPublisher instance = null;
     private String analyticsDataPrefix;
+    private ServerConfigurationInformation serverConfig;
+    private String publisherId;
 
     protected MoesifStatisticsPublisher() {
         super();
+        publisherId = SynapsePropertiesLoader.getPropertyValue(
+                ElasticConstants.SynapseConfigKeys.IDENTIFIER, null);
+        serverConfig = ServiceBusInitializer.getConfigurationInformation();
     }
 
     public static MoesifStatisticsPublisher GetInstance() {
@@ -53,6 +58,14 @@ public class MoesifStatisticsPublisher extends AbstractStatisticsPublisher {
             instance = new MoesifStatisticsPublisher();
         }
         return instance;
+    }
+
+    public void setServerConfig(ServerConfigurationInformation serverConfig) {
+        this.serverConfig = serverConfig;
+    }
+
+    public void setPublisherId(String publisherId) {
+        this.publisherId = publisherId;
     }
 
     @Override
@@ -225,14 +238,11 @@ public class MoesifStatisticsPublisher extends AbstractStatisticsPublisher {
 
     public MoesifDataSchemaElement setupServerInfo() {
         MoesifDataSchemaElement serverInfo = new MoesifDataSchemaElement();
-        String publisherId = SynapsePropertiesLoader.getPropertyValue(
-                ElasticConstants.SynapseConfigKeys.IDENTIFIER, null);
         serverInfo.setAttribute(ElasticConstants.ServerMetadataFieldDef.PUBLISHER_ID, publisherId);
-        ServerConfigurationInformation config = ServiceBusInitializer.getConfigurationInformation();
-        if (config != null) {
-            serverInfo.setAttribute(ElasticConstants.ServerMetadataFieldDef.HOST_NAME, config.getHostName());
-            serverInfo.setAttribute(ElasticConstants.ServerMetadataFieldDef.SERVER_NAME, config.getServerName());
-            serverInfo.setAttribute(ElasticConstants.ServerMetadataFieldDef.IP_ADDRESS, config.getIpAddress());
+        if (serverConfig != null) {
+            serverInfo.setAttribute(ElasticConstants.ServerMetadataFieldDef.HOST_NAME, serverConfig.getHostName());
+            serverInfo.setAttribute(ElasticConstants.ServerMetadataFieldDef.SERVER_NAME, serverConfig.getServerName());
+            serverInfo.setAttribute(ElasticConstants.ServerMetadataFieldDef.IP_ADDRESS, serverConfig.getIpAddress());
         }
         return serverInfo;
     }
