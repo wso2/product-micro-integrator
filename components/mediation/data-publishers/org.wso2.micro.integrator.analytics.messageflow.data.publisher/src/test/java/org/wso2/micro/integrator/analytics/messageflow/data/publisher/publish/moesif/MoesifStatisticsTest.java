@@ -1,22 +1,22 @@
 /*
- * Copyright (c) (2017-2022), WSO2 Inc. (http://www.wso2.com).
+ * Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com).
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
 
-package org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch;
+package org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.moesif;
 
 import com.damnhandy.uri.template.UriTemplate;
 import com.google.gson.JsonElement;
@@ -58,7 +58,8 @@ import org.apache.synapse.transport.netty.BridgeConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.producer.AnalyticsCustomDataProvider;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.PublisherTestUtils;
-import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.schema.ElasticDataSchema;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.ElasticConstants;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.SampleCustomDataProvider;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -67,20 +68,17 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
-public class ElasticStatisticsTest extends TestCase {
-    private static final int CURRENT_SCHEMA_VERSION = 1;
-    private final TestElasticStatisticsPublisher publisher = new TestElasticStatisticsPublisher();
-    ServerConfigurationInformation sysConfig = null;
+public class MoesifStatisticsTest extends TestCase {
+    private final TestMoesifStatisticsPublisher publisher = new TestMoesifStatisticsPublisher();
+    private ServerConfigurationInformation sysConfig = null;
     private boolean oneTimeSetupComplete = false;
     private Axis2MessageContext messageContext = null;
     private Axis2SynapseEnvironment synapseEnvironment = null;
 
-    private static MessageContext createSynapseMessageContext(
-            SynapseConfiguration testConfig) throws Exception {
-
-        SynapseEnvironment synEnv
-                = new Axis2SynapseEnvironment(new ConfigurationContext(new AxisConfiguration()),
+    private static MessageContext createSynapseMessageContext(SynapseConfiguration testConfig) throws Exception {
+        SynapseEnvironment synEnv = new Axis2SynapseEnvironment(new ConfigurationContext(new AxisConfiguration()),
                 testConfig);
         Axis2MessageContext synCtx;
         org.apache.axis2.context.MessageContext mc = new org.apache.axis2.context.MessageContext();
@@ -108,9 +106,10 @@ public class ElasticStatisticsTest extends TestCase {
         synCtx.setProperty(NhttpConstants.REST_URL_POSTFIX, url.substring(1));
 
         Axis2MessageContext axisCtx = synCtx;
-        axisCtx.getAxis2MessageContext().setProperty(Constants.Configuration.HTTP_METHOD, PublisherTestUtils.TEST_API_METHOD);
-        axisCtx.getAxis2MessageContext().setProperty(
-                Constants.Configuration.TRANSPORT_IN_URL, "https://" + PublisherTestUtils.SERVER_INFO_HOST_NAME + url);
+        axisCtx.getAxis2MessageContext().setProperty(Constants.Configuration.HTTP_METHOD,
+                PublisherTestUtils.TEST_API_METHOD);
+        axisCtx.getAxis2MessageContext().setProperty(Constants.Configuration.TRANSPORT_IN_URL,
+                "https://" + PublisherTestUtils.SERVER_INFO_HOST_NAME + url);
         return synCtx;
     }
 
@@ -141,7 +140,7 @@ public class ElasticStatisticsTest extends TestCase {
         synapseConfig.addProxyService(PublisherTestUtils.TEST_PROXY_SERVICE, proxyService);
     }
 
-    public void oneTimeSetup() throws Exception {
+    private void oneTimeSetup() throws Exception {
         if (oneTimeSetupComplete) {
             return;
         }
@@ -150,8 +149,8 @@ public class ElasticStatisticsTest extends TestCase {
         sysConfig.setServerName(PublisherTestUtils.SERVER_INFO_SERVER_NAME);
         sysConfig.setHostName(PublisherTestUtils.SERVER_INFO_HOST_NAME);
         sysConfig.setIpAddress(PublisherTestUtils.SERVER_INFO_IP_ADDRESS);
-        ElasticDataSchema.setPublisherId(PublisherTestUtils.SERVER_INFO_PUBLISHER_ID);
-        ElasticDataSchema.setupServerMetadata(sysConfig);
+        publisher.setPublisherId(PublisherTestUtils.SERVER_INFO_PUBLISHER_ID);
+        publisher.setServerConfig(sysConfig);
         ConfigurationContext axis2ConfigurationContext = new ConfigurationContext(new AxisConfiguration());
         axis2ConfigurationContext.getAxisConfiguration().addParameter(SynapseConstants.SYNAPSE_ENV, synapseEnvironment);
         SynapseConfiguration config = new SynapseConfiguration();
@@ -179,7 +178,7 @@ public class ElasticStatisticsTest extends TestCase {
         publisher.process(flow, PublisherTestUtils.TENANT_ID);
         assertTrue(publisher.isEnabled());
         assertEquals(1, publisher.getAnalyticsCount());
-        verifySchema(publisher.getAnalyticData(), AnalyticPayloadType.NON_STANDARD);
+        verifyMoesifSchema(publisher.getAnalyticData(), MoesifPayloadType.SEQUENCE);
         publisher.reset();
         publisher.disableService();
         publisher.process(flow, PublisherTestUtils.TENANT_ID);
@@ -191,7 +190,7 @@ public class ElasticStatisticsTest extends TestCase {
         flow.addEvent(createPublishingEvent(ComponentType.SEQUENCE, PublisherTestUtils.TEST_SEQUENCE_NAME));
         publisher.process(flow, PublisherTestUtils.TENANT_ID);
         assertEquals(1, publisher.getAnalyticsCount());
-        verifySchema(publisher.getAnalyticData(), AnalyticPayloadType.SEQUENCE);
+        verifyMoesifSchema(publisher.getAnalyticData(), MoesifPayloadType.SEQUENCE);
 
         for (int i = 0; i < 100; ++i) {
             publisher.process(flow, PublisherTestUtils.TENANT_ID);
@@ -206,7 +205,7 @@ public class ElasticStatisticsTest extends TestCase {
         flow.addEvent(createPublishingEvent(ComponentType.API, PublisherTestUtils.TEST_API_NAME));
         publisher.process(flow, PublisherTestUtils.TENANT_ID);
         assertEquals(1, publisher.getAnalyticsCount());
-        verifySchema(publisher.getAnalyticData(), AnalyticPayloadType.API);
+        verifyMoesifSchema(publisher.getAnalyticData(), MoesifPayloadType.API);
 
         for (int i = 0; i < 100; ++i) {
             publisher.process(flow, PublisherTestUtils.TENANT_ID);
@@ -219,7 +218,7 @@ public class ElasticStatisticsTest extends TestCase {
         flow.addEvent(createPublishingEvent(ComponentType.ENDPOINT, PublisherTestUtils.TEST_ENDPOINT_NAME));
         publisher.process(flow, PublisherTestUtils.TENANT_ID);
         assertEquals(1, publisher.getAnalyticsCount());
-        verifySchema(publisher.getAnalyticData(), AnalyticPayloadType.ENDPOINT);
+        verifyMoesifSchema(publisher.getAnalyticData(), MoesifPayloadType.ENDPOINT);
 
         for (int i = 0; i < 100; ++i) {
             publisher.process(flow, PublisherTestUtils.TENANT_ID);
@@ -231,7 +230,7 @@ public class ElasticStatisticsTest extends TestCase {
         PublishingFlow flow = new PublishingFlow();
         flow.addEvent(createPublishingEvent(ComponentType.PROXYSERVICE, PublisherTestUtils.TEST_PROXY_SERVICE));
         publisher.process(flow, PublisherTestUtils.TENANT_ID);
-        verifySchema(publisher.getAnalyticData(), AnalyticPayloadType.PROXY_SERVICE);
+        verifyMoesifSchema(publisher.getAnalyticData(), MoesifPayloadType.PROXY_SERVICE);
 
         for (int i = 0; i < 100; ++i) {
             publisher.process(flow, PublisherTestUtils.TENANT_ID);
@@ -243,12 +242,52 @@ public class ElasticStatisticsTest extends TestCase {
         PublishingFlow flow = new PublishingFlow();
         flow.addEvent(createPublishingEvent(ComponentType.INBOUNDENDPOINT, PublisherTestUtils.TEST_INBOUND_ENDPOINT));
         publisher.process(flow, PublisherTestUtils.TENANT_ID);
-        verifySchema(publisher.getAnalyticData(), AnalyticPayloadType.INBOUND_ENDPOINT);
+        verifyMoesifSchema(publisher.getAnalyticData(), MoesifPayloadType.INBOUND_ENDPOINT);
 
         for (int i = 0; i < 100; ++i) {
             publisher.process(flow, PublisherTestUtils.TENANT_ID);
         }
         assertEquals(100, publisher.getAnalyticsCount());
+    }
+
+    public void testTransactionIdFormat() {
+        PublishingFlow flow = new PublishingFlow();
+        flow.addEvent(createPublishingEvent(ComponentType.API, PublisherTestUtils.TEST_API_NAME));
+        publisher.process(flow, PublisherTestUtils.TENANT_ID);
+
+        JsonObject analytic = publisher.getAnalyticData();
+        assertTrue(analytic.has(MoesifConstants.TRANSACTION_ID));
+        String transactionId = analytic.get(MoesifConstants.TRANSACTION_ID).getAsString();
+
+        // Verify UUID format: 36 characters with hyphens
+        assertEquals(36, transactionId.length());
+        assertTrue(transactionId.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"));
+
+        // Verify it's a valid UUID
+        try {
+            UUID.fromString(transactionId);
+        } catch (IllegalArgumentException e) {
+            fail("Transaction ID should be a valid UUID format");
+        }
+    }
+
+    public void testTransactionIdUniqueness() {
+        PublishingFlow flow = new PublishingFlow();
+        flow.addEvent(createPublishingEvent(ComponentType.API, PublisherTestUtils.TEST_API_NAME));
+
+        Map<String, Integer> transactionIds = new HashMap<>();
+        for (int i = 0; i < 100; i++) {
+            publisher.reset();
+            publisher.process(flow, PublisherTestUtils.TENANT_ID);
+            JsonObject analytic = publisher.getAnalyticData();
+            String transactionId = analytic.get(MoesifConstants.TRANSACTION_ID).getAsString();
+            transactionIds.put(transactionId, transactionIds.getOrDefault(transactionId, 0) + 1);
+        }
+
+        assertEquals(100, transactionIds.size());
+        for (Integer count : transactionIds.values()) {
+            assertEquals(1, count.intValue());
+        }
     }
 
     private PublishingEvent createPublishingEvent(ComponentType componentType, String componentName) {
@@ -269,7 +308,7 @@ public class ElasticStatisticsTest extends TestCase {
     private ElasticMetadata createElasticMetadata() {
         AnalyticsCustomDataProvider customDataProvider = new SampleCustomDataProvider();
         Map<String, Object> customProperties = customDataProvider.getCustomProperties(messageContext);
-        Map<String, Object> contextProperties =  new HashMap<>(messageContext.getProperties());
+        Map<String, Object> contextProperties = new HashMap<>(messageContext.getProperties());
         contextProperties.computeIfAbsent(SynapseConstants.ANALYTICS_METADATA, k -> new HashMap<>());
         ((HashMap<String, Object>) contextProperties.get(SynapseConstants.ANALYTICS_METADATA)).putAll(customProperties);
         return new ElasticMetadata(
@@ -281,184 +320,172 @@ public class ElasticStatisticsTest extends TestCase {
         );
     }
 
-    private void verifySchema(JsonObject analytic, AnalyticPayloadType payloadType) {
+    private void verifyMoesifSchema(JsonObject analytic, MoesifPayloadType payloadType) {
         assertNotNull(analytic);
-        verifySchemaVersion(analytic.get(ElasticConstants.EnvelopDef.SCHEMA_VERSION));
-        verifyServerInfo(analytic.get(ElasticConstants.EnvelopDef.SERVER_INFO));
-        verifyTimestamp(analytic.get(ElasticConstants.EnvelopDef.TIMESTAMP));
 
-        JsonElement payloadElement = analytic.get(ElasticConstants.EnvelopDef.PAYLOAD);
+        assertTrue("actionName field is missing", analytic.has(MoesifConstants.ACTION_NAME));
+        assertTrue("transactionId field is missing", analytic.has(MoesifConstants.TRANSACTION_ID));
+        assertTrue("request field is missing", analytic.has(MoesifConstants.REQUEST));
+        assertTrue("metadata field is missing", analytic.has(MoesifConstants.METADATA));
+
+        verifyActionName(analytic.get(MoesifConstants.ACTION_NAME), payloadType);
+        verifyTransactionId(analytic.get(MoesifConstants.TRANSACTION_ID));
+        verifyRequest(analytic.get(MoesifConstants.REQUEST));
+        verifyMetadata(analytic.get(MoesifConstants.METADATA), payloadType);
+    }
+
+    private void verifyActionName(JsonElement actionNameElement, MoesifPayloadType payloadType) {
+        assertNotNull(actionNameElement);
+        assertTrue(actionNameElement.isJsonPrimitive());
+
+        String actionName = actionNameElement.getAsString();
         switch (payloadType) {
-            case PROXY_SERVICE:
-                verifyProxyServicePayload(payloadElement);
-                break;
-            case ENDPOINT:
-                verifyEndpointPayload(payloadElement);
-                break;
             case API:
-                verifyApiResourcePayload(payloadElement);
+                assertEquals(MoesifConstants.API_ACTION_NAME, actionName);
                 break;
             case SEQUENCE:
-                verifySequencePayload(payloadElement);
+                assertEquals(MoesifConstants.SEQUENCE_ACTION_NAME, actionName);
+                break;
+            case ENDPOINT:
+                assertEquals(MoesifConstants.ENDPOINT_ACTION_NAME, actionName);
+                break;
+            case PROXY_SERVICE:
+                assertEquals(MoesifConstants.PROXY_SERVICE_ACTION_NAME, actionName);
                 break;
             case INBOUND_ENDPOINT:
-                verifyInboundEndpointPayload(payloadElement);
+                assertEquals(MoesifConstants.INBOUND_ENDPOINT_ACTION_NAME, actionName);
                 break;
-            default:
-                assertTrue(payloadElement.isJsonObject());
         }
-        verifyCustomProperties(payloadElement);
+    }
+
+    private void verifyTransactionId(JsonElement transactionIdElement) {
+        assertNotNull(transactionIdElement);
+        assertTrue(transactionIdElement.isJsonPrimitive());
+
+        String transactionId = transactionIdElement.getAsString();
+        assertEquals(36, transactionId.length());
+
+        try {
+            UUID.fromString(transactionId);
+        } catch (IllegalArgumentException e) {
+            fail("Transaction ID should be a valid UUID");
+        }
+    }
+
+    private void verifyRequest(JsonElement requestElement) {
+        assertNotNull(requestElement);
+        assertTrue(requestElement.isJsonObject());
+
+        JsonObject request = requestElement.getAsJsonObject();
+        assertTrue(request.has(MoesifConstants.REQUEST_TIME));
+
+        String time = request.get(MoesifConstants.REQUEST_TIME).getAsString();
+        try {
+            Instant.parse(time);
+        } catch (DateTimeParseException e) {
+            fail("Request time should be in ISO8601 format. Found: " + time);
+        }
+    }
+
+    private void verifyMetadata(JsonElement metadataElement, MoesifPayloadType payloadType) {
+        assertNotNull(metadataElement);
+        assertTrue(metadataElement.isJsonObject());
+
+        JsonObject metadata = metadataElement.getAsJsonObject();
+
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.SERVER_INFO));
+        verifyServerInfo(metadata.get(ElasticConstants.EnvelopDef.SERVER_INFO));
+
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.ENTITY_TYPE));
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.LATENCY));
+        assertEquals(PublisherTestUtils.STATIC_LATENCY, metadata.get(ElasticConstants.EnvelopDef.LATENCY).getAsInt());
+
+        // Verify payload-specific metadata
+        switch (payloadType) {
+            case API:
+                verifyApiMetadata(metadata);
+                break;
+            case SEQUENCE:
+                verifySequenceMetadata(metadata);
+                break;
+            case ENDPOINT:
+                verifyEndpointMetadata(metadata);
+                break;
+            case PROXY_SERVICE:
+                verifyProxyServiceMetadata(metadata);
+                break;
+            case INBOUND_ENDPOINT:
+                verifyInboundEndpointPayload(metadata);
+        }
     }
 
     private void verifyServerInfo(JsonElement serverInfoElement) {
         assertNotNull(serverInfoElement);
         assertTrue(serverInfoElement.isJsonObject());
 
-        JsonObject dataObject = serverInfoElement.getAsJsonObject();
-        assertTrue(dataObject.has(ElasticConstants.ServerMetadataFieldDef.HOST_NAME));
-        assertEquals(PublisherTestUtils.SERVER_INFO_HOST_NAME,
-                dataObject.get(ElasticConstants.ServerMetadataFieldDef.HOST_NAME).getAsString());
-        assertTrue(dataObject.has(ElasticConstants.ServerMetadataFieldDef.SERVER_NAME));
-        assertEquals(PublisherTestUtils.SERVER_INFO_SERVER_NAME,
-                dataObject.get(ElasticConstants.ServerMetadataFieldDef.SERVER_NAME).getAsString());
-        assertTrue(dataObject.has(ElasticConstants.ServerMetadataFieldDef.IP_ADDRESS));
-        assertEquals(PublisherTestUtils.SERVER_INFO_IP_ADDRESS,
-                dataObject.get(ElasticConstants.ServerMetadataFieldDef.IP_ADDRESS).getAsString());
-        assertTrue(dataObject.has(ElasticConstants.ServerMetadataFieldDef.PUBLISHER_ID));
-        assertEquals(PublisherTestUtils.SERVER_INFO_PUBLISHER_ID,
-                dataObject.get(ElasticConstants.ServerMetadataFieldDef.PUBLISHER_ID).getAsString());
+        JsonObject serverInfo = serverInfoElement.getAsJsonObject();
+        assertTrue(serverInfo.has(ElasticConstants.ServerMetadataFieldDef.HOST_NAME));
+        assertTrue(serverInfo.has(ElasticConstants.ServerMetadataFieldDef.SERVER_NAME));
+        assertTrue(serverInfo.has(ElasticConstants.ServerMetadataFieldDef.IP_ADDRESS));
     }
 
-    private void verifyTimestamp(JsonElement timestampElement) {
-        assertNotNull(timestampElement);
-
-        try {
-            Instant.parse(timestampElement.getAsString());
-        } catch (DateTimeParseException e) {
-            fail("timestamp should be in ISO8601 format. Found: " + timestampElement.getAsString());
-        }
-    }
-
-    private void verifySchemaVersion(JsonElement schemaVersionElement) {
-        assertNotNull(schemaVersionElement);
-        assertEquals(CURRENT_SCHEMA_VERSION, schemaVersionElement.getAsInt());
-    }
-
-    private void verifySequencePayload(JsonElement payloadElement) {
-        assertNotNull(payloadElement);
-        assertTrue(payloadElement.isJsonObject());
-
-        JsonObject payload = payloadElement.getAsJsonObject();
-        verifyCommonPayloadFields(payload);
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.SEQUENCE_DETAILS));
-        assertTrue(payload.get(ElasticConstants.EnvelopDef.SEQUENCE_DETAILS).isJsonObject());
-
-        JsonObject sequenceDetails = payload.get(ElasticConstants.EnvelopDef.SEQUENCE_DETAILS).getAsJsonObject();
-        assertTrue(sequenceDetails.has(ElasticConstants.EnvelopDef.SEQUENCE_NAME));
-    }
-
-    private void verifyApiResourcePayload(JsonElement payloadElement) {
-        assertNotNull(payloadElement);
-        assertTrue(payloadElement.isJsonObject());
-
-        JsonObject payload = payloadElement.getAsJsonObject();
-        verifyCommonPayloadFields(payload);
-
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.REMOTE_HOST));
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.CONTENT_TYPE));
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.HTTP_METHOD));
-        assertEquals(PublisherTestUtils.TEST_API_METHOD, payload.get(ElasticConstants.EnvelopDef.HTTP_METHOD)
-                .getAsString());
-
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.API_DETAILS));
-        assertTrue(payload.get(ElasticConstants.EnvelopDef.API_DETAILS).isJsonObject());
-
-        JsonObject apiDetails = payload.get(ElasticConstants.EnvelopDef.API_DETAILS).getAsJsonObject();
+    private void verifyApiMetadata(JsonObject metadata) {
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.API_DETAILS));
+        JsonObject apiDetails = metadata.get(ElasticConstants.EnvelopDef.API_DETAILS).getAsJsonObject();
         assertTrue(apiDetails.has(ElasticConstants.EnvelopDef.API));
         assertEquals(PublisherTestUtils.TEST_API_NAME, apiDetails.get(ElasticConstants.EnvelopDef.API).getAsString());
-        assertTrue(apiDetails.has(ElasticConstants.EnvelopDef.SUB_REQUEST_PATH));
         assertTrue(apiDetails.has(ElasticConstants.EnvelopDef.API_CONTEXT));
-        assertEquals(PublisherTestUtils.TEST_API_CONTEXT, apiDetails
-                .get(ElasticConstants.EnvelopDef.API_CONTEXT).getAsString());
-        assertTrue(apiDetails.has(ElasticConstants.EnvelopDef.METHOD));
-        assertEquals(PublisherTestUtils.TEST_API_METHOD, apiDetails.get(ElasticConstants.EnvelopDef.METHOD)
+        assertEquals(PublisherTestUtils.TEST_API_CONTEXT, apiDetails.get(ElasticConstants.EnvelopDef.API_CONTEXT)
                 .getAsString());
+
+        // Verify HTTP properties
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.REMOTE_HOST));
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.CONTENT_TYPE));
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.HTTP_METHOD));
     }
 
-    private void verifyEndpointPayload(JsonElement payloadElement) {
-        assertNotNull(payloadElement);
-        assertTrue(payloadElement.isJsonObject());
+    private void verifySequenceMetadata(JsonObject metadata) {
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.SEQUENCE_DETAILS));
+        JsonObject sequenceDetails = metadata.get(ElasticConstants.EnvelopDef.SEQUENCE_DETAILS).getAsJsonObject();
+        assertTrue(sequenceDetails.has(ElasticConstants.EnvelopDef.SEQUENCE_NAME));
+        assertEquals(PublisherTestUtils.TEST_SEQUENCE_NAME, sequenceDetails
+                .get(ElasticConstants.EnvelopDef.SEQUENCE_NAME).getAsString());
+    }
 
-        JsonObject payload = payloadElement.getAsJsonObject();
-        verifyCommonPayloadFields(payload);
-
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.ENDPOINT_DETAILS));
-        JsonObject endpointDetails = payload.get(ElasticConstants.EnvelopDef.ENDPOINT_DETAILS).getAsJsonObject();
+    private void verifyEndpointMetadata(JsonObject metadata) {
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.ENDPOINT_DETAILS));
+        JsonObject endpointDetails = metadata.get(ElasticConstants.EnvelopDef.ENDPOINT_DETAILS).getAsJsonObject();
         assertTrue(endpointDetails.has(ElasticConstants.EnvelopDef.ENDPOINT_NAME));
-        assertEquals(PublisherTestUtils.TEST_ENDPOINT_NAME,
-                endpointDetails.get(ElasticConstants.EnvelopDef.ENDPOINT_NAME).getAsString());
-        assertEquals(PublisherTestUtils.TEST_INBOUND_ENDPOINT,
-                endpointDetails.get(ElasticConstants.EnvelopDef.INBOUND_ENDPOINT_NAME).getAsString());
+        assertEquals(PublisherTestUtils.TEST_ENDPOINT_NAME, endpointDetails
+                .get(ElasticConstants.EnvelopDef.ENDPOINT_NAME).getAsString());
     }
 
-    private void verifyProxyServicePayload(JsonElement payloadElement) {
-        assertNotNull(payloadElement);
-        assertTrue(payloadElement.isJsonObject());
+    private void verifyProxyServiceMetadata(JsonObject metadata) {
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.PROXY_SERVICE_DETAILS));
+        JsonObject proxyDetails = metadata.get(ElasticConstants.EnvelopDef.PROXY_SERVICE_DETAILS).getAsJsonObject();
+        assertTrue(proxyDetails.has(ElasticConstants.EnvelopDef.PROXY_SERVICE_NAME));
+        assertEquals(PublisherTestUtils.TEST_PROXY_SERVICE, proxyDetails
+                .get(ElasticConstants.EnvelopDef.PROXY_SERVICE_NAME).getAsString());
 
-        JsonObject payload = payloadElement.getAsJsonObject();
-        verifyCommonPayloadFields(payload);
+        // Verify HTTP properties for proxy service
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.REMOTE_HOST));
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.CONTENT_TYPE));
+    }
 
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.PROXY_SERVICE_DETAILS));
-        JsonObject proxyServiceDetails = payload.get(ElasticConstants.EnvelopDef.PROXY_SERVICE_DETAILS)
+    private void verifyInboundEndpointPayload(JsonObject metadata) {
+        assertTrue(metadata.has(ElasticConstants.EnvelopDef.INBOUND_ENDPOINT_DETAILS));
+        JsonObject endpointDetails = metadata.get(ElasticConstants.EnvelopDef.INBOUND_ENDPOINT_DETAILS)
                 .getAsJsonObject();
-        assertTrue(proxyServiceDetails.has(ElasticConstants.EnvelopDef.PROXY_SERVICE_NAME));
+        assertTrue(endpointDetails.has(ElasticConstants.EnvelopDef.INBOUND_ENDPOINT_NAME));
+        assertEquals(PublisherTestUtils.TEST_INBOUND_ENDPOINT, endpointDetails
+                .get(ElasticConstants.EnvelopDef.INBOUND_ENDPOINT_NAME).getAsString());
     }
 
-    private void verifyInboundEndpointPayload(JsonElement payloadElement) {
-        assertNotNull(payloadElement);
-        assertTrue(payloadElement.isJsonObject());
-
-        JsonObject payload = payloadElement.getAsJsonObject();
-        verifyCommonPayloadFields(payload);
-
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.INBOUND_ENDPOINT_DETAILS));
-        JsonObject inboundEndpointDetails = payload.get(ElasticConstants.EnvelopDef.INBOUND_ENDPOINT_DETAILS)
-                .getAsJsonObject();
-        assertTrue(inboundEndpointDetails.has(ElasticConstants.EnvelopDef.INBOUND_ENDPOINT_NAME));
-    }
-
-    private void verifyCommonPayloadFields(JsonObject payload) {
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.ENTITY_TYPE));
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.ENTITY_CLASS_NAME));
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.FAULT_RESPONSE));
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.FAILURE));
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.LATENCY));
-        assertEquals(PublisherTestUtils.STATIC_LATENCY, payload.get(ElasticConstants.EnvelopDef.LATENCY).getAsInt());
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.METADATA));
-    }
-
-    private void verifyCustomProperties(JsonElement payloadElement) {
-        assertNotNull(payloadElement);
-        assertTrue(payloadElement.isJsonObject());
-
-        JsonObject payload = payloadElement.getAsJsonObject();
-        assertTrue(payload.has(ElasticConstants.EnvelopDef.METADATA));
-        assertTrue(payload.get(ElasticConstants.EnvelopDef.METADATA).isJsonObject());
-
-        JsonObject metadata = payload.get(ElasticConstants.EnvelopDef.METADATA).getAsJsonObject();
-        assertTrue(metadata.has("messageBody"));
-        assertTrue(metadata.get("messageBody").isJsonPrimitive());
-
-        String messageBody = metadata.get("messageBody").getAsString();
-        assertEquals(messageContext.getEnvelope().getBody().toString(), messageBody);
-    }
-
-    enum AnalyticPayloadType {
+    enum MoesifPayloadType {
         PROXY_SERVICE,
         ENDPOINT,
         API,
         SEQUENCE,
-        INBOUND_ENDPOINT,
-        NON_STANDARD
+        INBOUND_ENDPOINT
     }
 }
