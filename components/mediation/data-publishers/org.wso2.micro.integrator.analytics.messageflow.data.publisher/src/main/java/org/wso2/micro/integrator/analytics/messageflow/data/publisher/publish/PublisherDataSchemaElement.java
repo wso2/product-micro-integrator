@@ -18,6 +18,7 @@
 
 package org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +26,7 @@ public abstract class PublisherDataSchemaElement {
     private final Map<String, Object> attributes = new HashMap<>();
 
     public Map<String, Object> getAttributes() {
-        return attributes;
+        return Collections.unmodifiableMap(attributes);
     }
 
     public void setAttribute(String key, Object value) {

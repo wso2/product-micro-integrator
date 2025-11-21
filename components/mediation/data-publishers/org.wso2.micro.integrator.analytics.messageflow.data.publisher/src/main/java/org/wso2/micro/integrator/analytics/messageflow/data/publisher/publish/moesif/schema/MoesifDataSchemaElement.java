@@ -29,10 +29,6 @@ public class MoesifDataSchemaElement extends PublisherDataSchemaElement {
         super();
     }
 
-    public void setAttribute(String key, Object value) {
-        getAttributes().put(key, value);
-    }
-
     public JsonObject toJsonObject() {
         JsonObject json = new JsonObject();
         for (Map.Entry<String, Object> entry : getAttributes().entrySet()) {
