@@ -32,7 +32,7 @@ public abstract class PublisherDataSchemaElement {
         attributes.put(key, value);
     }
 
-    private <T> T getAttribute(String key, T defaultValue) {
+    protected <T> T getAttribute(String key, T defaultValue) {
         if (!attributes.containsKey(key)) {
             return defaultValue;
         }

@@ -20,7 +20,6 @@ package org.wso2.micro.integrator.analytics.messageflow.data.publisher.observer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
-import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.ei.EIStatisticsPublisher;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.StatisticsPublisher;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.ElasticStatisticsPublisher;

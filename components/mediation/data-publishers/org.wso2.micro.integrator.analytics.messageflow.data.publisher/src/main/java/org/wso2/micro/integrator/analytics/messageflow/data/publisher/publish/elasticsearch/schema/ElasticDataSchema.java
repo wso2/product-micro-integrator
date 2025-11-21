@@ -21,6 +21,7 @@ package org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.e
 import com.google.gson.JsonObject;
 import org.apache.synapse.ServerConfigurationInformation;
 import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.PublisherConstants;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.ElasticConstants;
 import org.wso2.micro.integrator.initializer.ServiceBusInitializer;
 
@@ -43,7 +44,7 @@ public class ElasticDataSchema {
 
     public static void init() {
         publisherId = SynapsePropertiesLoader.getPropertyValue(
-                ElasticConstants.SynapseConfigKeys.IDENTIFIER, hostname);
+                PublisherConstants.SynapseConfigKeys.IDENTIFIER, hostname);
         ServerConfigurationInformation config = ServiceBusInitializer.getConfigurationInformation();
         if (config != null) {
             setupServerMetadata(config);
@@ -71,7 +72,7 @@ public class ElasticDataSchema {
         exportingAnalytic.add(ElasticConstants.EnvelopDef.SERVER_INFO, serverMetadata);
         exportingAnalytic.addProperty(ElasticConstants.EnvelopDef.TIMESTAMP, timestamp);
         exportingAnalytic.addProperty(ElasticConstants.EnvelopDef.SCHEMA_VERSION,
-                ElasticConstants.SynapseConfigKeys.SCHEMA_VERSION);
+                PublisherConstants.SynapseConfigKeys.SCHEMA_VERSION);
         exportingAnalytic.add(ElasticConstants.EnvelopDef.PAYLOAD, payload.toJsonObject());
 
         return exportingAnalytic;

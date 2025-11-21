@@ -27,53 +27,6 @@ public class ElasticConstants {
      */
     public static class SynapseConfigKeys {
         /**
-         * Schema version of the analytic.
-         */
-        public static final int SCHEMA_VERSION = 1;
-
-        /**
-         * Unique identifier for the publisher that can be used to filter analytics if multiple micro integrators are
-         * publishing data to the same Elasticsearch server.
-         */
-        public static final String IDENTIFIER = "analytics.id";
-
-        /**
-         * Name of the Synapse configuration used to determine if analytics for APIs are enabled or disabled.
-         */
-        public static final String API_ANALYTICS_ENABLED = "analytics.api_analytics.enabled";
-
-        /**
-         * Name of the Synapse configuration used to determine if analytics for ProxyServices are enabled or disabled.
-         */
-        public static final String PROXY_SERVICE_ANALYTICS_ENABLED = "analytics.proxy_service_analytics.enabled";
-
-        /**
-         * Name of the Synapse configuration used to determine if analytics for Sequences are enabled or disabled.
-         */
-        public static final String SEQUENCE_ANALYTICS_ENABLED = "analytics.sequence_analytics.enabled";
-
-        /**
-         * Name of the Synapse configuration used to determine if analytics for Endpoints are enabled or disabled.
-         */
-        public static final String ENDPOINT_ANALYTICS_ENABLED = "analytics.endpoint_analytics.enabled";
-
-        /**
-         * Name of the Synapse configuration used to determine if analytics for Inbound Endpoints are enabled or disabled.
-         */
-        public static final String INBOUND_ENDPOINT_ANALYTICS_ENABLED = "analytics.inbound_endpoint_analytics.enabled";
-
-        /**
-         * Name of the Synapse configuration used to determine the prefix analytics are published with.
-         * The purpose of this prefix is to distinguish log lines which hold analytics data from others.
-         */
-        public static final String ANALYTICS_PREFIX = "analytics.prefix";
-
-        /**
-         * Name of the Synapse configuration used to determine if the analytics service is enabled.
-         */
-        public static final String ANALYTICS_ENABLED = "analytics.enabled";
-
-        /**
          * Name of the custom data provider class that can add new properties to the elastic search properties.
          */
         public static final String ELASTICSEARCH_CUSTOM_DATA_PROVIDER_CLASS = "analytics.custom_data_provider_class";

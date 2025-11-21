@@ -52,6 +52,10 @@ public abstract class AbstractStatisticsPublisher implements StatisticsPublisher
             }
             return;
         }
+
+        if (null == publishingFlow.getEvents()) {
+            return;
+        }
         publishingFlow.getEvents().forEach(event -> {
             if (event.getElasticMetadata() == null || !event.getElasticMetadata().isValid()) {
                 return;
@@ -66,6 +70,11 @@ public abstract class AbstractStatisticsPublisher implements StatisticsPublisher
                 publishInboundEndpointAnalytics(event);
             } else if (StatisticsConstants.FLOW_STATISTICS_PROXYSERVICE.equals(event.getComponentType())) {
                 publishProxyServiceAnalytics(event);
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Skipping publishing analytics for unknown component type: "
+                            + event.getComponentType());
+                }
             }
         });
     }
@@ -75,17 +84,17 @@ public abstract class AbstractStatisticsPublisher implements StatisticsPublisher
             log.debug("Loading analytics configurations");
         }
         analyticsDisabledForAPI = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.API_ANALYTICS_ENABLED, true);
+                PublisherConstants.SynapseConfigKeys.API_ANALYTICS_ENABLED, true);
         analyticsDisabledForSequences = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.SEQUENCE_ANALYTICS_ENABLED, true);
+                PublisherConstants.SynapseConfigKeys.SEQUENCE_ANALYTICS_ENABLED, true);
         analyticsDisabledForProxyServices = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.PROXY_SERVICE_ANALYTICS_ENABLED, true);
+                PublisherConstants.SynapseConfigKeys.PROXY_SERVICE_ANALYTICS_ENABLED, true);
         analyticsDisabledForEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.ENDPOINT_ANALYTICS_ENABLED, true);
+                PublisherConstants.SynapseConfigKeys.ENDPOINT_ANALYTICS_ENABLED, true);
         analyticsDisabledForInboundEndpoints = !SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.INBOUND_ENDPOINT_ANALYTICS_ENABLED, true);
+                PublisherConstants.SynapseConfigKeys.INBOUND_ENDPOINT_ANALYTICS_ENABLED, true);
         enabled = SynapsePropertiesLoader.getBooleanProperty(
-                ElasticConstants.SynapseConfigKeys.ANALYTICS_ENABLED, false);
+                PublisherConstants.SynapseConfigKeys.ANALYTICS_ENABLED, false);
         if (log.isDebugEnabled()) {
             log.debug("Analytics enabled: " + enabled + ", API: " + !analyticsDisabledForAPI +
                     ", Sequences: " + !analyticsDisabledForSequences + ", Proxy: " + !analyticsDisabledForProxyServices +

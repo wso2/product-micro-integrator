@@ -30,6 +30,7 @@ import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTConstants;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.AbstractStatisticsPublisher;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.PublisherConstants;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.schema.ElasticDataSchema;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.schema.ElasticDataSchemaElement;
 
@@ -53,7 +54,7 @@ public class ElasticStatisticsPublisher extends AbstractStatisticsPublisher {
 
     protected void loadPublisherSpecificConfigurations() {
         analyticsDataPrefix = SynapsePropertiesLoader.getPropertyValue(
-                ElasticConstants.SynapseConfigKeys.ANALYTICS_PREFIX, ElasticConstants.ELASTIC_DEFAULT_PREFIX);
+                PublisherConstants.SynapseConfigKeys.ANALYTICS_PREFIX, ElasticConstants.ELASTIC_DEFAULT_PREFIX);
         if (log.isDebugEnabled()) {
             log.debug("Elasticsearch analytics data prefix configured as: " + analyticsDataPrefix);
         }
