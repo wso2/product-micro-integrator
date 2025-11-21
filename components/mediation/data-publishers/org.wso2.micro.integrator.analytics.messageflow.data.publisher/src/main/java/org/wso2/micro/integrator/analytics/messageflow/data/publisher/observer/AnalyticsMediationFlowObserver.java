@@ -38,6 +38,9 @@ public class AnalyticsMediationFlowObserver implements MessageFlowObserver, Tena
     private final Collection<StatisticsPublisher> statPublishers = new ArrayList<>();
 
     public AnalyticsMediationFlowObserver(List<String> publisherTypes) {
+        if (log.isDebugEnabled()) {
+            log.debug("Initializing AnalyticsMediationFlowObserver with publisher types: " + publisherTypes.toString());
+        }
         if (publisherTypes == null || publisherTypes.isEmpty()) {
             statPublishers.add(ElasticStatisticsPublisher.GetInstance());
         } else {
@@ -56,6 +59,9 @@ public class AnalyticsMediationFlowObserver implements MessageFlowObserver, Tena
                 hasAnyPublisher = true;
             }
             if (!hasAnyPublisher) {
+                if (log.isDebugEnabled()) {
+                    log.debug("No valid publisher type found in configuration, defaulting to ElasticStatisticsPublisher");
+                }
                 statPublishers.add(ElasticStatisticsPublisher.GetInstance());
             }
         }

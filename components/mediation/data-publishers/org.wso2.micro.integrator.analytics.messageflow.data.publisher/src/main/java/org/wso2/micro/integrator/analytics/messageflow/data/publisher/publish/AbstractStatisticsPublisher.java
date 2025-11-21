@@ -41,6 +41,7 @@ public abstract class AbstractStatisticsPublisher implements StatisticsPublisher
         this.log = LogFactory.getLog(this.getClass());
         loadConfigurations();
         loadPublisherSpecificConfigurations();
+        log.info("Initializing " + this.getClass().getSimpleName() + " statistics publisher");
     }
 
     @Override
@@ -70,6 +71,9 @@ public abstract class AbstractStatisticsPublisher implements StatisticsPublisher
     }
 
     protected void loadConfigurations() {
+        if (log.isDebugEnabled()) {
+            log.debug("Loading analytics configurations");
+        }
         analyticsDisabledForAPI = !SynapsePropertiesLoader.getBooleanProperty(
                 ElasticConstants.SynapseConfigKeys.API_ANALYTICS_ENABLED, true);
         analyticsDisabledForSequences = !SynapsePropertiesLoader.getBooleanProperty(
@@ -82,6 +86,11 @@ public abstract class AbstractStatisticsPublisher implements StatisticsPublisher
                 ElasticConstants.SynapseConfigKeys.INBOUND_ENDPOINT_ANALYTICS_ENABLED, true);
         enabled = SynapsePropertiesLoader.getBooleanProperty(
                 ElasticConstants.SynapseConfigKeys.ANALYTICS_ENABLED, false);
+        if (log.isDebugEnabled()) {
+            log.debug("Analytics enabled: " + enabled + ", API: " + !analyticsDisabledForAPI +
+                    ", Sequences: " + !analyticsDisabledForSequences + ", Proxy: " + !analyticsDisabledForProxyServices +
+                    ", Endpoints: " + !analyticsDisabledForEndpoints + ", Inbound: " + !analyticsDisabledForInboundEndpoints);
+        }
     }
 
     protected void attachHttpProperties(PublisherDataSchemaElement payload, ElasticMetadata metadata) {

@@ -54,6 +54,9 @@ public class ElasticStatisticsPublisher extends AbstractStatisticsPublisher {
     protected void loadPublisherSpecificConfigurations() {
         analyticsDataPrefix = SynapsePropertiesLoader.getPropertyValue(
                 ElasticConstants.SynapseConfigKeys.ANALYTICS_PREFIX, ElasticConstants.ELASTIC_DEFAULT_PREFIX);
+        if (log.isDebugEnabled()) {
+            log.debug("Elasticsearch analytics data prefix configured as: " + analyticsDataPrefix);
+        }
     }
 
     void publishAnalytic(ElasticDataSchemaElement payload) {
@@ -84,6 +87,9 @@ public class ElasticStatisticsPublisher extends AbstractStatisticsPublisher {
         analyticPayload.setAttribute(ElasticConstants.EnvelopDef.API_DETAILS, apiDetails);
         attachHttpProperties(analyticPayload, metadata);
 
+        if (log.isDebugEnabled()) {
+            log.debug("Publishing api analytics for: " + event.getComponentName());
+        }
         publishAnalytic(analyticPayload);
     }
 
@@ -103,6 +109,9 @@ public class ElasticStatisticsPublisher extends AbstractStatisticsPublisher {
         ElasticDataSchemaElement sequenceDetails = new ElasticDataSchemaElement();
         sequenceDetails.setAttribute(ElasticConstants.EnvelopDef.SEQUENCE_NAME, sequence.getName());
         analyticsPayload.setAttribute(ElasticConstants.EnvelopDef.SEQUENCE_DETAILS, sequenceDetails);
+        if (log.isDebugEnabled()) {
+            log.debug("Publishing sequence analytics for: " + event.getComponentName());
+        }
         publishAnalytic(analyticsPayload);
     }
 
@@ -126,6 +135,9 @@ public class ElasticStatisticsPublisher extends AbstractStatisticsPublisher {
         analyticsPayload.setAttribute(ElasticConstants.EnvelopDef.PROXY_SERVICE_DETAILS, proxyServiceDetails);
         attachHttpProperties(analyticsPayload, metadata);
 
+        if (log.isDebugEnabled()) {
+            log.debug("Publishing proxy service analytics for: " + event.getComponentName());
+        }
         publishAnalytic(analyticsPayload);
     }
 
@@ -147,6 +159,9 @@ public class ElasticStatisticsPublisher extends AbstractStatisticsPublisher {
         endpointDetails.setAttribute(ElasticConstants.EnvelopDef.ENDPOINT_NAME, componentName);
         analyticsPayload.setAttribute(ElasticConstants.EnvelopDef.ENDPOINT_DETAILS, endpointDetails);
 
+        if (log.isDebugEnabled()) {
+            log.debug("Publishing endpoint analytics for: " + event.getComponentName());
+        }
         publishAnalytic(analyticsPayload);
     }
 
@@ -175,6 +190,9 @@ public class ElasticStatisticsPublisher extends AbstractStatisticsPublisher {
                 ElasticConstants.EnvelopDef.INBOUND_ENDPOINT_DETAILS, inboundEndpointDetails);
         attachHttpProperties(analyticsPayload, event.getElasticMetadata());
 
+        if (log.isDebugEnabled()) {
+            log.debug("Publishing inbound endpoint analytics for: " + event.getComponentName());
+        }
         publishAnalytic(analyticsPayload);
     }
 

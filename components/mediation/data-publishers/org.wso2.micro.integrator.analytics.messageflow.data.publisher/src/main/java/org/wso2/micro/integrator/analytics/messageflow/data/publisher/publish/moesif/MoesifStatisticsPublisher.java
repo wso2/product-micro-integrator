@@ -72,6 +72,9 @@ public class MoesifStatisticsPublisher extends AbstractStatisticsPublisher {
     protected void loadPublisherSpecificConfigurations() {
         analyticsDataPrefix = SynapsePropertiesLoader.getPropertyValue(
                 ElasticConstants.SynapseConfigKeys.ANALYTICS_PREFIX, MoesifConstants.MOESIF_DEFAULT_PREFIX);
+        if (log.isDebugEnabled()) {
+            log.debug("Moesif analytics data prefix configured as: " + analyticsDataPrefix);
+        }
     }
 
     private MoesifDataSchemaElement generateAnalyticsMetadataObject(PublishingEvent event, Class<?> entityClass) {
@@ -128,6 +131,9 @@ public class MoesifStatisticsPublisher extends AbstractStatisticsPublisher {
         analyticsPayload.setAttribute(ElasticConstants.EnvelopDef.API_DETAILS, apiDetails);
         attachHttpProperties(analyticsPayload, metadata);
         JsonObject moesifPayload = generateMoesifPayload(MoesifConstants.API_ACTION_NAME, analyticsPayload, event);
+        if (log.isDebugEnabled()) {
+            log.debug("Publishing api analytics for: " + event.getComponentName());
+        }
         publishAnalytic(moesifPayload);
     }
 
@@ -145,6 +151,9 @@ public class MoesifStatisticsPublisher extends AbstractStatisticsPublisher {
         sequenceDetails.setAttribute(ElasticConstants.EnvelopDef.SEQUENCE_NAME, sequence.getName());
         analyticsPayload.setAttribute(ElasticConstants.EnvelopDef.SEQUENCE_DETAILS, sequenceDetails);
         JsonObject moesifPayload = generateMoesifPayload(MoesifConstants.SEQUENCE_ACTION_NAME, analyticsPayload, event);
+        if (log.isDebugEnabled()) {
+            log.debug("Publishing sequence analytics for: " + event.getComponentName());
+        }
         publishAnalytic(moesifPayload);
     }
 
@@ -167,7 +176,11 @@ public class MoesifStatisticsPublisher extends AbstractStatisticsPublisher {
         proxyServiceDetails.setAttribute(ElasticConstants.EnvelopDef.PROXY_SERVICE_NAME, event.getComponentName());
         analyticsPayload.setAttribute(ElasticConstants.EnvelopDef.PROXY_SERVICE_DETAILS, proxyServiceDetails);
         attachHttpProperties(analyticsPayload, metadata);
-        JsonObject moesifPayload = generateMoesifPayload(MoesifConstants.PROXY_SERVICE_ACTION_NAME, analyticsPayload, event);
+        JsonObject moesifPayload = generateMoesifPayload(MoesifConstants.PROXY_SERVICE_ACTION_NAME, analyticsPayload,
+                event);
+        if (log.isDebugEnabled()) {
+            log.debug("Publishing proxy service analytics for: " + event.getComponentName());
+        }
         publishAnalytic(moesifPayload);
     }
 
@@ -189,6 +202,9 @@ public class MoesifStatisticsPublisher extends AbstractStatisticsPublisher {
         endpointDetails.setAttribute(ElasticConstants.EnvelopDef.ENDPOINT_NAME, componentName);
         analyticsPayload.setAttribute(ElasticConstants.EnvelopDef.ENDPOINT_DETAILS, endpointDetails);
         JsonObject moesifPayload = generateMoesifPayload(MoesifConstants.ENDPOINT_ACTION_NAME, analyticsPayload, event);
+        if (log.isDebugEnabled()) {
+            log.debug("Publishing endpoint analytics for: " + event.getComponentName());
+        }
         publishAnalytic(moesifPayload);
     }
 
@@ -215,7 +231,11 @@ public class MoesifStatisticsPublisher extends AbstractStatisticsPublisher {
 
         analyticsPayload.setAttribute(ElasticConstants.EnvelopDef.INBOUND_ENDPOINT_DETAILS, inboundEndpointDetails);
         attachHttpProperties(analyticsPayload, event.getElasticMetadata());
-        JsonObject moesifPayload = generateMoesifPayload(MoesifConstants.INBOUND_ENDPOINT_ACTION_NAME, analyticsPayload, event);
+        JsonObject moesifPayload = generateMoesifPayload(MoesifConstants.INBOUND_ENDPOINT_ACTION_NAME, analyticsPayload,
+                event);
+        if (log.isDebugEnabled()) {
+            log.debug("Publishing inbound endpoint analytics for: " + event.getComponentName());
+        }
         publishAnalytic(moesifPayload);
     }
 
