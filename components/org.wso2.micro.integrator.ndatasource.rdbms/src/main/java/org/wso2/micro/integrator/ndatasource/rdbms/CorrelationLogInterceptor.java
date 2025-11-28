@@ -32,6 +32,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tomcat.jdbc.pool.interceptor.AbstractQueryReport;
+import org.wso2.micro.integrator.ndatasource.rdbms.utils.RDBMSDataSourceUtils;
 
 /**
  * Time-Logging interceptor for JDBC pool.
@@ -199,7 +200,13 @@ public class CorrelationLogInterceptor extends AbstractQueryReport {
                 Object result = null;
 
                 if (this.delegate != null) {
-                    result = method.invoke(this.delegate, args);
+                    try {
+                        result = method.invoke(this.delegate, args);
+                    } catch (Throwable ex) {
+                        // Unwrap the exceptions related to reflection calls.
+                        ex = RDBMSDataSourceUtils.unwrap(ex);
+                        throw ex;
+                    }
                 }
 
                 //If the query is an execute type of query the time taken is calculated and logged
