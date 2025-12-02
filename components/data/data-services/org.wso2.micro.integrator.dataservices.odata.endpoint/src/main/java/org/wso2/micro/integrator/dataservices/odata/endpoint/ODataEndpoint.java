@@ -25,6 +25,9 @@ import org.wso2.micro.integrator.core.Constants;
 import org.wso2.micro.integrator.dataservices.core.odata.ODataServiceFault;
 import org.wso2.micro.integrator.dataservices.core.odata.ODataServiceHandler;
 import org.wso2.micro.integrator.dataservices.core.odata.ODataServiceRegistry;
+import org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingCollector;
+
+import static org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingConstants.DATA_QUERY_EXECUTION_INDEX;
 
 public class ODataEndpoint {
     private static final Log log = LogFactory.getLog(ODataEndpoint.class);
@@ -101,11 +104,15 @@ public class ODataEndpoint {
         } else {
             Thread streamThread = new Thread(() -> {
                 try {
+                    DataServicesTracingCollector.reportOdataQueryExecutionEvent(request.getAxis2MessageContext());
                     oDataServiceHandler.process(request, response, serviceRootPath);
+                    DataServicesTracingCollector.closeOdataQueryExecutionEvent(request.getAxis2MessageContext());
                 } catch (Exception e) {
                     if (log.isDebugEnabled()) {
                         log.debug("Failed to process the servlet request. " + e);
                     }
+                    DataServicesTracingCollector.closeFlowForcefully(request.getAxis2MessageContext(),
+                            DATA_QUERY_EXECUTION_INDEX, e);
                     throw new SynapseException("Error occurred while processing the request " + request + ".", e);
                 } finally {
                     response.flushOutputStream();
@@ -121,7 +128,7 @@ public class ODataEndpoint {
      * @param uri          Request uri
      * @return String Array String[0] ServiceName, String[1] ConfigID
      */
-    private static String[] getServiceDetails(String uri) throws ODataServiceFault {
+    public static String[] getServiceDetails(String uri) throws ODataServiceFault {
         String odataServiceName;
         String odataServiceUri;
         String configID;

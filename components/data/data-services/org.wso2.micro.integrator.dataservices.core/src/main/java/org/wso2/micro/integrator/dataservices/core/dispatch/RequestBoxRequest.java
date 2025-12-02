@@ -18,11 +18,13 @@
 package org.wso2.micro.integrator.dataservices.core.dispatch;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.context.MessageContext;
 import org.wso2.micro.integrator.dataservices.core.DataServiceFault;
 import org.wso2.micro.integrator.dataservices.core.TLConnectionStore;
 import org.wso2.micro.integrator.dataservices.core.boxcarring.RequestBox;
 import org.wso2.micro.integrator.dataservices.core.boxcarring.TLParamStore;
 import org.wso2.micro.integrator.dataservices.core.engine.DataService;
+import org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingCollector;
 
 /**
  * Request box data service request for request grouping.
@@ -54,10 +56,10 @@ public class RequestBoxRequest extends DataServiceRequest {
     }
 
 	/**
-	 * @see DataServiceRequest#processRequest()
+     * @see DataServiceRequest#processRequest(MessageContext messageContext)
      */
     @Override
-    public OMElement processRequest() throws DataServiceFault {
+    public OMElement processRequest(MessageContext messageContext) throws DataServiceFault {
 
         boolean error = true;
         try {
@@ -65,7 +67,7 @@ public class RequestBoxRequest extends DataServiceRequest {
             if (!this.getDataService().isInDTX()) {
                 this.getDataService().getDSSTxManager().begin();
             }
-            OMElement lastRequestResult = this.requestBox.execute();
+            OMElement lastRequestResult = this.requestBox.execute(messageContext);
             error = false;
             return lastRequestResult;
         } finally {

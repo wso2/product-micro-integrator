@@ -26,6 +26,7 @@ import org.wso2.micro.integrator.dataservices.common.DBConstants;
 import org.wso2.micro.integrator.dataservices.core.dispatch.DataServiceRequest;
 import org.wso2.micro.integrator.dataservices.core.dispatch.DispatchStatus;
 import org.wso2.micro.integrator.dataservices.core.engine.DataService;
+import org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingCollector;
 
 import javax.xml.namespace.QName;
 
@@ -37,7 +38,8 @@ public class DataServiceProcessor {
 	public static OMElement dispatch(MessageContext msgContext) throws DataServiceFault {
 	    DispatchStatus.clearRequestStatus();
 		DataServiceRequest request = DataServiceRequest.createDataServiceRequest(msgContext);
-		OMElement result = request.dispatch();
+        DataServicesTracingCollector.reportQueryExecutionEvent(msgContext, request);
+        OMElement result = request.dispatch(msgContext);
 		if (result == null) {
 			DataService ds = request.getDataService();
 			String requestName = request.getRequestName();			
@@ -46,6 +48,7 @@ public class DataServiceProcessor {
 				result = generateRequestSuccessElement();
 			}			
 		}
+        DataServicesTracingCollector.closeQueryExecutionEvent(msgContext, result);
 		return result;
 	}
 	
