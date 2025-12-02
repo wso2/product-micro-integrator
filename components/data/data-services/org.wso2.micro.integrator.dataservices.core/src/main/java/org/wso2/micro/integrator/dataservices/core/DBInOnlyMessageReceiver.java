@@ -24,6 +24,9 @@ import org.apache.axis2.receivers.RawXMLINOnlyMessageReceiver;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.micro.integrator.dataservices.common.DBConstants;
+import org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingCollector;
+
+import static org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingConstants.DATA_SERVICE_INDEX;
 
 /**
  * This class represents the Axis2 message receiver used to dispatch in-only service calls.
@@ -42,26 +45,29 @@ public class DBInOnlyMessageReceiver extends RawXMLINOnlyMessageReceiver {
 	 *             on invalid method (wrong signature) or behavior (return
 	 *             null)
 	 */
-	public void invokeBusinessLogic(MessageContext msgContext) throws AxisFault {
-		try {
-			if (log.isDebugEnabled()) {
-				log.debug("Request received to DSS:  Data Service - " + msgContext.getServiceContext().getName() +
-				          ", Operation - " + msgContext.getSoapAction() + ", Request body - " +
-				          msgContext.getEnvelope().getText() + ", ThreadID - " + Thread.currentThread().getId());
-			}
-                        DataServiceProcessor.dispatch(msgContext);
-                        msgContext.setProperty(DBConstants.TENANT_IN_ONLY_MESSAGE, Boolean.TRUE);
-                } catch (Exception e) {
-			log.error("Error in in-only message receiver", e);
-			msgContext.setProperty(Constants.FAULT_NAME, DBConstants.DS_FAULT_NAME);
-			throw DBUtils.createAxisFault(e);
-		} finally {
-			if (log.isDebugEnabled()) {
-				log.debug("Request processing completed from DSS: Data Service - " +
-				          msgContext.getServiceContext().getName() + ", Operation - " + msgContext.getSoapAction() +
-				          ", ThreadID - " + Thread.currentThread().getId());
-			}
-		}
-	}
-    
+    public void invokeBusinessLogic(MessageContext msgContext) throws AxisFault {
+        try {
+            if (log.isDebugEnabled()) {
+                log.debug("Request received to DSS:  Data Service - " + msgContext.getServiceContext().getName() +
+                        ", Operation - " + msgContext.getSoapAction() + ", Request body - " +
+                        msgContext.getEnvelope().getText() + ", ThreadID - " + Thread.currentThread().getId());
+            }
+            DataServicesTracingCollector.reportEntryEvent(msgContext);
+            DataServiceProcessor.dispatch(msgContext);
+            msgContext.setProperty(DBConstants.TENANT_IN_ONLY_MESSAGE, Boolean.TRUE);
+            DataServicesTracingCollector.closeEntryEvent(msgContext, null);
+        } catch (Exception e) {
+            log.error("Error in in-only message receiver", e);
+            msgContext.setProperty(Constants.FAULT_NAME, DBConstants.DS_FAULT_NAME);
+            DataServicesTracingCollector.closeFlowForcefully(msgContext, DATA_SERVICE_INDEX, e);
+            throw DBUtils.createAxisFault(e);
+        } finally {
+            if (log.isDebugEnabled()) {
+                log.debug("Request processing completed from DSS: Data Service - " +
+                        msgContext.getServiceContext().getName() + ", Operation - " + msgContext.getSoapAction() +
+                        ", ThreadID - " + Thread.currentThread().getId());
+            }
+        }
+    }
+
 }

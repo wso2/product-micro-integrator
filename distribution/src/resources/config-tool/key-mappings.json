@@ -116,6 +116,9 @@
   "opentelemetry.url": "synapse_properties.'opentelemetry.url'",
   "opentelemetry.class": "synapse_properties.'opentelemetry.class'",
 
+  "opentelemetry.filtered.mediator.names": "synapse_properties.'oltp.filtered.mediator.names'",
+  "opentelemetry.custom.span.header.tags": "synapse_properties.'oltp.custom.span.header.tags'",
+
   "transport.http.socket_timeout": "passthru_properties.'http.socket.timeout'",
   "transport.http.block_service_list": "passthru_properties.'http.block_service_list'",
   "transport.http.connection_timeout": "passthru_properties.'http.connection.timeout'",

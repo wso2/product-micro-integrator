@@ -299,7 +299,8 @@ public abstract class DataServiceRequest {
      */
     @SuppressWarnings("unchecked")
     private static DataServiceRequest createRequestBoxRequest(DataService dataService, String requestName,
-                                                              OMElement inputMessage) throws DataServiceFault {
+                                                              OMElement inputMessage)
+            throws DataServiceFault {
         RequestBoxRequest dsRequest = new RequestBoxRequest(dataService, requestName);
 
 	    if (inputMessage == null) {
@@ -352,11 +353,11 @@ public abstract class DataServiceRequest {
     
 	/**
 	 * Dispatches the current request. This method does common dispatching logic and call the 
-	 * request type specific {@link DataServiceRequest}{@link #processRequest()} method.
+     * request type specific {@link DataServiceRequest}{@link #processRequest(MessageContext messageContext)} method.
 	 * @return The result of the request invocation
 	 * @throws DataServiceFault
 	 */
-	public OMElement dispatch() throws DataServiceFault {
+    public OMElement dispatch(MessageContext messageContext) throws DataServiceFault {
 		/* set user */
 		if (this.getUserRoles() != null) {
 			DataServiceUser currentUser = new DataServiceUser(this.getUser(),
@@ -365,7 +366,7 @@ public abstract class DataServiceRequest {
 		}		
 		
 		/* request specific processing */
-		OMElement result = this.processRequest();
+        OMElement result = this.processRequest(messageContext);
 		/* check disable streaming */
 		if (this.isDisableStreaming()) {
 			/* if result is of type OMSourcedElementImpl, that means,
@@ -376,12 +377,22 @@ public abstract class DataServiceRequest {
 		}
 		return result;
 	}
+
+    /**
+     * Dispatches the current request.
+     *
+     * @return The result of the request invocation
+     * @throws DataServiceFault
+     */
+    public OMElement dispatch() throws DataServiceFault {
+        return dispatch(null);
+    }
 	
 	/**
 	 * This method must implement the request specific request processing logic.
+     * @param messageContext Axis2 message context of the request
 	 * @return The result of the request invocation
 	 * @throws DataServiceFault
-	 */
-	public abstract OMElement processRequest() throws DataServiceFault;
-	
+     */
+    public abstract OMElement processRequest(MessageContext messageContext) throws DataServiceFault;
 }

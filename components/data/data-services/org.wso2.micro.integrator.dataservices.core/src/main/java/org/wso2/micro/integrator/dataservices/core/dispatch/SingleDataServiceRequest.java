@@ -24,6 +24,7 @@ import javax.xml.stream.XMLStreamException;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.llom.OMSourcedElementImpl;
+import org.apache.axis2.context.MessageContext;
 import org.wso2.micro.integrator.dataservices.core.DBUtils;
 import org.wso2.micro.integrator.dataservices.core.DataServiceFault;
 import org.wso2.micro.integrator.dataservices.core.XSLTTransformer;
@@ -55,10 +56,10 @@ public class SingleDataServiceRequest extends DataServiceRequest {
 	}
 	
 	/**
-	 * @see DataServiceRequest#processRequest()
+     * @see DataServiceRequest#processRequest(MessageContext messageContext)
 	 */
 	@Override
-	public OMElement processRequest() throws DataServiceFault {
+    public OMElement processRequest(MessageContext messageContext) throws DataServiceFault {
 		try {
             Query.resetQueryPreprocessing();
             Query.setQueryPreprocessingInitial(true);

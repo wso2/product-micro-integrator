@@ -25,12 +25,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.AbstractSynapseHandler;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingCollector;
 
 import javax.xml.stream.XMLStreamException;
+
+import static org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingConstants.DATA_SERVICE_INDEX;
 
 public class ODataPassThroughHandler extends AbstractSynapseHandler {
     private static final Log LOG = LogFactory.getLog(ODataPassThroughHandler.class);
@@ -46,6 +50,11 @@ public class ODataPassThroughHandler extends AbstractSynapseHandler {
             Object isODataService = axis2MessageContext.getProperty(IS_ODATA_SERVICE);
             // In this if block we are skipping proxy services, inbound related message contexts & api.
             if (axis2MessageContext.getProperty(TRANSPORT_IN_URL) != null && isODataService != null) {
+                // Marking the message to skip the main sequence in Synapse Axis2 Environment.
+                messageContext.setProperty(SynapseConstants.SKIP_MAIN_SEQUENCE, Boolean.TRUE);
+
+                DataServicesTracingCollector.reportOdataEntryEvent(axis2MessageContext);
+
                 RelayUtils.buildMessage(axis2MessageContext);
                 ODataServletRequest request = new ODataServletRequest(axis2MessageContext);
                 ODataServletResponse response = new ODataServletResponse(axis2MessageContext);
@@ -53,9 +62,13 @@ public class ODataPassThroughHandler extends AbstractSynapseHandler {
                     ODataEndpoint.process(request, response);
                     streamResponseBack(response, messageContext, axis2MessageContext);
                 }
+                DataServicesTracingCollector.closeOdataEntryEvent(axis2MessageContext,
+                        axis2MessageContext.getEnvelope());
             }
             return true;
         } catch (Exception e) {
+            DataServicesTracingCollector.closeFlowForcefully(
+                    ((Axis2MessageContext) messageContext).getAxis2MessageContext(), DATA_SERVICE_INDEX, e);
             this.handleException("Error occurred in integrator handler.", e, messageContext);
             return true;
         }

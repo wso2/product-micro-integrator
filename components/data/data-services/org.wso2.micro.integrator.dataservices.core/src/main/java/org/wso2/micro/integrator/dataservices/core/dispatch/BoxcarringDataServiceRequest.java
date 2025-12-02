@@ -21,6 +21,7 @@ import javax.xml.namespace.QName;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
+import org.apache.axis2.context.MessageContext;
 import org.wso2.micro.integrator.dataservices.common.DBConstants.BoxcarringOps;
 import org.wso2.micro.integrator.dataservices.core.DBUtils;
 import org.wso2.micro.integrator.dataservices.core.DSSessionManager;
@@ -48,10 +49,10 @@ public class BoxcarringDataServiceRequest extends DataServiceRequest {
 	}
 	
 	/**
-	 * @see DataServiceRequest#processRequest()
+     * @see DataServiceRequest#processRequest(MessageContext messageContext)
 	 */
 	@Override
-	public OMElement processRequest() throws DataServiceFault {
+    public OMElement processRequest(MessageContext messageContext) throws DataServiceFault {
 		if (BoxcarringOps.BEGIN_BOXCAR.equals(this.getRequestName())) {
 			/* clear earlier boxcarring sessions */
 			DSSessionManager.getCurrentRequestBox().clear();
@@ -65,7 +66,7 @@ public class BoxcarringDataServiceRequest extends DataServiceRequest {
 				if (!this.getDataService().isInDTX()) {
 				    this.getDataService().getDSSTxManager().begin();
 				}
-			    OMElement lastRequestResult = DSSessionManager.getCurrentRequestBox().execute();
+                OMElement lastRequestResult = DSSessionManager.getCurrentRequestBox().execute(messageContext);
 			    error = false;
 			    return lastRequestResult;
 			} finally {
