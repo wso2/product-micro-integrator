@@ -252,6 +252,15 @@ public class ICPHeartBeatComponent {
         payload.addProperty("project", getProject());
         payload.addProperty("component", getComponent());
         payload.addProperty("version", getMicroIntegratorVersion());
+        // Optional management endpoint details (hostname and port)
+        String runtimeHost = getICPApiHostname();
+        String runtimePort = getICPAPIPort();
+        if (!StringUtils.isEmpty(runtimeHost)) {
+            payload.addProperty("runtimeHostname", runtimeHost);
+        }
+        if (!StringUtils.isEmpty(runtimePort)) {
+            payload.addProperty("runtimePort", runtimePort);
+        }
         
         // Node information
         JsonObject nodeInfo = new JsonObject();
@@ -289,6 +298,54 @@ public class ICPHeartBeatComponent {
         
         log.info("Full heartbeat payload: " + payload.toString());
         return payload;
+    }
+
+    private static String getICPApiHostname() {
+        try {
+            Object configured = configs.get(HOSTNAME);
+            if (configured != null && !StringUtils.isEmpty(configured.toString())) {
+                return configured.toString();
+            }
+            String localIp = System.getProperty("carbon.local.ip");
+            if (!StringUtils.isEmpty(localIp)) {
+                return localIp;
+            }
+        } catch (Exception ignored) {
+            // fall through to default
+        }
+        return ICP_API_DEFAULT_HOST;
+    }
+
+    /**
+     * Resolves the ICP API port to report in the ICP heartbeat.
+     * Priority:
+     *  1) Calculated from `offset` (if provided)
+     *  2) Default ICP API port (9164)
+     */
+    private static String getICPAPIPort() {
+        try {
+            // Read offset only from dashboard config (no legacy checks)
+            int offset = 0;
+            Object offsetCfg = configs.get(PORT_OFFSET);
+            if (offsetCfg != null && !StringUtils.isEmpty(offsetCfg.toString())) {
+                try {
+                    offset = Integer.parseInt(offsetCfg.toString());
+                } catch (NumberFormatException ignored) {
+                    // keep offset = 0 if invalid
+                }
+            }
+
+            if (ICP_API_DEFAULT_PORT > 0) {
+                if (offset != 0) {
+                    int computed = ICP_API_DEFAULT_PORT - 10 + offset;
+                    return String.valueOf(computed);
+                }
+                return String.valueOf(ICP_API_DEFAULT_PORT);
+            }
+        } catch (Exception ignored) {
+            // fall through
+        }
+        return String.valueOf(ICP_API_DEFAULT_PORT);
     }
 
     /**
