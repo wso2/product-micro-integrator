@@ -48,19 +48,16 @@ import org.wso2.micro.application.deployer.config.Artifact;
 import org.wso2.micro.core.util.StringUtils;
 import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 import org.wso2.micro.integrator.initializer.deployment.application.deployer.CappDeployer;
-import org.wso2.micro.integrator.registry.MicroIntegratorRegistry;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.KeyStore;
 import java.security.MessageDigest;
-import java.security.PrivateKey;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -91,10 +88,21 @@ public class ICPHeartBeatComponent {
      * Only initializes when ICP is configured.
      *
      * @return the runtime ID
-     * @throws IOException if there's an error reading or writing the runtime ID file
+     * @throws IOException if there's an error reading or writing the runtime ID
+     *                     file
      */
     private static synchronized String getRuntimeId() throws IOException {
-        if (runtimeId == null) {
+        // Always prefer configured runtime ID if provided
+        Object configuredRuntimeId = configs.get(ICP_CONFIG_RUNTIME_ID);
+        if (configuredRuntimeId != null) {
+            String cfgId = configuredRuntimeId.toString().trim();
+            if (!cfgId.isEmpty()) {
+                runtimeId = cfgId;
+                return runtimeId;
+            }
+        }
+        // Fallback to persisted/generated runtime ID
+        if (runtimeId == null || runtimeId.trim().isEmpty()) {
             runtimeId = initRuntimeId();
         }
         return runtimeId;
@@ -104,7 +112,8 @@ public class ICPHeartBeatComponent {
      * Initializes the runtime ID from file or generates a new one.
      *
      * @return the runtime ID
-     * @throws IOException if there's an error reading or writing the runtime ID file
+     * @throws IOException if there's an error reading or writing the runtime ID
+     *                     file
      */
     private static String initRuntimeId() throws IOException {
         // Use current working directory for the runtime ID file
@@ -127,8 +136,8 @@ public class ICPHeartBeatComponent {
     }
 
     /**
-     * Starts the ICP heartbeat executor service that sends periodic delta heartbeats
-     * and full heartbeats when requested by the ICP.
+     * Starts the ICP heartbeat executor service that sends periodic delta
+     * heartbeats and full heartbeats when requested by the ICP.
      */
     public static void invokeICPHeartbeatExecutorService() {
         String icpUrl = getConfigValue(ICP_CONFIG_URL, DEFAULT_ICP_URL);
@@ -147,14 +156,15 @@ public class ICPHeartBeatComponent {
                 log.error("Error occurred while sending delta heartbeat to ICP.", e);
             }
         };
-        
+
         // Initial delay of 5 seconds, then send at configured interval
         scheduledExecutorService.scheduleAtFixedRate(runnableTask, 5, interval, TimeUnit.SECONDS);
     }
 
     /**
      * Sends a delta heartbeat to ICP with only runtime hash.
-     * If ICP detects a hash mismatch, it will respond with fullHeartbeatRequired=true.
+     * If ICP detects a hash mismatch, it will respond with
+     * fullHeartbeatRequired=true.
      */
     private static void sendDeltaHeartbeat(String icpUrl) {
         try {
@@ -173,20 +183,18 @@ public class ICPHeartBeatComponent {
             String deltaEndpoint = icpUrl + ICP_DELTA_HEARTBEAT_ENDPOINT;
             JsonObject response = sendHeartbeatRequest(deltaEndpoint, deltaPayload);
 
-            if (response != null && response.has("fullHeartbeatRequired") 
+            if (response != null && response.has("fullHeartbeatRequired")
                     && response.get("fullHeartbeatRequired").getAsBoolean()) {
                 log.info("ICP requested full heartbeat. Sending full heartbeat with all artifacts.");
                 sendFullHeartbeat(icpUrl);
                 lastRuntimeHash = currentHash;
-            } else if (response != null && response.has("acknowledged") 
+            } else if (response != null && response.has("acknowledged")
                     && response.get("acknowledged").getAsBoolean()) {
                 log.debug("Delta heartbeat acknowledged by ICP.");
                 lastRuntimeHash = currentHash;
-            } else {
-                log.debug("Unexpected response from ICP delta heartbeat.");
             }
         } catch (Exception e) {
-            log.error("Error sending delta heartbeat to ICP.", e);
+            log.error("Error sending full heartbeat to ICP.", e);
         }
     }
 
@@ -197,10 +205,10 @@ public class ICPHeartBeatComponent {
         try {
             JsonObject fullPayload = buildFullHeartbeatPayload(true);
             String fullEndpoint = icpUrl + ICP_HEARTBEAT_ENDPOINT;
-            
+
             JsonObject response = sendHeartbeatRequest(fullEndpoint, fullPayload);
-            
-            if (response != null && response.has("acknowledged") 
+
+            if (response != null && response.has("acknowledged")
                     && response.get("acknowledged").getAsBoolean()) {
                 log.info("Full heartbeat acknowledged by ICP.");
             } else {
@@ -217,7 +225,7 @@ public class ICPHeartBeatComponent {
     private static JsonObject sendHeartbeatRequest(String endpoint, JsonObject payload) {
         try (CloseableHttpClient client = createHttpClient()) {
             HttpPost httpPost = new HttpPost(endpoint);
-            
+
             // Add JWT token to Authorization header
             String jwtToken = "";
             try {
@@ -228,10 +236,10 @@ public class ICPHeartBeatComponent {
             httpPost.setHeader("Authorization", "Bearer " + jwtToken);
             httpPost.setHeader("Accept", HEADER_VALUE_APPLICATION_JSON);
             httpPost.setHeader("Content-type", HEADER_VALUE_APPLICATION_JSON);
-            
+
             StringEntity entity = new StringEntity(payload.toString(), "UTF-8");
             httpPost.setEntity(entity);
-            
+
             CloseableHttpResponse response = client.execute(httpPost);
             return getJsonResponse(response);
         } catch (Exception e) {
@@ -252,7 +260,16 @@ public class ICPHeartBeatComponent {
         payload.addProperty("project", getProject());
         payload.addProperty("component", getComponent());
         payload.addProperty("version", getMicroIntegratorVersion());
-        
+        // Optional management endpoint details (hostname and port)
+        String runtimeHost = getICPApiHostname();
+        String runtimePort = getICPAPIPort();
+        if (!StringUtils.isEmpty(runtimeHost)) {
+            payload.addProperty("runtimeHostname", runtimeHost);
+        }
+        if (!StringUtils.isEmpty(runtimePort)) {
+            payload.addProperty("runtimePort", runtimePort);
+        }
+
         // Node information
         JsonObject nodeInfo = new JsonObject();
         nodeInfo.addProperty("platformName", "WSO2 Micro Integrator");
@@ -264,7 +281,7 @@ public class ICPHeartBeatComponent {
         nodeInfo.addProperty("javaVersion", System.getProperty("java.version"));
         nodeInfo.addProperty("carbonHome", System.getProperty("carbon.home"));
         nodeInfo.addProperty("javaVendor", System.getProperty("java.vendor"));
-        
+
         Runtime runtime = Runtime.getRuntime();
         nodeInfo.addProperty("totalMemory", runtime.totalMemory());
         nodeInfo.addProperty("freeMemory", runtime.freeMemory());
@@ -274,21 +291,69 @@ public class ICPHeartBeatComponent {
         // Artifacts
         JsonObject artifacts = collectArtifacts();
         payload.add("artifacts", artifacts);
-        
+
         // Hash (exclude timestamp for hash calculation)
         String hash = calculateHash(payload);
         payload.addProperty("runtimeHash", hash);
-        
+
         // Add timestamp if requested
         if (includeTimestamp) {
             payload.add("timestamp", createBallerinaTimestamp());
         }
-        
+
         // Validate payload structure for ICP compatibility
         payload = validateHeartbeatPayload(payload);
-        
+
         log.info("Full heartbeat payload: " + payload.toString());
         return payload;
+    }
+
+    private static String getICPApiHostname() {
+        try {
+            Object configured = configs.get(HOSTNAME);
+            if (configured != null && !StringUtils.isEmpty(configured.toString())) {
+                return configured.toString();
+            }
+            String localIp = System.getProperty("carbon.local.ip");
+            if (!StringUtils.isEmpty(localIp)) {
+                return localIp;
+            }
+        } catch (Exception ignored) {
+            // fall through to default
+        }
+        return ICP_API_DEFAULT_HOST;
+    }
+
+    /**
+     * Resolves the ICP API port to report in the ICP heartbeat.
+     * Priority:
+     * 1) Calculated from `offset` (if provided)
+     * 2) Default ICP API port (9164)
+     */
+    private static String getICPAPIPort() {
+        try {
+            // Read offset only from dashboard config (no legacy checks)
+            int offset = 0;
+            Object offsetCfg = configs.get(PORT_OFFSET);
+            if (offsetCfg != null && !StringUtils.isEmpty(offsetCfg.toString())) {
+                try {
+                    offset = Integer.parseInt(offsetCfg.toString());
+                } catch (NumberFormatException ignored) {
+                    // keep offset = 0 if invalid
+                }
+            }
+
+            if (ICP_API_DEFAULT_PORT > 0) {
+                if (offset != 0) {
+                    int computed = ICP_API_DEFAULT_PORT - 10 + offset;
+                    return String.valueOf(computed);
+                }
+                return String.valueOf(ICP_API_DEFAULT_PORT);
+            }
+        } catch (Exception ignored) {
+            // fall through
+        }
+        return String.valueOf(ICP_API_DEFAULT_PORT);
     }
 
     /**
@@ -296,80 +361,77 @@ public class ICPHeartBeatComponent {
      */
     private static JsonObject collectArtifacts() {
         JsonObject artifacts = new JsonObject();
-        
+
         try {
             // Check if Synapse environment is available
             if (MicroIntegratorBaseUtils.getSynapseEnvironment() == null) {
                 log.warn("Synapse environment is not available yet, returning empty artifacts");
                 return createEmptyArtifactsStructure();
             }
-            
+
             SynapseConfiguration synapseConfig = MicroIntegratorBaseUtils.getSynapseEnvironment()
                     .getSynapseConfiguration();
-                    
+
             if (synapseConfig == null) {
                 log.warn("Synapse configuration is not available yet, returning empty artifacts");
                 return createEmptyArtifactsStructure();
             }
-            
+
             // Collect all artifact types as available in Management API
-            
+
             // 1. REST APIs
             artifacts.add("apis", collectRestApis(synapseConfig));
-            
-            // 2. Proxy Services  
+
+            // 2. Proxy Services
             artifacts.add("proxyServices", collectProxyServices(synapseConfig));
-            
+
             // 3. Endpoints
             artifacts.add("endpoints", collectEndpoints(synapseConfig));
-            
+
             // 4. Inbound Endpoints
             artifacts.add("inboundEndpoints", collectInboundEndpoints(synapseConfig));
-            
+
             // 5. Sequences
             artifacts.add("sequences", collectSequences(synapseConfig));
-            
+
             // 6. Tasks
             artifacts.add("tasks", collectTasks(synapseConfig));
-            
+
             // 7. Templates
             artifacts.add("templates", collectTemplates(synapseConfig));
-            
+
             // 8. Message Stores
             artifacts.add("messageStores", collectMessageStores(synapseConfig));
-            
+
             // 9. Message Processors
             artifacts.add("messageProcessors", collectMessageProcessors(synapseConfig));
-            
+
             // 10. Local Entries
             artifacts.add("localEntries", collectLocalEntries(synapseConfig));
-            
+
             // 11. Data Services (requires separate access)
             artifacts.add("dataServices", collectDataServices(synapseConfig));
-            
+
             // 12. Carbon Applications (requires separate access)
             artifacts.add("carbonApps", collectCarbonApps());
-            
+
             // 13. Data Sources (requires separate access)
             artifacts.add("dataSources", collectDataSources());
-            
+
             // 14. Connectors (requires separate access)
             artifacts.add("connectors", collectConnectors(synapseConfig));
-            
+
             // 15. Registry Resources (requires separate access)
             artifacts.add("registryResources", collectRegistryResources(synapseConfig));
-            
-            // 16. Listeners (HTTP/HTTPS ports)
-            artifacts.add("listeners", collectListeners());
-            
+
         } catch (Exception e) {
             log.error("Error collecting artifacts from MI configuration.", e);
             return createEmptyArtifactsStructure();
         }
-        
+
         return artifacts;
     }
-    
+
     private static JsonObject createEmptyArtifactsStructure() {
         JsonObject artifacts = new JsonObject();
         artifacts.add("apis", new JsonArray());
@@ -391,21 +453,22 @@ public class ICPHeartBeatComponent {
         artifacts.add("systemInfo", new JsonObject());
         return artifacts;
     }
-    
+
     /**
-     * Validates and sanitizes artifacts structure to ensure compatibility with ICP GraphQL API
+     * Validates and sanitizes artifacts structure to ensure compatibility with ICP
+     * GraphQL API
      */
     private static JsonObject validateAndSanitizeArtifacts(JsonObject artifacts) {
         try {
             log.debug("Validating artifacts structure for ICP compatibility");
-            
+
             // Ensure all expected artifact arrays exist and are not null
             String[] requiredArrays = {
-                "apis", "proxyServices", "endpoints", "inboundEndpoints", "sequences", 
-                "tasks", "templates", "messageStores", "messageProcessors", "localEntries",
-                "dataServices", "carbonApps", "dataSources", "connectors", "registryResources", "listeners"
+                    "apis", "proxyServices", "endpoints", "inboundEndpoints", "sequences",
+                    "tasks", "templates", "messageStores", "messageProcessors", "localEntries",
+                    "dataServices", "carbonApps", "dataSources", "connectors", "registryResources"
             };
-            
+
             for (String arrayName : requiredArrays) {
                 if (!artifacts.has(arrayName) || artifacts.get(arrayName).isJsonNull()) {
                     log.warn("Missing or null artifact array: " + arrayName + ", adding empty array");
@@ -415,7 +478,7 @@ public class ICPHeartBeatComponent {
                     artifacts.add(arrayName, new JsonArray());
                 }
             }
-            
+
             // Ensure systemInfo exists and is a valid object
             if (!artifacts.has("systemInfo") || artifacts.get("systemInfo").isJsonNull()) {
                 log.warn("Missing or null systemInfo, adding empty object");
@@ -424,18 +487,18 @@ public class ICPHeartBeatComponent {
                 log.warn("Invalid systemInfo type, replacing with empty object");
                 artifacts.add("systemInfo", new JsonObject());
             }
-            
+
             // Validate and sanitize individual artifact arrays
             for (String arrayName : requiredArrays) {
                 JsonArray artifactArray = artifacts.getAsJsonArray(arrayName);
                 JsonArray sanitizedArray = new JsonArray();
-                
+
                 for (int i = 0; i < artifactArray.size(); i++) {
                     try {
                         com.google.gson.JsonElement element = artifactArray.get(i);
                         if (element != null && element.isJsonObject()) {
                             JsonObject artifactObj = element.getAsJsonObject();
-                            
+
                             // Ensure each artifact has at least a name and type
                             if (!artifactObj.has("name") || artifactObj.get("name").isJsonNull()) {
                                 artifactObj.addProperty("name", "UNKNOWN_" + arrayName.toUpperCase() + "_" + i);
@@ -446,7 +509,7 @@ public class ICPHeartBeatComponent {
                                 typeName = typeName.substring(0, 1).toUpperCase() + typeName.substring(1);
                                 artifactObj.addProperty("type", typeName);
                             }
-                            
+
                             sanitizedArray.add(artifactObj);
                         } else {
                             log.warn("Invalid artifact object in " + arrayName + " at index " + i + ", skipping");
@@ -455,64 +518,66 @@ public class ICPHeartBeatComponent {
                         log.warn("Error validating artifact in " + arrayName + " at index " + i + ", skipping", e);
                     }
                 }
-                
+
                 artifacts.add(arrayName, sanitizedArray);
             }
-            
+
             log.debug("Artifacts validation completed successfully");
             return artifacts;
-            
+
         } catch (Exception e) {
             log.error("Error validating artifacts structure, returning empty structure", e);
             return createEmptyArtifactsStructure();
         }
     }
-    
+
     /**
-     * Validates the entire heartbeat payload structure for Ballerina GraphQL API compatibility
+     * Validates the entire heartbeat payload structure for Ballerina GraphQL API
+     * compatibility
      */
     private static JsonObject validateHeartbeatPayload(JsonObject payload) {
         try {
             log.debug("Validating heartbeat payload structure for ICP GraphQL API compatibility");
-            
+
             // Ensure all required root-level properties exist and have correct types
             if (!payload.has("runtime") || payload.get("runtime").isJsonNull()) {
                 payload.addProperty("runtime", UUID.randomUUID().toString());
                 log.warn("Missing runtime, added default UUID");
             }
-            
+
             if (!payload.has("runtimeType") || payload.get("runtimeType").isJsonNull()) {
                 payload.addProperty("runtimeType", "MI");
                 log.warn("Missing runtimeType, added default 'MI'");
             }
-            
+
             if (!payload.has("status") || payload.get("status").isJsonNull()) {
                 payload.addProperty("status", "RUNNING");
                 log.warn("Missing status, added default 'RUNNING'");
             }
-            
+
             if (!payload.has("environment") || payload.get("environment").isJsonNull()) {
                 payload.addProperty("environment", "dev");
                 log.warn("Missing environment, added default 'dev'");
             }
-            
+
             if (!payload.has("project") || payload.get("project").isJsonNull()) {
                 payload.addProperty("project", "default");
                 log.warn("Missing project, added default 'default'");
             }
-            
+
             if (!payload.has("component") || payload.get("component").isJsonNull()) {
                 payload.addProperty("component", "micro-integrator");
                 log.warn("Missing component, added default 'micro-integrator'");
             }
-            
+
             if (!payload.has("version") || payload.get("version").isJsonNull()) {
                 payload.addProperty("version", "4.4.0");
                 log.warn("Missing version, added default '4.4.0'");
             }
-            
+
             // Validate nodeInfo structure
-            if (!payload.has("nodeInfo") || payload.get("nodeInfo").isJsonNull() || !payload.get("nodeInfo").isJsonObject()) {
+            if (!payload.has("nodeInfo") || payload.get("nodeInfo").isJsonNull()
+                    || !payload.get("nodeInfo").isJsonObject()) {
                 JsonObject nodeInfo = new JsonObject();
                 nodeInfo.addProperty("platformName", "wso2-mi");
                 nodeInfo.addProperty("platformVersion", "4.4.0");
@@ -523,19 +588,20 @@ public class ICPHeartBeatComponent {
                 payload.add("nodeInfo", nodeInfo);
                 log.warn("Missing or invalid nodeInfo, added default nodeInfo structure");
             }
-            
+
             // Validate artifacts structure
-            if (!payload.has("artifacts") || payload.get("artifacts").isJsonNull() || !payload.get("artifacts").isJsonObject()) {
+            if (!payload.has("artifacts") || payload.get("artifacts").isJsonNull()
+                    || !payload.get("artifacts").isJsonObject()) {
                 payload.add("artifacts", createEmptyArtifactsStructure());
                 log.warn("Missing or invalid artifacts, added empty artifacts structure");
             }
-            
+
             // Ensure runtimeHash exists
             if (!payload.has("runtimeHash") || payload.get("runtimeHash").isJsonNull()) {
                 payload.addProperty("runtimeHash", "");
                 log.warn("Missing runtimeHash, added empty string");
             }
-            
+
             // Validate timestamp structure if present
             if (payload.has("timestamp") && !payload.get("timestamp").isJsonNull()) {
                 if (!payload.get("timestamp").isJsonArray()) {
@@ -549,13 +615,13 @@ public class ICPHeartBeatComponent {
                     }
                 }
             }
-            
+
             log.debug("Heartbeat payload validation completed successfully");
             return payload;
-            
+
         } catch (Exception e) {
             log.error("Error validating heartbeat payload structure, returning minimal payload", e);
-            
+
             // Create minimal valid payload
             JsonObject minimalPayload = new JsonObject();
             minimalPayload.addProperty("runtime", UUID.randomUUID().toString());
@@ -566,20 +632,21 @@ public class ICPHeartBeatComponent {
             minimalPayload.addProperty("component", "micro-integrator");
             minimalPayload.addProperty("version", "4.4.0");
             minimalPayload.addProperty("runtimeHash", "");
-            
+
             JsonObject nodeInfo = new JsonObject();
             nodeInfo.addProperty("platformName", "wso2-mi");
             nodeInfo.addProperty("platformVersion", "4.4.0");
             minimalPayload.add("nodeInfo", nodeInfo);
-            
+
             minimalPayload.add("artifacts", createEmptyArtifactsStructure());
-            
+
             return minimalPayload;
         }
     }
 
     /**
-     * Creates a Ballerina time:Utc compatible timestamp array [seconds, nanoseconds_fraction].
+     * Creates a Ballerina time:Utc compatible timestamp array [seconds,
+     * nanoseconds_fraction].
      */
     private static JsonArray createBallerinaTimestamp() {
         Instant now = Instant.now();
@@ -590,13 +657,14 @@ public class ICPHeartBeatComponent {
     }
 
     /**
-     * Calculates MD5 hash of the payload (excluding timestamp and dynamic memory values).
+     * Calculates MD5 hash of the payload (excluding timestamp and dynamic memory
+     * values).
      */
     private static String calculateHash(JsonObject payload) {
         try {
             // Create a copy and remove timestamp for consistent hashing
             JsonObject payloadCopy = payload.deepCopy();
-            payloadCopy.remove("timestamp"); 
+            payloadCopy.remove("timestamp");
             if (payloadCopy.has("nodeInfo") && payloadCopy.get("nodeInfo").isJsonObject()) {
                 JsonObject nodeInfo = payloadCopy.getAsJsonObject("nodeInfo");
                 nodeInfo.remove("freeMemory");
@@ -604,7 +672,7 @@ public class ICPHeartBeatComponent {
                 nodeInfo.remove("maxMemory");
                 nodeInfo.remove("totalMemory");
             }
-            
+
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] hashBytes = md.digest(payloadCopy.toString().getBytes("UTF-8"));
             return Base64.getEncoder().encodeToString(hashBytes);
@@ -734,7 +802,7 @@ public class ICPHeartBeatComponent {
     }
 
     // ===== ARTIFACT COLLECTION METHODS =====
-    
+
     /**
      * Collects REST API information from Synapse Configuration
      */
@@ -751,13 +819,13 @@ public class ICPHeartBeatComponent {
                 apiObj.addProperty("port", api.getPort());
                 apiObj.addProperty("type", "API");
                 apiObj.addProperty("state", "ENABLED");
-                
+
                 // Collect API resources
                 JsonArray resources = new JsonArray();
                 if (api.getResources() != null) {
                     for (org.apache.synapse.api.Resource resource : api.getResources()) {
                         JsonObject resourceObj = new JsonObject();
-                        
+
                         String resourcePath = "";
                         try {
                             if (resource.getDispatcherHelper() != null) {
@@ -770,7 +838,7 @@ public class ICPHeartBeatComponent {
                             resourcePath = "/*";
                         }
                         resourceObj.addProperty("path", resourcePath);
-                        
+
                         if (resource.getMethods() != null && resource.getMethods().length > 0) {
                             resourceObj.addProperty("methods", String.join(",", resource.getMethods()));
                         }
@@ -785,7 +853,7 @@ public class ICPHeartBeatComponent {
         }
         return apis;
     }
-    
+
     /**
      * Collects Proxy Service information from Synapse Configuration
      */
@@ -798,7 +866,7 @@ public class ICPHeartBeatComponent {
                 proxyObj.addProperty("name", proxy.getName());
                 proxyObj.addProperty("type", "ProxyService");
                 proxyObj.addProperty("state", proxy.isRunning() ? "ENABLED" : "DISABLED");
-                
+
                 // Transport information
                 if (proxy.getTransports() != null) {
                     JsonArray transports = new JsonArray();
@@ -807,7 +875,7 @@ public class ICPHeartBeatComponent {
                     }
                     proxyObj.add("transports", transports);
                 }
-                
+
                 proxies.add(proxyObj);
             }
         } catch (Exception e) {
@@ -815,7 +883,7 @@ public class ICPHeartBeatComponent {
         }
         return proxies;
     }
-    
+
     /**
      * Collects Endpoint information from Synapse Configuration
      */
@@ -835,15 +903,15 @@ public class ICPHeartBeatComponent {
         }
         return endpoints;
     }
-    
+
     /**
      * Collects Inbound Endpoint information
      */
     private static JsonArray collectInboundEndpoints(SynapseConfiguration synapseConfig) {
         JsonArray inboundEndpoints = new JsonArray();
         try {
-            Collection<org.apache.synapse.inbound.InboundEndpoint> inboundCollection = 
-                synapseConfig.getInboundEndpoints();
+            Collection<org.apache.synapse.inbound.InboundEndpoint> inboundCollection = synapseConfig
+                    .getInboundEndpoints();
             for (org.apache.synapse.inbound.InboundEndpoint inbound : inboundCollection) {
                 JsonObject inboundObj = new JsonObject();
                 inboundObj.addProperty("name", inbound.getName());
@@ -856,15 +924,15 @@ public class ICPHeartBeatComponent {
         }
         return inboundEndpoints;
     }
-    
+
     /**
      * Collects Sequence information from Synapse Configuration
      */
     private static JsonArray collectSequences(SynapseConfiguration synapseConfig) {
         JsonArray sequences = new JsonArray();
         try {
-            Map<String, org.apache.synapse.mediators.base.SequenceMediator> seqMap = 
-                synapseConfig.getDefinedSequences();
+            Map<String, org.apache.synapse.mediators.base.SequenceMediator> seqMap = synapseConfig
+                    .getDefinedSequences();
             for (Map.Entry<String, org.apache.synapse.mediators.base.SequenceMediator> entry : seqMap.entrySet()) {
                 JsonObject seqObj = new JsonObject();
                 seqObj.addProperty("name", entry.getKey());
@@ -876,7 +944,7 @@ public class ICPHeartBeatComponent {
         }
         return sequences;
     }
-    
+
     /**
      * Collects Task information from Synapse Configuration
      */
@@ -891,7 +959,7 @@ public class ICPHeartBeatComponent {
         }
         return tasks;
     }
-    
+
     /**
      * Collects Template information from Synapse Configuration
      */
@@ -899,8 +967,7 @@ public class ICPHeartBeatComponent {
         JsonArray templates = new JsonArray();
         try {
             // Endpoint Templates
-            Map<String, org.apache.synapse.endpoints.Template> endpointTemplates = 
-                synapseConfig.getEndpointTemplates();
+            Map<String, org.apache.synapse.endpoints.Template> endpointTemplates = synapseConfig.getEndpointTemplates();
             for (Map.Entry<String, org.apache.synapse.endpoints.Template> entry : endpointTemplates.entrySet()) {
                 JsonObject templateObj = new JsonObject();
                 templateObj.addProperty("name", entry.getKey());
@@ -912,15 +979,14 @@ public class ICPHeartBeatComponent {
         }
         return templates;
     }
-    
+
     /**
      * Collects Message Store information from Synapse Configuration
      */
     private static JsonArray collectMessageStores(SynapseConfiguration synapseConfig) {
         JsonArray messageStores = new JsonArray();
         try {
-            Map<String, org.apache.synapse.message.store.MessageStore> storeMap = 
-                synapseConfig.getMessageStores();
+            Map<String, org.apache.synapse.message.store.MessageStore> storeMap = synapseConfig.getMessageStores();
             for (Map.Entry<String, org.apache.synapse.message.store.MessageStore> entry : storeMap.entrySet()) {
                 JsonObject storeObj = new JsonObject();
                 org.apache.synapse.message.store.MessageStore store = entry.getValue();
@@ -934,16 +1000,17 @@ public class ICPHeartBeatComponent {
         }
         return messageStores;
     }
-    
+
     /**
      * Collects Message Processor information from Synapse Configuration
      */
     private static JsonArray collectMessageProcessors(SynapseConfiguration synapseConfig) {
         JsonArray messageProcessors = new JsonArray();
         try {
-            Map<String, org.apache.synapse.message.processor.MessageProcessor> processorMap = 
-                synapseConfig.getMessageProcessors();
-            for (Map.Entry<String, org.apache.synapse.message.processor.MessageProcessor> entry : processorMap.entrySet()) {
+            Map<String, org.apache.synapse.message.processor.MessageProcessor> processorMap = synapseConfig
+                    .getMessageProcessors();
+            for (Map.Entry<String, org.apache.synapse.message.processor.MessageProcessor> entry : processorMap
+                    .entrySet()) {
                 JsonObject processorObj = new JsonObject();
                 org.apache.synapse.message.processor.MessageProcessor processor = entry.getValue();
                 processorObj.addProperty("name", entry.getKey());
@@ -956,7 +1023,7 @@ public class ICPHeartBeatComponent {
         }
         return messageProcessors;
     }
-    
+
     /**
      * Collects Local Entry information from Synapse Configuration
      */
@@ -977,7 +1044,7 @@ public class ICPHeartBeatComponent {
         }
         return localEntries;
     }
-    
+
     /**
      * Collects Data Service information from Synapse Configuration
      */
@@ -988,32 +1055,34 @@ public class ICPHeartBeatComponent {
                 log.debug("Synapse configuration or Axis configuration is not available for data services collection");
                 return dataServices;
             }
-            
+
             AxisConfiguration axisConfiguration = synapseConfig.getAxisConfiguration();
-            
+
             // Get available data service names using DBUtils
-            String[] dataServiceNames = org.wso2.micro.integrator.dataservices.core.DBUtils.getAvailableDS(axisConfiguration);
-            
+            String[] dataServiceNames = org.wso2.micro.integrator.dataservices.core.DBUtils
+                    .getAvailableDS(axisConfiguration);
+
             for (String serviceName : dataServiceNames) {
                 JsonObject dsObj = new JsonObject();
                 try {
                     dsObj.addProperty("name", serviceName);
                     dsObj.addProperty("type", "DataService");
-                    
+
                     // Try to get the DataService object for more details
                     AxisService axisService = axisConfiguration.getServiceForActivation(serviceName);
                     if (axisService != null) {
                         // Get DataService object from axis service parameter
                         Parameter dsParam = axisService.getParameter("DataService");
-                        if (dsParam != null && dsParam.getValue() instanceof org.wso2.micro.integrator.dataservices.core.engine.DataService) {
-                            org.wso2.micro.integrator.dataservices.core.engine.DataService dataService = 
-                                (org.wso2.micro.integrator.dataservices.core.engine.DataService) dsParam.getValue();
-                            
+                        if (dsParam != null && dsParam
+                                .getValue() instanceof org.wso2.micro.integrator.dataservices.core.engine.DataService) {
+                            org.wso2.micro.integrator.dataservices.core.engine.DataService dataService = (org.wso2.micro.integrator.dataservices.core.engine.DataService) dsParam
+                                    .getValue();
+
                             // Add service description if available
                             if (dataService.getDescription() != null) {
                                 dsObj.addProperty("description", dataService.getDescription());
                             }
-                            
+
                             // Add config information
                             if (dataService.getConfigs() != null && !dataService.getConfigs().isEmpty()) {
                                 JsonArray configs = new JsonArray();
@@ -1022,22 +1091,22 @@ public class ICPHeartBeatComponent {
                                 }
                                 dsObj.add("configs", configs);
                             }
-                            
+
                             // Add operation count
                             if (dataService.getOperationNames() != null) {
                                 dsObj.addProperty("operationCount", dataService.getOperationNames().size());
                             }
-                            
-                            // Add query count  
+
+                            // Add query count
                             if (dataService.getQueries() != null) {
                                 dsObj.addProperty("queryCount", dataService.getQueries().size());
                             }
                         }
-                        
+
                         // Add service status
                         dsObj.addProperty("state", axisService.isActive() ? "ENABLED" : "DISABLED");
                     }
-                    
+
                     dataServices.add(dsObj);
                 } catch (Exception e) {
                     log.warn("Error processing data service: " + serviceName, e);
@@ -1054,7 +1123,7 @@ public class ICPHeartBeatComponent {
         }
         return dataServices;
     }
-    
+
     /**
      * Collects Carbon Application information in the required heartbeat format
      */
@@ -1069,8 +1138,8 @@ public class ICPHeartBeatComponent {
                     carbonApps.add(appObj);
                 }
             }
-            
-            // Get faulty Carbon Applications  
+
+            // Get faulty Carbon Applications
             Collection<CarbonApplication> faultyApps = CappDeployer.getFaultyCAppObjects();
             for (CarbonApplication app : faultyApps) {
                 JsonObject appObj = convertCarbonAppToHeartbeatFormat(app, "faulty", getRuntimeId());
@@ -1078,80 +1147,61 @@ public class ICPHeartBeatComponent {
                     carbonApps.add(appObj);
                 }
             }
-            
+
         } catch (Exception e) {
             log.error("Error collecting Carbon Apps", e);
         }
         return carbonApps;
     }
-    
+
     /**
-     * Converts a CarbonApplication to the required heartbeat format with name, nameIgnoreCase, and nodes structure
+     * Converts a CarbonApplication to the required heartbeat format with name,
+     * nameIgnoreCase, and nodes structure
      */
-    private static JsonObject convertCarbonAppToHeartbeatFormat(CarbonApplication carbonApp, String status, String runtimeId) {
+    private static JsonObject convertCarbonAppToHeartbeatFormat(CarbonApplication carbonApp, String status,
+            String runtimeId) {
         if (carbonApp == null) {
             return null;
         }
-        
+
         JsonObject appObj = new JsonObject();
         String appName = carbonApp.getAppName();
-        
+
         // Main structure
-        appObj.addProperty("name", appName); 
+        appObj.addProperty("name", appName);
         appObj.addProperty("runtimeId", runtimeId);
         appObj.addProperty("version", carbonApp.getAppVersion());
         appObj.addProperty("status", status);
-               
-        // Create nodes array with single node (this MI instance)
-        // JsonArray nodes = new JsonArray();
-        // JsonObject nodeObj = new JsonObject();
 
-        // Create details JSON string
-        // JsonObject details = new JsonObject();
-        // details.addProperty("name", appName);
-        // details.addProperty("version", carbonApp.getAppVersion());
-        // details.addProperty("status", status);
-        
-        // // Collect artifacts contained in this Carbon App
-        // JsonArray artifacts = new JsonArray();
-        // try {
-        //     if (carbonApp.getAppConfig() != null && 
-        //         carbonApp.getAppConfig().getApplicationArtifact() != null &&
-        //         carbonApp.getAppConfig().getApplicationArtifact().getDependencies() != null) {
-                
-        //         for (Artifact.Dependency dependency : carbonApp.getAppConfig().getApplicationArtifact().getDependencies()) {
-        //             Artifact artifact = dependency.getArtifact();
-                    
-        //             if (artifact != null && artifact.getName() != null) {
-        //                 JsonObject artifactObj = new JsonObject();
-        //                 artifactObj.addProperty("name", artifact.getName());
-                        
-        //                 // Extract artifact type (remove prefix if present)
-        //                 String artifactType = artifact.getType();
-        //                 if (artifactType != null && artifactType.contains("/")) {
-        //                     artifactType = artifactType.split("/")[1];
-        //                 }
-        //                 artifactObj.addProperty("type", artifactType);
-                        
-        //                 artifacts.add(artifactObj);
-        //             }
-        //         }
-        //     }
-        // } catch (Exception e) {
-        //     log.warn("Error processing artifacts for Carbon App: " + appName, e);
-        // }
-        
-        // details.add("artifacts", artifacts);
-        
-        // // Convert details to JSON string and add to node
-        // nodeObj.addProperty("details", details.toString());
-        // nodes.add(nodeObj);
-        
-        // appObj.add("nodes", nodes);
-        
+        // Collect artifacts contained in this Carbon App
+        JsonArray artifacts = new JsonArray();
+        if (carbonApp.getAppConfig() != null &&
+                carbonApp.getAppConfig().getApplicationArtifact() != null &&
+                carbonApp.getAppConfig().getApplicationArtifact().getDependencies() != null) {
+            List<Artifact.Dependency> dependencies = carbonApp.getAppConfig().getApplicationArtifact()
+                    .getDependencies();
+            for (Artifact.Dependency dependency : dependencies) {
+                Artifact artifact = dependency.getArtifact();
+
+                if (artifact != null && artifact.getName() != null) {
+                    JsonObject artifactObj = new JsonObject();
+                    artifactObj.addProperty("name", artifact.getName());
+
+                    // Extract artifact type (remove prefix if present)
+                    String artifactType = artifact.getType();
+                    if (artifactType != null && artifactType.contains("/")) {
+                        artifactType = artifactType.split("/")[1];
+                    }
+                    artifactObj.addProperty("type", artifactType);
+
+                    artifacts.add(artifactObj);
+                }
+            }
+        }
+        appObj.add("artifacts", artifacts);
         return appObj;
     }
-    
+
     /**
      * Collects Data Source information
      */
@@ -1166,7 +1216,7 @@ public class ICPHeartBeatComponent {
         }
         return dataSources;
     }
-    
+
     /**
      * Collects Connector information from Synapse Configuration
      */
@@ -1174,70 +1224,69 @@ public class ICPHeartBeatComponent {
         JsonArray connectors = new JsonArray();
         try {
             log.info("Starting connector collection for ICP heartbeat");
-            
+
             if (synapseConfig == null) {
                 log.warn("SynapseConfiguration is null, returning empty connector list");
                 return connectors;
             }
-            
-            // Get synapse libraries (which include connectors) 
+
+            // Get synapse libraries (which include connectors)
             Map<String, org.apache.synapse.libraries.model.Library> libraryMap = synapseConfig.getSynapseLibraries();
-            
+
             if (libraryMap == null || libraryMap.isEmpty()) {
                 log.info("No connectors/libraries found in SynapseConfiguration");
                 return connectors;
             }
-            
+
             log.info("Found " + libraryMap.size() + " libraries/connectors to process");
-            
+
             int processedCount = 0;
             int errorCount = 0;
-            
+
             for (Map.Entry<String, org.apache.synapse.libraries.model.Library> entry : libraryMap.entrySet()) {
                 try {
                     String qualifiedName = entry.getKey();
                     org.apache.synapse.libraries.model.Library library = entry.getValue();
-                    
+
                     if (library instanceof org.apache.synapse.libraries.model.SynapseLibrary) {
-                        org.apache.synapse.libraries.model.SynapseLibrary synapseLibrary = 
-                            (org.apache.synapse.libraries.model.SynapseLibrary) library;
-                        
+                        org.apache.synapse.libraries.model.SynapseLibrary synapseLibrary = (org.apache.synapse.libraries.model.SynapseLibrary) library;
+
                         JsonObject connectorObj = new JsonObject();
                         connectorObj.addProperty("name", synapseLibrary.getName());
                         connectorObj.addProperty("package", synapseLibrary.getPackage());
                         connectorObj.addProperty("qualifiedName", qualifiedName);
                         connectorObj.addProperty("type", "Connector");
-                        
+
                         // Add description if available
                         if (synapseLibrary.getDescription() != null) {
                             connectorObj.addProperty("description", synapseLibrary.getDescription());
                         }
-                        
+
                         // Add status information
                         Boolean libStatus = synapseLibrary.getLibStatus();
                         String status = (libStatus != null && libStatus) ? "enabled" : "disabled";
                         connectorObj.addProperty("status", status);
-                        
+
                         // Add file name if available
                         if (synapseLibrary.getFileName() != null) {
                             connectorObj.addProperty("fileName", synapseLibrary.getFileName());
                         }
-                        
+
                         connectors.add(connectorObj);
                         processedCount++;
-                        
+
                         if (log.isDebugEnabled()) {
-                            log.debug("Processed connector: " + synapseLibrary.getName() + 
-                                " (package: " + synapseLibrary.getPackage() + ", status: " + status + ")");
+                            log.debug("Processed connector: " + synapseLibrary.getName() +
+                                    " (package: " + synapseLibrary.getPackage() + ", status: " + status + ")");
                         }
                     } else {
-                        log.debug("Skipping non-SynapseLibrary entry: " + qualifiedName + 
-                            " (type: " + library.getClass().getSimpleName() + ")");
+                        log.debug("Skipping non-SynapseLibrary entry: " + qualifiedName +
+                                " (type: " + library.getClass().getSimpleName() + ")");
                     }
                 } catch (Exception e) {
                     errorCount++;
                     log.warn("Error processing connector entry: " + entry.getKey(), e);
-                    
+
                     // Add basic error entry
                     JsonObject errorConnectorObj = new JsonObject();
                     errorConnectorObj.addProperty("name", "ERROR_" + entry.getKey());
@@ -1247,16 +1296,16 @@ public class ICPHeartBeatComponent {
                     connectors.add(errorConnectorObj);
                 }
             }
-            
-            log.info("Connector collection completed. Processed: " + processedCount + 
-                ", Errors: " + errorCount + ", Total connectors collected: " + connectors.size());
-                
+
+            log.info("Connector collection completed. Processed: " + processedCount +
+                    ", Errors: " + errorCount + ", Total connectors collected: " + connectors.size());
+
         } catch (Exception e) {
             log.error("Error collecting Connectors from SynapseConfiguration", e);
         }
         return connectors;
     }
-    
+
     /**
      * Collects Registry Resources from MicroIntegratorRegistry
      */
@@ -1264,63 +1313,62 @@ public class ICPHeartBeatComponent {
         JsonArray registryResources = new JsonArray();
         try {
             log.info("Starting registry resources collection for ICP heartbeat");
-            
+
             if (synapseConfig == null) {
                 log.warn("SynapseConfiguration is null, returning empty registry resources list");
                 return registryResources;
             }
-            
+
             // Get the registry from synapse configuration
             org.apache.synapse.registry.Registry synapseRegistry = synapseConfig.getRegistry();
             if (synapseRegistry == null) {
                 log.warn("No registry found in SynapseConfiguration, returning empty registry resources list");
                 return registryResources;
             }
-            
+
             if (!(synapseRegistry instanceof org.wso2.micro.integrator.registry.MicroIntegratorRegistry)) {
-                log.warn("Registry is not MicroIntegratorRegistry type, cannot collect resources. Type: " + 
-                    synapseRegistry.getClass().getSimpleName());
+                log.warn("Registry is not MicroIntegratorRegistry type, cannot collect resources. Type: " +
+                        synapseRegistry.getClass().getSimpleName());
                 return registryResources;
             }
-            
-            org.wso2.micro.integrator.registry.MicroIntegratorRegistry microIntegratorRegistry = 
-                (org.wso2.micro.integrator.registry.MicroIntegratorRegistry) synapseRegistry;
-            
+
+            org.wso2.micro.integrator.registry.MicroIntegratorRegistry microIntegratorRegistry = (org.wso2.micro.integrator.registry.MicroIntegratorRegistry) synapseRegistry;
+
             String regRoot = microIntegratorRegistry.getRegRoot();
             log.info("Registry root path: " + regRoot);
-            
+
             if (regRoot == null || regRoot.trim().isEmpty()) {
                 log.warn("Registry root path is null or empty, returning empty registry resources list");
                 return registryResources;
             }
-            
+
             // Get the root directory contents
             java.io.File rootDir = new java.io.File(regRoot);
             if (!rootDir.exists() || !rootDir.isDirectory()) {
                 log.warn("Registry root directory does not exist or is not a directory: " + regRoot);
                 return registryResources;
             }
-            
+
             // Get immediate children of the registry root
             org.json.JSONArray childrenList = microIntegratorRegistry.getChildrenList(regRoot, regRoot);
-            
+
             if (childrenList == null) {
                 log.warn("Failed to get children list from registry root");
                 return registryResources;
             }
-            
+
             log.info("Found " + childrenList.length() + " registry resources to process");
-            
+
             int processedCount = 0;
             int errorCount = 0;
-            
+
             // Convert JSONArray to JsonArray and add metadata
             for (int i = 0; i < childrenList.length(); i++) {
                 try {
                     org.json.JSONObject child = childrenList.getJSONObject(i);
-                    
+
                     JsonObject resourceObj = new JsonObject();
-                    
+
                     // Basic properties
                     if (child.has("name")) {
                         resourceObj.addProperty("name", child.getString("name"));
@@ -1340,7 +1388,7 @@ public class ICPHeartBeatComponent {
                     if (child.has("lastModified")) {
                         resourceObj.addProperty("lastModified", child.getString("lastModified"));
                     }
-                    
+
                     // Properties array if exists
                     if (child.has("properties")) {
                         org.json.JSONArray properties = child.getJSONArray("properties");
@@ -1358,20 +1406,20 @@ public class ICPHeartBeatComponent {
                         }
                         resourceObj.add("properties", propsArray);
                     }
-                    
+
                     registryResources.add(resourceObj);
                     processedCount++;
-                    
+
                     if (log.isDebugEnabled()) {
                         String resourceName = child.has("name") ? child.getString("name") : "unknown";
                         String resourceType = child.has("type") ? child.getString("type") : "unknown";
                         log.debug("Processed registry resource: " + resourceName + " (type: " + resourceType + ")");
                     }
-                    
+
                 } catch (Exception e) {
                     errorCount++;
                     log.warn("Error processing registry resource at index " + i, e);
-                    
+
                     // Add basic error entry
                     JsonObject errorResourceObj = new JsonObject();
                     errorResourceObj.addProperty("name", "ERROR_RESOURCE_" + i);
@@ -1380,24 +1428,24 @@ public class ICPHeartBeatComponent {
                     registryResources.add(errorResourceObj);
                 }
             }
-            
-            log.info("Registry resources collection completed. Processed: " + processedCount + 
-                ", Errors: " + errorCount + ", Total registry resources collected: " + registryResources.size());
-            
+
+            log.info("Registry resources collection completed. Processed: " + processedCount +
+                    ", Errors: " + errorCount + ", Total registry resources collected: " + registryResources.size());
+
             // Log the response data for debugging
             if (log.isDebugEnabled()) {
                 log.debug("Registry resources response data: " + registryResources.toString());
             } else {
-                log.info("Registry resources response summary - Count: " + registryResources.size() + 
-                    ", Root directory: " + regRoot);
+                log.info("Registry resources response summary - Count: " + registryResources.size() +
+                        ", Root directory: " + regRoot);
             }
-                
+
         } catch (Exception e) {
             log.error("Error collecting Registry Resources from SynapseConfiguration", e);
         }
         return registryResources;
     }
-    
+
     /**
      * Collects Listener information (HTTP/HTTPS ports)
      */
@@ -1410,7 +1458,7 @@ public class ICPHeartBeatComponent {
             httpListener.addProperty("port", ConfigurationLoader.getInternalInboundHttpPort());
             httpListener.addProperty("host", "0.0.0.0");
             listeners.add(httpListener);
-            
+
             // HTTPS Listener
             JsonObject httpsListener = new JsonObject();
             httpsListener.addProperty("protocol", "https");
@@ -1422,5 +1470,5 @@ public class ICPHeartBeatComponent {
         }
         return listeners;
     }
-    
+
 }

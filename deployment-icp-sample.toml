@@ -28,26 +28,31 @@ algorithm = "AES"
 # ICP Configuration
 # ----------------------------------------
 [icp_config]
-# Enable new ICP integration (set to false to use legacy Dashboard)
 enabled = true
+# ICP connection details (only needed if enabled = true)
+runtime_id = "mi-test"
 environment = "prod"
 project = "sample-project"
 integration = "sample-mi-integration"
+# icp_url = "https://icp-server:9443"
+
 # ----------------------------------------
-# Heartbeat Configuration
+# Heartbeat Configuration (only used if enabled = true)
 # ----------------------------------------
 # Interval between heartbeat transmissions (in seconds)
 # Default: 5 seconds
 # heartbeat_interval = 10
+
 # ----------------------------------------
-# Advanced - JWT Authentication Configuration
+# JWT Authentication Configuration
 # ----------------------------------------
+# JWT token configuration (defaults shown)
+jwt_hmac_secret = "default-secret-key-at-least-32-characters-long-for-hs256"
 #jwt_issuer = "icp-runtime-jwt-issuer"
 #jwt_audience = "icp-server"
 #jwt_scope = "runtime_agent"
 # Token validity in seconds (default: 3600 = 1 hour)
 #jwt_expiry_seconds = 3600
-#jwt_hmac_secret = "default-secret-key-at-least-32-characters-long-for-hs256"
 
 # ----------------------------------------
 # Legacy Dashboard Configuration (Optional)

@@ -16,10 +16,15 @@ public class Constants {
     public static final String DASHBOARD_CONFIG_MANAGEMENT_PORT = "dashboard_config.management_port";
 
     // New ICP Configuration
+    public static final String ICP_API_DEFAULT_HOST = "localhost";
+    public static final int ICP_API_DEFAULT_PORT = 9164;
+    public static final String PORT_OFFSET = "server.offset";
+    public static final String HOSTNAME = "server.hostname";
     public static final String ICP_CONFIG_URL = "icp_config.icp_url";
     public static final String ICP_CONFIG_ENVIRONMENT = "icp_config.environment";
     public static final String ICP_CONFIG_PROJECT = "icp_config.project";
     public static final String ICP_CONFIG_COMPONENT = "icp_config.integration";
+    public static final String ICP_CONFIG_RUNTIME_ID = "icp_config.runtime_id";
     public static final String ICP_CONFIG_ENABLED = "icp_config.enabled";
     public static final String  ICP_CONFIG_HEARTBEAT_INTERVAL = "icp_config.heartbeat_interval";
 
