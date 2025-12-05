@@ -369,6 +369,7 @@ do
     -Dproperties.file.path=default \
     -DenableReadinessProbe=true \
     -DenableManagementApi=true \
+    -DenableICPApi=true \
     $NODE_PARAMS \
     -Dorg.apache.activemq.SERIALIZABLE_PACKAGES="*" \
     org.wso2.micro.integrator.bootstrap.Bootstrap $*
