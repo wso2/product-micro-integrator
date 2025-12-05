@@ -64,6 +64,7 @@ public final class UserCoreUtil {
     private static Log log = LogFactory.getLog(UserCoreUtil.class);
     private static Boolean isEmailUserName;
     private static Boolean isCrossTenantUniqueUserName;
+    private static final String JCE_PROVIDER = "security.jce.provider";
     private static RealmService realmService = null;
     /*
      * When user authenticates with out domain, need to set the domain of the user store that he
@@ -347,7 +348,7 @@ public final class UserCoreUtil {
 
         try {
             // the secure random
-            SecureRandom prng = SecureRandom.getInstance("SHA1PRNG");
+            SecureRandom prng = SecureRandom.getInstance(getAlgorithm());
             for (int i = 0; i < length; i++) {
                 password[i] = passwordChars.charAt(prng.nextInt(passwordFeed.length()));
             }
@@ -1084,5 +1085,14 @@ public final class UserCoreUtil {
         // please un-comment to find usages
         /*log.debug("This Functionality is not available in WSO2 Micro Integrator",
                  new Throwable("Unsupported operation"));*/
+    }
+
+    private static String getAlgorithm() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return "DRBG";
+        } else {
+            return "SHA1PRNG";
+        }
     }
 }

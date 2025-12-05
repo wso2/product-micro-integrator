@@ -77,6 +77,8 @@ public class ServerCrypto implements Crypto {
     public final static String PROP_ID_XKMS_SERVICE_PASS_PHRASE = "org.wso2.wsas.security.wso2wsas.crypto.xkms.pass";
     public final static String PROP_ID_TENANT_ID = "org.wso2.stratos.tenant.id";
     public final static String PROP_ID_XKMS_SERVICE_URL = "org.wso2.carbon.security.crypto.xkms.url";
+    private static final String DEFAULT = "DEFAULT";
+    private static final String JCE_PROVIDER = "security.jce.provider";
     private static final String SKI_OID = "2.5.29.14";
     private static Log log = LogFactory.getLog(ServerCrypto.class);
     private static CertificateFactory certFact = null;
@@ -128,7 +130,7 @@ public class ServerCrypto implements Crypto {
         InputStream cacertsIs = new FileInputStream(cacertsPath);
         try {
             String cacertsPasswd = properties.getProperty(PROP_ID_CACERT_PASS, "changeit");
-            cacerts = KeyStore.getInstance(KeyStore.getDefaultType());
+            cacerts = KeyStore.getInstance(getKeyType(properties));
             cacerts.load(cacertsIs, cacertsPasswd.toCharArray());
 
         } catch (GeneralSecurityException e) {
@@ -480,7 +482,7 @@ public class ServerCrypto implements Crypto {
             System.arraycopy(encoded, 22, value, 0, value.length);
             MessageDigest sha;
             try {
-                sha = MessageDigest.getInstance("SHA-1");
+                sha = MessageDigest.getInstance(getAlgorithm());
             } catch (NoSuchAlgorithmException ex) {
                 throw new WSSecurityException(1, "noSKIHandling",
                         new Object[]{"Wrong certificate version (<3) and no "
@@ -509,7 +511,7 @@ public class ServerCrypto implements Crypto {
         Certificate cert;
         MessageDigest sha;
         try {
-            sha = MessageDigest.getInstance("SHA-1");
+            sha = MessageDigest.getInstance(getAlgorithm());
         } catch (NoSuchAlgorithmException e1) {
             throw new WSSecurityException(0, "noSHA1availabe");
         }
@@ -559,18 +561,10 @@ public class ServerCrypto implements Crypto {
     public CertificateFactory getCertificateFactory() throws WSSecurityException {
         if (certFact == null) {
             try {
-                String provider = properties.getProperty(PROP_ID_CERT_PROVIDER);
-                if (provider == null || provider.length() == 0) {
-                    certFact = CertificateFactory.getInstance("X.509");
-                } else {
-                    certFact = CertificateFactory.getInstance("X.509", provider);
-                }
+                certFact = CertificateFactory.getInstance("X.509");
             } catch (CertificateException e) {
                 throw new WSSecurityException(WSSecurityException.SECURITY_TOKEN_UNAVAILABLE,
                         "unsupportedCertType");
-            } catch (NoSuchProviderException e) {
-                throw new WSSecurityException(WSSecurityException.SECURITY_TOKEN_UNAVAILABLE,
-                        "noSecProvider");
             }
         }
         return certFact;
@@ -705,20 +699,31 @@ public class ServerCrypto implements Crypto {
             param.setRevocationEnabled(false);
 
             // Verify the trust path using the above settings
-            String provider = properties
-                    .getProperty("org.apache.ws.security.crypto.merlin.cert.provider");
-            CertPathValidator certPathValidator;
-            if (provider == null || provider.length() == 0) {
-                certPathValidator = CertPathValidator.getInstance("PKIX");
-            } else {
-                certPathValidator = CertPathValidator.getInstance("PKIX", provider);
-            }
+            CertPathValidator certPathValidator = CertPathValidator.getInstance("PKIX");
             certPathValidator.validate(path, param);
-        } catch (NoSuchProviderException | NoSuchAlgorithmException | CertificateException |
-                InvalidAlgorithmParameterException | CertPathValidatorException | KeyStoreException ex) {
+        } catch (NoSuchAlgorithmException | CertificateException | InvalidAlgorithmParameterException |
+                 CertPathValidatorException | KeyStoreException ex) {
             throw new WSSecurityException(WSSecurityException.FAILURE, "certpath",
                     new Object[]{ex.getMessage()}, ex);
         }
         return true;
+    }
+
+    private static String getAlgorithm() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return "SHA-256";
+        } else {
+            return "SHA-1";
+        }
+    }
+
+    private static String getKeyType(Properties prop) {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return prop.getProperty("org.wso2.carbon.security.crypto.type", "BCFKS");
+        } else {
+            return prop.getProperty("org.wso2.carbon.security.crypto.type", KeyStore.getDefaultType());
+        }
     }
 }
