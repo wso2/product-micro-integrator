@@ -26,7 +26,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.inbound.DynamicControlOperationResult;
+import org.apache.synapse.util.DynamicControlOperationResult;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.json.JSONArray;
 import org.json.JSONObject;
