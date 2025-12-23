@@ -20,7 +20,7 @@ package org.wso2.carbon.caching.impl;
 import org.apache.axis2.clustering.ClusteringAgent;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.base.api.ServerConfigurationService;
+import org.wso2.micro.integrator.core.services.ServerConfigurationService;
 
 import javax.cache.spi.AnnotationProvider;
 

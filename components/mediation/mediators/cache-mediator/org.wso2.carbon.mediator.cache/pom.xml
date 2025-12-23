@@ -101,6 +101,8 @@
                         <Export-Package>
                             org.wso2.carbon.mediator.cache.*,
                         </Export-Package>
+                        <Import-Package>
+                        </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                         <Fragment-Host>synapse-core</Fragment-Host>
                     </instructions>

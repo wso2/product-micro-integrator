@@ -44,6 +44,8 @@
                         <Export-Package>
                             org.wso2.micro.integrator.ndatasource.common.*;version="${project.version}"
                         </Export-Package>
+                        <Import-Package>
+                        </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>
                 </configuration>

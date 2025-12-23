@@ -56,16 +56,8 @@
             <artifactId>org.wso2.carbon.sequences</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.osgi</groupId>
-            <artifactId>org.eclipse.osgi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.osgi</groupId>
-            <artifactId>org.eclipse.osgi.services</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse.equinox</groupId>
-            <artifactId>org.eclipse.equinox.http.helper</artifactId>
+            <artifactId>javax.servlet</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.equinox</groupId>
@@ -156,6 +148,12 @@
                             org.apache.axis2.*; version="${imp.pkg.version.axis2}",
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
+                        <Provide-Capability>
+                            osgi.service;objectClass=org.wso2.micro.integrator.core.services.Axis2ConfigurationContextService,
+                            osgi.service;objectClass=org.wso2.micro.integrator.core.UserStoreTemporaryService,
+                            osgi.service;objectClass=org.wso2.micro.integrator.core.services.CarbonServerConfigurationService,
+                            osgi.service;objectClass=org.wso2.micro.integrator.core.services.ServerConfigurationService
+                        </Provide-Capability>
                     </instructions>
                 </configuration>
             </plugin>

@@ -44,6 +44,8 @@
                         <Export-Package>
                             org.wso2.micro.integrator.dataservices.common.*;version="${project.version}"
                         </Export-Package>
+                        <Import-Package>
+                        </Import-Package>
                     </instructions>
                 </configuration>
             </plugin>

@@ -100,6 +100,7 @@
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Axis2Module>${project.artifactId}-${project.version}</Axis2Module>
+                        <_contract>!*</_contract>
                         <Export-Package>
                             org.wso2.micro.integrator.observability.* ;version="${project.version}"
                         </Export-Package>
