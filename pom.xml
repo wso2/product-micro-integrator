@@ -53,19 +53,19 @@
                 <version>${openjpa.version.wso2}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.osgi</groupId>
-                <artifactId>org.eclipse.osgi</artifactId>
-                <version>${version.equinox.osgi}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.osgi</groupId>
+                <groupId>org.eclipse.platform</groupId>
                 <artifactId>org.eclipse.osgi.services</artifactId>
                 <version>${version.equinox.osgi.services}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.equinox</groupId>
-                <artifactId>org.eclipse.equinox.http.helper</artifactId>
-                <version>${version.equinox.http.helper}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.eclipse.jetty.toolchain</groupId>
+                        <artifactId>jetty-servlet</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.eclipse.jetty.toolchain</groupId>
+                        <artifactId>jetty-servlet-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.equinox</groupId>
@@ -75,7 +75,7 @@
             <dependency>
                 <groupId>org.eclipse.platform</groupId>
                 <artifactId>org.eclipse.osgi</artifactId>
-                <version>${version.equinox.platform}</version>
+                <version>${version.equinox.platform.osgi}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.axis2.wso2</groupId>
@@ -1619,6 +1619,86 @@
                 <artifactId>gson</artifactId>
                 <version>${version.com.google.code.gson}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>org.apache.felix.scr</artifactId>
+                <version>${felix.scr.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.xml.soap</groupId>
+                <artifactId>javax.xml.soap-api</artifactId>
+                <version>${javax.xml.soap-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.service.component</artifactId>
+                <version>${osgi.service.component.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.util.promise</artifactId>
+                <version>${osgi.util.promise.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.util.function</artifactId>
+                <version>${osgi.util.function.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.service.cm</artifactId>
+                <version>${osgi.service.cm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.service.upnp</artifactId>
+                <version>${osgi.service.upnp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.service.device</artifactId>
+                <version>${osgi.service.device.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.service.event</artifactId>
+                <version>${osgi.service.event.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.service.wireadmin</artifactId>
+                <version>${osgi.service.wireadmin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.service.provisioning</artifactId>
+                <version>${osgi.service.provisioning.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.service.useradmin</artifactId>
+                <version>${osgi.service.useradmin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.service.metatype</artifactId>
+                <version>${osgi.service.metatype.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.service.permissionadmin</artifactId>
+                <version>${osgi.service.permissionadmin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.osgi</groupId>
+                <artifactId>org.osgi.service.coordinator</artifactId>
+                <version>${osgi.service.coordinator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>${version.javax.annotation.annotation-api}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1694,10 +1774,29 @@
         <carbon.identity.framework.version>5.15.17</carbon.identity.framework.version>
         <carbon.identity.imp.pkg.version>[5.14.0, 6.0.0)</carbon.identity.imp.pkg.version>
 
-        <version.equinox.osgi>3.9.1.v20130814-1242</version.equinox.osgi>
-        <version.equinox.osgi.services>3.3.100.v20130513-1956</version.equinox.osgi.services>
+        <version.equinox.osgi.services>3.12.300</version.equinox.osgi.services>
+        <version.equinox.platform.osgi>3.19.0</version.equinox.platform.osgi>
         <version.equinox.http.helper>1.1.0.wso2v1</version.equinox.http.helper>
         <version.equinox.p2.metadata>2.2.0.v20130523-1557</version.equinox.p2.metadata>
+        <felix.scr.version>2.1.30</felix.scr.version>
+
+        <!-- javax.xml.soap version -->
+        <javax.xml.soap-api.version>1.4.0</javax.xml.soap-api.version>
+
+        <!-- OSGi service versions -->
+        <osgi.service.component.version>1.5.1</osgi.service.component.version>
+        <osgi.util.promise.version>1.3.0</osgi.util.promise.version>
+        <osgi.util.function.version>1.2.0</osgi.util.function.version>
+        <osgi.service.cm.version>1.6.1</osgi.service.cm.version>
+        <osgi.service.upnp.version>1.2.1</osgi.service.upnp.version>
+        <osgi.service.device.version>1.1.1</osgi.service.device.version>
+        <osgi.service.event.version>1.4.1</osgi.service.event.version>
+        <osgi.service.wireadmin.version>1.0.2</osgi.service.wireadmin.version>
+        <osgi.service.provisioning.version>1.2.0</osgi.service.provisioning.version>
+        <osgi.service.useradmin.version>1.1.1</osgi.service.useradmin.version>
+        <osgi.service.metatype.version>1.4.1</osgi.service.metatype.version>
+        <osgi.service.permissionadmin.version>1.2.1</osgi.service.permissionadmin.version>
+        <osgi.service.coordinator.version>1.0.2</osgi.service.coordinator.version>
 
         <openjpa.version>2.2.2</openjpa.version>
         <openjpa.version.wso2>2.2.2.wso2v2</openjpa.version.wso2>
@@ -1705,7 +1804,7 @@
         <!-- Maven Plugin Version -->
         <maven.build.helper.plugin.version>3.0.0</maven.build.helper.plugin.version>
         <maven.xmlbeans-maven-plugin.plugin.version>2.3.3</maven.xmlbeans-maven-plugin.plugin.version>
-        <carbon.p2.plugin.version>5.1.2</carbon.p2.plugin.version>
+        <carbon.p2.plugin.version>5.4.12-SNAPSHOT</carbon.p2.plugin.version>
 
         <!-- Carbon kernel version-->
         <carbon.kernel.version>4.9.30</carbon.kernel.version>
@@ -1762,7 +1861,7 @@
         <bouncycastle.orbit.version>1.81.0.wso2v1</bouncycastle.orbit.version>
         <orbit.version.poi.ooxml>5.5.1.wso2v1</orbit.version.poi.ooxml>
         <org.wso2.json.version>3.0.0.wso2v7</org.wso2.json.version>
-        <version.equinox.http.servlet>1.1.400.v20130418-1354</version.equinox.http.servlet>
+        <version.equinox.http.servlet>1.8.100</version.equinox.http.servlet>
         <version.tomcat>9.0.110</version.tomcat>
         <orbit.version.tomcat.jsp.api>${version.tomcat}.wso2v1</orbit.version.tomcat.jsp.api>
         <orbit.version.tomcat.el.api>${version.tomcat}.wso2v1</orbit.version.tomcat.el.api>
@@ -1807,7 +1906,7 @@
         <maven.resources.plugin.version>3.1.0</maven.resources.plugin.version>
         <maven.antrun.plugin.version>1.8</maven.antrun.plugin.version>
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
-        <jacoco.maven.plugin.version>0.8.8</jacoco.maven.plugin.version>
+        <jacoco.maven.plugin.version>0.8.12</jacoco.maven.plugin.version>
         <testng.version>6.11</testng.version>
         <javax.jms-api.version>2.0.1</javax.jms-api.version>
         <jakarta.jms-api.version>3.1.0</jakarta.jms-api.version>
@@ -1823,11 +1922,11 @@
         <pax.logging.api.version>2.1.0-wso2v5</pax.logging.api.version>
         <pax.logging.log4j2.version>2.1.0-wso2v5</pax.logging.log4j2.version>
         <org.apache.commons.logging.version>1.1.1</org.apache.commons.logging.version>
-        <version.eclipse.equinox.cm>1.3.100</version.eclipse.equinox.cm>
+        <version.eclipse.equinox.cm>1.6.300</version.eclipse.equinox.cm>
         <version.eclipse.equinox.event>1.5.100</version.eclipse.equinox.event>
 
         <version.org.wso2.orbit.javax.activation>1.1.1.wso2v3</version.org.wso2.orbit.javax.activation>
-        <verion.javax.annotation.annotation-api>1.3.2</verion.javax.annotation.annotation-api>
+        <version.javax.annotation.annotation-api>1.3.2</version.javax.annotation.annotation-api>
         <version.org.wso2.orbit.javax.jta>1.1.0.wso2v2</version.org.wso2.orbit.javax.jta>
         <org.wso2.orbit.sun.xml.ws.version>2.3.2.wso2v1</org.wso2.orbit.sun.xml.ws.version>
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
@@ -1835,10 +1934,10 @@
         <json.smart.version>2.5.2</json.smart.version>
         <google.guava.version>33.0.0-jre</google.guava.version>
         <ca.uhn.hapi.wso2.version>2.4.0.wso2v2</ca.uhn.hapi.wso2.version>
-        <junit.version>4.8.2</junit.version>
+        <junit.version>4.12</junit.version>
         <netty.version>4.1.127.Final</netty.version>
         <netty.tcnative.version>2.0.53.Final</netty.tcnative.version>
-        <jacoco.agent.version>0.8.8</jacoco.agent.version>
+        <jacoco.agent.version>0.8.12</jacoco.agent.version>
         <activemq.version>5.2.0</activemq.version>
         <activemq.broker.version>5.15.2</activemq.broker.version>
         <aries.version>1.1.0</aries.version>
@@ -1933,7 +2032,7 @@
         <commons-codec.orbit.imp.pkg.version>0.0.0</commons-codec.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([1.4.0.wso2v1,1.5.0)) after osgi bundle is corrected - rajith-->
 
 <!--        <osgi.imp.pkg.version>[1.9.0,2.0.0)</osgi.imp.pkg.version> &lt;!&ndash; todo change this version to proper version range after osgi bundles are corrected (because export versions are different from bundle version) -rajith &ndash;&gt;-->
-        <osgi.service.imp.pkg.version>[1.2.0,1.3.0)</osgi.service.imp.pkg.version> <!-- todo change this version to proper version range after osgi bundles are corrected -rajith -->
+        <osgi.service.imp.pkg.version>[1.2.0,1.6.0)</osgi.service.imp.pkg.version> <!-- todo change this version to proper version range after osgi bundles are corrected -rajith -->
 
         <carbon-commons.trnsaction.mgt.imp.pkg.version>0.0.0</carbon-commons.trnsaction.mgt.imp.pkg.version> <!-- todo remove this and use {carbon-commons.imp.pkg.version} after org.wso2.carbon.transaction.manager (bundle - org.wso2.carbon.transaction.manager) is corrected to export correct versions-->
 
@@ -2030,7 +2129,7 @@
         <saxon.wso2.version>10.8</saxon.wso2.version>
         <xercesImpl.orbit.version>2.12.2.wso2v1</xercesImpl.orbit.version>
         <commons-logging.version>1.2</commons-logging.version>
-        <mockito.version>2.23.4</mockito.version>
+        <mockito.version>5.3.1</mockito.version>
         <wrapper.version>3.2.3</wrapper.version>
         <nimbus-jose.orbit.version>9.22.0.wso2v1</nimbus-jose.orbit.version>
         <nimbus-jose.orbit.imp.pkg.version>[9.22,10.0)</nimbus-jose.orbit.imp.pkg.version>
@@ -2040,7 +2139,7 @@
         <prometheus.version>0.8.1</prometheus.version>
         <!-- Prometheus API version 1.x-->
         <prometheus.v1.version>1.4.3</prometheus.v1.version>
-        <version.equinox.platform>3.14.0</version.equinox.platform>
+        <version.equinox.platform>3.23.200</version.equinox.platform>
         <!-- OAS3 Versions -->
         <swagger.parser.orbit.version>2.1.18.wso2v3</swagger.parser.orbit.version>
         <snakeyaml.version>2.5</snakeyaml.version>
@@ -2049,7 +2148,7 @@
         <version.geronimo.jta.spec>1.1</version.geronimo.jta.spec>
         <quartz.orbit.version>2.3.2.wso2v1</quartz.orbit.version>
         <!-- Maven bundle plugin -->
-        <maven.bundle.plugin.version>3.3.0</maven.bundle.plugin.version>
+        <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
         <apache.http.nio.version>4.4.15.wso2v1</apache.http.nio.version>
         <wso2.caching.version>4.0.3</wso2.caching.version>
         <apache.http.protocol.version>4.4.14.wso2v1</apache.http.protocol.version>
@@ -2179,19 +2278,13 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>21</source>
+                    <target>21</target>
                 </configuration>
             </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <groupId>org.apache.felix</groupId>
-                    <artifactId>maven-scr-plugin</artifactId>
-                    <version>1.26.2</version>
-
-                </plugin>
                 <plugin>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>

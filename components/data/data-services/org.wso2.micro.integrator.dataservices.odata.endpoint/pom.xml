@@ -34,10 +34,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.eclipse.equinox</groupId>
-            <artifactId>javax.servlet</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.wso2.ei</groupId>
             <artifactId>org.wso2.micro.integrator.dataservices.core</artifactId>
         </dependency>
@@ -62,10 +58,6 @@
         <dependency>
             <groupId>org.wso2.orbit.org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.ws.commons.axiom.wso2</groupId>
@@ -96,11 +88,9 @@
                         <Import-Package>
                             !org.wso2.micro.integrator.dataservices.odata.endpoint.*,
                             org.wso2.micro.integrator.dataservices.core.*;version="${project.version}",
-                            javax.servlet.http;version="${javax.servlet.imp.pkg.version}",
                             org.apache.commons.logging;version="${carbon.commons.logging.imp.pkg.version}",
                             org.apache.axis2.*; version="${imp.pkg.version.axis2}",
                             org.apache.commons.collections4.*,
-                            javax.servlet;version="${imp.pkg.version.javax.servlet}",
                             org.apache.axiom.*; version="${axiom.osgi.version.range}",
                             org.apache.synapse.*; version="${imp.pkg.version.synapse}",
                             org.apache.http.nio.*; version="${apache.http.nio.version}",
@@ -111,10 +101,6 @@
                 </configuration>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-scr-plugin</artifactId>
-            </plugin>
         </plugins>
     </build>
 

@@ -142,6 +142,11 @@
                             *;resolution:=optional
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
+                        <Provide-Capability>
+                            osgi.service;objectClass=org.wso2.micro.integrator.initializer.services.SynapseEnvironmentService,
+                            osgi.service;objectClass=org.wso2.micro.integrator.initializer.services.SynapseRegistrationsService,
+                            osgi.service;objectClass=org.wso2.micro.integrator.initializer.services.SynapseConfigurationService
+                        </Provide-Capability>
                     </instructions>
                 </configuration>
             </plugin>

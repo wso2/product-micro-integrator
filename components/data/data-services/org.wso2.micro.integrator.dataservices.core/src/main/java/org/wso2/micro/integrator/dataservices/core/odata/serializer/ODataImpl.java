@@ -27,7 +27,7 @@ import org.apache.olingo.server.api.ServiceMetadata;
 import org.apache.olingo.server.api.etag.ServiceMetadataETagSupport;
 import org.apache.olingo.server.api.serializer.SerializerException;
 import org.apache.olingo.server.api.serializer.SerializerException.MessageKeys;
-import org.apache.olingo.server.api.uri.UriHelper;;
+import org.apache.olingo.server.api.uri.UriHelper;
 import org.apache.olingo.server.core.ServiceMetadataImpl;
 import org.apache.olingo.server.core.uri.UriHelperImpl;
 
