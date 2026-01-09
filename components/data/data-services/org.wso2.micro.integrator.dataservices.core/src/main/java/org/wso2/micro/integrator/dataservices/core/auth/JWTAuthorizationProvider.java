@@ -20,6 +20,7 @@ package org.wso2.micro.integrator.dataservices.core.auth;
 import org.apache.axiom.util.base64.Base64Utils;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.MessageContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.micro.core.util.KeyStoreManager;
@@ -308,8 +309,7 @@ public class JWTAuthorizationProvider implements AuthorizationProvider {
     private static String getAlgorithm() {
         if (StringUtils.isNotEmpty(System.getProperty(SECURITY_JCE_PROVIDER))) {
             return "SHA-256";
-        } else {
-            return "SHA-1";
         }
+        return "SHA-1";
     }
 }

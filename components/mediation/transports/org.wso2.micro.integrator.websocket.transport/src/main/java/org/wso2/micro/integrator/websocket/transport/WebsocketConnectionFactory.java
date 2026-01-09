@@ -73,13 +73,8 @@ public class WebsocketConnectionFactory {
                 OMElement trustStorePasswordElem = trustParam.getParameterElement().
                         getFirstChildWithName(new QName(WebsocketConstants.
                                                                 TRUST_STORE_PASSWORD));
-                OMElement trustStoreTypeElem = trustParam.getParameterElement().getFirstChildWithName(
-                        new QName(WebsocketConstants.TRUST_STORE_TYPE));
-                if (trustStoreTypeElem != null) {
-                    trustStoreType = trustStoreTypeElem.getText();
-                } else {
-                    trustStoreType = "JKS";
-                }
+                resolveTrustStoreType(trustParam.getParameterElement().getFirstChildWithName(
+                        new QName(WebsocketConstants.TRUST_STORE_TYPE)));
                 if (trustStoreLocationElem == null || trustStorePasswordElem == null) {
                     handleWssTrustStoreParameterError(
                             "Unable to read parameter(s) " + WebsocketConstants.TRUST_STORE_LOCATION + " and/or "
@@ -176,17 +171,11 @@ public class WebsocketConnectionFactory {
                     OMElement trustStoreLocationElem = trustParam.getParameterElement().
                             getFirstChildWithName(new QName(WebsocketConstants.TRUST_STORE_LOCATION));
                     OMElement trustStorePasswordElem = trustParam.getParameterElement().
-                            getFirstChildWithName(new QName(WebsocketConstants.
-                                                                    TRUST_STORE_PASSWORD));
-                    OMElement trustStoreTypeElem = trustParam.getParameterElement().getFirstChildWithName(
-                            new QName(WebsocketConstants.TRUST_STORE_TYPE));
+                            getFirstChildWithName(new QName(WebsocketConstants.TRUST_STORE_PASSWORD));
                     final String location = trustStoreLocationElem.getText();
                     final String storePassword = trustStorePasswordElem.getText();
-                    if (trustStoreTypeElem != null) {
-                        trustStoreType = trustStoreTypeElem.getText();
-                    } else {
-                        trustStoreType = "JKS";
-                    }
+                    resolveTrustStoreType(trustParam.getParameterElement().getFirstChildWithName(
+                            new QName(WebsocketConstants.TRUST_STORE_TYPE)));
                     sslCtx = SslContextBuilder.forClient().trustManager(SSLUtil.createTrustmanager(location,
                             storePassword)).build();
                 } else {
@@ -337,4 +326,12 @@ public class WebsocketConnectionFactory {
         return trustStoreType;
     }
 
+    private void resolveTrustStoreType(OMElement trustParam) {
+        OMElement trustStoreTypeElem = trustParam.getFirstChildWithName(new QName(WebsocketConstants.TRUST_STORE_TYPE));
+        if (trustStoreTypeElem != null) {
+            trustStoreType = trustStoreTypeElem.getText();
+        } else {
+            trustStoreType = "JKS";
+        }
+    }
 }

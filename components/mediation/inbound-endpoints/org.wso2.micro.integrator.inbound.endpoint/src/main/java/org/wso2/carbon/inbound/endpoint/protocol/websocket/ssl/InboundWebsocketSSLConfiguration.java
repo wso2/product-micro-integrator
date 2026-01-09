@@ -54,7 +54,6 @@ public class InboundWebsocketSSLConfiguration {
     public InboundWebsocketSSLConfiguration(File keyStore, String keyStorePass) {
         this.keyStore = keyStore;
         this.keyStorePass = keyStorePass;
-        this.keyStoreType = WebsocketEndpointManager.getInstance().getKeyStoreType();
     }
 
     public String getCertPass() {
@@ -90,6 +89,11 @@ public class InboundWebsocketSSLConfiguration {
 
     public InboundWebsocketSSLConfiguration setTrustStoreType(String trustStoreType) {
         this.trustStoreType = trustStoreType;
+        return this;
+    }
+
+    public InboundWebsocketSSLConfiguration setKeyStoreType(String keyStoreType) {
+        this.keyStoreType = keyStoreType;
         return this;
     }
 
@@ -155,7 +159,7 @@ public class InboundWebsocketSSLConfiguration {
                 throw new IllegalArgumentException("KeyStore File " + keyStoreFile + " not found");
             }
             InboundWebsocketSSLConfiguration sslConfig = new InboundWebsocketSSLConfiguration(keyStore, keyStorePass)
-                    .setCertPass(certPass);
+                    .setCertPass(certPass).setKeyStoreType(keyStoreType);
             if (trustStoreFile != null) {
                 File trustStore = new File(trustStoreFile);
                 if (!trustStore.exists()) {

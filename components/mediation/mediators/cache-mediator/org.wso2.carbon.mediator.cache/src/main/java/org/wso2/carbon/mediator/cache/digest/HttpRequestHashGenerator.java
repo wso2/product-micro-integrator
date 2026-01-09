@@ -564,7 +564,7 @@ public class HttpRequestHashGenerator implements DigestGenerator {
             if (toAddress != null) {
                 digest = getDigest(body, toAddress, transportHeaders, getAlgorithm());
             } else {
-                digest = getDigest(body, MD5_DIGEST_ALGORITHM);
+                digest = getDigest(body, getAlgorithm());
             }
             return digest != null ? getStringRepresentation(digest) : null;
         } else {
@@ -626,8 +626,7 @@ public class HttpRequestHashGenerator implements DigestGenerator {
         String provider = System.getProperty(JCE_PROVIDER);
         if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
             return SHA_256_DIGEST_ALGORITHM;
-        } else {
-            return MD5_DIGEST_ALGORITHM;
         }
+        return MD5_DIGEST_ALGORITHM;
     }
 }

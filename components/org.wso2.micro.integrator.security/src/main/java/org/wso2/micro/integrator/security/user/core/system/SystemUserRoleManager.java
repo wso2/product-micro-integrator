@@ -53,7 +53,6 @@ public class SystemUserRoleManager {
     private DataSource dataSource;
     private static final String SHA_1_PRNG = "SHA1PRNG";
     private static final String DRBG = "DRBG";
-    private static final String DEFAULT = "DEFAULT";
     private static final String JCE_PROVIDER = "security.jce.provider";
 
     public SystemUserRoleManager(DataSource dataSource, int tenantId) throws UserStoreException {
@@ -641,8 +640,7 @@ public class SystemUserRoleManager {
         String provider = System.getProperty(JCE_PROVIDER);
         if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
             return DRBG;
-        } else {
-            return SHA_1_PRNG;
         }
+        return SHA_1_PRNG;
     }
 }

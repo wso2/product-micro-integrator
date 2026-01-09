@@ -39,6 +39,7 @@ public class SSLUtil {
 
     private static final String PROTOCOL = "TLS";
     private static final String PKIX = "PKIX";
+    private static String trustStoreType = "JKS";
     private static final String JCE_PROVIDER = "security.jce.provider";
 
     private static SSLContext serverSSLCtx = null;
@@ -100,18 +101,16 @@ public class SSLUtil {
         String provider = System.getProperty(JCE_PROVIDER);
         if (StringUtils.isNotEmpty(provider)) {
             return PKIX;
-        } else {
-            return TrustManagerFactory.getDefaultAlgorithm();
         }
+        return TrustManagerFactory.getDefaultAlgorithm();
     }
 
     private static String getKeyManagerType() {
         String provider = System.getProperty(JCE_PROVIDER);
         if (StringUtils.isNotEmpty(provider)) {
             return PKIX;
-        } else {
-            return KeyManagerFactory.getDefaultAlgorithm();
         }
+        return KeyManagerFactory.getDefaultAlgorithm();
     }
 
 }

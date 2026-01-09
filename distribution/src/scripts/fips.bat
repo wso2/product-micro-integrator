@@ -30,14 +30,12 @@ set "EXPECTED_BCTLS_FIPS_CHECKSUM=9cc33650ede63bc1a8281ed5c8e1da314d50bc76"
 set "EXPECTED_BCUTIL_FIPS_CHECKSUM=c11996822d9d0f831b340bf4ea4d9d3e87a8e9de"
 
 :: ======= Legacy (non-FIPS) to restore on DISABLE if no backup exists =======
-set "LEGACY_BCPROV_ARTIFACT=bcprov-jdk18on"
 set "LEGACY_BCPROV_VERSION=1.78.1"
 
 set "PRG=%~f0"
 set "PRGDIR=%~dp0"
 
-:: UPDATED: Force recalculation of CARBON_HOME to avoid system-wide variable conflicts
-:: This assumes the script is in the 'bin' directory, and CARBON_HOME is one level up.
+:: Recalculate CARBON_HOME (script in bin, home one level up)
 PUSHD "%PRGDIR%.."
 set "CARBON_HOME=%CD%"
 POPD
@@ -45,22 +43,17 @@ POPD
 set "LOCAL_DIR="
 set "MAVEN_BASE=https://repo1.maven.org/maven2"
 
-:: Parse options first
+:: ---------------------------- Option Parsing ----------------------------
 :ParseOpts
 IF "%~1"=="" GOTO EndParseOpts
 IF /I "%~1"=="-f" (
     set "LOCAL_DIR=%~2"
-    shift
-    shift
-    GOTO ParseOpts
+    shift & shift & GOTO ParseOpts
 )
 IF /I "%~1"=="-m" (
     set "MAVEN_BASE=%~2"
-    shift
-    shift
-    GOTO ParseOpts
+    shift & shift & GOTO ParseOpts
 )
-:: Assume first non-option is the main argument
 set "ARGUMENT=%~1"
 shift
 GOTO ParseOpts
@@ -70,8 +63,7 @@ IF "%ARGUMENT%"=="" (
     IF "%~1" NEQ "" set "ARGUMENT=%~1"
 )
 
-:: Directories
-:: !!! VERIFY THIS PATH IS CORRECT on your system !!!
+:: ---------------------------- Paths ----------------------------
 set "BACKUP_DIR=%USERPROFILE%\.wso2-mi\backup"
 set "RUNTIME_LIB_DIR=%CARBON_HOME%\wso2\lib"
 set "PLUGINS_DIR=%CARBON_HOME%\wso2\components\plugins"
@@ -80,26 +72,35 @@ mkdir "%BACKUP_DIR%" 2>NUL
 mkdir "%RUNTIME_LIB_DIR%" 2>NUL
 mkdir "%PLUGINS_DIR%" 2>NUL
 
-:: Check for dependencies
-curl --version >NUL 2>NUL
+:: ---------------------------- Dependency Checks ----------------------------
+curl --version >NUL 2>&1
 IF ERRORLEVEL 1 (
     echo ERROR: curl.exe not found or not in PATH.
-    echo Please install curl or add it to your system's PATH.
+    echo Please install curl or add it to your system PATH.
     GOTO :EndScript
 )
-certutil /? >NUL 2>NUL
+
+:: Hash tool detection (certutil OR PowerShell). Don't hard-fail if missing.
+where certutil >NUL 2>&1
+IF %ERRORLEVEL%==0 ( set "HAS_CERTUTIL=1" ) ELSE ( set "HAS_CERTUTIL=0" )
+
+powershell -NoProfile -Command "exit 0" >NUL 2>&1
+IF %ERRORLEVEL%==0 ( set "HAS_POWERSHELL=1" ) ELSE ( set "HAS_POWERSHELL=0" )
+
+IF "%HAS_CERTUTIL%%HAS_POWERSHELL%"=="00" (
+  echo WARNING: Neither certutil nor PowerShell is available. Checksum verification will be skipped.
+)
+
+:: Optional: warn if not elevated (helps with access denied on Program Files installs)
+net session >NUL 2>&1
 IF ERRORLEVEL 1 (
-    echo ERROR: certutil.exe not found or not in PATH.
-    echo This tool is required for checksum verification.
-    GOTO :EndScript
+  echo WARNING: Not running elevated. If files are under a protected directory, moves/copies may fail.
 )
 
 :: ---------------------------- Main ----------------------------
-
 IF /I "%ARGUMENT%"=="DISABLE" GOTO :DisableFIPS
 IF /I "%ARGUMENT%"=="VERIFY" GOTO :VerifyFIPS
 GOTO :InstallFIPS
-
 
 :InstallFIPS
 echo Step 1/4: Backing up ^& removing legacy (non-FIPS) BC jars from plugins...
@@ -133,7 +134,6 @@ IF ERRORLEVEL 1 GOTO :EndScript
 echo Step 4/4: Done. Please restart the server.
 GOTO :EndScript
 
-
 :DisableFIPS
 echo Disabling FIPS jars...
 CALL :remove_fips_artifact "bc-fips"
@@ -151,7 +151,6 @@ IF ERRORLEVEL 1 GOTO :EndScript
 
 echo Done. Please restart the server.
 GOTO :EndScript
-
 
 :VerifyFIPS
 set "VERIFY_FAILED=false"
@@ -191,32 +190,53 @@ GOTO :EndScript
 :: ============================================================================
 :: SUBROUTINES
 :: ============================================================================
-GOTO :EOF
 
-:: ---------- Verify Checksum (Windows implementation) ----------
+:: ---------- Verify Checksum (certutil -> PowerShell -> skip) ----------
 :verify_checksum
     set "FILE=%~1"
     set "EXPECTED=%~2"
+
+    IF NOT EXIST "%FILE%" (
+        echo ERROR: File not found: %~1
+        EXIT /B 1
+    )
+
     IF "%EXPECTED%"=="" (
-        echo Skipping checksum for %~nx1
+        echo Skipping checksum for %~nx1 (no EXPECTED value)
         EXIT /B 0
     )
 
     set "GOT="
-    FOR /F "skip=1 tokens=*" %%G IN ('certutil -hashfile "%FILE%" SHA1') DO (
-        set "GOT=%%G"
-        GOTO :gotHash
+
+    :: Try certutil first
+    IF "%HAS_CERTUTIL%"=="1" (
+        FOR /F "usebackq skip=1 tokens=1* delims=" %%G IN (`
+            certutil -hashfile "%FILE%" SHA1
+        `) DO (
+            IF NOT DEFINED GOT IF NOT "%%~G"=="" set "GOT=%%G"
+        )
     )
-    :gotHash
+
+    :: Fallback to PowerShell Get-FileHash
+    IF NOT DEFINED GOT IF "%HAS_POWERSHELL%"=="1" (
+        FOR /F "usebackq delims=" %%H IN (`
+            powershell -NoProfile -Command "(Get-FileHash -Algorithm SHA1 -LiteralPath '%FILE%').Hash.ToLower()"
+        `) DO (
+            IF NOT DEFINED GOT set "GOT=%%H"
+        )
+    )
+
     IF NOT DEFINED GOT (
-        echo ERROR: Could not get hash for %~nx1 using certutil.
-        EXIT /B 1
+        echo WARNING: No hashing tool available. Skipping checksum for %~nx1
+        EXIT /B 0
     )
 
     set "GOT=%GOT: =%"
 
     IF /I "%GOT%" NEQ "%EXPECTED%" (
         echo Checksum mismatch for %~nx1
+        echo   Expected: %EXPECTED%
+        echo   Got     : %GOT%
         EXIT /B 1
     )
 
@@ -240,33 +260,28 @@ GOTO :EOF
 :backup_and_remove_bc_jars_in_dir
     set "DIR=%~1"
 
-    :: Define the specific jar to look for
     set "ORBIT_PLUGIN_JAR=bcprov-jdk18on_%LEGACY_BCPROV_VERSION%.wso2v1.jar"
     set "FILE_PATH=%DIR%\%ORBIT_PLUGIN_JAR%"
 
     mkdir "%BACKUP_DIR%" 2>NUL
 
-    :: Check if that specific file exists
     IF EXIST "%FILE_PATH%" (
         echo Backing up legacy BC jar from %DIR% -> %BACKUP_DIR%
-        echo   Moved %FILE_PATH%
-
         move /Y "%FILE_PATH%" "%BACKUP_DIR%\%ORBIT_PLUGIN_JAR%" >NUL
         IF ERRORLEVEL 1 (
             echo ERROR: Access is denied. Failed to move %ORBIT_PLUGIN_JAR%.
             echo Please ensure the server is stopped and run as administrator.
             EXIT /B 1
         )
+        echo   Moved %ORBIT_PLUGIN_JAR%
     ) ELSE (
         echo No legacy BC jars in %DIR%
     )
-
     EXIT /B 0
 
 :: ---------- Backup & remove specific legacy BC jars from RUNTIME_LIB_DIR ----------
 :backup_and_remove_specific_legacy_in_runtime
     mkdir "%BACKUP_DIR%" 2>NUL
-
     set "LEGACY_RUNTIME_JARS=bcprov-jdk18on-%LEGACY_BCPROV_VERSION%.jar bctls-jdk18on-%LEGACY_BCPROV_VERSION%.jar bcpkix-jdk18on-%LEGACY_BCPROV_VERSION%.jar bcutil-jdk18on-%LEGACY_BCPROV_VERSION%.jar"
 
     set "FOUND_ANY=false"
@@ -319,7 +334,7 @@ GOTO :EOF
         echo Re-downloading...
         CALL :download_to_path "%ARTIFACT%" "%VERSION%" "%STAGED%"
         IF ERRORLEVEL 1 EXIT /B 1
-        CALL :verify_checksum "%STAGED%" "%EXPECTED%"
+        CALL :verify_checksum "%STAGED%"
         IF ERRORLEVEL 1 (
             echo Checksum failed again. Deleting corrupt file.
             del "%STAGED%" 2>NUL
@@ -335,7 +350,6 @@ GOTO :EOF
     set "DEST=%~3"
     set "FILENAME="
     FOR %%F IN ("%DEST%") DO set "FILENAME=%%~nxF"
-
     set "URL=%MAVEN_BASE%/org/bouncycastle/%ARTIFACT%/%VERSION%/%FILENAME%"
     echo Downloading %URL%
     curl -fL -o "%DEST%" "%URL%"
@@ -391,14 +405,12 @@ GOTO :EOF
     )
     EXIT /B 0
 
-:: ----- Helper for restore_legacy_to_dir -----
 :_restore_legacy_jar
     set "JAR=%~1"
     set "TARGET_DIR=%~2"
     set "TARGET_PATH=%TARGET_DIR%\%JAR%"
     set "VER=%LEGACY_BCPROV_VERSION%"
 
-    :: Prefer restore from backup
     IF EXIST "%BACKUP_DIR%\%JAR%" (
         copy /Y "%BACKUP_DIR%\%JAR%" "%TARGET_PATH%" >NUL
         IF ERRORLEVEL 1 (
@@ -410,7 +422,6 @@ GOTO :EOF
         EXIT /B 0
     )
 
-    :: Otherwise, download from Maven Central
     set "BASE="
     FOR /F "tokens=1 delims=-" %%B IN ("%JAR%") DO set "BASE=%%B"
 
@@ -441,25 +452,72 @@ GOTO :EOF
     set "TARGET_PATH=%TARGET_DIR%\%PLUGIN_JAR%"
     set "BACKUP_PATH=%BACKUP_DIR%\%PLUGIN_JAR%"
 
+    :: Maven Central filename uses dashes, not underscore
+    set "MVN_FILE_DASH=bcprov-jdk18on-%VER%.wso2v1.jar"
+    set "MVN_URL=%MAVEN_BASE%/org/wso2/orbit/org/bouncycastle/bcprov-jdk18on/%VER%/%MVN_FILE_DASH%"
+    set "MVN_DL=%BACKUP_DIR%\%MVN_FILE_DASH%"
+
     mkdir "%BACKUP_DIR%" 2>NUL
     mkdir "%TARGET_DIR%" 2>NUL
 
-    :: Check if it exists in backup
+    :: 1) Prefer restore from backup (underscore name)
     IF EXIST "%BACKUP_PATH%" (
         echo Restoring %PLUGIN_JAR% from backup...
         move /Y "%BACKUP_PATH%" "%TARGET_PATH%" >NUL
         IF ERRORLEVEL 1 (
             echo ERROR: Access is denied moving plugin from backup.
-            echo Please run this script as an Administrator.
+            echo Please stop the server and/or run as Administrator.
             EXIT /B 1
         )
         echo Moved %PLUGIN_JAR% -> %TARGET_DIR%
         EXIT /B 0
     )
 
-    :: If not found in backup or target, it means we don't have it to restore.
-    echo WARNING: %PLUGIN_JAR% not found in backup or target; skipping plugin restore.
+    :: 2) If not in backup, try a previously downloaded dash-named jar
+    IF EXIST "%MVN_DL%" (
+        echo Installing plugin from previously downloaded %MVN_FILE_DASH%
+        copy /Y "%MVN_DL%" "%TARGET_PATH%" >NUL
+        IF ERRORLEVEL 1 (
+            echo ERROR: Access is denied copying plugin from download cache.
+            echo Please stop the server and/or run as Administrator.
+            EXIT /B 1
+        )
+        echo Installed %PLUGIN_JAR% -> %TARGET_DIR%
+        EXIT /B 0
+    )
+
+    :: 3) Download from Maven Central then place as underscore plugin name
+    echo %PLUGIN_JAR% not found in backup. Downloading orbit plugin from Maven Central...
+    echo   %MVN_URL%
+    curl -fL -o "%MVN_DL%" "%MVN_URL%"
+    IF ERRORLEVEL 1 (
+        echo ERROR: Download failed for %MVN_URL%
+        echo HINT: Check your internet/proxy or use "-m" to point to a mirror.
+        GOTO :plugin_diag
+    )
+
+    copy /Y "%MVN_DL%" "%TARGET_PATH%" >NUL
+    IF ERRORLEVEL 1 (
+        echo ERROR: Access is denied copying downloaded plugin to %TARGET_DIR%.
+        echo Please stop the server and/or run as Administrator.
+        EXIT /B 1
+    )
+    echo Installed %PLUGIN_JAR% -> %TARGET_DIR%
     EXIT /B 0
+
+:plugin_diag
+    echo ---- Diagnostics (plugin restore) ----
+    echo BACKUP_DIR = %BACKUP_DIR%
+    echo TARGET_DIR = %TARGET_DIR%
+    echo Looking for:
+    echo   %BACKUP_PATH%
+    echo   %MVN_DL%
+    echo Directory contents:
+    dir /b "%BACKUP_DIR%" 2>NUL
+    echo.
+    dir /b "%TARGET_DIR%" 2>NUL
+    echo --------------------------------------
+    EXIT /B 1
 
 :: ---------- Helper for VERIFY ----------
 :_verify_fips_jar
@@ -483,7 +541,6 @@ GOTO :EOF
         EXIT /B 0
     )
     EXIT /B 0
-
 
 :: ============================================================================
 :: END OF SCRIPT

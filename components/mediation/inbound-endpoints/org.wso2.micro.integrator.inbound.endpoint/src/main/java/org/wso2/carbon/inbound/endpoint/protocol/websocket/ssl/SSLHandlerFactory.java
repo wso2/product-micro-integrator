@@ -112,9 +112,7 @@ public class SSLHandlerFactory {
     private static String getTrustManagerType() {
         if (StringUtils.isNotEmpty(System.getProperty(JCE_PROVIDER))) {
             return PKIX;
-        } else {
-            return TrustManagerFactory.getDefaultAlgorithm();
         }
+        return TrustManagerFactory.getDefaultAlgorithm();
     }
-
 }

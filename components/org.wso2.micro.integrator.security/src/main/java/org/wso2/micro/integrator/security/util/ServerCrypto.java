@@ -713,17 +713,15 @@ public class ServerCrypto implements Crypto {
         String provider = System.getProperty(JCE_PROVIDER);
         if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
             return "SHA-256";
-        } else {
-            return "SHA-1";
         }
+        return "SHA-1";
     }
 
     private static String getKeyType(Properties prop) {
         String provider = System.getProperty(JCE_PROVIDER);
         if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
             return prop.getProperty("org.wso2.carbon.security.crypto.type", "BCFKS");
-        } else {
-            return prop.getProperty("org.wso2.carbon.security.crypto.type", KeyStore.getDefaultType());
         }
+        return prop.getProperty("org.wso2.carbon.security.crypto.type", KeyStore.getDefaultType());
     }
 }
