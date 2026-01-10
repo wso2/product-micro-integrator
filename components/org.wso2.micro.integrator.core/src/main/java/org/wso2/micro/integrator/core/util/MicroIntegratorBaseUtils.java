@@ -21,10 +21,13 @@ package org.wso2.micro.integrator.core.util;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.XMLUtils;
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
 import org.wso2.micro.integrator.core.internal.CarbonServerConfigurationService;
 import org.wso2.micro.integrator.core.internal.ResolverException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.FileInputStream;
@@ -36,11 +39,36 @@ import javax.xml.namespace.QName;
 
 public class MicroIntegratorBaseUtils {
 
+    private static final Logger log = LoggerFactory.getLogger(MicroIntegratorBaseUtils.class);
+
     private static OMElement axis2Config;
     private static org.wso2.micro.integrator.core.internal.CarbonAxisConfigurator carbonAxisConfigurator;
 
     // --------------------------
-    // getPropertyFromAxisConf
+    // Static initializer for SERVER_PORT_OFFSET
+    // --------------------------
+    static {
+        try {
+            CarbonServerConfigurationService serverConfig = getServerConfiguration();
+            if (serverConfig != null) {
+                String portOffsetStr = System.getProperty(org.wso2.micro.core.Constants.SERVER_PORT_OFFSET,
+                        serverConfig.getFirstProperty("Ports.Offset"));
+                if (portOffsetStr != null) {
+                    try {
+                        int portOffset = Integer.parseInt(portOffsetStr);
+                        System.setProperty(org.wso2.micro.core.Constants.SERVER_PORT_OFFSET, String.valueOf(portOffset));
+                    } catch (NumberFormatException e) {
+                        log.error("Invalid port offset during initialization: " + portOffsetStr, e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error initializing SERVER_PORT_OFFSET", e);
+        }
+    }
+
+    // --------------------------
+    // Get property from axis2.xml
     // --------------------------
     private static String getPropertyFromAxisConf(String parameter) throws IOException, XMLStreamException {
         try (InputStream file = new FileInputStream(Paths.get(getCarbonConfigDirPath(), "axis2", "axis2.xml").toString())) {
@@ -64,14 +92,18 @@ public class MicroIntegratorBaseUtils {
     }
 
     // --------------------------
-    // getPortFromServerConfig
+    // Get port from server config
     // --------------------------
     public static int getPortFromServerConfig(String property) {
         CarbonServerConfigurationService serverConfig = getServerConfiguration();
+        if (serverConfig == null) {
+            throw new IllegalStateException("CarbonServerConfigurationService is not initialized");
+        }
+
         String portValue = null;
         int portNumber = -1;
 
-        // The following condition deals with ports specified to be read from carbon.xml
+        // Ports can be defined as templates: ${PortName}
         if (property.contains("${") && property.contains("}")) {
             String template = property.substring(property.indexOf("${") + 2, property.indexOf("}"));
             portValue = serverConfig.getFirstProperty(template);
@@ -91,10 +123,8 @@ public class MicroIntegratorBaseUtils {
             }
         }
 
-        // setting up port offset properties as system global property
-        String portOffsetStr = System.getProperty(org.wso2.micro.core.Constants.SERVER_PORT_OFFSET,
-                serverConfig.getFirstProperty("Ports.Offset"));
         int portOffset = 0;
+        String portOffsetStr = System.getProperty(org.wso2.micro.core.Constants.SERVER_PORT_OFFSET);
         if (portOffsetStr != null) {
             try {
                 portOffset = Integer.parseInt(portOffsetStr);
@@ -102,15 +132,22 @@ public class MicroIntegratorBaseUtils {
                 log.error("Invalid port offset: " + portOffsetStr, e);
             }
         }
-        System.setProperty(org.wso2.micro.core.Constants.SERVER_PORT_OFFSET, String.valueOf(portOffset));
+
+        if (portNumber < 0) {
+            throw new IllegalArgumentException("Invalid port configuration: " + property);
+        }
 
         return portNumber + portOffset;
     }
 
     // --------------------------
-    // HTTP/HTTPS helper
+    // Transport listener helpers
     // --------------------------
     private static int getTransportListenerPort(String transportType) throws ResolverException {
+        if (carbonAxisConfigurator == null) {
+            throw new ResolverException("CarbonAxisConfigurator not initialized. Call setCarbonAxisConfigurator() first.");
+        }
+
         try {
             int portOffset = 0;
             String offsetProp = System.getProperty(org.wso2.micro.core.Constants.SERVER_PORT_OFFSET);
@@ -144,32 +181,25 @@ public class MicroIntegratorBaseUtils {
     }
 
     // --------------------------
-    // This is to set the carbonAxisConfigurator instance.
+    // Set CarbonAxisConfigurator
     // --------------------------
     public static void setCarbonAxisConfigurator(org.wso2.micro.integrator.core.internal.CarbonAxisConfigurator carbonAxisConfig) {
+        if (carbonAxisConfig == null) {
+            throw new IllegalArgumentException("carbonAxisConfig cannot be null");
+        }
         carbonAxisConfigurator = carbonAxisConfig;
     }
 
     // --------------------------
-    // Utility methods
+    // Stub methods to implement
     // --------------------------
     private static CarbonServerConfigurationService getServerConfiguration() {
-        // implement fetching the CarbonServerConfigurationService instance
+        // TODO: implement fetching the CarbonServerConfigurationService instance
         return null;
     }
 
     private static String getCarbonConfigDirPath() {
-        // implement fetching carbon config dir path
+        // TODO: implement fetching carbon config dir path
         return null;
-    }
-
-    private static class log {
-        public static void debug(String msg) {
-            System.out.println("[DEBUG] " + msg);
-        }
-        public static void error(String msg, Exception e) {
-            System.err.println("[ERROR] " + msg);
-            e.printStackTrace();
-        }
     }
 }
