@@ -95,12 +95,7 @@ public class MicroIntegratorBaseUtils {
     private static CarbonServerConfigurationService serverConfigurationService;
 
     public static String getServerXml() {
-
         String carbonXML = System.getProperty(MicroIntegratorBaseConstants.CARBON_CONFIG_DIR_PATH);
-        /*
-         * if user set the system property telling where is the configuration
-         * directory
-         */
         if (carbonXML == null) {
             return getCarbonConfigDirPath() + File.separator + "carbon.xml";
         }
@@ -130,7 +125,6 @@ public class MicroIntegratorBaseUtils {
     }
 
     public static String getCarbonConfigDirPath() {
-
         String carbonConfigDirPath = System.getProperty(MicroIntegratorBaseConstants.CARBON_CONFIG_DIR_PATH);
         if (carbonConfigDirPath == null) {
             carbonConfigDirPath = System.getenv(MicroIntegratorBaseConstants.CARBON_CONFIG_DIR_PATH_ENV);
@@ -142,7 +136,6 @@ public class MicroIntegratorBaseUtils {
     }
 
     public static String getCarbonHome() {
-
         String carbonHome = System.getProperty(MicroIntegratorBaseConstants.CARBON_HOME);
         if (carbonHome == null) {
             carbonHome = System.getenv(MicroIntegratorBaseConstants.CARBON_HOME_ENV);
@@ -164,27 +157,14 @@ public class MicroIntegratorBaseUtils {
         return configPath;
     }
 
-    /**
-     * Method to test whether a given user has permission to execute the given
-     * method.
-     */
     public static void checkSecurity() {
-
         java.lang.SecurityManager secMan = System.getSecurityManager();
         if (secMan != null) {
             secMan.checkPermission(new ManagementPermission("control"));
         }
     }
 
-    /**
-     * Returns a copy of the provided array. Same as the JDK 1.6 Arrays.copyOf() method
-     *
-     * @param original The original array
-     * @param <T>      Type of objects in the original array
-     * @return Copy of the provided array
-     */
     public static <T> T[] arrayCopyOf(T[] original) {
-
         if (original == null) {
             return null;
         }
@@ -197,24 +177,11 @@ public class MicroIntegratorBaseUtils {
         return copy;
     }
 
-    /**
-     * Check if this is an Instance started by a Java exec
-     *
-     * @return true if this is an instance started by Java exec
-     */
     public static boolean isChildNode() {
-
         return TRUE.equals(System.getProperty("instance"));
     }
 
-    /**
-     * Check whther the specified Strin corresponds to a URL
-     *
-     * @param location The String to be checked
-     * @return true - if <code>location</code> is a URL, false - otherwise
-     */
     public static boolean isURL(String location) {
-
         try {
             new URL(location);
             return true;
@@ -224,7 +191,6 @@ public class MicroIntegratorBaseUtils {
     }
 
     public static String getAxis2Xml() {
-
         String axis2XML = CarbonServerConfigurationService.getInstance().
                 getFirstProperty("Axis2Config.ConfigurationFile");
         if (axis2XML == null) {
@@ -233,18 +199,11 @@ public class MicroIntegratorBaseUtils {
         return axis2XML;
     }
 
-    /**
-     * Check whether this is the multiple Instance scenario- means started the server with -n arg
-     *
-     * @return true if the server started with -n argument
-     */
     public static boolean isMultipleInstanceCase() {
-
         return System.getProperty("instances.value") != null;
     }
 
     public static String getComponentsRepo() {
-
         String componentsRepo = System.getProperty(org.wso2.micro.core.Constants.COMPONENT_REP0);
         if (componentsRepo == null) {
             componentsRepo = System.getenv(MicroIntegratorBaseConstants.COMPONENT_REP0_ENV);
@@ -256,15 +215,7 @@ public class MicroIntegratorBaseUtils {
         return componentsRepo;
     }
 
-    /**
-     * Reads the AAR services dir from the Axis config. if it is null, returns the default value
-     * used in Carbon
-     *
-     * @param axisConfig - AxisConfiguration instance
-     * @return - services dir name
-     */
     public static String getAxis2ServicesDir(AxisConfiguration axisConfig) {
-
         String servicesDir = "axis2services";
         String serviceDirPara = (String) axisConfig.getParameterValue(DeploymentConstants.SERVICE_DIR_PATH);
         if (serviceDirPara != null) {
@@ -274,7 +225,6 @@ public class MicroIntegratorBaseUtils {
     }
 
     public static String getAxis2Repo() {
-
         String axis2Repo = System.getProperty(org.wso2.micro.core.Constants.AXIS2_REPO);
         if (axis2Repo == null) {
             axis2Repo = System.getenv(MicroIntegratorBaseConstants.AXIS2_REPO_ENV);
@@ -283,14 +233,11 @@ public class MicroIntegratorBaseUtils {
     }
 
     public static String getCarbonRepository() {
-
         CarbonServerConfigurationService serverConfig = getServerConfiguration();
-        return serverConfig
-                .getFirstProperty("Axis2Config.RepositoryLocation"); //TODO: Change to Carbon.Repository in carbon.xml
+        return serverConfig.getFirstProperty("Axis2Config.RepositoryLocation");
     }
 
     public static CarbonServerConfigurationService getServerConfiguration() {
-
         CarbonServerConfigurationService serverConfig = CarbonServerConfigurationService.getInstance();
         if (!isServerConfigInitialized) {
             String serverXml = MicroIntegratorBaseUtils.getServerXml();
@@ -316,7 +263,6 @@ public class MicroIntegratorBaseUtils {
     }
 
     public static boolean isDataService(org.apache.axis2.context.MessageContext messageContext) throws AxisFault {
-
         AxisService axisService = messageContext.getAxisService();
         if (axisService != null) {
             URL file = axisService.getFileName();
@@ -329,7 +275,6 @@ public class MicroIntegratorBaseUtils {
     }
 
     public static String getPassThroughJsonBuilder() throws IOException, XMLStreamException {
-
         String psJsonBuilder = getPropertyFromAxisConf(org.wso2.micro.integrator.core.Constants.PASSTHRU_JSON_BUILDER);
         if (psJsonBuilder == null) {
             return "org.apache.synapse.commons.json.JsonStreamBuilder";
@@ -339,7 +284,6 @@ public class MicroIntegratorBaseUtils {
     }
 
     public static String getPassThroughJsonFormatter() throws IOException, XMLStreamException {
-
         String psJsonFormatter = getPropertyFromAxisConf(org.wso2.micro.integrator.core.Constants.PASSTHRU_JSON_FORMATTER);
         if (psJsonFormatter == null) {
             return "org.apache.synapse.commons.json.JsonStreamFormatter";
@@ -349,7 +293,6 @@ public class MicroIntegratorBaseUtils {
     }
 
     public static String getDSSJsonBuilder() throws IOException, XMLStreamException {
-
         String dssJsonBuilder = getPropertyFromAxisConf(org.wso2.micro.integrator.core.Constants.DATASERVICE_JSON_BUILDER);
         if (dssJsonBuilder == null) {
             return "org.apache.axis2.json.gson.JsonBuilder";
@@ -359,7 +302,6 @@ public class MicroIntegratorBaseUtils {
     }
 
     public static String getDSSJsonFormatter() throws IOException, XMLStreamException {
-
         String dssJsonFormatter = getPropertyFromAxisConf(org.wso2.micro.integrator.core.Constants.DATASERVICE_JSON_FORMATTER);
         if (dssJsonFormatter == null) {
             return "org.apache.axis2.json.gson.JsonFormatter";
@@ -369,9 +311,7 @@ public class MicroIntegratorBaseUtils {
     }
 
     private static String getPropertyFromAxisConf(String parameter) throws IOException, XMLStreamException {
-
-        try (InputStream file = new FileInputStream(Paths.get(getCarbonConfigDirPath(), "axis2",
-                "axis2.xml").toString())) {
+        try (InputStream file = new FileInputStream(Paths.get(getCarbonConfigDirPath(), "axis2", "axis2.xml").toString())) {
             if (axis2Config == null) {
                 OMElement element = (OMElement) XMLUtils.toOM(file);
                 element.build();
@@ -390,26 +330,14 @@ public class MicroIntegratorBaseUtils {
         }
     }
 
-
-    /**
-     * This is a utility method which can be used to set security headers in a service client. This method
-     * will create authorization header according to basic security protocol. i.e. encodeBase64(username:password)
-     * and put it in a HTTP header with name "Authorization".
-     *
-     * @param userName      User calling the service.
-     * @param password      Password of the user.
-     * @param rememberMe    <code>true</code> if UI asks to persist remember me cookie.
-     * @param serviceClient The service client used in the communication.
-     */
     public static void setBasicAccessSecurityHeaders(String userName, String password, boolean rememberMe,
                                                      ServiceClient serviceClient) {
-
         String userNamePassword = userName + ":" + password;
         String encodedString = Base64Utils.encode(userNamePassword.getBytes());
 
         String authorizationHeader = "Basic " + encodedString;
 
-        List<Header> headers = new ArrayList<Header>();
+        List<Header> headers = new ArrayList<>();
 
         Header authHeader = new Header("Authorization", authorizationHeader);
         headers.add(authHeader);
@@ -423,7 +351,6 @@ public class MicroIntegratorBaseUtils {
     }
 
     private static DocumentBuilderFactory getSecuredDocumentBuilder() {
-
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         dbf.setXIncludeAware(false);
@@ -437,7 +364,6 @@ public class MicroIntegratorBaseUtils {
                     org.apache.xerces.impl.Constants.LOAD_EXTERNAL_DTD_FEATURE, false);
             dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         } catch (ParserConfigurationException e) {
-
         }
 
         SecurityManager securityManager = new SecurityManager();
@@ -447,13 +373,7 @@ public class MicroIntegratorBaseUtils {
         return dbf;
     }
 
-    /**
-     * @param xmlConfiguration InputStream that carries xml configuration
-     * @return returns a InputStream that has evaluated system variables in input
-     * @throws CarbonException
-     */
     public static InputStream replaceSystemVariablesInXml(InputStream xmlConfiguration) throws CarbonException {
-
         DocumentBuilderFactory documentBuilderFactory = getSecuredDocumentBuilder();
         DocumentBuilder documentBuilder;
         Document doc;
@@ -477,7 +397,6 @@ public class MicroIntegratorBaseUtils {
     }
 
     public static void resolveLeafNodeValue(Node node) {
-
         if (node != null) {
             Element element = (Element) node;
             NodeList childNodeList = element.getChildNodes();
@@ -493,13 +412,7 @@ public class MicroIntegratorBaseUtils {
         }
     }
 
-    /**
-     * @param doc the DOM.Document to be converted to InputStream.
-     * @return Returns InputStream.
-     * @throws CarbonException
-     */
     public static InputStream toInputStream(Document doc) throws CarbonException {
-
         InputStream in;
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -515,18 +428,12 @@ public class MicroIntegratorBaseUtils {
     }
 
     public static String resolveSystemProperty(String text) {
-
         int indexOfStartingChars = -1;
         int indexOfClosingBrace;
 
-        // The following condition deals with properties.
-        // Properties are specified as ${system.property},
-        // and are assumed to be System properties
         while (indexOfStartingChars < text.indexOf("${")
                 && (indexOfStartingChars = text.indexOf("${")) != -1
-                && (indexOfClosingBrace = text.indexOf('}')) != -1) { // Is a
-            // property
-            // used?
+                && (indexOfClosingBrace = text.indexOf('}')) != -1) {
             String sysProp = text.substring(indexOfStartingChars + 2,
                     indexOfClosingBrace);
             String propValue = System.getProperty(sysProp);
@@ -538,126 +445,94 @@ public class MicroIntegratorBaseUtils {
                     && propValue.equals(".")) {
 
                 text = new File(".").getAbsolutePath() + File.separator + text;
-
             }
         }
         return text;
     }
 
-    /**
-     * This is to read the port values defined in other config files, which are overridden
-     * from those in carbon.xml.
-     * @param property
-     * @return
-     */
     public static int getPortFromServerConfig(String property) {
-        String port;
-        int portNumber = -1;
-        int indexOfStartingChars = -1;
-        int indexOfClosingBrace;
-
         CarbonServerConfigurationService serverConfig = getServerConfiguration();
-        // The following condition deals with ports specified to be read from carbon.xml.
-        // Ports are specified as templates: eg ${Ports.EmbeddedLDAP.LDAPServerPort},
-        if (indexOfStartingChars < property.indexOf("${") &&
-                (indexOfStartingChars = property.indexOf("${")) != -1 &&
-                (indexOfClosingBrace = property.indexOf('}')) != -1) { // Is this template used?
+        String portValue = null;
+        int portNumber = -1;
 
-            String portTemplate = property.substring(indexOfStartingChars + 2,
-                    indexOfClosingBrace);
-
-            port = serverConfig.getFirstProperty(portTemplate);
-
-            if (port != null) {
-                portNumber = Integer.parseInt(port);
+        if (property.contains("${") && property.contains("}")) {
+            String template = property.substring(property.indexOf("${") + 2, property.indexOf("}"));
+            portValue = serverConfig.getFirstProperty(template);
+            if (portValue != null) {
+                portNumber = Integer.parseInt(portValue);
             }
-
         }
-        String portOffset = System.getProperty("portOffset", serverConfig.getFirstProperty("Ports.Offset"));
-        //setting up port offset properties as system global property which allows this
-        //to available at the other context as required (fix 2011-11-30)
-        System.setProperty("portOffset", portOffset);
-        return portOffset == null? portNumber : portNumber + Integer.parseInt(portOffset);
+
+        String portOffsetStr = System.getProperty("portOffset", serverConfig.getFirstProperty("Ports.Offset"));
+        int portOffset = 0;
+        if (portOffsetStr != null) {
+            portOffset = Integer.parseInt(portOffsetStr);
+        }
+        System.setProperty("portOffset", String.valueOf(portOffset));
+
+        return portNumber + portOffset;
     }
 
-    /**
-     * This is to set the carbonAxisConfigurator instance.
-     *
-     * @param carbonAxisConfig Carbon Axis Configurator
-     */
     public static void setCarbonAxisConfigurator(CarbonAxisConfigurator carbonAxisConfig) {
         carbonAxisConfigurator = carbonAxisConfig;
     }
 
-    /**
-     * This is to set the serverConfigurationService instance.
-     *
-     * @param serverConfiguration server configuration service
-     */
     public static void setServerConfigurationService(CarbonServerConfigurationService serverConfiguration) {
         serverConfigurationService = serverConfiguration;
     }
 
-    /**
-     * This is to get the carbonAxisConfigurator instance.
-     */
     public static CarbonAxisConfigurator getCarbonAxisConfigurator() {
         return carbonAxisConfigurator;
     }
 
-    /**
-     * Get Synapse Environment. This might throw NPE if called before SynapseEnvironment is initialized.
-     *
-     * @return SynapseEnvironment - SynapseEnvironment
-     */
     public static SynapseEnvironment getSynapseEnvironment() {
-
         Parameter synapseEnvironmentParatemer =
                 CarbonCoreDataHolder.getInstance().getAxis2ConfigurationContextService().getServerConfigContext()
                         .getAxisConfiguration().getParameter(SynapseConstants.SYNAPSE_ENV);
         return (SynapseEnvironment) synapseEnvironmentParatemer.getValue();
     }
 
-    /**
-     * Gets Server hostname.
-     *
-     * @return server hostname
-     */
     public static String getServerHostName() {
         return serverConfigurationService.getFirstProperty("HostName");
     }
 
-    /**
-     * Gets Server http listener port.
-     *
-     * @return http port
-     * @throws ResolverException exception
-     */
     public static int getServerHTTPListenerPort() throws ResolverException {
         try {
-            return Integer.parseInt(carbonAxisConfigurator.getAxisConfiguration().getTransportsIn()
+            int portOffset = 0;
+            String offsetProp = System.getProperty(org.wso2.micro.core.Constants.SERVER_PORT_OFFSET);
+            if (offsetProp != null) {
+                portOffset = Integer.parseInt(offsetProp);
+            }
+
+            Object portValue = carbonAxisConfigurator.getAxisConfiguration()
+                    .getTransportsIn()
                     .get(org.wso2.micro.core.Constants.HTTP_TRANSPORT)
-                    .getParameter(org.wso2.micro.core.Constants.TRANSPORT_PORT).getValue().toString())
-                    + Integer.parseInt(System.getProperty(org.wso2.micro.core.Constants.SERVER_PORT_OFFSET));
+                    .getParameter(org.wso2.micro.core.Constants.TRANSPORT_PORT)
+                    .getValue();
+
+            return Integer.parseInt(portValue.toString()) + portOffset;
         } catch (AxisFault e) {
-            throw new ResolverException("Error in getting server default http listener port", e);
+            throw new ResolverException("Error in getting server HTTP listener port", e);
         }
     }
 
-    /**
-     * Gets Server https listener port.
-     *
-     * @return https port
-     * @throws ResolverException exception
-     */
     public static int getServerHTTPSListenerPort() throws ResolverException {
         try {
-            return Integer.parseInt(carbonAxisConfigurator.getAxisConfiguration().getTransportsIn()
+            int portOffset = 0;
+            String offsetProp = System.getProperty(org.wso2.micro.core.Constants.SERVER_PORT_OFFSET);
+            if (offsetProp != null) {
+                portOffset = Integer.parseInt(offsetProp);
+            }
+
+            Object portValue = carbonAxisConfigurator.getAxisConfiguration()
+                    .getTransportsIn()
                     .get(org.wso2.micro.core.Constants.HTTPS_TRANSPORT)
-                    .getParameter(org.wso2.micro.core.Constants.TRANSPORT_PORT).getValue().toString())
-                    + Integer.parseInt(System.getProperty(org.wso2.micro.core.Constants.SERVER_PORT_OFFSET));
+                    .getParameter(org.wso2.micro.core.Constants.TRANSPORT_PORT)
+                    .getValue();
+
+            return Integer.parseInt(portValue.toString()) + portOffset;
         } catch (AxisFault e) {
-            throw new ResolverException("Error in getting server default https listener port", e);
+            throw new ResolverException("Error in getting server HTTPS listener port", e);
         }
     }
 }
