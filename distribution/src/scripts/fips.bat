@@ -30,7 +30,8 @@ set "EXPECTED_BCTLS_FIPS_CHECKSUM=9cc33650ede63bc1a8281ed5c8e1da314d50bc76"
 set "EXPECTED_BCUTIL_FIPS_CHECKSUM=c11996822d9d0f831b340bf4ea4d9d3e87a8e9de"
 
 :: ======= Legacy (non-FIPS) to restore on DISABLE if no backup exists =======
-set "LEGACY_BCPROV_VERSION=1.81.0"
+set "LEGACY_BCPROV_VERSION=1.81"
+set "LEGACY_BCPROV_WSO2_VERSION=1.81.0"
 
 set "PRG=%~f0"
 set "PRGDIR=%~dp0"
@@ -260,7 +261,7 @@ GOTO :EndScript
 :backup_and_remove_bc_jars_in_dir
     set "DIR=%~1"
 
-    set "ORBIT_PLUGIN_JAR=bcprov-jdk18on_%LEGACY_BCPROV_VERSION%.wso2v1.jar"
+    set "ORBIT_PLUGIN_JAR=bcprov-jdk18on_%LEGACY_BCPROV_WSO2_VERSION%.wso2v1.jar"
     set "FILE_PATH=%DIR%\%ORBIT_PLUGIN_JAR%"
 
     mkdir "%BACKUP_DIR%" 2>NUL
@@ -446,7 +447,7 @@ GOTO :EndScript
 
 :: ---------- Restore WSO2-orbit bcprov plugin jar to components/plugins ----------
 :restore_orbit_bcprov_plugin
-    set "VER=%LEGACY_BCPROV_VERSION%"
+    set "VER=%LEGACY_BCPROV_WSO2_VERSION%"
     set "PLUGIN_JAR=bcprov-jdk18on_%VER%.wso2v1.jar"
     set "TARGET_DIR=%PLUGINS_DIR%"
     set "TARGET_PATH=%TARGET_DIR%\%PLUGIN_JAR%"

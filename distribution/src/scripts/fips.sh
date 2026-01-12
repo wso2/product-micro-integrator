@@ -29,7 +29,8 @@ EXPECTED_BCPKIX_FIPS_CHECKSUM="4cc5a8607f3dd6cd3fb0ee5abc2e7a068adf2cf1"
 EXPECTED_BCTLS_FIPS_CHECKSUM="9cc33650ede63bc1a8281ed5c8e1da314d50bc76"
 EXPECTED_BCUTIL_FIPS_CHECKSUM="c11996822d9d0f831b340bf4ea4d9d3e87a8e9de"
 
-LEGACY_BCPROV_VERSION="1.81.0"
+LEGACY_BCPROV_VERSION="1.81"
+LEGACY_BCPROV_WSO2_VERSION="1.81.0"
 
 PRG="$0"
 PRGDIR=$(dirname "$PRG")
@@ -234,7 +235,7 @@ restore_legacy_to_dir() {
 # ---------- Restore WSO2-orbit bcprov plugin jar to components/plugins ----------
 # Expects: bcprov-jdk18on_<ver>.wso2v1.jar in BACKUP_DIR or LOCAL_DIR
 restore_orbit_bcprov_plugin() {
-  local ver="$LEGACY_BCPROV_VERSION"
+  local ver="$LEGACY_BCPROV_WSO2_VERSION"
   local plugin_jar="bcprov-jdk18on_${ver}.wso2v1.jar"
   local target_dir="$PLUGINS_DIR"
   local target_path="$target_dir/$plugin_jar"
