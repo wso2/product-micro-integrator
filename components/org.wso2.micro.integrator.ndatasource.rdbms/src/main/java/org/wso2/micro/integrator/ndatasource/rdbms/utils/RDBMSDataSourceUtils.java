@@ -17,8 +17,10 @@
  */
 package org.wso2.micro.integrator.ndatasource.rdbms.utils;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.sql.Connection;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -374,5 +376,20 @@ public class RDBMSDataSourceUtils {
 		            e.getMessage(), e);
 		}
 	}
+
+    /**
+     * Recursively unwraps common reflective wrapper exceptions to reveal the original cause.
+     * This method traverses through {@link InvocationTargetException} and
+     * {@link UndeclaredThrowableException} instances until the root cause is found.
+     *
+     * @param e the throwable to unwrap
+     * @return the root cause if {@code e} is wrapped, or {@code e} itself if not
+     */
+    public static Throwable unwrap(Throwable e) {
+        if (e instanceof InvocationTargetException || e instanceof UndeclaredThrowableException) {
+            return unwrap(e.getCause());
+        }
+        return e;
+    }
 	
 }

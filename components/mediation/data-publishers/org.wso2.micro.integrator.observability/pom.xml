@@ -44,6 +44,34 @@
             <artifactId>simpleclient_hotspot</artifactId>
         </dependency>
         <dependency>
+          <groupId>io.prometheus</groupId>
+          <artifactId>prometheus-metrics-core</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>io.prometheus</groupId>
+          <artifactId>prometheus-metrics-instrumentation-jvm</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>io.prometheus</groupId>
+          <artifactId>prometheus-metrics-exposition-formats</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>io.prometheus</groupId>
+          <artifactId>prometheus-metrics-config</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>io.prometheus</groupId>
+          <artifactId>prometheus-metrics-model</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>io.prometheus</groupId>
+          <artifactId>prometheus-metrics-tracer-initializer</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>io.prometheus</groupId>
+          <artifactId>prometheus-metrics-exposition-textformats</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.wso2.ei</groupId>
             <artifactId>org.wso2.micro.integrator.core</artifactId>
         </dependency>
@@ -75,7 +103,15 @@
                         <Export-Package>
                             org.wso2.micro.integrator.observability.* ;version="${project.version}"
                         </Export-Package>
-                        <Private-Package>io.prometheus.client.*</Private-Package>
+                        <Private-Package>
+                          io.prometheus.client.*,
+                          io.prometheus.metrics.core.*,
+                          io.prometheus.metrics.instrumentation.jvm.*,
+                          io.prometheus.metrics.config.*,
+                          io.prometheus.metrics.model.*,
+                          io.prometheus.metrics.tracer.initializer.*,
+                          io.prometheus.metrics.expositionformats.*
+                        </Private-Package>
                         <Import-Package>
                             org.wso2.carbon.inbound.endpoint.internal.http.api ;version="${project.version}",
                             *;resolution:=optional

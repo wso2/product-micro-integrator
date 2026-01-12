@@ -86,7 +86,7 @@ public class MessageFlowReporterThread extends Thread {
     }
 
     public void run() {
-        StatisticsReportingEventHolder statisticsReportingEventHolder;
+        StatisticsReportingEventHolder statisticsReportingEventHolder = null;
         while (!shutdownRequested) {
             try {
                 statisticsReportingEventHolder = synapseEnvironmentService.getSynapseEnvironment().getMessageDataStore()
@@ -98,6 +98,11 @@ public class MessageFlowReporterThread extends Thread {
                 }
             } catch (Exception exception) {//catching throwable since this shouldn't fail
                 log.error("Error in mediation flow statistic data consumer while consuming data", exception);
+            } finally {
+                // Removing the event queue reference from the event holder to enable GC.
+                if (statisticsReportingEventHolder != null) {
+                    statisticsReportingEventHolder.clearEventQueue();
+                }
             }
         }
     }
