@@ -30,7 +30,7 @@ set "EXPECTED_BCTLS_FIPS_CHECKSUM=9cc33650ede63bc1a8281ed5c8e1da314d50bc76"
 set "EXPECTED_BCUTIL_FIPS_CHECKSUM=c11996822d9d0f831b340bf4ea4d9d3e87a8e9de"
 
 :: ======= Legacy (non-FIPS) to restore on DISABLE if no backup exists =======
-set "LEGACY_BCPROV_VERSION=1.78.1"
+set "LEGACY_BCPROV_VERSION=1.81.0"
 
 set "PRG=%~f0"
 set "PRGDIR=%~dp0"
