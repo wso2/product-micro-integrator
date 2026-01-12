@@ -39,7 +39,6 @@ public class SSLUtil {
 
     private static final String PROTOCOL = "TLS";
     private static final String PKIX = "PKIX";
-    private static String trustStoreType = "JKS";
     private static final String JCE_PROVIDER = "security.jce.provider";
 
     private static SSLContext serverSSLCtx = null;

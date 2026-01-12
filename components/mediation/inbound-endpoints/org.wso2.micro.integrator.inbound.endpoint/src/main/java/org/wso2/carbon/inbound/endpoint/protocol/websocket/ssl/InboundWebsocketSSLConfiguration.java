@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.inbound.endpoint.protocol.websocket.ssl;
 
-import org.wso2.carbon.inbound.endpoint.protocol.websocket.management.WebsocketEndpointManager;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;

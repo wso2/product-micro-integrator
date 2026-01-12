@@ -63,11 +63,6 @@ public class JWTAuthorizationProvider implements AuthorizationProvider {
     private static final String ESCAPED_DOUBLE_QUOTATION = "\"";
     private static final String USERNAME = "username";
     private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
-    private static final String PRIMARY_KEY_STORE_TYPE_PROPERTY = "primary.key.type";
-    private static final String BOUNCY_CASTLE_PROVIDER = "BC";
-    private static final String BOUNCY_CASTLE_FIPS_PROVIDER = "BCFIPS";
-    public static final String BCFKS = "BCFKS";
-
     private static ConcurrentHashMap<KeyStore, Certificate> publicCerts = new ConcurrentHashMap<KeyStore, Certificate>();
     private static ConcurrentHashMap<Integer, KeyStore> keyStores = new ConcurrentHashMap<Integer, KeyStore>();
 
