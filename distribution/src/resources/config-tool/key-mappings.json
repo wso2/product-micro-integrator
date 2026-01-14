@@ -115,6 +115,7 @@
   "opentelemetry.port": "synapse_properties.'opentelemetry.port'",
   "opentelemetry.url": "synapse_properties.'opentelemetry.url'",
   "opentelemetry.class": "synapse_properties.'opentelemetry.class'",
+  "opentelemetry.protocol": "synapse_properties.'opentelemetry.protocol'",
 
   "transport.http.socket_timeout": "passthru_properties.'http.socket.timeout'",
   "transport.http.block_service_list": "passthru_properties.'http.block_service_list'",
