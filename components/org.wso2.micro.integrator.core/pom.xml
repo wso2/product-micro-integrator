@@ -152,7 +152,9 @@
                             osgi.service;objectClass=org.wso2.micro.integrator.core.services.Axis2ConfigurationContextService,
                             osgi.service;objectClass=org.wso2.micro.integrator.core.UserStoreTemporaryService,
                             osgi.service;objectClass=org.wso2.micro.integrator.core.services.CarbonServerConfigurationService,
-                            osgi.service;objectClass=org.wso2.micro.integrator.core.services.ServerConfigurationService
+                            osgi.service;objectClass=org.wso2.micro.integrator.core.services.ServerConfigurationService,
+                            osgi.service;objectClass=javax.transaction.TransactionManager,
+                            osgi.service;objectClass=javax.transaction.UserTransaction
                         </Provide-Capability>
                     </instructions>
                 </configuration>

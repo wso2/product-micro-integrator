@@ -39,6 +39,7 @@
         <module>transports</module>
         <module>data-publishers</module>
         <module>security</module>
+        <module>mediation-commons</module>
     </modules>
 
 </project>
