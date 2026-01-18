@@ -21,6 +21,10 @@ package org.wso2.micro.integrator.transaction.manager;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.micro.core.Constants;
@@ -33,6 +37,8 @@ import javax.transaction.TransactionManager;
 import javax.transaction.UserTransaction;
 
 //TODO: need a way to solve javax.transaction service dependency
+@Component(name = "org.wso2.micro.integrator.transaction.manager.TransactionManagerComponent",
+        immediate = true)
 public class TransactionManagerComponent {
 
     private static Log log = LogFactory.getLog(TransactionManagerComponent.class);
@@ -44,16 +50,23 @@ public class TransactionManagerComponent {
     /* class level lock for controlling synchronized access to static variables */
     private static Object txManagerComponentLock = new Object();
 
+    @Activate
     protected void activate(ComponentContext ctxt) {
 
         bindTransactionManagerWithJNDI();
         log.debug("Transaction Manager bundle is activated ");
     }
 
+    @Deactivate
     protected void deactivate(ComponentContext ctxt) {
         log.debug("Transaction Manager bundle is deactivated ");
     }
 
+    @Reference(name = "transactionmanager",
+            service = TransactionManager.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetTransactionManager")
     protected void setTransactionManager(TransactionManager txManager) {
 
         synchronized (txManagerComponentLock) {
@@ -76,6 +89,11 @@ public class TransactionManagerComponent {
         return txManager;
     }
 
+    @Reference(name = "usertransaction",
+            service = UserTransaction.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetUserTransaction")
     protected void setUserTransaction(UserTransaction userTransaction) {
 
         synchronized (txManagerComponentLock) {

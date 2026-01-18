@@ -139,12 +139,8 @@
                             </adviceFile>
                             <bundles>
                                 <bundleDef>org.wso2.ei:org.wso2.micro.integrator.core</bundleDef>
-                                <bundleDef>
-                                    org.wso2.carbon.mediation:org.wso2.carbon.mediation.commons:${carbon.mediation.version}
-                                </bundleDef>
-<!--                    mct            <bundleDef>org.wso2.ei:org.wso2.micro.integrator.security:${product.mi
-.version}-->
-<!--                                </bundleDef>-->
+                                <bundleDef>org.wso2.ei:org.wso2.micro.integrator.mediation.commons:${project.version}</bundleDef>
+
                                 <bundleDef>org.apache.ws.security.wso2:wss4j:${wss4j.version}</bundleDef>
 
 
