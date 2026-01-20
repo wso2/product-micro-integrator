@@ -849,7 +849,7 @@
         <!-- TODO Remove after fixing the test cases, kept for compilation purposes.-->
         <carbon.registry.version>4.6.46</carbon.registry.version>
         <carbon.identity.framework.version>5.14.67</carbon.identity.framework.version>
-        <squareup.okhttp3.version>4.9.1</squareup.okhttp3.version>
+        <squareup.okhttp3.version>4.9.2</squareup.okhttp3.version>
     </properties>
 
     <profiles>
