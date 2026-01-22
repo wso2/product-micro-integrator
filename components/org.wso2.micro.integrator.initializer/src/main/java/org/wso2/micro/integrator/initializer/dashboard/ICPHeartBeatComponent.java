@@ -20,6 +20,7 @@ package org.wso2.micro.integrator.initializer.dashboard;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -327,8 +328,9 @@ public class ICPHeartBeatComponent {
 
         // Validate payload structure for ICP compatibility
         payload = validateHeartbeatPayload(payload);
-
-        log.info("Full heartbeat payload: " + payload.toString());
+        if (log.isDebugEnabled()) {
+            log.debug("Full heartbeat payload: " + payload.toString());
+        }
         return payload;
     }
 
@@ -447,10 +449,7 @@ public class ICPHeartBeatComponent {
 
             // 15. Registry Resources (requires separate access)
             artifacts.add("registryResources", collectRegistryResources(synapseConfig));
-
-            // 16. Log Files (requires filesystem access)
-            artifacts.add("logFiles", collectLogFiles());
-
+            
         } catch (Exception e) {
             log.error("Error collecting artifacts from MI configuration.", e);
             return createEmptyArtifactsStructure();
@@ -837,7 +836,14 @@ public class ICPHeartBeatComponent {
                 apiObj.addProperty("host", api.getHost());
                 apiObj.addProperty("port", api.getPort());
                 apiObj.addProperty("type", "API");
-                apiObj.addProperty("state", "ENABLED");
+
+                // Tracing flag via AspectConfiguration
+                try {
+                    if (api.getAspectConfiguration() != null) {
+                        String tracingState = api.getAspectConfiguration().isTracingEnabled() ? "enabled" : "disabled";
+                        apiObj.addProperty("tracing", tracingState);
+                    }
+                } catch (Throwable ignore) { }
 
                 // Collect API resources
                 JsonArray resources = new JsonArray();
@@ -907,7 +913,7 @@ public class ICPHeartBeatComponent {
                         if (eprs != null) {
                             for (String epr : eprs) {
                                 if (epr != null && !epr.trim().isEmpty()) {
-                                    eprArray.add(new com.google.gson.JsonPrimitive(epr));
+                                    eprArray.add(new JsonPrimitive(epr));
                                 }
                             }
                         }
@@ -938,7 +944,22 @@ public class ICPHeartBeatComponent {
                 endpointObj.addProperty("name", entry.getKey());
                 String typeName = endpoint.getClass().getSimpleName();
                 endpointObj.addProperty("type", typeName);
-
+                try {
+                    boolean activated = endpoint.readyToSend();
+                    endpointObj.addProperty("state", activated ? "enabled" : "disabled");
+                } catch (Throwable t) {
+                    endpointObj.addProperty("state", "enabled");
+                }
+                // Tracing flag via AspectConfiguration
+                try {
+                    if (endpoint instanceof AbstractEndpoint) {
+                        AbstractEndpoint abstractEndpoint = (AbstractEndpoint) endpoint;
+                        if (abstractEndpoint.getDefinition() != null && abstractEndpoint.getDefinition().getAspectConfiguration() != null) {
+                            String tracingState = abstractEndpoint.getDefinition().getAspectConfiguration().isTracingEnabled() ? "enabled" : "disabled";
+                            endpointObj.addProperty("tracing", tracingState);
+                        }
+                    }
+                } catch (Throwable ignore) { }
                 // Collect type-specific attributes in a name/value array
                 JsonArray attributes = new JsonArray();
                 try {
@@ -1041,6 +1062,14 @@ public class ICPHeartBeatComponent {
                     }
                 } catch (Throwable ignore) { }
 
+                // Tracing flag via AspectConfiguration
+                try {
+                    if (inbound.getAspectConfiguration() != null) {
+                        String tracingState = inbound.getAspectConfiguration().isTracingEnabled() ? "enabled" : "disabled";
+                        inboundObj.addProperty("tracing", tracingState);
+                    }
+                } catch (Throwable ignore) { }
+
                 // Sequences
                 try {
                     String seq = inbound.getInjectingSeq();
@@ -1072,8 +1101,16 @@ public class ICPHeartBeatComponent {
                     .getDefinedSequences();
             for (Map.Entry<String, org.apache.synapse.mediators.base.SequenceMediator> entry : seqMap.entrySet()) {
                 JsonObject seqObj = new JsonObject();
+                org.apache.synapse.mediators.base.SequenceMediator sequence = entry.getValue();
                 seqObj.addProperty("name", entry.getKey());
                 seqObj.addProperty("type", "Sequence");
+                // Tracing flag via AspectConfiguration
+                try {
+                    if (sequence.getAspectConfiguration() != null) {
+                        String tracingState = sequence.getAspectConfiguration().isTracingEnabled() ? "enabled" : "disabled";
+                        seqObj.addProperty("tracing", tracingState);
+                    }
+                } catch (Throwable ignore) { }
                 sequences.add(seqObj);
             }
         } catch (Exception e) {
@@ -1187,7 +1224,12 @@ public class ICPHeartBeatComponent {
                 org.apache.synapse.message.processor.MessageProcessor processor = entry.getValue();
                 processorObj.addProperty("name", entry.getKey());
                 processorObj.addProperty("type", processor.getClass().getSimpleName());
-                processorObj.addProperty("state", "ENABLED"); // Default state
+                try {
+                    boolean deactivated = processor.isDeactivated();
+                    processorObj.addProperty("state", deactivated ? "disabled" : "enabled");
+                } catch (Throwable t) {
+                    processorObj.addProperty("state", "enabled");
+                }
                 // Include the associated Message Store name similar to Management API
                 try {
                     String messageStoreName = processor.getMessageStoreName();
@@ -1308,11 +1350,7 @@ public class ICPHeartBeatComponent {
                                 dsObj.addProperty("queryCount", dataService.getQueries().size());
                             }
                         }
-
-                        // Add service status
-                        dsObj.addProperty("state", axisService.isActive() ? "ENABLED" : "DISABLED");
                     }
-
                     dataServices.add(dsObj);
                 } catch (Exception e) {
                     log.warn("Error processing data service: " + serviceName, e);

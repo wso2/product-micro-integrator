@@ -46,6 +46,8 @@ public class ICPInternalApi implements InternalAPI {
         resourcesList.add(new WsdlResource(PREFIX_ARTIFACTS + "/wsdl"));
         resourcesList.add(new ICPGetLocalEntryValueResource(PREFIX_ARTIFACTS + "/local-entry"));
         resourcesList.add(new ICPGetParamsResource(PREFIX_ARTIFACTS + "/parameters"));
+        resourcesList.add(new ICPStatusResource(PREFIX_ARTIFACTS + "/status"));
+        resourcesList.add(new ICPTracingResource(PREFIX_ARTIFACTS + "/tracing"));
         resources = resourcesList.toArray(new APIResource[resourcesList.size()]);
     }
 
