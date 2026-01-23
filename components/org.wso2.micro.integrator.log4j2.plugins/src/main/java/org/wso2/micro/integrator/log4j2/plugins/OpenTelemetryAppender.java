@@ -97,7 +97,7 @@ public class OpenTelemetryAppender extends AbstractAppender {
             @PluginAttribute(value = "ignoreExceptions", defaultBoolean = true) boolean ignoreExceptions,
             @PluginAttribute("endpoint") String endpoint) {
 
-        if (name == null) {
+        if (name == null || name.trim().isEmpty()) {
             LOGGER.error("No name provided for OpenTelemetryAppender");
             return null;
         }
@@ -111,16 +111,24 @@ public class OpenTelemetryAppender extends AbstractAppender {
             return;
         }
 
-        Instant instant = Instant.ofEpochMilli(event.getTimeMillis());
-
-        logger.logRecordBuilder(instant)
-                .setSeverity(mapSeverity(event.getLevel()))
-                .setSeverityText(event.getLevel().name())
-                .setBody(event.getMessage().getFormattedMessage())
-                .setAttribute(io.opentelemetry.api.common.AttributeKey.stringKey("thread.name"), event.getThreadName())
-                .setAttribute(io.opentelemetry.api.common.AttributeKey.stringKey("logger.name"), event.getLoggerName())
-                .setContext(Context.current())
-                .emit();
+        try {
+            Instant instant = Instant.ofEpochMilli(event.getTimeMillis());
+            logger.logRecordBuilder(instant)
+                    .setSeverity(mapSeverity(event.getLevel()))
+                    .setSeverityText(event.getLevel().name())
+                    .setBody(event.getMessage().getFormattedMessage())
+                    .setAttribute(io.opentelemetry.api.common.AttributeKey.stringKey("thread.name"),
+                            event.getThreadName())
+                    .setAttribute(io.opentelemetry.api.common.AttributeKey.stringKey("logger.name"),
+                            event.getLoggerName())
+                    .setContext(Context.current())
+                    .emit();
+        } catch (Exception e) {
+            error("Unable to export log event via OpenTelemetry", event, e);
+            if (!ignoreExceptions()) {
+                throw new org.apache.logging.log4j.core.appender.AppenderLoggingException(e);
+            }
+        }
     }
 
     private Severity mapSeverity(org.apache.logging.log4j.Level level) {
