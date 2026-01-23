@@ -17,6 +17,23 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <properties>
+        <opentelemetry.version>1.34.1</opentelemetry.version>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <parent>
         <groupId>org.wso2.ei</groupId>
@@ -48,7 +65,40 @@
             <artifactId>org.wso2.micro.integrator.core</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+        </dependency>
+        <dependency>
+             <groupId>io.opentelemetry</groupId>
+             <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
+        <dependency>
+             <groupId>io.opentelemetry.semconv</groupId>
+             <artifactId>opentelemetry-semconv</artifactId>
+             <version>1.30.0-alpha</version>
+         </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${opentelemetry.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
@@ -67,7 +117,11 @@
                         <Fragment-Host>org.ops4j.pax.logging.pax-logging-log4j2</Fragment-Host>
                         <Export-Package>
                             org.wso2.micro.integrator.log4j.plugins.*,
+                            org.wso2.micro.integrator.log4j2.plugins.*,
                         </Export-Package>
+                        <Private-Package>
+                          io.opentelemetry.*
+                        </Private-Package>
                         <Import-Package>
                             org.wso2.micro.integrator.core.util.*,
                             org.wso2.micro.integrator.utils.*,
