@@ -49,18 +49,21 @@ public class OpenTelemetryAppender extends AbstractAppender {
 
     private final Logger logger;
 
-    protected OpenTelemetryAppender(String name, Filter filter, Layout<? extends Serializable> layout, boolean ignoreExceptions) {
+    protected OpenTelemetryAppender(String name, Filter filter, Layout<? extends Serializable> layout,
+            boolean ignoreExceptions) {
         super(name, filter, layout, ignoreExceptions, null);
-        
+        LOGGER.info("Initializing OpenTelemetryAppender with name: " + name);
+
         // Initialize OpenTelemetry Logs SDK specific for this Appender or use global?
         // Ideally we should use a global one, but for isolation here we build one.
-        // In a real scenario, this should be shared or initialized via a Service Component.
-        
+        // In a real scenario, this should be shared or initialized via a Service
+        // Component.
+
         Resource resource = Resource.getDefault()
                 .merge(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, "wso2-micro-integrator")));
 
         OtlpGrpcLogRecordExporter logExporter = OtlpGrpcLogRecordExporter.builder()
-                .setEndpoint("http://localhost:4317") 
+                .setEndpoint("http://localhost:4317")
                 .build();
 
         SdkLoggerProvider sdkLoggerProvider = SdkLoggerProvider.builder()
@@ -92,11 +95,12 @@ public class OpenTelemetryAppender extends AbstractAppender {
     @Override
     public void append(LogEvent event) {
         if (logger == null) {
+            LOGGER.warn("OpenTelemetry logger not initialized, skipping log event");
             return;
         }
 
         Instant instant = Instant.ofEpochMilli(event.getTimeMillis());
-        
+
         logger.logRecordBuilder(instant)
                 .setSeverity(mapSeverity(event.getLevel()))
                 .setSeverityText(event.getLevel().name())
@@ -106,16 +110,23 @@ public class OpenTelemetryAppender extends AbstractAppender {
                 .setContext(Context.current())
                 .emit();
     }
-    
+
     private Severity mapSeverity(org.apache.logging.log4j.Level level) {
         switch (level.StandardLevel) {
-            case FATAL: return Severity.FATAL;
-            case ERROR: return Severity.ERROR;
-            case WARN: return Severity.WARN;
-            case INFO: return Severity.INFO;
-            case DEBUG: return Severity.DEBUG;
-            case TRACE: return Severity.TRACE;
-            default: return Severity.UNDEFINED;
+            case FATAL:
+                return Severity.FATAL;
+            case ERROR:
+                return Severity.ERROR;
+            case WARN:
+                return Severity.WARN;
+            case INFO:
+                return Severity.INFO;
+            case DEBUG:
+                return Severity.DEBUG;
+            case TRACE:
+                return Severity.TRACE;
+            default:
+                return Severity.UNDEFINED;
         }
     }
 }

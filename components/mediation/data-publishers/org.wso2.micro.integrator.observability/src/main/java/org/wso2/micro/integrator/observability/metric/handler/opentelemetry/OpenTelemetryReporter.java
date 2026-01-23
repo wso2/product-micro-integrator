@@ -56,6 +56,7 @@ public class OpenTelemetryReporter implements MetricReporter {
     @Override
     public void initMetrics() {
         try {
+            log.info("Initializing OpenTelemetry Metric Reporter");
             // Initialize OpenTelemetry SDK
             Resource resource = Resource.getDefault()
                     .merge(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, SERVICE_NAME_VAL)));
@@ -83,6 +84,7 @@ public class OpenTelemetryReporter implements MetricReporter {
             initializeApiMetrics();
             initializeInboundEndpointMetrics();
             initializeDataServiceMetrics();
+            log.info("OpenTelemetry Metric Reporter initialized successfully");
 
         } catch (Exception e) {
             log.error("Error initializing OpenTelemetry Metric Reporter", e);
