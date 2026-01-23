@@ -29,7 +29,7 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider;
 import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
 import io.opentelemetry.exporter.otlp.metrics.OtlpGrpcMetricExporter;
 import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.semconv.resource.ServiceAttributes;
+import io.opentelemetry.semconv.resource.attributes.ServiceAttributes;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.micro.integrator.observability.metric.handler.MetricReporter;
