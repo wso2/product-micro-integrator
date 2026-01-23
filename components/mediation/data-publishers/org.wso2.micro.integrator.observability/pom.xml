@@ -32,6 +32,7 @@
 
     <properties>
         <opentelemetry.version>1.34.1</opentelemetry.version>
+        <opentelemetry.semconv.version>1.34.0-alpha</opentelemetry.semconv.version>
     </properties>
 
     <repositories>
@@ -133,7 +134,7 @@
         <dependency>
             <groupId>io.opentelemetry.semconv</groupId>
             <artifactId>opentelemetry-semconv</artifactId>
-            <version>1.30.0-alpha</version>
+            <version>${opentelemetry.semconv.version}</version>
         </dependency>
         <dependency>
             <groupId>org.testng</groupId>

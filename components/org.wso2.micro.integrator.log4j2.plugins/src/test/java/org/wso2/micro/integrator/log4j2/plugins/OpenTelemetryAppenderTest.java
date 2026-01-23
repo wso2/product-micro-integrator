@@ -13,7 +13,7 @@ public class OpenTelemetryAppenderTest {
 
     @Test
     public void testAppenderCreation() {
-        OpenTelemetryAppender appender = OpenTelemetryAppender.createAppender("OTelAppender", null, null, true);
+        OpenTelemetryAppender appender = OpenTelemetryAppender.createAppender("OTelAppender", null, null, true, null);
         Assert.assertNotNull(appender, "Appender should not be null");
     }
 
@@ -25,7 +25,7 @@ public class OpenTelemetryAppenderTest {
         // Real end-to-end verification without Mock OTel is hard in unit test without
         // dependency injection.
 
-        OpenTelemetryAppender appender = OpenTelemetryAppender.createAppender("OTelAppender", null, null, true);
+        OpenTelemetryAppender appender = OpenTelemetryAppender.createAppender("OTelAppender", null, null, true, null);
         appender.start();
 
         LogEvent event = Log4jLogEvent.newBuilder()
@@ -39,8 +39,8 @@ public class OpenTelemetryAppenderTest {
             appender.append(event);
         } catch (Exception e) {
             Assert.fail("Append should not throw exception: " + e.getMessage());
+        } finally {
+            appender.stop();
         }
-
-        appender.stop();
     }
 }

@@ -80,7 +80,7 @@
         <dependency>
              <groupId>io.opentelemetry.semconv</groupId>
              <artifactId>opentelemetry-semconv</artifactId>
-             <version>1.30.0-alpha</version>
+             <version>1.34.0-alpha</version>
          </dependency>
         <dependency>
             <groupId>org.testng</groupId>

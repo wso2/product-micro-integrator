@@ -20,7 +20,6 @@ package org.wso2.micro.integrator.log4j2.plugins;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.logs.Logger;
-import io.opentelemetry.api.logs.LoggerProvider;
 import io.opentelemetry.api.logs.Severity;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter;
@@ -28,7 +27,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.logs.SdkLoggerProvider;
 import io.opentelemetry.sdk.logs.export.BatchLogRecordProcessor;
 import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
+import io.opentelemetry.semconv.resource.ServiceAttributes;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Core;
 import org.apache.logging.log4j.core.Filter;
@@ -48,34 +47,46 @@ import java.util.concurrent.TimeUnit;
 public class OpenTelemetryAppender extends AbstractAppender {
 
     private final Logger logger;
+    private final SdkLoggerProvider sdkLoggerProvider;
 
     protected OpenTelemetryAppender(String name, Filter filter, Layout<? extends Serializable> layout,
-            boolean ignoreExceptions) {
+            boolean ignoreExceptions, String endpoint) {
         super(name, filter, layout, ignoreExceptions, null);
         LOGGER.info("Initializing OpenTelemetryAppender with name: " + name);
 
-        // Initialize OpenTelemetry Logs SDK specific for this Appender or use global?
-        // Ideally we should use a global one, but for isolation here we build one.
-        // In a real scenario, this should be shared or initialized via a Service
-        // Component.
-
         Resource resource = Resource.getDefault()
-                .merge(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, "wso2-micro-integrator")));
+                .merge(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, "wso2-micro-integrator")));
+
+        String otlpEndpoint = endpoint;
+        if (otlpEndpoint == null || otlpEndpoint.isEmpty()) {
+            otlpEndpoint = System.getenv("OTEL_EXPORTER_OTLP_ENDPOINT");
+        }
+        if (otlpEndpoint == null || otlpEndpoint.isEmpty()) {
+            otlpEndpoint = "http://localhost:4317";
+        }
 
         OtlpGrpcLogRecordExporter logExporter = OtlpGrpcLogRecordExporter.builder()
-                .setEndpoint("http://localhost:4317")
+                .setEndpoint(otlpEndpoint)
                 .build();
 
-        SdkLoggerProvider sdkLoggerProvider = SdkLoggerProvider.builder()
+        this.sdkLoggerProvider = SdkLoggerProvider.builder()
                 .setResource(resource)
                 .addLogRecordProcessor(BatchLogRecordProcessor.builder(logExporter).build())
                 .build();
 
-        OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
+        OpenTelemetrySdk openTelemetry = OpenTelemetrySdk.builder()
                 .setLoggerProvider(sdkLoggerProvider)
-                .buildAndRegisterGlobal();
+                .build();
 
         this.logger = openTelemetry.getLogsBridge().get("org.wso2.micro.integrator");
+    }
+
+    @Override
+    public void stop() {
+        if (this.sdkLoggerProvider != null) {
+            this.sdkLoggerProvider.close();
+        }
+        super.stop();
     }
 
     @PluginFactory
@@ -83,13 +94,14 @@ public class OpenTelemetryAppender extends AbstractAppender {
             @PluginAttribute("name") String name,
             @PluginElement("Filter") Filter filter,
             @PluginElement("Layout") Layout<? extends Serializable> layout,
-            @PluginAttribute(value = "ignoreExceptions", defaultBoolean = true) boolean ignoreExceptions) {
+            @PluginAttribute(value = "ignoreExceptions", defaultBoolean = true) boolean ignoreExceptions,
+            @PluginAttribute("endpoint") String endpoint) {
 
         if (name == null) {
             LOGGER.error("No name provided for OpenTelemetryAppender");
             return null;
         }
-        return new OpenTelemetryAppender(name, filter, layout, ignoreExceptions);
+        return new OpenTelemetryAppender(name, filter, layout, ignoreExceptions, endpoint);
     }
 
     @Override
@@ -112,7 +124,7 @@ public class OpenTelemetryAppender extends AbstractAppender {
     }
 
     private Severity mapSeverity(org.apache.logging.log4j.Level level) {
-        switch (level.StandardLevel) {
+        switch (level.getStandardLevel()) {
             case FATAL:
                 return Severity.FATAL;
             case ERROR:

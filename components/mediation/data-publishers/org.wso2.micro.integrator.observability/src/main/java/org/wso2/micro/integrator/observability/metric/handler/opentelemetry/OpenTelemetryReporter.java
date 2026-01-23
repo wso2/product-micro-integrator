@@ -29,7 +29,7 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider;
 import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
 import io.opentelemetry.exporter.otlp.metrics.OtlpGrpcMetricExporter;
 import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
+import io.opentelemetry.semconv.resource.ServiceAttributes;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.micro.integrator.observability.metric.handler.MetricReporter;
@@ -45,34 +45,54 @@ import java.util.concurrent.TimeUnit;
 public class OpenTelemetryReporter implements MetricReporter {
 
     private static final Log log = LogFactory.getLog(OpenTelemetryReporter.class);
-    private Meter meter;
-    private final Map<String, LongCounter> counterMap = new HashMap<>();
-    private final Map<String, DoubleHistogram> histogramMap = new HashMap<>();
-    private final Map<String, String[]> metricKeys = new HashMap<>();
 
-    // OTel Resource attributes
-    private static final String SERVICE_NAME_VAL = "wso2-micro-integrator";
+    // Maintain reference to allow cleanup
+    private SdkMeterProvider sdkMeterProvider;
+
+    private Meter meter;
+    private Map<String, LongCounter> counterMap = new HashMap<>();
+    private Map<String, DoubleHistogram> histogramMap = new HashMap<>();
+    private Map<String, String[]> metricKeys = new HashMap<>();
+
+    private static final String SERVICE_NAME_VAL = "WSO2-Micro-Integrator";
+    private static final String OTLP_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_ENDPOINT";
+    private static final String DEFAULT_OTLP_ENDPOINT = "http://localhost:4317";
+
+    private volatile boolean initialized = false;
 
     @Override
     public void initMetrics() {
+        if (initialized) {
+            log.warn("OpenTelemetry Metric Reporter already initialized");
+            return;
+        }
+
         try {
             log.info("Initializing OpenTelemetry Metric Reporter");
+
             // Initialize OpenTelemetry SDK
             Resource resource = Resource.getDefault()
-                    .merge(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, SERVICE_NAME_VAL)));
+                    .merge(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, SERVICE_NAME_VAL)));
+
+            String otlpEndpoint = System.getenv(OTLP_ENDPOINT_ENV);
+            if (otlpEndpoint == null || otlpEndpoint.isEmpty()) {
+                otlpEndpoint = DEFAULT_OTLP_ENDPOINT;
+            }
+            log.info("OpenTelemetry Metric Reporter using endpoint: " + otlpEndpoint);
 
             OtlpGrpcMetricExporter metricExporter = OtlpGrpcMetricExporter.builder()
-                    .setEndpoint("http://localhost:4317")
+                    .setEndpoint(otlpEndpoint)
                     .build();
 
-            SdkMeterProvider sdkMeterProvider = SdkMeterProvider.builder()
+            this.sdkMeterProvider = SdkMeterProvider.builder()
                     .registerMetricReader(PeriodicMetricReader.builder(metricExporter).build())
                     .setResource(resource)
                     .build();
 
-            OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
+            // Use independent Sdk instance instead of global to avoid conflicts
+            OpenTelemetrySdk openTelemetry = OpenTelemetrySdk.builder()
                     .setMeterProvider(sdkMeterProvider)
-                    .buildAndRegisterGlobal();
+                    .build();
 
             this.meter = openTelemetry.getMeter("org.wso2.micro.integrator.observability");
 
@@ -84,6 +104,8 @@ public class OpenTelemetryReporter implements MetricReporter {
             initializeApiMetrics();
             initializeInboundEndpointMetrics();
             initializeDataServiceMetrics();
+
+            initialized = true;
             log.info("OpenTelemetry Metric Reporter initialized successfully");
 
         } catch (Exception e) {
@@ -200,6 +222,12 @@ public class OpenTelemetryReporter implements MetricReporter {
         return builder.build();
     }
 
+    public void shutdown() {
+        if (sdkMeterProvider != null) {
+            sdkMeterProvider.close();
+        }
+    }
+
     private static class OTelTimer {
         long startTime;
         DoubleHistogram histogram;
@@ -223,6 +251,7 @@ public class OpenTelemetryReporter implements MetricReporter {
 
     @Override
     public void serverDown(String h, String p, String jv, String jh) {
+        shutdown();
     }
 
     @Override
