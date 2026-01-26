@@ -1776,7 +1776,7 @@
         <carbon.commons.version>4.7.55</carbon.commons.version>
         <carbon.rule.version>4.5.3</carbon.rule.version>
         <carbon.deployment.version>4.9.11</carbon.deployment.version>
-        <wss4j.version>1.6.0-wso2v8</wss4j.version>
+        <wss4j.version>1.6.0-wso2v6</wss4j.version>
         <rampart.wso2.version>1.7.0-wso2v7</rampart.wso2.version>
         <siddhi.version>3.2.3</siddhi.version>
         <opensaml.orbit.version>3.3.1.wso2v14</opensaml.orbit.version>
@@ -1822,7 +1822,7 @@
         <orbit.version.commons.lang>2.6.0.wso2v1</orbit.version.commons.lang>
         <version.geronimo.saaj.spec>1.0.1.wso2v2</version.geronimo.saaj.spec>
         <orbit.version.poi>3.17.0.wso2v1</orbit.version.poi>
-        <orbit.version.poi.scratchpad>5.4.1.wso2v1</orbit.version.poi.scratchpad>
+        <orbit.version.poi.scratchpad>5.5.1.wso2v1</orbit.version.poi.scratchpad>
         <slf4j.version>1.7.36</slf4j.version>
         <version.log4j.core>2.17.1</version.log4j.core>
         <version.jaxb>2.2.5.wso2v1</version.jaxb>
@@ -1924,20 +1924,20 @@
         <opencsv.orbit.version>1.8.wso2v1</opencsv.orbit.version>
         <opencsv.orbit.imp.pkg.version>0.0.0</opencsv.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([1.8.wso2v1,1.9)) after osgi bundle was corrected -->
 
-        <poi-ooxml.orbit.version>5.4.1.wso2v1</poi-ooxml.orbit.version>
+        <poi-ooxml.orbit.version>5.5.1.wso2v1</poi-ooxml.orbit.version>
         <poi-ooxml.orbit.imp.pkg.version>0.0.0</poi-ooxml.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([3.9.0.wso2v3,4.0.0)) after osgi bundle is corrected - rajith-->
 
-        <poi.orbit.version>5.4.1.wso2v1</poi.orbit.version>
+        <poi.orbit.version>5.5.1.wso2v1</poi.orbit.version>
         <poi.orbit.imp.pkg.version>0.0.0</poi.orbit.imp.pkg.version> <!--todo change this to appropriate version range ([3.9.0,4.0.0)) after osgi bundle is corrected - rajith-->
 
-        <poi-ooxml.version>5.4.1</poi-ooxml.version>
-        <poi.version>5.4.1</poi.version>
+        <poi-ooxml.version>5.5.1</poi-ooxml.version>
+        <poi.version>5.5.1</poi.version>
 
         <xmlbeans.orbit.version>5.3.0.wso2v1</xmlbeans.orbit.version>
         <commons-compress.orbit.version>1.27.1.wso2v1</commons-compress.orbit.version>
         <xmlbeans.orbit.imp.pkg.version>[5.3.0.wso2v1,6.0.0.wso2v1)</xmlbeans.orbit.imp.pkg.version>
 
-        <commons-collections4.orbit.version>4.4.wso2v1</commons-collections4.orbit.version>
+        <commons-collections4.orbit.version>4.5.0.wso2v1</commons-collections4.orbit.version>
         <commons-collections4.orbit.imp.pkg.version>0.0.0</commons-collections4.orbit.imp.pkg.version>
 
         <carbon.registry.imp.pkg.version>0.0.0</carbon.registry.imp.pkg.version> <!-- todo remove this and use {carbon.kernel.imp.pkg.version} after registry bundles are corrected to export correct versions-->
