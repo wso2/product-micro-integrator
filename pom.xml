@@ -1786,7 +1786,7 @@
         <jsonassert.version>1.5.1</jsonassert.version>
         <saml.common.util.version.range>[1.0.0,2.0.0)</saml.common.util.version.range>
         <bouncycastle.orbit.version>1.81.0.wso2v1</bouncycastle.orbit.version>
-        <orbit.version.poi.ooxml>5.3.0.wso2v1</orbit.version.poi.ooxml>
+        <orbit.version.poi.ooxml>5.5.1.wso2v1</orbit.version.poi.ooxml>
         <org.wso2.json.version>3.0.0.wso2v7</org.wso2.json.version>
         <version.equinox.http.servlet>1.1.400.v20130418-1354</version.equinox.http.servlet>
         <version.tomcat>9.0.110</version.tomcat>
