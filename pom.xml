@@ -1785,7 +1785,7 @@
         <version.annogen>0.1.0.wso2v1</version.annogen>
         <version.backport.util.concurrent>3.1.0.wso2v1</version.backport.util.concurrent>
         <version.commons.fileupload>1.6.0.wso2v1</version.commons.fileupload>
-        <orbit.version.commons.httpclient>3.1.0.wso2v6</orbit.version.commons.httpclient>
+        <orbit.version.commons.httpclient>3.1.0-wso2v7</orbit.version.commons.httpclient>
         <orbit.version.commons.collection>3.2.2.wso2v1</orbit.version.commons.collection>
         <version.compass>2.0.1.wso2v2</version.compass>
         <orbit.version.commons.lang>2.6.0.wso2v1</orbit.version.commons.lang>
@@ -1965,7 +1965,7 @@
         <bson4jackson.orbit.version>2.9.0</bson4jackson.orbit.version>
 
         <saxon.orbit.version>8.9.0.wso2v2</saxon.orbit.version>
-        <commons-httpclient.orbit.version>3.1.0.wso2v6</commons-httpclient.orbit.version>
+        <commons-httpclient.orbit.version>3.1.0-wso2v7</commons-httpclient.orbit.version>
         <htmlcleaner.orbit.version>2.1.0.wso2v1</htmlcleaner.orbit.version>
         <jboss-transaction-api.version>1.0.1.Final</jboss-transaction-api.version>
         <ojdbc.version>6</ojdbc.version> <!--todo need to check for latest - rajith-->
