@@ -128,7 +128,7 @@ public class TaskResource extends APIResource {
                 Startup task = configuration.getStartup(taskName);
                 if (task != null) {
                     String performedBy = Constants.ANONYMOUS_USER;
-                    if (msgCtx.getProperty(USERNAME_PROPERTY) !=  null) {
+                    if (msgCtx.getProperty(USERNAME_PROPERTY) != null) {
                         performedBy = msgCtx.getProperty(USERNAME_PROPERTY).toString();
                     }
                     JSONObject info = new JSONObject();
