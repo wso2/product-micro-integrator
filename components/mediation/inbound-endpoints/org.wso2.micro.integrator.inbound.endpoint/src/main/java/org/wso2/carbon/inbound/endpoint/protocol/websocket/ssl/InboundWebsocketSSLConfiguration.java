@@ -49,9 +49,10 @@ public class InboundWebsocketSSLConfiguration {
         this.cipherSuites = cipherSuites;
     }
 
-    public InboundWebsocketSSLConfiguration(File keyStore, String keyStorePass) {
+    public InboundWebsocketSSLConfiguration(File keyStore, String keyStorePass, String keyStoreType) {
         this.keyStore = keyStore;
         this.keyStorePass = keyStorePass;
+        this.keyStoreType = keyStoreType;
     }
 
     public String getCertPass() {
@@ -90,11 +91,6 @@ public class InboundWebsocketSSLConfiguration {
         return this;
     }
 
-    public InboundWebsocketSSLConfiguration setKeyStoreType(String keyStoreType) {
-        this.keyStoreType = keyStoreType;
-        return this;
-    }
-
     public File getKeyStore() {
         return keyStore;
     }
@@ -121,22 +117,27 @@ public class InboundWebsocketSSLConfiguration {
         private String cipherSuites;
 
         public SSLConfigurationBuilder(String keyStoreFile, String keyStorePass, String trustStoreFile,
-                                       String trustStorePass, String certPass) {
+                                       String trustStorePass, String certPass, String keyStoreType,
+                                       String trustStoreType) {
             this.keyStoreFile = keyStoreFile;
             this.keyStorePass = keyStorePass;
+            this.keyStoreType = keyStoreType;
             this.trustStoreFile = trustStoreFile;
             this.trustStorePass = trustStorePass;
+            this.trustStoreType = trustStoreType;
             this.certPass = certPass;
 
         }
 
         public SSLConfigurationBuilder(String keyStoreFile, String keyStorePass, String trustStoreFile,
                                        String trustStorePass, String certPass, String sslProtocols,
-                                       String cipherSuites) {
+                                       String cipherSuites, String keyStoreType,
+                                       String trustStoreType) {
             this.keyStoreFile = keyStoreFile;
             this.keyStorePass = keyStorePass;
+            this.keyStoreType = keyStoreType;
             this.trustStoreFile = trustStoreFile;
-            this.trustStorePass = trustStorePass;
+            this.trustStorePass = trustStoreType;
             this.certPass = certPass;
             this.sslProtocols = sslProtocols;
             this.cipherSuites = cipherSuites;
@@ -156,8 +157,8 @@ public class InboundWebsocketSSLConfiguration {
             if (!keyStore.exists()) {
                 throw new IllegalArgumentException("KeyStore File " + keyStoreFile + " not found");
             }
-            InboundWebsocketSSLConfiguration sslConfig = new InboundWebsocketSSLConfiguration(keyStore, keyStorePass)
-                    .setCertPass(certPass).setKeyStoreType(keyStoreType);
+            InboundWebsocketSSLConfiguration sslConfig = new InboundWebsocketSSLConfiguration(keyStore, keyStorePass,
+                    keyStoreType).setCertPass(certPass);
             if (trustStoreFile != null) {
                 File trustStore = new File(trustStoreFile);
                 if (!trustStore.exists()) {
@@ -169,7 +170,7 @@ public class InboundWebsocketSSLConfiguration {
                 if (trustStoreType == null) {
                     trustStoreType = "JKS";
                 }
-                sslConfig.setTrustStore(trustStore).setTrustStorePass(trustStorePass).setTrustStoreType(trustStoreType);
+                sslConfig.setTrustStore(trustStore).setTrustStorePass(trustStorePass);
             }
 
             if (sslProtocols == null || sslProtocols.trim().isEmpty()) {
