@@ -29,8 +29,11 @@ import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.micro.integrator.dataservices.common.DBConstants;
+import org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingCollector;
 
 import java.util.Map;
+
+import static org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingConstants.DATA_SERVICE_INDEX;
 
 /**
  * This class represents the Axis2 message receiver used to dispatch in-out service calls.
@@ -59,6 +62,7 @@ public class DBInOutMessageReceiver extends RawXMLINOutMessageReceiver {
 				          ", Operation - " + msgContext.getSoapAction() + ", Request body - " +
 				          msgContext.getEnvelope().getText() + ", ThreadID - " + Thread.currentThread().getId());
 			}
+            DataServicesTracingCollector.reportEntryEvent(msgContext);
 			boolean isAcceptJson = false;
 			Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
 			if (transportHeaders != null) {
@@ -91,9 +95,11 @@ public class DBInOutMessageReceiver extends RawXMLINOutMessageReceiver {
 				newMsgContext.setProperty(Constants.Configuration.MESSAGE_TYPE,
 						HTTPConstants.MEDIA_TYPE_APPLICATION_JSON);
 			}
+            DataServicesTracingCollector.closeEntryEvent(msgContext, result);
 		} catch (Exception e) {
 			log.error("Error in in-out message receiver", e);
 			msgContext.setProperty(Constants.FAULT_NAME, DBConstants.DS_FAULT_NAME);
+            DataServicesTracingCollector.closeFlowForcefully(msgContext, DATA_SERVICE_INDEX, e);
 			throw DBUtils.createAxisFault(e);
 		} finally {
 			if (msgContext.getProperty(DATA_SERVICE_LATENCY_TIMER) != null) {

@@ -22,10 +22,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.context.MessageContext;
 import org.wso2.micro.integrator.dataservices.core.DataServiceFault;
 import org.wso2.micro.integrator.dataservices.core.TLConnectionStore;
 import org.wso2.micro.integrator.dataservices.core.engine.DataService;
 import org.wso2.micro.integrator.dataservices.core.engine.ParamValue;
+import org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingCollector;
+
+import static org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingConstants.MULTI_REQUEST_LAST_INDEX_PROPERTY;
 
 /**
  * Represents a batch data service request.
@@ -85,10 +89,10 @@ public class BatchDataServiceRequest extends DataServiceRequest {
 	}
 
 	/**
-	 * @see DataServiceRequest#processRequest()
+     * @see DataServiceRequest#processRequest(MessageContext messageContext)
 	 */
 	@Override
-	public OMElement processRequest() throws DataServiceFault {
+    public OMElement processRequest(MessageContext messageContext) throws DataServiceFault {
 		boolean error = true;
 		try {
 			/* signal that we are batch processing */
@@ -103,7 +107,12 @@ public class BatchDataServiceRequest extends DataServiceRequest {
 				/* set the current batch request number in TL */
 			    DispatchStatus.setBatchRequestNumber(i);
 				/* execute/enqueue request */
-				OMElement element = requests.get(i).dispatch();
+                DataServicesTracingCollector.reportMultiEvent(messageContext, i, requests.get(i));
+                if (messageContext != null){
+                    messageContext.setProperty(MULTI_REQUEST_LAST_INDEX_PROPERTY, i);
+                }
+                OMElement element = requests.get(i).dispatch(messageContext);
+                DataServicesTracingCollector.closeMultiEvent(messageContext, i, element);
 				if (element != null && element.getFirstOMChild() != null) {
 					result = element;
 				}
