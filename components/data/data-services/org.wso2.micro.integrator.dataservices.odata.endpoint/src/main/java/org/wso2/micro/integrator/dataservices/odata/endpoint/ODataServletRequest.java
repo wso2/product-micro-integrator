@@ -441,4 +441,9 @@ public class ODataServletRequest implements HttpServletRequest {
     public DispatcherType getDispatcherType() {
         throw new UnsupportedOperationException();
     }
+
+    public MessageContext getAxis2MessageContext() {
+        return axis2MessageContext;
+    }
+
 }

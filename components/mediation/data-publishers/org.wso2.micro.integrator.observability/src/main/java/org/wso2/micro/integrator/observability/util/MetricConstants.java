@@ -97,5 +97,6 @@ public class MetricConstants {
     public static final String MESSAGE_DIRECTION_IN = "in";
 
     public static final String MESSAGE_DIRECTION_OUT = "out";
+    public static final String ENABLE_LEGACY_PROMETHEUS = "usePrometheusLegacyApi";
 
 }

@@ -30,9 +30,11 @@ import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHo
 import org.apache.synapse.aspects.flow.statistics.log.templates.AbstractStatisticEvent;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 import org.apache.synapse.aspects.flow.statistics.util.TracingDataCollectionHelper;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.data.MessageFlowObserverStore;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.producer.AnalyticsCustomDataProvider;
 import org.wso2.micro.integrator.analytics.messageflow.data.publisher.producer.AnalyticsDataProviderHolder;
+import org.wso2.micro.integrator.analytics.messageflow.data.publisher.publish.elasticsearch.ElasticConstants;
 import org.wso2.micro.integrator.initializer.services.SynapseEnvironmentService;
 
 import java.util.ArrayList;
@@ -50,6 +52,7 @@ public class MessageFlowReporterThread extends Thread {
     private static Log log = LogFactory.getLog(MessageFlowReporterThread.class);
 
     private volatile boolean shutdownRequested = false;
+    private volatile boolean customDataProviderEnabled = false;
 
     private MessageFlowObserverStore messageFlowObserverStore;
 
@@ -64,6 +67,11 @@ public class MessageFlowReporterThread extends Thread {
                                      MessageFlowObserverStore messageFlowObserverStore) {
         this.synapseEnvironmentService = synEnvSvc;
         this.messageFlowObserverStore = messageFlowObserverStore;
+        String analyticsCustomDataProviderClass = SynapsePropertiesLoader.getPropertyValue(
+            ElasticConstants.SynapseConfigKeys.ELASTICSEARCH_CUSTOM_DATA_PROVIDER_CLASS, null);
+        if (analyticsCustomDataProviderClass != null) {
+            customDataProviderEnabled = true;
+        }
     }
 
     public void setDelay(long delay) {
@@ -86,7 +94,7 @@ public class MessageFlowReporterThread extends Thread {
     }
 
     public void run() {
-        StatisticsReportingEventHolder statisticsReportingEventHolder;
+        StatisticsReportingEventHolder statisticsReportingEventHolder = null;
         while (!shutdownRequested) {
             try {
                 statisticsReportingEventHolder = synapseEnvironmentService.getSynapseEnvironment().getMessageDataStore()
@@ -98,6 +106,11 @@ public class MessageFlowReporterThread extends Thread {
                 }
             } catch (Exception exception) {//catching throwable since this shouldn't fail
                 log.error("Error in mediation flow statistic data consumer while consuming data", exception);
+            } finally {
+                // Removing the event queue reference from the event holder to enable GC.
+                if (statisticsReportingEventHolder != null) {
+                    statisticsReportingEventHolder.clearEventQueue();
+                }
             }
         }
     }
@@ -153,7 +166,13 @@ public class MessageFlowReporterThread extends Thread {
                 } else {
                     statisticsLog.setParentIndex(getParent(messageFlowLogs, parentIndex));
                 }
-                setElasticMetaData(dataUnit, statisticsLog);
+                if (customDataProviderEnabled) {
+                    setElasticMetaData(dataUnit, statisticsLog);
+                } else {
+                    if (dataUnit.getElasticMetadata() != null) {
+                        statisticsLog.setElasticMetadata(dataUnit.getElasticMetadata());
+                    }
+                }
                 if (statisticsLog.getHashCode() == null) {
                     statisticsLog.setHashCode(statisticsLog.getComponentId().hashCode());
                 }
@@ -268,7 +287,13 @@ public class MessageFlowReporterThread extends Thread {
             StatisticsLog updatingLog = messageFlowLogs.get(index);
             updatingLog.incrementNoOfFaults();
             index = updatingLog.getParentIndex();
-            setElasticMetaData(dataUnit, updatingLog);
+            if (customDataProviderEnabled) {
+                setElasticMetaData(dataUnit, updatingLog);
+            } else {
+                if (dataUnit.getElasticMetadata() != null) {
+                    updatingLog.setElasticMetadata(dataUnit.getElasticMetadata());
+                }
+            }
         }
 
     }

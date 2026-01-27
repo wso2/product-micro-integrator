@@ -23,10 +23,14 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.context.MessageContext;
 import org.apache.commons.io.output.NullOutputStream;
 import org.wso2.micro.integrator.dataservices.core.DBUtils;
 import org.wso2.micro.integrator.dataservices.core.DataServiceFault;
 import org.wso2.micro.integrator.dataservices.core.dispatch.DataServiceRequest;
+import org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingCollector;
+
+import static org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingConstants.MULTI_REQUEST_LAST_INDEX_PROPERTY;
 
 /**
  * Represents a boxcarring session service request group.
@@ -56,13 +60,18 @@ public class RequestBox {
 	 * and the stored requests will be executed,
 	 * the result of the last operation is returned.
 	 */
-	public synchronized OMElement execute() throws DataServiceFault {
+    public synchronized OMElement execute(MessageContext messageContext) throws DataServiceFault {
 		OMElement result;
 		List<DataServiceRequest> reqList = this.getRequests();
 		int n = reqList.size();
 		OMElement resultElement = null;
 		for (int i = 0; i < n; i++) {
-			result = reqList.get(i).dispatch();
+            DataServicesTracingCollector.reportMultiEvent(messageContext, i, reqList.get(i));
+            if (messageContext != null){
+                messageContext.setProperty(MULTI_REQUEST_LAST_INDEX_PROPERTY, i);
+            }
+            result = reqList.get(i).dispatch(messageContext);
+            DataServicesTracingCollector.closeMultiEvent(messageContext, i, result);
 			if (result != null) {
 				try {
 					/* if it's the last request, return the result,
