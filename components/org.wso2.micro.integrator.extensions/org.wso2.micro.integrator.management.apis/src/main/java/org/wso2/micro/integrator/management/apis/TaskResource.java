@@ -300,6 +300,7 @@ public class TaskResource extends APIResource {
     /**
      * Handles the activation or deactivation of a schedule task based on the provided status.
      *
+     * @param task           The task the operation is performed, used for audit logging.
      * @param performedBy    The user performing the operation, used for audit logging.
      * @param info           A JSON object containing additional audit information.
      * @param messageContext The current Synapse {@link MessageContext} for accessing the configuration.
