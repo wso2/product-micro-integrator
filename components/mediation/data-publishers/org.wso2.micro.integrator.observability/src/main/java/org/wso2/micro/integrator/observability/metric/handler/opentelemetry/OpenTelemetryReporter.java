@@ -29,7 +29,7 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider;
 import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
 import io.opentelemetry.exporter.otlp.metrics.OtlpGrpcMetricExporter;
 import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.semconv.resource.attributes.ServiceAttributes;
+import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.micro.integrator.observability.metric.handler.MetricReporter;
@@ -72,7 +72,7 @@ public class OpenTelemetryReporter implements MetricReporter {
 
             // Initialize OpenTelemetry SDK
             Resource resource = Resource.getDefault()
-                    .merge(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, SERVICE_NAME_VAL)));
+                    .merge(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, SERVICE_NAME_VAL)));
 
             String otlpEndpoint = System.getenv(OTLP_ENDPOINT_ENV);
             if (otlpEndpoint == null || otlpEndpoint.isEmpty()) {

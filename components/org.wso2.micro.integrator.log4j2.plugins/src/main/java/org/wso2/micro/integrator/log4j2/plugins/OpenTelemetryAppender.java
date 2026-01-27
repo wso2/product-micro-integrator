@@ -27,7 +27,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.logs.SdkLoggerProvider;
 import io.opentelemetry.sdk.logs.export.BatchLogRecordProcessor;
 import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.semconv.resource.attributes.ServiceAttributes;
+import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Core;
 import org.apache.logging.log4j.core.Filter;
@@ -55,7 +55,7 @@ public class OpenTelemetryAppender extends AbstractAppender {
         LOGGER.info("Initializing OpenTelemetryAppender with name: " + name);
 
         Resource resource = Resource.getDefault()
-                .merge(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, "wso2-micro-integrator")));
+                .merge(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, "wso2-micro-integrator")));
 
         String otlpEndpoint = endpoint;
         if (otlpEndpoint == null || otlpEndpoint.isEmpty()) {
