@@ -119,6 +119,7 @@ public class Constants {
     // Synapse service statuses
     public static final String ACTIVE_STATUS = "active";
     public static final String INACTIVE_STATUS = "inactive";
+    public static final String TRIGGER_STATUS = "trigger";
 
     // Constant on pax logging
     public static final String PAX_LOGGING_CONFIGURATION_PID = "org.ops4j.pax.logging";
@@ -165,6 +166,7 @@ public class Constants {
     public static final String AUDIT_LOG_TYPE_ROOT_LOG_LEVEL = "root_log_level";
     public static final String AUDIT_LOG_TYPE_MESSAGE_PROCESSOR = "message_processor";
     public static final String AUDIT_LOG_TYPE_INBOUND_ENDPOINT = "inbound_endpoint";
+    public static final String AUDIT_LOG_TYPE_TASK = "task";
     public static final String AUDIT_LOG_TYPE_CARBON_APPLICATION = "carbon_application";
     public static final String AUDIT_LOG_TYPE_CONNECTOR = "connector";
 
@@ -202,6 +204,7 @@ public class Constants {
     public static final String AUDIT_LOG_ACTION_CREATED = "created";
     public static final String AUDIT_LOG_ACTION_DELETED = "deleted";
     public static final String AUDIT_LOG_ACTION_UPDATED = "updated";
+    public static final String AUDIT_LOG_ACTION_TRIGGERED = "triggered";
 
     public static final String DOMAIN_SEPARATOR;
 

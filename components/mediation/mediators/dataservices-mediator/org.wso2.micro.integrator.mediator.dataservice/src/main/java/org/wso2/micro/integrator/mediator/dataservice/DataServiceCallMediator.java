@@ -45,6 +45,7 @@ import org.apache.synapse.util.MessageHelper;
 import org.w3c.dom.Document;
 import org.wso2.micro.integrator.dataservices.core.DataServiceFault;
 import org.wso2.micro.integrator.dataservices.core.DataServiceProcessor;
+import org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingCollector;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -56,6 +57,7 @@ import java.io.StringReader;
 import java.util.List;
 
 import static org.wso2.micro.integrator.dataservices.core.dispatch.DataServiceRequest.AXIS_OPERATION_NAME;
+import static org.wso2.micro.integrator.dataservices.core.opentelemetry.DataServicesTracingConstants.DATA_SERVICE_INDEX;
 
 public class DataServiceCallMediator extends AbstractMediator {
 
@@ -206,7 +208,9 @@ public class DataServiceCallMediator extends AbstractMediator {
                                    MessageContext messageContext, SynapseLog synLog) {
 
         try {
+            DataServicesTracingCollector.reportEntryEvent(axis2MessageContext);
             OMElement omElement = DataServiceProcessor.dispatch(axis2MessageContext);
+            DataServicesTracingCollector.closeEntryEvent(axis2MessageContext, omElement);
             if (synLog.isTraceOrDebugEnabled()) {
                 synLog.traceOrDebug("The result OMElement from the dataservice : " + omElement);
             }
@@ -240,6 +244,7 @@ public class DataServiceCallMediator extends AbstractMediator {
                 axisMsgCtx.setEnvelope(createDefaultSOAPEnvelope(messageContext));
             }
         } catch (DataServiceFault dataServiceFault) {
+            DataServicesTracingCollector.closeFlowForcefully(axis2MessageContext, DATA_SERVICE_INDEX, dataServiceFault);
             if (synLog.isTraceOrDebugEnabled()) {
                 synLog.traceOrDebug(dataServiceFault.getMessage());
             }
@@ -248,6 +253,7 @@ public class DataServiceCallMediator extends AbstractMediator {
                     dataServiceFault, messageContext);
 
         } catch (AxisFault axisFault) {
+            DataServicesTracingCollector.closeFlowForcefully(axis2MessageContext, DATA_SERVICE_INDEX, axisFault);
             if (synLog.isTraceOrDebugEnabled()) {
                 synLog.traceOrDebug(axisFault.getMessage());
             }
