@@ -251,10 +251,6 @@
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
                     </exclusion>
-                    <exclusion>
-                        <groupId>org.ops4j.pax.logging</groupId>
-                        <artifactId>pax-logging-api</artifactId>
-                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
