@@ -23,11 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InboundWebsocketSSLConfiguration {
-    private File keyStore;
-    private String keyStorePass;
+    private final File keyStore;
+    private final String keyStorePass;
+    private String keyStoreType = "JKS";
     private String certPass;
     private File trustStore;
     private String trustStorePass;
+    private String trustStoreType = "JKS";
     private String[] sslProtocols;
     private String[] cipherSuites;
 
@@ -47,13 +49,18 @@ public class InboundWebsocketSSLConfiguration {
         this.cipherSuites = cipherSuites;
     }
 
-    public InboundWebsocketSSLConfiguration(File keyStore, String keyStorePass) {
+    public InboundWebsocketSSLConfiguration(File keyStore, String keyStorePass, String keyStoreType) {
         this.keyStore = keyStore;
         this.keyStorePass = keyStorePass;
+        this.keyStoreType = keyStoreType;
     }
 
     public String getCertPass() {
         return certPass;
+    }
+
+    public String getTrustStoreType() {
+        return trustStoreType;
     }
 
     public InboundWebsocketSSLConfiguration setCertPass(String certPass) {
@@ -79,9 +86,19 @@ public class InboundWebsocketSSLConfiguration {
         return this;
     }
 
+    public InboundWebsocketSSLConfiguration setTrustStoreType(String trustStoreType) {
+        this.trustStoreType = trustStoreType;
+        return this;
+    }
+
     public File getKeyStore() {
         return keyStore;
     }
+
+    public String getKeyStoreType() {
+        return keyStoreType;
+    }
+
 
     public String getKeyStorePass() {
         return keyStorePass;
@@ -89,31 +106,38 @@ public class InboundWebsocketSSLConfiguration {
 
     public static class SSLConfigurationBuilder {
 
-        private String keyStoreFile;
-        private String keyStorePass;
-        private String trustStoreFile;
-        private String trustStorePass;
+        private final String keyStoreFile;
+        private final String keyStorePass;
+        private String keyStoreType = "JKS";
+        private final String trustStoreFile;
+        private final String trustStorePass;
+        private String trustStoreType = "JKS";
         private String certPass;
         private String sslProtocols;
         private String cipherSuites;
 
         public SSLConfigurationBuilder(String keyStoreFile, String keyStorePass, String trustStoreFile,
-                                       String trustStorePass, String certPass) {
+                                       String trustStorePass, String certPass, String keyStoreType,
+                                       String trustStoreType) {
             this.keyStoreFile = keyStoreFile;
             this.keyStorePass = keyStorePass;
+            this.keyStoreType = keyStoreType;
             this.trustStoreFile = trustStoreFile;
             this.trustStorePass = trustStorePass;
+            this.trustStoreType = trustStoreType;
             this.certPass = certPass;
 
         }
 
         public SSLConfigurationBuilder(String keyStoreFile, String keyStorePass, String trustStoreFile,
                                        String trustStorePass, String certPass, String sslProtocols,
-                                       String cipherSuites) {
+                                       String cipherSuites, String keyStoreType,
+                                       String trustStoreType) {
             this.keyStoreFile = keyStoreFile;
             this.keyStorePass = keyStorePass;
+            this.keyStoreType = keyStoreType;
             this.trustStoreFile = trustStoreFile;
-            this.trustStorePass = trustStorePass;
+            this.trustStorePass = trustStoreType;
             this.certPass = certPass;
             this.sslProtocols = sslProtocols;
             this.cipherSuites = cipherSuites;
@@ -126,12 +150,15 @@ public class InboundWebsocketSSLConfiguration {
             if (keyStoreFile == null || keyStorePass == null) {
                 throw new IllegalArgumentException("keyStoreFile or keyStorePass not defined ");
             }
+            if (keyStoreType == null) {
+                keyStoreType = "JKS";
+            }
             File keyStore = new File(keyStoreFile);
             if (!keyStore.exists()) {
                 throw new IllegalArgumentException("KeyStore File " + keyStoreFile + " not found");
             }
-            InboundWebsocketSSLConfiguration sslConfig = new InboundWebsocketSSLConfiguration(keyStore, keyStorePass)
-                    .setCertPass(certPass);
+            InboundWebsocketSSLConfiguration sslConfig = new InboundWebsocketSSLConfiguration(keyStore, keyStorePass,
+                    keyStoreType).setCertPass(certPass);
             if (trustStoreFile != null) {
                 File trustStore = new File(trustStoreFile);
                 if (!trustStore.exists()) {
@@ -139,6 +166,9 @@ public class InboundWebsocketSSLConfiguration {
                 }
                 if (trustStorePass == null) {
                     throw new IllegalArgumentException("trustStorePass is not defined ");
+                }
+                if (trustStoreType == null) {
+                    trustStoreType = "JKS";
                 }
                 sslConfig.setTrustStore(trustStore).setTrustStorePass(trustStorePass);
             }
