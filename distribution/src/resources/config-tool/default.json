@@ -86,6 +86,7 @@
   "synapse_properties.'opentelemetry.host'": "localhost",
   "synapse_properties.'opentelemetry.port'":  "14250",
   "synapse_properties.'opentelemetry.class'": "org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.JaegerTelemetryManager",
+  "synapse_properties.'opentelemetry.protocol'": "grpc",
 
   "synapse_properties.'analytics.enabled'": false,
   "synapse_properties.'analytics.publisher'": "log",
