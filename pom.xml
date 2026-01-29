@@ -1886,7 +1886,7 @@
         <carbon.commons.logging.imp.pkg.version>0.0.0</carbon.commons.logging.imp.pkg.version> <!-- todo  org.apache.commons.logging package version changed to this since there are no version in current export, after it was fixed change accordingly (should be able to use carbon.kernel.imp.pkg.version). - rajith-->
         <carbon.kernel.imp.pkg.version>[4.4.0,5.0.0)</carbon.kernel.imp.pkg.version>
 
-        <commons-io.version>2.17.0</commons-io.version>
+        <commons-io.version>2.21.0</commons-io.version>
         <commons-io.orbit.imp.pkg.version>0.0.0</commons-io.orbit.imp.pkg.version> <!-- todo change this once commons-io is corrected to use correct version exports - rajith -->
 
         <jena-arq.orbit.version>1.0.0.wso2v1</jena-arq.orbit.version>
