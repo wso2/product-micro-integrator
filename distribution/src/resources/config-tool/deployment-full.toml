@@ -887,6 +887,7 @@ internal_https_api_port = 9154      # inferred 9154 by default
 enable = false
 host="localhost"
 port="14250"
+service_name="WSO2-SYNAPSE"
 class="org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.JaegerTelemetryManager"
 
 ###################################   Database configurations   ###################################
