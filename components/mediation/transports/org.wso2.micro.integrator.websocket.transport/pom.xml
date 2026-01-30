@@ -57,24 +57,8 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-transport</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-handler</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec-http</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec</artifactId>
+            <groupId>org.wso2.orbit.io.netty</groupId>
+            <artifactId>netty-all</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.axis2</groupId>

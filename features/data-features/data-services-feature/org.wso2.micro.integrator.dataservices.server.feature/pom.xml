@@ -78,12 +78,7 @@
                                 <bundleDef>org.wso2.orbit.org.apache.poi:poi-scratchpad:${orbit.version.poi.scratchpad}</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.commons:commons-collections4</bundleDef>
                                 <bundleDef>io.dropwizard.metrics:metrics-core</bundleDef>
-                                <bundleDef>io.netty:netty-handler</bundleDef>
-                                <bundleDef>io.netty:netty-buffer</bundleDef>
-                                <bundleDef>io.netty:netty-transport</bundleDef>
-                                <bundleDef>io.netty:netty-transport-native-unix-common</bundleDef>
-                                <bundleDef>io.netty:netty-codec</bundleDef>
-                                <bundleDef>io.netty:netty-common</bundleDef>
+                                <bundleDef>org.wso2.orbit.io.netty:netty-all</bundleDef>
                                 <bundleDef>org.mongodb:mongodb-driver-sync</bundleDef>
                                 <bundleDef>org.mongodb:mongodb-driver-core</bundleDef>
                                 <bundleDef>org.mongodb:bson</bundleDef>
