@@ -21,6 +21,7 @@ public final class ServerConstants {
     private ServerConstants() {
     }
     public static final String CARBON_HOME = "carbon.home";
+    public static final String CARBON_CONFIG_DIR_PATH = "carbon.config.dir.path";
 
     //=============================================
     //          HTTP Constants

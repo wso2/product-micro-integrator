@@ -20,12 +20,12 @@ package org.wso2.carbon.caching.impl;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.utils.Axis2ConfigurationContextObserver;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+import org.wso2.micro.core.util.Axis2ConfigurationContextObserver;
 
 import javax.cache.Caching;
 
 import static org.wso2.carbon.caching.impl.Constants.SUPER_TENANT_DOMAIN_NAME;
+import static org.wso2.carbon.caching.impl.Constants.SUPER_TENANT_ID;
 
 /**
  * TODO: class description
@@ -52,7 +52,7 @@ public class CachingAxisConfigurationObserver implements Axis2ConfigurationConte
      */
     @Override
     public void terminatingConfigurationContext(ConfigurationContext configurationContext) {
-        int tenantId = MultitenantUtils.getTenantId(configurationContext);
+        int tenantId = SUPER_TENANT_ID;
         if (log.isDebugEnabled()) {
             log.debug("Remove all caches of the tenant " + tenantId);
         }

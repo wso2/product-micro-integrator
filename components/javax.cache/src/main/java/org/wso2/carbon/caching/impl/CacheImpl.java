@@ -21,7 +21,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.caching.impl.clustering.ClusterCacheInvalidationRequestSender;
 import org.wso2.carbon.caching.impl.eviction.EvictionAlgorithm;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.micro.integrator.core.services.CarbonServerConfigurationService;
 
 import javax.cache.Cache;
@@ -116,9 +115,6 @@ public class CacheImpl<K, V> implements Cache<K, V> {
             throw new IllegalStateException("Tenant domain cannot be null");
         }
         ownerTenantId = SUPER_TENANT_ID;
-        if (ownerTenantId == MultitenantConstants.INVALID_TENANT_ID) {
-            throw new IllegalStateException("Tenant ID cannot be " + ownerTenantId);
-        }
         this.cacheName = cacheName;
         this.cacheManager = cacheManager;
         DistributedMapProvider distributedMapProvider =

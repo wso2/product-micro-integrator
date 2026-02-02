@@ -65,7 +65,7 @@
             <artifactId>org.wso2.micro.integrator.registry</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon</groupId>
+            <groupId>org.wso2.ei</groupId>
             <artifactId>org.wso2.carbon.securevault</artifactId>
         </dependency>
         <dependency>
@@ -116,6 +116,10 @@
         <dependency>
             <groupId>org.wso2.integration.transaction.counter</groupId>
             <artifactId>transaction-count-handler</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.ei</groupId>
+            <artifactId>org.wso2.micro.integrator.utils</artifactId>
         </dependency>
     </dependencies>
 

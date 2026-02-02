@@ -36,6 +36,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -449,6 +450,21 @@ public class ODataServiceHandler {
             @Override
             public DispatcherType getDispatcherType() {
                 return req.getDispatcherType();
+            }
+
+            @Override
+            public <T extends HttpUpgradeHandler> T upgrade(Class<T> aClass) throws IOException, ServletException {
+                return req.upgrade(aClass);
+            }
+
+            @Override
+            public String changeSessionId() {
+                return req.changeSessionId();
+            }
+
+            @Override
+            public long getContentLengthLong() {
+                return req.getContentLengthLong();
             }
         };
     }

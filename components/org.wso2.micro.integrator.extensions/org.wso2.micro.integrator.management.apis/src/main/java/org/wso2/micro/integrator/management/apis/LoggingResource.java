@@ -30,7 +30,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 
 import org.json.JSONObject;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.APIResource;
-import org.wso2.carbon.utils.ServerConstants;
+import org.wso2.micro.integrator.utils.utils.ServerConstants;
 import org.wso2.micro.core.util.AuditLogger;
 import org.wso2.micro.integrator.management.apis.security.handler.SecurityUtils;
 import org.wso2.micro.integrator.security.user.api.UserStoreException;

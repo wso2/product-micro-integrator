@@ -38,6 +38,10 @@
             <artifactId>org.wso2.micro.integrator.core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.ei</groupId>
+            <artifactId>org.wso2.micro.integrator.osgi.security</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.service.component</artifactId>
         </dependency>
@@ -97,6 +101,18 @@
             <groupId>javax.xml.soap</groupId>
             <artifactId>javax.xml.soap-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>javax.xml.soap</groupId>
+            <artifactId>javax.xml.soap-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>javax.servlet.jsp-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.el</groupId>
+            <artifactId>javax.el-api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -140,6 +156,8 @@
                             <bundles>
                                 <bundleDef>org.wso2.ei:org.wso2.micro.integrator.core</bundleDef>
                                 <bundleDef>org.wso2.ei:org.wso2.micro.integrator.mediation.commons:${project.version}</bundleDef>
+                                <bundleDef>org.wso2.ei:org.wso2.micro.integrator.osgi.security</bundleDef>
+                                <bundleDef>org.wso2.ei:org.wso2.carbon.securevault</bundleDef>
 
                                 <bundleDef>org.apache.ws.security.wso2:wss4j:${wss4j.version}</bundleDef>
 
@@ -180,18 +198,18 @@
 <!--                                </bundleDef>-->
                                 <!--javax.servlet.jsp-->
                                 <bundleDef>
-                                    org.wso2.orbit.org.apache.tomcat:tomcat-jsp-api:${orbit.version.tomcat.jsp.api}
+                                    org.wso2.orbit.org.apache.tomcat:tomcat-jsp-api-jdk21:${orbit.version.tomcat.jsp.api}
                                 </bundleDef>
-                                <bundleDef>org.wso2.orbit.org.apache.tomcat:tomcat-el-api:${orbit.version.tomcat.el.api}
+                                <bundleDef>org.wso2.orbit.org.apache.tomcat:tomcat-el-api-jdk21:${orbit.version.tomcat.el.api}
                                 </bundleDef>
 <!--                                <bundleDef>org.wso2.tomcat:tomcat:${orbit.version.tomcat}</bundleDef>-->
 
 <!--                                for javax.servelt pkg-->
                                 <bundleDef>
-                                    org.wso2.orbit.org.apache.tomcat:tomcat-servlet-api:${orbit.version.tomcat.servlet.api}
+                                    org.wso2.orbit.org.apache.tomcat:tomcat-servlet-api-jdk21:${orbit.version.tomcat.servlet.api}
                                 </bundleDef>
 <!--                                <bundleDef>antlr.wso2:antlr:${antlr.wso2.version}</bundleDef>-->
-                                <bundleDef>org.wso2.orbit.org.apache.tomcat:tomcat:${orbit.version.tomcat}</bundleDef>
+                                <bundleDef>org.wso2.orbit.org.apache.tomcat:tomcat-jdk21:${orbit.version.tomcat}</bundleDef>
 <!--                                <bundleDef>-->
 <!--                                    org.wso2.orbit.org.apache.tomcat:tomcat-catalina-ha:${orbit.version.tomcat.ha}-->
 <!--                                </bundleDef>-->
@@ -247,13 +265,6 @@
                                 <bundleDef>org.wso2.orbit.org.apache.tomcat:jdbc-pool:${jdbc-pool.orbit.version}</bundleDef>
                                 <bundleDef>org.eclipse.jdt.core.compiler:ecj:${version.eclipse.ecj}</bundleDef>
                                 <bundleDef>com.google.code.gson:gson:${version.com.google.code.gson}</bundleDef>
-
-<!--                                &lt;!&ndash;Kernel bundles&ndash;&gt;-->
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.utils:${carbon.kernel.version}</bundleDef>-->
-<!--                                <bundleDef>org.wso2.carbon:javax.cache.wso2:${carbon.kernel.version}</bundleDef>-->
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.tomcat:${carbon.kernel.version}</bundleDef>-->
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.tomcat.ext:${carbon.kernel.version}-->
-<!--                                </bundleDef>-->
 
                                 <!--Log4j 2 packages -->
                                 <bundleDef>org.wso2.org.ops4j.pax.logging:pax-logging-api:${pax.logging.api.version}</bundleDef>
@@ -315,6 +326,9 @@
 <!--                                </bundleDef>-->
                                 <!--Management API-->
                                 <bundleDef>jakarta.servlet:jakarta.servlet-api:${jakarta.servlet.api.version}</bundleDef>
+                                <bundleDef>javax.servlet:javax.servlet-api:${javax.servlet.api.version}</bundleDef>
+                                <bundleDef>javax.servlet.jsp:javax.servlet.jsp-api:${javax.servlet.jsp-api.version}</bundleDef>
+                                <bundleDef>javax.el:javax.el-api:${javax.el-api.version}</bundleDef>
                                 <bundleDef>org.apache.commons:commons-configuration2:${commons.configuration2.version}</bundleDef>
                                 <bundleDef>
                                     org.wso2.ei:org.wso2.micro.integrator.management.apis:${project.version}
@@ -343,22 +357,7 @@
                                 <bundleDef>org.wso2.ei:javax.cache.wso2:${project.version}</bundleDef>
                                 <bundleDef>org.wso2.orbit.io.grpc:grpc-context:${grpc-context.orbit.version}</bundleDef>
                                 <bundleDef>org.wso2.orbit.io.opencensus:opencensus:${opencensus.orbit.version}</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.service.cm:${osgi.service.cm.version}</bundleDef>
                                 <bundleDef>org.osgi:org.osgi.service.coordinator:${osgi.service.coordinator.version}</bundleDef>
-                                <bundleDef>org.apache.felix:org.apache.felix.scr:${felix.scr.version}</bundleDef>
-                                <bundleDef>org.eclipse.platform:org.eclipse.osgi:${version.equinox.platform.osgi}</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.service.component</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.util.promise</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.util.function</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.service.cm</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.service.upnp</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.service.device</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.service.event</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.service.wireadmin</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.service.provisioning</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.service.useradmin</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.service.metatype</bundleDef>
-                                <bundleDef>org.osgi:org.osgi.service.permissionadmin</bundleDef>
                             </bundles>
 
                             <importFeatures>

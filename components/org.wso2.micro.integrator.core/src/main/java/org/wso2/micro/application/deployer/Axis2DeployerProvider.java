@@ -18,7 +18,7 @@
 
 package org.wso2.micro.application.deployer;
 
-import org.wso2.carbon.utils.component.xml.config.DeployerConfig;
+import org.wso2.micro.core.util.xml.DeployerConfig;
 
 import java.util.List;
 
