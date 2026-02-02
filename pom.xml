@@ -753,8 +753,8 @@
                 <version>${org.apache.bsf.wso2.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wso2.orbit.org.mozilla</groupId>
-                <artifactId>rhino</artifactId>
+                <groupId>rhino.wso2</groupId>
+                <artifactId>js</artifactId>
                 <version>${rhino.wso2.js.version}</version>
             </dependency>
             <dependency>
@@ -1833,11 +1833,11 @@
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <org.wso2.carbon.caching.core.version>4.2.0</org.wso2.carbon.caching.core.version>
         <json.smart.version>2.5.2</json.smart.version>
-        <google.guava.version>33.0.0-jre</google.guava.version>
+        <google.guava.version>33.5.0-jre</google.guava.version>
         <ca.uhn.hapi.wso2.version>2.4.0.wso2v2</ca.uhn.hapi.wso2.version>
         <junit.version>4.8.2</junit.version>
         <netty.version>4.1.127.Final</netty.version>
-        <netty.tcnative.version>2.0.53.Final</netty.tcnative.version>
+        <netty.tcnative.version>2.0.74.Final</netty.tcnative.version>
         <jacoco.agent.version>0.8.8</jacoco.agent.version>
         <activemq.version>5.2.0</activemq.version>
         <activemq.broker.version>5.15.2</activemq.broker.version>
@@ -1866,7 +1866,7 @@
         <imp.package.version.osgi.services>[1.2.0,2.0.0)</imp.package.version.osgi.services>
 
         <org.apache.bsf.wso2.version>3.0.0.wso2v6</org.apache.bsf.wso2.version>
-        <rhino.wso2.js.version>1.7.13.wso2v1</rhino.wso2.js.version>
+        <rhino.wso2.js.version>1.7.15.1.wso2v2</rhino.wso2.js.version>
         <org.apache.velocity.version>2.4.1</org.apache.velocity.version>
 
         <javax.servlet.version>3.0.0.v201112011016</javax.servlet.version>

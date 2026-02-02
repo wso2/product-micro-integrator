@@ -42,8 +42,8 @@
             <artifactId>velocity-engine-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.orbit.org.mozilla</groupId>
-            <artifactId>rhino</artifactId>
+            <groupId>rhino.wso2</groupId>
+            <artifactId>js</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.bsf.wso2</groupId>
@@ -94,7 +94,7 @@
                                 <bundleDef>org.wso2.carbon.mediation:org.wso2.carbon.connector.core</bundleDef>
                             </bundles>
                             <importBundles>
-                                <importBundleDef>org.wso2.orbit.org.mozilla:rhino</importBundleDef>
+                                <importBundleDef>rhino.wso2:js</importBundleDef>
                                 <importBundleDef>org.apache.velocity:velocity-engine-core</importBundleDef>
                                 <importBundleDef>org.apache.bsf.wso2:bsf-all</importBundleDef>
                             </importBundles>
