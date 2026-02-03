@@ -1204,7 +1204,7 @@
             </dependency>
             <dependency>
                 <groupId>org.wso2.orbit.com.google.oauth-client</groupId>
-                <artifactId>google-oauth-client</artifactId>
+                <artifactId>google-oauth-client-jdk21</artifactId>
                 <version>${google-oauth-client.orbit.version}</version>
             </dependency>
             <dependency>
@@ -1602,7 +1602,7 @@
             </dependency>
             <dependency>
                 <groupId>org.wso2.orbit.org.opensaml</groupId>
-                <artifactId>opensaml</artifactId>
+                <artifactId>opensaml-jdk21</artifactId>
                 <version>${opensaml.orbit.version}</version>
             </dependency>
             <dependency>
@@ -2212,7 +2212,7 @@
         <!-- Maven Plugin Version -->
         <maven.build.helper.plugin.version>3.0.0</maven.build.helper.plugin.version>
         <maven.xmlbeans-maven-plugin.plugin.version>2.3.3</maven.xmlbeans-maven-plugin.plugin.version>
-        <carbon.p2.plugin.version>5.4.12-SNAPSHOT</carbon.p2.plugin.version>
+        <carbon.p2.plugin.version>5.5.1</carbon.p2.plugin.version>
 
         <!-- Carbon kernel version-->
         <carbon.kernel.version>4.9.30</carbon.kernel.version>
@@ -2245,7 +2245,7 @@
         <!-- Apache Axis2 -->
         <axis2.wso2.version>1.6.1-wso2v119</axis2.wso2.version>
         <!-- Please unify axis2 versions in future -->
-        <axis2.wso2.integration.test.version>1.6.1-wso2v105</axis2.wso2.integration.test.version>
+        <axis2.wso2.integration.test.version>1.6.1-wso2v119</axis2.wso2.integration.test.version>
         <imp.pkg.version.axis2>[1.6.1, 1.7.0)</imp.pkg.version.axis2>
 
         <carbon.analytics.common.version>5.2.66</carbon.analytics.common.version>
@@ -2478,7 +2478,7 @@
         <google-http-client.orbit.version>1.41.2.wso2v2</google-http-client.orbit.version>
         <google-http-client.orbit.imp.pkg.version>[1.41.2,2.0)</google-http-client.orbit.imp.pkg.version>
 
-        <google-oauth-client.orbit.version>1.33.3.wso2v2</google-oauth-client.orbit.version>
+        <google-oauth-client.orbit.version>1.33.3.wso2v1</google-oauth-client.orbit.version>
         <google-oauth-client.orbit.imp.pkg.version>[1.33.1,2.0)</google-oauth-client.orbit.imp.pkg.version>
 
         <google-api-client.orbit.version>1.33.1.wso2v2</google-api-client.orbit.version>
@@ -2540,7 +2540,7 @@
         <mysql.connector.version>8.0.19</mysql.connector.version>
         <derby.orbit.version>10.3.2.1wso2v1</derby.orbit.version>
 
-        <jdbc-pool.orbit.version>11.0.15.wso2v1</jdbc-pool.orbit.version>
+        <jdbc-pool.orbit.version>11.0.18.wso2v1</jdbc-pool.orbit.version>
         <jdbc-pool.orbit.imp.pkg.version>[1.7.0,2.0.0)</jdbc-pool.orbit.imp.pkg.version>
 
         <antlr4.runtime.version>4.5.1.wso2v1</antlr4.runtime.version>

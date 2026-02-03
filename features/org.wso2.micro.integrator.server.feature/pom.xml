@@ -174,7 +174,7 @@
 <!--                                <bundleDef>org.wso2.siddhi:siddhi-core:${siddhi.version}</bundleDef>-->
 
 <!--                                for rampart-core-->
-                                <bundleDef>org.wso2.orbit.org.opensaml:opensaml:${opensaml.orbit.version}</bundleDef>
+                                <bundleDef>org.wso2.orbit.org.opensaml:opensaml-jdk21:${opensaml.orbit.version}</bundleDef>
 
 <!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.user.core:${carbon.kernel.version}-->
 <!--                                </bundleDef>-->
@@ -239,7 +239,7 @@
 <!--                                    backport-util-concurrent.wso2:backport-util-concurrent:${version.backport.util.concurrent}-->
 <!--                                </bundleDef>-->
                                 <bundleDef>
-                                    org.wso2.orbit.commons-fileupload:commons-fileupload:${version.commons.fileupload}
+                                    org.wso2.orbit.commons-fileupload:commons-fileupload-jdk21:${version.commons.fileupload}
                                 </bundleDef>
                                 <bundleDef>
                                     org.wso2.orbit.commons-httpclient:commons-httpclient:${orbit.version.commons.httpclient}
