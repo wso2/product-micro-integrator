@@ -36,32 +36,8 @@
             <artifactId>org.wso2.micro.integrator.websocket.transport</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-transport</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-handler</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec-http</artifactId>
-        </dependency>
-        <dependency>
-             <groupId>io.netty</groupId>
-             <artifactId>netty-codec</artifactId>            
-        </dependency>
-        <dependency>
-             <groupId>io.netty</groupId>
-             <artifactId>netty-buffer</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-resolver</artifactId>
+            <groupId>org.wso2.orbit.io.netty</groupId>
+            <artifactId>netty-all</artifactId>
         </dependency>
     </dependencies>
 
@@ -88,14 +64,7 @@
                             </adviceFile>
                             <bundles>
                                 <bundleDef>org.wso2.ei:org.wso2.micro.integrator.websocket.transport</bundleDef>
-                                <bundleDef>io.netty:netty-common:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-transport:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-transport-native-unix-common:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-codec-http:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-codec:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-buffer:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-handler:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-resolver:compatible:${netty.version}</bundleDef>
+                                <bundleDef>org.wso2.orbit.io.netty:netty-all</bundleDef>
                             </bundles>
                         </configuration>
                     </execution>
