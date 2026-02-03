@@ -70,6 +70,10 @@
                         <groupId>org.ops4j.pax.logging</groupId>
                         <artifactId>pax-logging-api</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.wso2.carbon</groupId>
+                        <artifactId>org.wso2.carbon.securevault</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -87,6 +91,10 @@
                         <groupId>org.ops4j.pax.logging</groupId>
                         <artifactId>pax-logging-api</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.wso2.carbon</groupId>
+                        <artifactId>org.wso2.carbon.securevault</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -102,6 +110,10 @@
                     <exclusion>
                         <groupId>org.seleniumhq.selenium</groupId>
                         <artifactId>selenium-java</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.wso2.carbon</groupId>
+                        <artifactId>org.wso2.carbon.securevault</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -726,6 +738,12 @@
                 <groupId>org.wso2.carbon</groupId>
                 <artifactId>org.wso2.carbon.core</artifactId>
                 <version>${carbon.kernel.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.wso2.carbon</groupId>
+                        <artifactId>org.wso2.carbon.securevault</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.rampart.wso2</groupId>
@@ -845,6 +863,7 @@
         <org.wso2.json.version>3.0.0.wso2v7</org.wso2.json.version>
         <maven.model.version>3.3.9</maven.model.version>
         <testng.suiteXml.location>src/test/resources/testng.xml</testng.suiteXml.location>
+        <axiom.api.version>1.2.13</axiom.api.version>
 
         <!-- TODO Remove after fixing the test cases, kept for compilation purposes.-->
         <carbon.registry.version>4.6.46</carbon.registry.version>

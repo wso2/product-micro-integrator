@@ -291,8 +291,6 @@
                                     org.wso2.orbit.javax.xml.bind:jaxb-api:${org.wso2.orbit.javax.xml.bind.version}
                                 </bundleDef>
 
-                                <bundleDef>org.wso2.carbon:org.wso2.carbon.securevault:${carbon.kernel.version}
-                                </bundleDef>
 <!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.core.common:${carbon.kernel.version}-->
 <!--                                </bundleDef>-->
                                 <bundleDef>org.wso2.orbit.commons-text:commons-text:${commons-text.orbit.version}
