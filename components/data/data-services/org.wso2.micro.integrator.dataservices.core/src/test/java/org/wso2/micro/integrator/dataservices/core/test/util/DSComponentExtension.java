@@ -151,6 +151,12 @@ public class DSComponentExtension extends DataServicesDSComponent {
                     }
 
                     @Override
+                    public <S> ServiceRegistration<S> registerService(Class<S> sClass, ServiceFactory<S> serviceFactory,
+                                                                      Dictionary<String, ?> stringDictionary) {
+                        return null;
+                    }
+
+                    @Override
                     public ServiceReference<?>[] getServiceReferences(String s, String s2) throws InvalidSyntaxException {
                         return new ServiceReference<?>[0];
                     }
@@ -184,6 +190,11 @@ public class DSComponentExtension extends DataServicesDSComponent {
                     @Override
                     public boolean ungetService(ServiceReference<?> serviceReference) {
                         return false;
+                    }
+
+                    @Override
+                    public <S> ServiceObjects<S> getServiceObjects(ServiceReference<S> sServiceReference) {
+                        return null;
                     }
 
                     @Override
