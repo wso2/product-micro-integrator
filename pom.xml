@@ -1762,10 +1762,10 @@
         <javax.jms-api.version>2.0.1</javax.jms-api.version>
         <jakarta.jms-api.version>3.1.0</jakarta.jms-api.version>
         <maven.dependency.plugin.version>3.1.1</maven.dependency.plugin.version>
-        <commons-text.orbit.version>1.13.1.wso2v1</commons-text.orbit.version>
-        <commons-lang3.orbit.version>3.18.0.wso2v1</commons-lang3.orbit.version>
-        <commons-lang3.version>3.18.0</commons-lang3.version>
-        <joda-time.version>2.9.4.wso2v1</joda-time.version>
+        <commons-text.orbit.version>1.15.0.wso2v1</commons-text.orbit.version>
+        <commons-lang3.orbit.version>3.20.0.wso2v1</commons-lang3.orbit.version>
+        <commons-lang3.version>3.20.0</commons-lang3.version>
+        <joda-time.version>2.14.0.wso2v1</joda-time.version>
         <libthrift.version>0.16.0.wso2v1</libthrift.version>
         <axis2.mar.maven.plugin>1.5.2</axis2.mar.maven.plugin>
 
@@ -1783,11 +1783,11 @@
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <org.wso2.carbon.caching.core.version>4.2.0</org.wso2.carbon.caching.core.version>
         <json.smart.version>2.5.2</json.smart.version>
-        <google.guava.version>33.0.0-jre</google.guava.version>
+        <google.guava.version>33.5.0-jre</google.guava.version>
         <ca.uhn.hapi.wso2.version>2.4.0.wso2v2</ca.uhn.hapi.wso2.version>
         <junit.version>4.8.2</junit.version>
         <netty.wso2.version>4.2.9.wso2v1</netty.wso2.version>
-        <netty.tcnative.version>2.0.53.Final</netty.tcnative.version>
+        <netty.tcnative.version>2.0.74.Final</netty.tcnative.version>
         <jacoco.agent.version>0.8.8</jacoco.agent.version>
         <activemq.version>5.2.0</activemq.version>
         <activemq.broker.version>5.15.2</activemq.broker.version>
@@ -1836,7 +1836,7 @@
         <carbon.commons.logging.imp.pkg.version>0.0.0</carbon.commons.logging.imp.pkg.version> <!-- todo  org.apache.commons.logging package version changed to this since there are no version in current export, after it was fixed change accordingly (should be able to use carbon.kernel.imp.pkg.version). - rajith-->
         <carbon.kernel.imp.pkg.version>[4.4.0,5.0.0)</carbon.kernel.imp.pkg.version>
 
-        <commons-io.version>2.17.0</commons-io.version>
+        <commons-io.version>2.21.0</commons-io.version>
         <commons-io.orbit.imp.pkg.version>0.0.0</commons-io.orbit.imp.pkg.version> <!-- todo change this once commons-io is corrected to use correct version exports - rajith -->
 
         <jena-arq.orbit.version>1.0.0.wso2v1</jena-arq.orbit.version>
@@ -1858,7 +1858,7 @@
         <poi.version>5.5.1</poi.version>
 
         <xmlbeans.orbit.version>5.3.0.wso2v1</xmlbeans.orbit.version>
-        <commons-compress.orbit.version>1.27.1.wso2v1</commons-compress.orbit.version>
+        <commons-compress.orbit.version>1.28.0.wso2v1</commons-compress.orbit.version>
         <xmlbeans.orbit.imp.pkg.version>[5.3.0.wso2v1,6.0.0.wso2v1)</xmlbeans.orbit.imp.pkg.version>
 
         <commons-collections4.orbit.version>4.5.0.wso2v1</commons-collections4.orbit.version>
@@ -1906,16 +1906,16 @@
 
         <olingo.orbit.imp.pkg.version>[4.4,5)</olingo.orbit.imp.pkg.version>
 
-        <google-http-client.orbit.version>1.41.2.wso2v2</google-http-client.orbit.version>
-        <google-http-client.orbit.imp.pkg.version>[1.41.2,2.0)</google-http-client.orbit.imp.pkg.version>
+        <google-http-client.orbit.version>1.47.1.wso2v1</google-http-client.orbit.version>
+        <google-http-client.orbit.imp.pkg.version>[1.47.1,2.0)</google-http-client.orbit.imp.pkg.version>
 
-        <google-oauth-client.orbit.version>1.33.3.wso2v1</google-oauth-client.orbit.version>
-        <google-oauth-client.orbit.imp.pkg.version>[1.33.1,2.0)</google-oauth-client.orbit.imp.pkg.version>
+        <google-oauth-client.orbit.version>1.39.0.wso2v1</google-oauth-client.orbit.version>
+        <google-oauth-client.orbit.imp.pkg.version>[1.39.0,2.0)</google-oauth-client.orbit.imp.pkg.version>
 
-        <google-api-client.orbit.version>1.33.1.wso2v2</google-api-client.orbit.version>
-        <google-api-client.orbit.imp.pkg.version>[1.33.1,2.0)</google-api-client.orbit.imp.pkg.version>
+        <google-api-client.orbit.version>1.33.4.wso2v1</google-api-client.orbit.version>
+        <google-api-client.orbit.imp.pkg.version>[1.33.4,2.0)</google-api-client.orbit.imp.pkg.version>
 
-        <olingo.orbit.version>4.9.0.wso2v1</olingo.orbit.version>
+        <olingo.orbit.version>4.10.0.wso2v1</olingo.orbit.version>
 
         <bson4jackson.orbit.version>2.9.0</bson4jackson.orbit.version>
 
@@ -2009,8 +2009,8 @@
         <jsoup.version>1.15.3</jsoup.version>
         <grpc-context.orbit.version>1.59.0.wso2v1</grpc-context.orbit.version>
         <opencensus.orbit.version>0.31.1.wso2v3</opencensus.orbit.version>
-        <graalvm.version>22.3.4</graalvm.version>
-        <icu.version>71.1</icu.version>
+        <graalvm.version>23.0.9</graalvm.version>
+        <icu.version>78.1</icu.version>
         <sparsebitset.version>1.3</sparsebitset.version>
         <failureaccess.version>1.0.3</failureaccess.version>
     </properties>

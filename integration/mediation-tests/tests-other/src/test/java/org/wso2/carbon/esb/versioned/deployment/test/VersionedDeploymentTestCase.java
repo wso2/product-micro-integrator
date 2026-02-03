@@ -46,6 +46,7 @@ public class VersionedDeploymentTestCase extends ESBIntegrationTest {
     private static final String PAYMENT_100_CAPP_NAME = "payment_1.0.0.car";
     private static final String PAYMENT_101_CAPP_NAME = "payment_1.0.1.car";
     private static final String BANKING_SERVICE_CAPP_NAME = "bankingservices_1.0.0.car";
+    private static final String BETA_SERVICE_CAPP_NAME = "beta1_1.0.0.car";
     private static final String paymentAPI100ExpectedPayload = "{\"weather\":{\"main\":\"Clear\",\"description\":\"CLEAR SKY\",\"icon\":\"01d\",\"daylight_hours\":11.743055555555555},\"temp\":{\"temp\":23.760000000000048,\"temp_description\":\"Hot\"},\"wind\":{\"speed\":3.87,\"deg\":39},\"pressure\":1011,\"humidity\":\"87%\",\"visibility\":10000}";
     private static final String paymentAPI101ExpectedPayload = "{\"weather\":{\"main\":\"Rainy\",\"description\":\"LIGHT RAIN\",\"icon\":\"10d\",\"daylight_hours\":11.743055555555555},\"temp\":{\"temp\":23.760000000000048,\"temp_description\":\"Hot\"},\"wind\":{\"speed\":3.87,\"deg\":39},\"pressure\":1011,\"humidity\":\"87%\",\"visibility\":10000}";
     private ServerConfigurationManager serverConfigurationManager;
@@ -174,8 +175,120 @@ public class VersionedDeploymentTestCase extends ESBIntegrationTest {
                 new Gson().fromJson(expectedProxy, Object.class));
     }
 
+    @Test(groups = "wso2.esb", description = "Testcase to test versioned Fat CAR hot deployment when versioned service expose is true",
+            dependsOnMethods = "testVersionedDeploymentConnectors")
+    public void testVersionedFATCARHotDeployment() throws Exception {
+
+        File betaService = new File(
+                getESBResourceLocation() + File.separator + VERSIONED_CAPP_FOLDER + File.separator +
+                        BETA_SERVICE_CAPP_NAME);
+        serverConfigurationManager.copyToCarbonapps(betaService);
+
+        // logs of the embedded dependencies
+        carbonLogReader.checkForLog("Sequence named 'com.microintegrator.projects__beta2__1.0.0__my_seq_one' has been deployed",
+                DEFAULT_TIMEOUT);
+
+        carbonLogReader.checkForLog("Successfully Deployed Carbon Application : com.microintegrator.projects__beta2__1.0.0", DEFAULT_TIMEOUT);
+
+        // logs of the parent CAR
+        carbonLogReader.checkForLog("Sequence named 'com.microintegrator.projects__beta1__1.0.0__TestInbound-inboundErrorSequence' has been deployed",
+                DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Sequence named 'com.microintegrator.projects__beta1__1.0.0__TestInbound-inboundSequence' has been deployed",
+                DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("ProxyService named 'com.microintegrator.projects__beta1__1.0.0/SampleProxy' has been deployed from file",
+                DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Inbound Endpoint named 'TestInbound' has been deployed from file",
+                DEFAULT_TIMEOUT);
+
+        carbonLogReader.checkForLog("Successfully Deployed Carbon Application : com.microintegrator.projects__beta1__1.0.0", DEFAULT_TIMEOUT);
+
+        // Invoke the API and Test
+        String betaAPI = getMainSequenceURL() + "/com.microintegrator.projects/beta1/1.0.0/testapi";
+        Map<String, String> headers = new HashMap<>(1);
+        SimpleHttpClient httpClient = new SimpleHttpClient();
+        HttpResponse httpResponse1 = httpClient.doGet(betaAPI, headers);
+
+        carbonLogReader.checkForLog("\"name\": \"Alice\"", DEFAULT_TIMEOUT);
+
+        Assert.assertEquals(200, httpResponse1.getStatusLine().getStatusCode());
+        String betaAPIv1ExpectedPayload = "{\"message\":\"v1\"}";
+        org.testng.Assert.assertEquals(new Gson().fromJson(SimpleHttpClient.responseEntityBodyToString(httpResponse1), Object.class),
+                new Gson().fromJson(betaAPIv1ExpectedPayload, Object.class));
+
+        // Do a hot deployment for the Fat CAR
+        carbonLogReader.clearLogs();
+        File beta2Service = new File(
+                getESBResourceLocation() + File.separator + VERSIONED_CAPP_FOLDER + File.separator + "hotDeployment"  +
+                        File.separator + BETA_SERVICE_CAPP_NAME);
+        serverConfigurationManager.copyToCarbonapps(beta2Service);
+
+        // Parent CAR un deployment logs
+        carbonLogReader.checkForLog("Undeploying Carbon Application : com.microintegrator.projects__beta1__1.0.0...", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Inbound Endpoint named 'TestInbound' has been undeployed", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("API named 'com.microintegrator.projects__beta1__1.0.0__TestAPI' has been " +
+                "undeployed", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("ProxyService named 'com.microintegrator.projects__beta1__1.0.0/SampleProxy' " +
+                "has been undeployed", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Sequence named 'com.microintegrator.projects__beta1__1.0.0__TestInbound-inboundErrorSequence'" +
+                " has been undeployed", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Sequence named 'com.microintegrator.projects__beta1__1.0.0__TestInbound-inboundSequence' " +
+                "has been undeployed", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("LocalEntry named 'com.microintegrator.projects__beta1__1.0.0__OPEN_AI'" +
+                " has been undeployed", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Synapse Library named '{com.microintegrator.projects__beta1__1.0.0__org.wso2.carbon.connector}idp' " +
+                "has been undeployed", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Successfully undeployed Carbon Application : com.microintegrator.projects__beta1__1.0.0", DEFAULT_TIMEOUT);
+
+        // Embedded dependant CAR un deployment logs
+        carbonLogReader.checkForLog("Undeploying Carbon Application : com.microintegrator.projects__beta2__1.0.0...",
+                DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Sequence named 'com.microintegrator.projects__beta2__1.0.0__my_seq_one' " +
+                "has been undeployed", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Synapse Library named '{com.microintegrator.projects__beta2__1.0.0__org.wso2.carbon.connector}http' " +
+                "has been undeployed", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Successfully undeployed Carbon Application : com.microintegrator.projects__beta2__1.0.0",
+                DEFAULT_TIMEOUT);
+
+        // Embedded dependant CAR hot deployment logs
+        carbonLogReader.checkForLog("Synapse Library named '{com.microintegrator.projects__beta2__1.0.0__org.wso2.carbon.connector}http' " +
+                "has been deployed from file", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Sequence named 'com.microintegrator.projects__beta2__1.0.0__my_seq_one' " +
+                "has been deployed from file", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Successfully Deployed Carbon Application : com.microintegrator.projects__beta2__1.0.0", DEFAULT_TIMEOUT);
+
+        // Parent CAR hot deployment logs
+        carbonLogReader.checkForLog("Deploying Class mediators from file", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("{org.wso2.carbon.connector}idp_pdfbox-3.0.2/pdfbox-3.0.2.jar to the library" +
+                " : {org.wso2.carbon.connector}idp", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Synapse Library named '{com.microintegrator.projects__beta1__1.0.0__org.wso2.carbon.connector}idp' " +
+                "has been deployed from file", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("LocalEntry named 'com.microintegrator.projects__beta1__1.0.0__OPEN_AI'" +
+                " has been deployed from file", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Sequence named 'com.microintegrator.projects__beta1__1.0.0__TestInbound-inboundErrorSequence' " +
+                        "has been deployed", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Sequence named 'com.microintegrator.projects__beta1__1.0.0__TestInbound-inboundSequence'" +
+                        " has been deployed", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("ProxyService named 'com.microintegrator.projects__beta1__1.0.0/SampleProxy' " +
+                        "has been deployed from file", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("API named 'com.microintegrator.projects__beta1__1.0.0__TestAPI' has been deployed from file",
+                DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Inbound Endpoint named 'TestInbound' has been deployed from file", DEFAULT_TIMEOUT);
+        carbonLogReader.checkForLog("Successfully Deployed Carbon Application : com.microintegrator.projects__beta1__1.0.0", DEFAULT_TIMEOUT);
+
+        // Invoke the API and Test
+        String betaV2API = getMainSequenceURL() + "/com.microintegrator.projects/beta1/1.0.0/testapi";
+        HttpResponse httpResponse1V2 = httpClient.doGet(betaV2API, headers);
+
+        carbonLogReader.checkForLog("\"name\": \"Bob\"", DEFAULT_TIMEOUT);
+
+        Assert.assertEquals(200, httpResponse1V2.getStatusLine().getStatusCode());
+        String betaAPIv2ExpectedPayload = "{\"message\":\"v2\"}";
+        org.testng.Assert.assertEquals(new Gson().fromJson(SimpleHttpClient.responseEntityBodyToString(httpResponse1V2), Object.class),
+                new Gson().fromJson(betaAPIv2ExpectedPayload, Object.class));
+    }
+
     @Test(groups = "wso2.esb", description = "Testcase to test versioned deployment when versioned service expose is false",
-          dependsOnMethods = "testNonVersionedDeploymentWithServiceExpose")
+          dependsOnMethods = "testVersionedFATCARHotDeployment")
     public void testVersionedDeploymentWithoutServiceExpose() throws Exception {
 
         serverConfigurationManager.restoreToLastConfiguration(true);
@@ -206,6 +319,7 @@ public class VersionedDeploymentTestCase extends ESBIntegrationTest {
         serverConfigurationManager.removeFromCarbonapps(PAYMENT_100_CAPP_NAME);
         serverConfigurationManager.removeFromCarbonapps(TEMPLATE_CAPP_NAME);
         serverConfigurationManager.removeFromCarbonapps(BANKING_SERVICE_CAPP_NAME);
+        serverConfigurationManager.removeFromCarbonapps(BETA_SERVICE_CAPP_NAME);
         super.cleanup();
     }
 }
