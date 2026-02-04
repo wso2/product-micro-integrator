@@ -614,44 +614,9 @@
                 <version>${netty.tcnative.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-common</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-buffer</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-native-unix-common</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-resolver</artifactId>
-                <version>${netty.version}</version>
+                <groupId>org.wso2.orbit.io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>${netty.wso2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ibatis</groupId>
@@ -827,7 +792,7 @@
         <hawtbuf.version>1.9</hawtbuf.version>
         <geronimo.specs.jms.version>1.1.1</geronimo.specs.jms.version>
         <ibatis-core.version>3.0</ibatis-core.version>
-        <netty.version>4.1.118.Final</netty.version>
+        <netty.wso2.version>4.2.9.wso2v1</netty.wso2.version>
         <netty.tcnative.version>2.0.53.Final</netty.tcnative.version>
         <org.eclipse.paho.version>1.2.0</org.eclipse.paho.version>
         <activemq.version>5.9.1</activemq.version>

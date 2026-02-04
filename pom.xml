@@ -849,59 +849,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-common</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-native-unix-common</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http2</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-buffer</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-resolver</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler-proxy</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-socks</artifactId>
-                <version>${netty.version}</version>
+                <groupId>org.wso2.orbit.io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>${netty.wso2.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
@@ -2236,7 +2186,7 @@
 
         <cipher.tool.version>1.2.6</cipher.tool.version>
         <axis2.transport.version>2.0.0-wso2v79</axis2.transport.version>
-        <transport.http.netty.version>6.3.57</transport.http.netty.version>
+        <transport.http.netty.version>6.3.58</transport.http.netty.version>
 
         <esotericsoftware.kryo.version>3.0.3</esotericsoftware.kryo.version>
         <esotericsoftware.minlog.version>1.3.0</esotericsoftware.minlog.version>
@@ -2351,11 +2301,11 @@
         <apache.felix.scr.ds.annotations.version>1.2.4</apache.felix.scr.ds.annotations.version>
         <org.wso2.carbon.caching.core.version>4.2.0</org.wso2.carbon.caching.core.version>
         <json.smart.version>2.5.2</json.smart.version>
-        <google.guava.version>33.0.0-jre</google.guava.version>
+        <google.guava.version>33.5.0-jre</google.guava.version>
         <ca.uhn.hapi.wso2.version>2.4.0.wso2v2</ca.uhn.hapi.wso2.version>
         <junit.version>4.12</junit.version>
-        <netty.version>4.1.127.Final</netty.version>
-        <netty.tcnative.version>2.0.53.Final</netty.tcnative.version>
+        <netty.wso2.version>4.2.9.wso2v1</netty.wso2.version>
+        <netty.tcnative.version>2.0.74.Final</netty.tcnative.version>
         <jacoco.agent.version>0.8.12</jacoco.agent.version>
         <activemq.version>5.2.0</activemq.version>
         <activemq.broker.version>5.15.2</activemq.broker.version>
@@ -2475,16 +2425,16 @@
 
         <olingo.orbit.imp.pkg.version>[4.4,5)</olingo.orbit.imp.pkg.version>
 
-        <google-http-client.orbit.version>1.41.2.wso2v2</google-http-client.orbit.version>
-        <google-http-client.orbit.imp.pkg.version>[1.41.2,2.0)</google-http-client.orbit.imp.pkg.version>
+        <google-http-client.orbit.version>1.47.1.wso2v1</google-http-client.orbit.version>
+        <google-http-client.orbit.imp.pkg.version>[1.47.1,2.0)</google-http-client.orbit.imp.pkg.version>
 
         <google-oauth-client.orbit.version>1.33.3.wso2v1</google-oauth-client.orbit.version>
         <google-oauth-client.orbit.imp.pkg.version>[1.33.1,2.0)</google-oauth-client.orbit.imp.pkg.version>
 
-        <google-api-client.orbit.version>1.33.1.wso2v2</google-api-client.orbit.version>
-        <google-api-client.orbit.imp.pkg.version>[1.33.1,2.0)</google-api-client.orbit.imp.pkg.version>
+        <google-api-client.orbit.version>1.33.4.wso2v1</google-api-client.orbit.version>
+        <google-api-client.orbit.imp.pkg.version>[1.33.4,2.0)</google-api-client.orbit.imp.pkg.version>
 
-        <olingo.orbit.version>4.9.0.wso2v1</olingo.orbit.version>
+        <olingo.orbit.version>4.10.0.wso2v1</olingo.orbit.version>
 
         <bson4jackson.orbit.version>2.9.0</bson4jackson.orbit.version>
 
