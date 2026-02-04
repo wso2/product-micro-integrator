@@ -135,9 +135,7 @@ public class CarbonServerConfigurationService {
 	 * 
 	 * @param xmlInputStream
 	 *            the server configuration file stream.
-	 * 
-	 * @throws org.wso2.carbon.base.ServerConfigurationException
-	 *             if the operation failed.
+	 *
 	 */
 	public synchronized void init(InputStream xmlInputStream)
             throws MicroIntegratorConfigurationException {

@@ -84,7 +84,7 @@
                                 <bundleDef>org.mongodb:bson</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.webharvest:webharvest-core</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.google.api-client:google-api-client</bundleDef>
-                                <bundleDef>org.wso2.orbit.com.google.oauth-client:google-oauth-client</bundleDef>
+                                <bundleDef>org.wso2.orbit.com.google.oauth-client:google-oauth-client-jdk21</bundleDef>
                                 <bundleDef>org.wso2.orbit.com.google.http-client:google-http-client</bundleDef>
                                 <bundleDef>org.wso2.orbit.org.apache.olingo:odata-server</bundleDef>
                                 <bundleDef>de.undercouch:bson4jackson:${bson4jackson.orbit.version}</bundleDef>

@@ -31,8 +31,14 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.eclipse.osgi</groupId>
+            <groupId>org.eclipse.platform</groupId>
             <artifactId>org.eclipse.osgi.services</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.toolchain</groupId>
+                    <artifactId>jetty-servlet</artifactId>
+                </exclusion>
+            </exclusions>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -48,10 +54,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-scr-plugin</artifactId>
-            </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
@@ -74,6 +76,9 @@
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                         <DeployBefore>UserCore</DeployBefore>
+                        <Provide-Capability>
+                            osgi.service;objectClass=org.wso2.micro.integrator.ndatasource.core.DataSourceService
+                        </Provide-Capability>
                     </instructions>
                 </configuration>
             </plugin>

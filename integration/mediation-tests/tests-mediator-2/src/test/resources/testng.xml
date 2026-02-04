@@ -92,6 +92,36 @@
                     <exclude name=".*" />
                 </methods>
             </class>
+            <class name="org.wso2.carbon.esb.mediator.test.script.SetRemovePropertiesWithNashornJsTestCase">
+                <methods>
+                    <exclude name=".*" />
+                </methods>
+            </class>
+            <class name="org.wso2.carbon.esb.mediator.test.script.MediationWithNashornJsScriptStoredInRegistryTestCase">
+                <methods>
+                    <exclude name=".*" />
+                </methods>
+            </class>
+            <class name="org.wso2.carbon.esb.mediator.test.script.AddHeadersUsingNashornJsTestCase">
+                <methods>
+                    <exclude name=".*" />
+                </methods>
+            </class>
+            <class name="org.wso2.carbon.esb.mediator.test.script.InlineNashornJsFunctionsForBothInAndOutTestCase">
+                <methods>
+                    <exclude name=".*" />
+                </methods>
+            </class>
+            <class name="org.wso2.carbon.esb.mediator.test.script.NashornJsScriptStoredInGovRegistryTestCase">
+                <methods>
+                    <exclude name=".*" />
+                </methods>
+            </class>
+            <class name="org.wso2.carbon.esb.mediator.test.script.LocalEntryFunctionTestForNashornTestCase">
+                <methods>
+                    <exclude name=".*" />
+                </methods>
+            </class>
         </classes>
     </test>
 

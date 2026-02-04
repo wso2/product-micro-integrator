@@ -38,6 +38,9 @@
         <module>data-publisher-features</module>
         <module>entitlement-mediator-feature/org.wso2.micro.integrator.identity.xacml.mediator</module>
         <module>dataservice-mediator-feature/org.wso2.micro.integrator.mediator.dataservice</module>
+        <module>datamapper-mediator-feature</module>
+        <module>smooks-mediator-feature/org.wso2.micro.integrator.mediator.smooks.server.feature</module>
+        <module>message-relay-feature</module>
     </modules>
 
 </project>

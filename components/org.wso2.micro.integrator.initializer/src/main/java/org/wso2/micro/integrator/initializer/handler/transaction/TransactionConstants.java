@@ -18,7 +18,7 @@ Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 
 package org.wso2.micro.integrator.initializer.handler.transaction;
 
-import org.wso2.carbon.utils.ServerConstants;
+import org.wso2.micro.integrator.utils.utils.ServerConstants;
 
 import java.io.File;
 

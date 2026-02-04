@@ -151,8 +151,8 @@ public class DSComponentExtension extends DataServicesDSComponent {
                     }
 
                     @Override
-                    public <S> ServiceRegistration<S> registerService(Class<S> aClass, ServiceFactory<S> serviceFactory,
-                                                                      Dictionary<String, ?> dictionary) {
+                    public <S> ServiceRegistration<S> registerService(Class<S> sClass, ServiceFactory<S> serviceFactory,
+                                                                      Dictionary<String, ?> stringDictionary) {
                         return null;
                     }
 
@@ -193,7 +193,7 @@ public class DSComponentExtension extends DataServicesDSComponent {
                     }
 
                     @Override
-                    public <S> ServiceObjects<S> getServiceObjects(ServiceReference<S> serviceReference) {
+                    public <S> ServiceObjects<S> getServiceObjects(ServiceReference<S> sServiceReference) {
                         return null;
                     }
 

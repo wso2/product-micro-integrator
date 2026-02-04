@@ -18,7 +18,7 @@
 
 package org.wso2.micro.integrator.mediation.security.vault;
 
-import org.wso2.carbon.utils.ServerConstants;
+import org.wso2.micro.integrator.utils.utils.ServerConstants;
 
 public interface SecureVaultConstants {
 	public static final String SECRET_CONF = "secret-conf.properties";

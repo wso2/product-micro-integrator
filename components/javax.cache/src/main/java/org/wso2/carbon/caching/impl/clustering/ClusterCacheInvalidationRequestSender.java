@@ -19,12 +19,10 @@ package org.wso2.carbon.caching.impl.clustering;
 
 import org.apache.axis2.clustering.ClusteringAgent;
 import org.apache.axis2.clustering.ClusteringFault;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.caching.impl.CachingConstants;
 import org.wso2.carbon.caching.impl.DataHolder;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import javax.cache.event.CacheEntryCreatedListener;
 import javax.cache.event.CacheEntryEvent;
@@ -69,14 +67,6 @@ public class ClusterCacheInvalidationRequestSender implements CacheEntryRemovedL
     public void send(CacheEntryEvent cacheEntryEvent) {
 
         int tenantId = SUPER_TENANT_ID;
-
-        if (MultitenantConstants.INVALID_TENANT_ID == tenantId) {
-            if (log.isDebugEnabled()) {
-                String stackTrace = ExceptionUtils.getStackTrace(new Throwable());
-                log.debug("Tenant information cannot be found in the request. This originated from: \n" + stackTrace);
-            }
-            return;
-        }
 
         if (!cacheEntryEvent.getSource().getName().startsWith(CachingConstants.LOCAL_CACHE_PREFIX) ||
                 getClusteringAgent() == null ) {
