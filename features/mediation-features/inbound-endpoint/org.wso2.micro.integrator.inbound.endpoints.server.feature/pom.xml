@@ -51,40 +51,8 @@
             <artifactId>hapi</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-transport</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-transport-native-unix-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-handler</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec-http</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-buffer</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-handler-proxy</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec-socks</artifactId>
+            <groupId>org.wso2.orbit.io.netty</groupId>
+            <artifactId>netty-all</artifactId>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
@@ -144,18 +112,10 @@
                                 </bundleDef>
                                 <bundleDef>org.wso2.ei:org.wso2.micro.integrator.inbound.endpoint.osgi</bundleDef>
                                 <bundleDef>ca.uhn.hapi.wso2:hapi</bundleDef>
-                                <bundleDef>io.netty:netty-common:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-transport:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-transport-native-unix-common:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-codec-http:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-codec:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-buffer:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-handler:compatible:${netty.version}</bundleDef>
+                                <bundleDef>org.wso2.orbit.io.netty:netty-all</bundleDef>
                                 <bundleDef>io.netty:netty-tcnative:compatible:${netty.tcnative.version}</bundleDef>
                                 <bundleDef>io.netty:netty-tcnative-boringssl-static:compatible:${netty.tcnative.version}</bundleDef>
                                 <bundleDef>io.netty:netty-tcnative-classes:compatible:${netty.tcnative.version}</bundleDef>
-                                <bundleDef>io.netty:netty-handler-proxy:compatible:${netty.version}</bundleDef>
-                                <bundleDef>io.netty:netty-codec-socks:compatible:${netty.version}</bundleDef>
                                 <bundleDef>org.apache.aries.blueprint:org.apache.aries.blueprint</bundleDef>
                                 <bundleDef>org.apache.aries.proxy:org.apache.aries.proxy</bundleDef>
                                 <bundleDef>org.apache.aries:org.apache.aries.util</bundleDef>

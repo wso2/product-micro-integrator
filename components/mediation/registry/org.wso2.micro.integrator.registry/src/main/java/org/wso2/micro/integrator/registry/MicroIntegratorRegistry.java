@@ -260,38 +260,55 @@ public class MicroIntegratorRegistry extends AbstractRegistry {
             StAXOMBuilder builder = new StAXOMBuilder(parser);
             result = builder.getDocumentElement();
 
+            if (result != null && result.getParent() != null) {
+                result.detach();
+                OMDocumentImpl parent = new OMDocumentImpl(OMAbstractFactory.getOMFactory());
+                parent.addChild(result);
+            }
+
         } catch (OMException | XMLStreamException ignored) {
-
-            if (log.isDebugEnabled()) {
-                log.debug("The resource at the provided URL isn't well-formed XML,So,takes it as a text");
+            result = treatContentAsNonXmlOnXmlError(url);
+        } catch (RuntimeException runtimeException) {
+            // Woodstox Exception Handling:
+            // The WstxLazyException is often wrapped by internal layers and its ClassLoader
+            // is isolated from this component's ClassLoader. Here, we check the message
+            // to safely identify this specific, anticipated XML parsing failure.
+            if (runtimeException.getMessage() != null
+                    && runtimeException.getMessage().contains("com.ctc.wstx.exc.WstxLazyException")) {
+                result = treatContentAsNonXmlOnXmlError(url);
+            } else {
+                throw runtimeException;
             }
-
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-                log.error("Error in closing the input stream. ", e);
-            }
-
-            try {
-                result = readNonXML(url);
-            } catch (IOException e) {
-                log.error("Error occurred while retrieving text content from registry artifact", e);
-                result = null;
-            }
-
         } finally {
             try {
-                if (result != null && result.getParent() != null) {
-                    result.detach();
-                    OMDocumentImpl parent = new OMDocumentImpl(OMAbstractFactory.getOMFactory());
-                    parent.addChild(result);
-                }
                 inputStream.close();
             } catch (IOException e) {
                 log.error("Error in closing the input stream.", e);
             }
 
         }
+        return result;
+    }
+
+    private OMNode treatContentAsNonXmlOnXmlError(URL url) {
+        if (log.isDebugEnabled()) {
+            log.debug("The resource at the provided URL isn't well-formed XML. So, takes it as a text");
+        }
+
+        OMNode result;
+        try {
+            result = readNonXML(url);
+        } catch (IOException e) {
+            log.error("Error occurred while retrieving text content from registry artifact", e);
+            result = null;
+        }
+
+        if (result != null && result.getParent() != null) {
+            result.detach();
+            OMDocumentImpl parent = new OMDocumentImpl(OMAbstractFactory.getOMFactory());
+            parent.addChild(result);
+        }
+
         return result;
     }
 
