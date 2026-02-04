@@ -241,6 +241,7 @@
             <includes>
                 <include>**/build.xml</include>
                 <include>**/micro-integrator.bat</include>
+                <include>**/fips.bat</include>
             </includes>
         </fileSet>
 
@@ -252,6 +253,7 @@
                 <include>**/tcpmon.sh</include>
                 <include>**/micro-integrator.sh</include>
                 <include>**/extension-runner.sh</include>
+                <include>**/fips.sh</include>
             </includes>
             <fileMode>755</fileMode>
         </fileSet>
@@ -670,6 +672,10 @@
                 <include>com.hubspot.immutables:immutables-exceptions:jar</include>
                 <include>commons-codec:commons-codec:jar</include>
                 <include>com.hubspot.jinjava:jinjava:jar</include>
+                <include>org.bouncycastle:bcpkix-jdk18on:jar</include>
+                <include>org.bouncycastle:bcprov-jdk18on:jar</include>
+                <include>org.bouncycastle:bcutil-jdk18on:jar</include>
+                <include>org.bouncycastle:bctls-jdk18on:jar</include>
                 <include>org.slf4j:slf4j-api:jar</include>
                 <include>commons-lang.wso2:commons-lang:jar</include>
                 <include>org.apache.commons:commons-lang3:jar</include>

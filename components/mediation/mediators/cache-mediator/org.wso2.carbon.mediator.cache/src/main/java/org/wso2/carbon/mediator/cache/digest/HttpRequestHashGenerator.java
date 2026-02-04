@@ -59,6 +59,8 @@ public class HttpRequestHashGenerator implements DigestGenerator {
      * String representing the MD5 digest algorithm.
      */
     private static final String MD5_DIGEST_ALGORITHM = "MD5";
+    public static final String SHA_256_DIGEST_ALGORITHM = "SHA-256";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     /**
      * This value can be specified for the headersToExcludeInHash property to avoid all the headers when caching.
@@ -547,7 +549,7 @@ public class HttpRequestHashGenerator implements DigestGenerator {
             return null;
         }
         String toAddress = msgContext.getTo().getAddress();
-        byte[] digest = getDigest(toAddress, transportHeaders, MD5_DIGEST_ALGORITHM);
+        byte[] digest = getDigest(toAddress, transportHeaders, getAlgorithm());
         return digest != null ? getStringRepresentation(digest) : null;
     }
 
@@ -560,9 +562,9 @@ public class HttpRequestHashGenerator implements DigestGenerator {
         if (body != null) {
             byte[] digest;
             if (toAddress != null) {
-                digest = getDigest(body, toAddress, transportHeaders, MD5_DIGEST_ALGORITHM);
+                digest = getDigest(body, toAddress, transportHeaders, getAlgorithm());
             } else {
-                digest = getDigest(body, MD5_DIGEST_ALGORITHM);
+                digest = getDigest(body, getAlgorithm());
             }
             return digest != null ? getStringRepresentation(digest) : null;
         } else {
@@ -575,7 +577,7 @@ public class HttpRequestHashGenerator implements DigestGenerator {
             return null;
         }
         String toAddress = msgContext.getTo().getAddress();
-        byte[] digest = getDigest(toAddress, MD5_DIGEST_ALGORITHM);
+        byte[] digest = getDigest(toAddress, getAlgorithm());
         return digest != null ? getStringRepresentation(digest) : null;
     }
 
@@ -588,9 +590,9 @@ public class HttpRequestHashGenerator implements DigestGenerator {
         if (body != null) {
             byte[] digest;
             if (toAddress != null) {
-                digest = getDigest(body, toAddress, null, MD5_DIGEST_ALGORITHM);
+                digest = getDigest(body, toAddress, null, getAlgorithm());
             } else {
-                digest = getDigest(body, MD5_DIGEST_ALGORITHM);
+                digest = getDigest(body, getAlgorithm());
             }
             return digest != null ? getStringRepresentation(digest) : null;
         } else {
@@ -618,5 +620,13 @@ public class HttpRequestHashGenerator implements DigestGenerator {
             transportHeaders.remove(header);
         }
         return transportHeaders;
+    }
+
+    private static String getAlgorithm() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return SHA_256_DIGEST_ALGORITHM;
+        }
+        return MD5_DIGEST_ALGORITHM;
     }
 }

@@ -49,6 +49,8 @@ public class REQUESTHASHGenerator extends DOMHASHGenerator {
      * String representing the MD5 digest algorithm.
      */
     public static final String MD5_DIGEST_ALGORITHM = "MD5";
+    public static final String SHA_256_DIGEST_ALGORITHM = "SHA-256";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     private static final Log log = LogFactory.getLog(REQUESTHASHGenerator.class);
 
@@ -83,9 +85,9 @@ public class REQUESTHASHGenerator extends DOMHASHGenerator {
         if (body != null) {
             byte[] digest = null;
             if (toAddress != null) {
-                digest = getDigest(body, toAddress, headers, MD5_DIGEST_ALGORITHM);
+                digest = getDigest(body, toAddress, headers, getAlgorithm());
             } else {
-                digest = getDigest(body, MD5_DIGEST_ALGORITHM);
+                digest = getDigest(body, getAlgorithm());
             }
             return digest != null ? getStringRepresentation(digest) : null;
         } else {
@@ -253,6 +255,15 @@ public class REQUESTHASHGenerator extends DOMHASHGenerator {
     private void handleException(String message, Throwable cause) throws CachingException {
         log.debug(message, cause);
         throw new CachingException(message, cause);
+    }
+
+    private static String getAlgorithm() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return SHA_256_DIGEST_ALGORITHM;
+        } else {
+            return MD5_DIGEST_ALGORITHM;
+        }
     }
 
 }

@@ -52,6 +52,8 @@ public class SystemUserRoleManager {
     int tenantId;
     private DataSource dataSource;
     private static final String SHA_1_PRNG = "SHA1PRNG";
+    private static final String DRBG = "DRBG";
+    private static final String JCE_PROVIDER = "security.jce.provider";
 
     public SystemUserRoleManager(DataSource dataSource, int tenantId) throws UserStoreException {
         super();
@@ -379,7 +381,7 @@ public class SystemUserRoleManager {
 
             String saltValue = null;
             try {
-                SecureRandom secureRandom = SecureRandom.getInstance(SHA_1_PRNG);
+                SecureRandom secureRandom = SecureRandom.getInstance(getAlgorithm());
                 byte[] bytes = new byte[16];
                 //secureRandom is automatically seeded by calling nextBytes
                 secureRandom.nextBytes(bytes);
@@ -632,5 +634,13 @@ public class SystemUserRoleManager {
             }
             DatabaseUtil.closeAllConnections(null, prepStmt);
         }
+    }
+
+    private static String getAlgorithm() {
+        String provider = System.getProperty(JCE_PROVIDER);
+        if (org.apache.commons.lang.StringUtils.isNotEmpty(provider)) {
+            return DRBG;
+        }
+        return SHA_1_PRNG;
     }
 }
