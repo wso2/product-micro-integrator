@@ -39,6 +39,8 @@
         <module>transports</module>
         <module>data-publishers</module>
         <module>security</module>
+        <module>mediation-commons</module>
+        <module>message-relay</module>
     </modules>
 
 </project>

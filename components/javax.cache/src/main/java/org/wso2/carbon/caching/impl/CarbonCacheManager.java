@@ -18,7 +18,6 @@
 package org.wso2.carbon.caching.impl;
 
 import org.wso2.micro.integrator.core.services.CarbonServerConfigurationService;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import javax.cache.Cache;
 import javax.cache.CacheBuilder;
@@ -54,13 +53,7 @@ public class CarbonCacheManager implements CacheManager {
     public CarbonCacheManager(String name, CacheManagerFactoryImpl cacheManagerFactory) {
         this.cacheManagerFactory = cacheManagerFactory;
         ownerTenantDomain = SUPER_TENANT_DOMAIN_NAME;
-        if (ownerTenantDomain == null) {
-            throw new IllegalStateException("Tenant domain cannot be " + ownerTenantDomain);
-        }
         ownerTenantId = SUPER_TENANT_ID;
-        if (ownerTenantId == MultitenantConstants.INVALID_TENANT_ID) {
-            throw new IllegalStateException("Tenant ID cannot be " + ownerTenantId);
-        }
         this.name = name;
         touch();
         status = Status.STARTED;

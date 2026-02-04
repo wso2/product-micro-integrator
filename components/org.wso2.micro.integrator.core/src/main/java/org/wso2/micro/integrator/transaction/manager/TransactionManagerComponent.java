@@ -36,6 +36,7 @@ import javax.naming.NameNotFoundException;
 import javax.transaction.TransactionManager;
 import javax.transaction.UserTransaction;
 
+//TODO: need a way to solve javax.transaction service dependency
 @Component(name = "org.wso2.micro.integrator.transaction.manager.TransactionManagerComponent",
         immediate = true)
 public class TransactionManagerComponent {

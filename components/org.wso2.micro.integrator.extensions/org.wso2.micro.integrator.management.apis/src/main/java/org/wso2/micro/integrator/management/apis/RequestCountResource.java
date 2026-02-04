@@ -25,7 +25,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.wso2.carbon.utils.ServerConstants;
+import org.wso2.micro.integrator.utils.utils.ServerConstants;
 import org.wso2.micro.core.util.StringUtils;
 import org.wso2.micro.integrator.initializer.handler.DataHolder;
 import org.wso2.micro.integrator.initializer.handler.transaction.exception.TransactionCounterException;

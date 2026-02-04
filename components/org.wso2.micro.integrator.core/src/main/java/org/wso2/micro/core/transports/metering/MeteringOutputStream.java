@@ -16,11 +16,13 @@
 package org.wso2.micro.core.transports.metering;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+
 import java.io.IOException;
 
 /**
- * MeteringOutputStream class wraps OutputStream and meter the number of 
- * byte transfered which can be retrieved using the geWrittenSize() 
+ * MeteringOutputStream class wraps OutputStream and meter the number of
+ * byte transfered which can be retrieved using the geWrittenSize()
  * method.
  */
 public class MeteringOutputStream extends ServletOutputStream {
@@ -122,5 +124,13 @@ public class MeteringOutputStream extends ServletOutputStream {
 	 */
 	public long geWrittenSize() {
 		return writtenSize;
+	}
+
+	public void setWriteListener(WriteListener writeListener) {
+		wrappedOutputStream.setWriteListener(writeListener);
+	}
+
+	public boolean isReady() {
+		return wrappedOutputStream.isReady();
 	}
 }

@@ -37,6 +37,11 @@
             <artifactId>axis2-java2wsdl</artifactId>
             <version>${axis2-java2wsdl.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.ws.commons.axiom</groupId>
+            <artifactId>axiom-api</artifactId>
+            <version>${axiom.api.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

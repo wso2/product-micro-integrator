@@ -34,35 +34,10 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <inherited>false</inherited>
-                <executions>
-                    <execution>
-                        <id>2-unpack-equinox-executable</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.eclipse.equinox</groupId>
-                                    <artifactId>org.eclipse.equinox.executable</artifactId>
-                                    <version>3.5.0.v20110530-7P7NFUFFLWUl76mart</version>
-                                    <type>zip</type>
-                                    <overWrite>false</overWrite>
-                                    <outputDirectory>target</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.wso2.maven</groupId>
                 <artifactId>carbon-p2-plugin</artifactId>
                 <version>${carbon.p2.plugin.version}</version>
+                <extensions>true</extensions>
                 <executions>
                     <execution>
                         <id>2-p2-repo-generation</id>
@@ -103,16 +78,13 @@
                                     org.wso2.ei:org.wso2.micro.integrator.initializer.feature:${project.version}
                                 </featureArtifactDef>
                                 <featureArtifactDef>
-                                    org.wso2.carbon.mediation:org.wso2.carbon.relay.server.feature:${carbon.mediation.version}
+                                    org.wso2.ei:org.wso2.micro.integrator.relay.server.feature:${project.version}
                                 </featureArtifactDef>
                                 <featureArtifactDef>
-                                    org.wso2.carbon.mediation:org.wso2.carbon.mediator.smooks.server.feature:${carbon.mediation.version}
+                                    org.wso2.ei:org.wso2.micro.integrator.mediator.smooks.server.feature:${project.version}
                                 </featureArtifactDef>
                                 <featureArtifactDef>
-                                    org.wso2.carbon.mediation:org.wso2.carbon.mediator.datamapper.server.feature:${carbon.mediation.version}
-                                </featureArtifactDef>
-                                <featureArtifactDef>
-                                    org.wso2.carbon.mediation:org.wso2.carbon.mediator.datamapper.engine.feature:${carbon.mediation.version}
+                                    org.wso2.ei:org.wso2.micro.integrator.mediator.datamapper.server.feature:${project.version}
                                 </featureArtifactDef>
 
 
@@ -128,9 +100,9 @@
                                     org.wso2.carbon.mediation:org.wso2.carbon.application.mgt.synapse.server.feature:${carbon.mediation.version}>
                                 </featureArtifactDef>-->
 
-                                <!--2 Carbon-Kernel-->
+                                <!--Core Runtime-->
                                 <featureArtifactDef>
-                                    org.wso2.carbon:org.wso2.carbon.core.runtime.feature:${carbon.kernel.version}
+                                    org.wso2.ei:org.wso2.micro.integrator.core.runtime.feature:${project.version}
                                 </featureArtifactDef>
 
                                 <!--Analytics-->
@@ -286,20 +258,16 @@
                                     <version>${project.version}</version>
                                 </feature>
                                 <feature>
-                                    <id>org.wso2.carbon.relay.server.feature.group</id>
-                                    <version>${carbon.mediation.version}</version>
+                                    <id>org.wso2.micro.integrator.relay.server.feature.group</id>
+                                    <version>${project.version}</version>
                                 </feature>
                                 <feature>
-                                    <id>org.wso2.carbon.mediator.smooks.server.feature.group</id>
-                                    <version>${carbon.mediation.version}</version>
+                                    <id>org.wso2.micro.integrator.mediator.smooks.server.feature.group</id>
+                                    <version>${project.version}</version>
                                 </feature>
                                 <feature>
-                                    <id>org.wso2.carbon.mediator.datamapper.server.feature.group</id>
-                                    <version>${carbon.mediation.version}</version>
-                                </feature>
-                                <feature>
-                                    <id>org.wso2.carbon.mediator.datamapper.engine.feature.group</id>
-                                    <version>${carbon.mediation.version}</version>
+                                    <id>org.wso2.micro.integrator.mediator.datamapper.server.feature.group</id>
+                                    <version>${project.version}</version>
                                 </feature>
 
                                 <feature>
@@ -335,10 +303,10 @@
                                 </feature>
 
 
-                                <!-- 2 Carbon-Kernel -->
+                                <!-- 2 Core-Runtime -->
                                 <feature>
-                                    <id>org.wso2.carbon.core.runtime.feature.group</id>
-                                    <version>${carbon.kernel.version}</version>
+                                    <id>org.wso2.micro.integrator.core.runtime.feature.group</id>
+                                    <version>${project.version}</version>
                                 </feature>
 
                                 <!-- 3 Carbon Commons -->

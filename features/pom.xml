@@ -41,6 +41,7 @@
         <module>crypto-feature/org.wso2.micro.integrator.crypto.feature</module>
         <module>wso2mi-hl7</module>
         <module>org.wso2.micro.integrator.logging.updater.feature</module>
+        <module>org.wso2.micro.integrator.core.runtime.feature</module>
     </modules>
 
 </project>

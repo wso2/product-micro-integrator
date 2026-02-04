@@ -56,19 +56,11 @@
             <artifactId>org.wso2.carbon.sequences</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.osgi</groupId>
-            <artifactId>org.eclipse.osgi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.osgi</groupId>
-            <artifactId>org.eclipse.osgi.services</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse.equinox</groupId>
-            <artifactId>org.eclipse.equinox.http.helper</artifactId>
+            <artifactId>javax.servlet</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.equinox</groupId>
+            <groupId>org.eclipse.platform</groupId>
             <artifactId>org.eclipse.equinox.p2.metadata</artifactId>
         </dependency>
         <dependency>
@@ -150,12 +142,20 @@
                         </Export-Package>
                         <Import-Package>
                             javax.xml.parsers; version="${javax.xml.parsers.import.pkg.version}",
-                            org.apache.naming.*;version="[9.0.0,10.0.0)",
+                            org.apache.naming.*;version="[11.0.0,12.0.0)",
                             javax.activation.*;version="[0.0.0, 1.0.0)",
                             *;resolution:=optional,
                             org.apache.axis2.*; version="${imp.pkg.version.axis2}",
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
+                        <Provide-Capability>
+                            osgi.service;objectClass=org.wso2.micro.integrator.core.services.Axis2ConfigurationContextService,
+                            osgi.service;objectClass=org.wso2.micro.integrator.core.UserStoreTemporaryService,
+                            osgi.service;objectClass=org.wso2.micro.integrator.core.services.CarbonServerConfigurationService,
+                            osgi.service;objectClass=org.wso2.micro.integrator.core.services.ServerConfigurationService,
+                            osgi.service;objectClass=javax.transaction.TransactionManager,
+                            osgi.service;objectClass=javax.transaction.UserTransaction
+                        </Provide-Capability>
                     </instructions>
                 </configuration>
             </plugin>

@@ -16,14 +16,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.wso2.ei</groupId>
             <artifactId>org.wso2.micro.integrator.inbound.endpoint</artifactId>
             <scope>compile</scope>
@@ -64,6 +56,15 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-core</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -84,7 +85,7 @@
                             com.nimbusds.jose.jwk;version="${nimbus-jose.orbit.imp.pkg.version}",
                             com.nimbusds.jose.crypto;version="${nimbus-jose.orbit.imp.pkg.version}",
                             com.nimbusds.jwt;version="${nimbus-jose.orbit.imp.pkg.version}",
-                            org.osgi.service.cm;version="${version.eclipse.equinox.cm}",
+                            org.osgi.service.cm;version=${osgi.service.cm.version},
                             org.apache.commons.configuration2;version="${commons.configuration2.imp.pkg.version}",
                             *;resolution:=optional
                         </Import-Package>

@@ -17,6 +17,7 @@ package org.wso2.micro.core.transports.metering;
 
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -196,5 +197,9 @@ public class MeteredServletResponse implements HttpServletResponse {
 	 */
 	public long getWrittenSize() {
 		return wrappedOutputStream.geWrittenSize();
+	}
+
+	public void setContentLengthLong(long len) {
+		wrappedHttpServletResponse.setContentLengthLong(len);
 	}
 }

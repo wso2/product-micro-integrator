@@ -15,12 +15,13 @@
  */
 package org.wso2.micro.core.transports.metering;
 
+import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import java.io.IOException;
 
 /**
- * MeteringInputStream class wraps InputStream and meter the number of 
- * byte transfered which can be retrieved using the getReadSize() 
+ * MeteringInputStream class wraps InputStream and meter the number of
+ * byte transfered which can be retrieved using the getReadSize()
  * method.
  */
 public class MeteringInputStream extends ServletInputStream {
@@ -84,5 +85,17 @@ public class MeteringInputStream extends ServletInputStream {
 	 */
 	public long getReadSize() {
 		return readSize;
+	}
+
+	public void setReadListener(ReadListener readListener) {
+		wrappedInputStream.setReadListener(readListener);
+	}
+
+	public boolean isFinished() {
+		return wrappedInputStream.isFinished();
+	}
+
+	public boolean isReady() {
+		return wrappedInputStream.isReady();
 	}
 }

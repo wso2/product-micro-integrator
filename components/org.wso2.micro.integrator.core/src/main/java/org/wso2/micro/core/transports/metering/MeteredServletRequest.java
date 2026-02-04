@@ -28,6 +28,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -42,7 +43,7 @@ import java.util.Map;
  * MeteredServletRequest is to use to track the request message sizes and the bandwidth.
  * Here getInputStream method is overloaded and returning a custom InputStream which count
  * the number of bytes transferred. The getReadSize() method returns the size of the request
- * in bytes. 
+ * in bytes.
  * @see MeteringInputStream
  */
 public class MeteredServletRequest implements HttpServletRequest {
@@ -333,5 +334,18 @@ public class MeteredServletRequest implements HttpServletRequest {
 	 */
 	public long getReadSize() {
 		return wrappedInputStream.getReadSize();
+	}
+
+	public String changeSessionId() {
+		return wrappedHttpServletRequest.changeSessionId();
+	}
+
+	public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
+		return wrappedHttpServletRequest.upgrade(handlerClass);
+	}
+
+	@Override
+	public long getContentLengthLong() {
+		return wrappedHttpServletRequest.getContentLengthLong();
 	}
 }

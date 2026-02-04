@@ -27,6 +27,7 @@ import org.apache.synapse.api.API;
 import org.apache.synapse.rest.RESTConstants;
 import org.wso2.carbon.mediation.commons.rest.api.swagger.ServerConfig;
 import org.wso2.carbon.mediation.commons.rest.api.swagger.SwaggerConstants;
+import org.wso2.micro.core.util.NetworkUtils;
 import org.wso2.micro.integrator.transport.handlers.DataHolder;
 
 import java.net.SocketException;
@@ -109,7 +110,7 @@ public class MIServerConfig implements ServerConfig {
                 hostname = (String) axisConfiguration.getParameter("hostname").getValue();
             } else {
                 try {
-                    hostname = org.wso2.carbon.utils.NetworkUtils.getLocalHostname();
+                    hostname = NetworkUtils.getLocalHostname();
                 } catch (SocketException e) {
                     log.warn("SocketException occurred when trying to obtain IP address of local machine");
                 }

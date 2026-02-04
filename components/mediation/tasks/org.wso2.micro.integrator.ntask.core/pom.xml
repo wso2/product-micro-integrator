@@ -34,10 +34,6 @@
     <dependencies>
 
         <dependency>
-            <groupId>org.eclipse.osgi</groupId>
-            <artifactId>org.eclipse.osgi</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.wso2.orbit.org.quartz-scheduler</groupId>
             <artifactId>quartz</artifactId>
         </dependency>
@@ -77,6 +73,9 @@
                             !org.wso2.micro.integrator.ntask.internal,
                             org.wso2.micro.integrator.ntask.core.*; version="${project.version}",
                         </Export-Package>
+                        <Provide-Capability>
+                            osgi.service;objectClass="org.wso2.micro.integrator.ntask.core.service.TaskService"
+                        </Provide-Capability>
                     </instructions>
                 </configuration>
             </plugin>

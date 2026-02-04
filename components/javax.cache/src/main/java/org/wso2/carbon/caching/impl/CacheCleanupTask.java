@@ -19,7 +19,6 @@ package org.wso2.carbon.caching.impl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
