@@ -183,12 +183,12 @@ set CMD=RUN %*
 :checkJdk
 PATH %PATH%;%JAVA_HOME%\bin\
 for /f tokens^=2-5^ delims^=.-_+^" %%j in ('java -fullversion 2^>^&1') do set "JAVA_VERSION=%%j%%k"
-if %JAVA_VERSION% LSS 110 goto unknownJdk
+if %JAVA_VERSION% LSS 210 goto unknownJdk
 goto supportedJdk
 
 :unknownJdk
 echo Starting WSO2 MI (in unsupported JDK %JAVA_VERSION%)
-echo [ERROR] WSO2 MI is supported only between JDK 11 and JDK 21"
+echo [ERROR] WSO2 MI is supported only between JDK 21 and JDK 25"
 goto end
 
 :supportedJdk
