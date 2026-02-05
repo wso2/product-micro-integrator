@@ -28,6 +28,7 @@ import org.wso2.micro.integrator.server.extensions.EclipseIniRewriter;
 import org.wso2.micro.integrator.server.extensions.LibraryFragmentBundleCreator;
 import org.wso2.micro.integrator.server.extensions.PatchInstaller;
 import org.wso2.micro.integrator.server.extensions.SystemBundleExtensionCreator;
+import org.wso2.micro.integrator.server.util.ICPStartupUtils;
 import org.wso2.micro.integrator.server.util.Utils;
 
 import java.io.File;
@@ -116,6 +117,15 @@ public class Main {
             skipExtensions = true;
         }
         handleConfiguration();          // handle config mapper configurations
+
+        // Initialize ICP runtime ID if ICP is configured
+        if (ICPStartupUtils.isICPConfigured()) {
+            try {
+                ICPStartupUtils.initRuntimeId();
+            } catch (IOException e) {
+                logger.error("Error initializing the ICP runtime ID during startup");
+            }
+        }
         if (!skipExtensions) {
             writePID(System.getProperty(LauncherConstants.CARBON_HOME));
             invokeExtensions();
