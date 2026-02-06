@@ -340,6 +340,11 @@ public abstract class ESBIntegrationTest {
         String endpoint = "https://" + hostName + ":" + (DEFAULT_INTERNAL_API_HTTPS_PORT + portOffset) + "/management/"
                           + artifactType;
         HttpResponse response = client.doPostWithMultipart(endpoint, cabonApp, header);
+        // throw error if statusCode is not 200
+        if (response.getStatusLine().getStatusCode() != 200) {
+            throw new IOException("Failed to deploy Carbon Application. HTTP error code: " + response.getStatusLine().getStatusCode()
+                                  + ". Response: " + client.getResponsePayload(response));
+        }
         return client.getResponsePayload(response);
     }
 
