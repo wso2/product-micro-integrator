@@ -2324,7 +2324,7 @@
         <google.guava.version>33.5.0-jre</google.guava.version>
         <ca.uhn.hapi.wso2.version>2.4.0.wso2v2</ca.uhn.hapi.wso2.version>
         <junit.version>4.12</junit.version>
-        <netty.wso2.version>4.2.9.wso2v1</netty.wso2.version>
+        <netty.wso2.version>4.2.9.wso2v2</netty.wso2.version>
         <netty.tcnative.version>2.0.74.Final</netty.tcnative.version>
         <jacoco.agent.version>0.8.12</jacoco.agent.version>
         <activemq.version>5.2.0</activemq.version>
@@ -2448,7 +2448,7 @@
         <google-http-client.orbit.version>1.47.1.wso2v1</google-http-client.orbit.version>
         <google-http-client.orbit.imp.pkg.version>[1.47.1,2.0)</google-http-client.orbit.imp.pkg.version>
 
-        <google-oauth-client.orbit.version>1.33.3.wso2v1</google-oauth-client.orbit.version>
+        <google-oauth-client.orbit.version>1.39.0.wso2v1</google-oauth-client.orbit.version>
         <google-oauth-client.orbit.imp.pkg.version>[1.33.1,2.0)</google-oauth-client.orbit.imp.pkg.version>
 
         <google-api-client.orbit.version>1.33.4.wso2v1</google-api-client.orbit.version>
@@ -2469,7 +2469,6 @@
         <commons-pool.orbit.version>1.5.6.wso2v1</commons-pool.orbit.version>
 
         <metrics.core.version>3.2.5</metrics.core.version>
-<!--        <netty.version>4.0.39.Final</netty.version>-->
         <xml.apis.version>1.4.01</xml.apis.version>
 
         <carbon-commons.version>${carbon.commons.version}</carbon-commons.version>
