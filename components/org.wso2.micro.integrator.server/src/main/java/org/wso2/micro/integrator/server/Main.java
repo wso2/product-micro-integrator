@@ -120,10 +120,16 @@ public class Main {
 
         // Initialize ICP runtime ID if ICP is configured
         if (ICPStartupUtils.isICPConfigured()) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("ICP is configured. Initializing ICP runtime ID.");
+            }
             try {
                 ICPStartupUtils.initRuntimeId();
+                if (logger.isDebugEnabled()) {
+                    logger.debug("ICP runtime ID initialized successfully.");
+                }
             } catch (IOException e) {
-                logger.error("Error initializing the ICP runtime ID during startup");
+                logger.error("Error initializing the ICP runtime ID during startup: " + e.getMessage());
             }
         }
         if (!skipExtensions) {

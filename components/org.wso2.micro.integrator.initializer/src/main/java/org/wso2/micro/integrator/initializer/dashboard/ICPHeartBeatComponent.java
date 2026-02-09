@@ -113,6 +113,9 @@ public class ICPHeartBeatComponent {
         // Read from persisted file if present
         Path runtimeIdPath = Paths.get(runtimeIdFile);
         if (Files.exists(runtimeIdPath)) {
+            log.debug("Reading runtime ID from file: " + runtimeIdFile);
+        }
+        if (Files.exists(runtimeIdPath)) {
             String existingId = Files.readString(runtimeIdPath).trim();
             if (!existingId.isEmpty()) {
                 runtimeId = existingId;
@@ -121,6 +124,7 @@ public class ICPHeartBeatComponent {
         }
 
         // Runtime ID should have been generated at startup - throw error if not found
+        log.error("Runtime ID file not found at: " + runtimeIdFile);
         throw new IOException("Error retrieving runtime ID as it was not properly generated during MI startup.");
     }
 

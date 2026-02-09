@@ -17,6 +17,8 @@
  */
 package org.wso2.micro.integrator.server.util;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.config.mapper.ConfigParser;
 
 import java.io.IOException;
@@ -27,6 +29,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class ICPStartupUtils {
+    private static final Log log = LogFactory.getLog(ICPStartupUtils.class);
     private static final Map<String, Object> configs = ConfigParser.getParsedConfigs();
     public static final String ICP_CONFIG_ENABLED = "icp_config.enabled";
     private static String runtimeId = null;
@@ -54,6 +57,9 @@ public class ICPStartupUtils {
     public static synchronized void initRuntimeId() throws IOException {
         // Return if already initialized
         if (runtimeId != null && !runtimeId.trim().isEmpty()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Runtime ID already initialized: " + runtimeId);
+            }
             return;
         }
 
@@ -84,6 +90,9 @@ public class ICPStartupUtils {
         Files.writeString(runtimeIdPath, newRuntimeId);
         runtimeId = newRuntimeId;
         setRuntimeIdSystemProperty(newRuntimeId);
+        if (log.isDebugEnabled()) {
+            log.debug("Generated new runtime ID: " + newRuntimeId);
+        }
     }
 
     /**
