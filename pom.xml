@@ -2220,10 +2220,10 @@
 
         <carbon.analytics.common.version>5.2.66</carbon.analytics.common.version>
         <carbon.analytics.common.imp.pkg.version>[5.2.0, 6.0.0)</carbon.analytics.common.imp.pkg.version>
-        <fasterxml.jackson.version>2.20.0</fasterxml.jackson.version>
+        <fasterxml.jackson.version>2.21.0</fasterxml.jackson.version>
         <fasterxml.jackson.datatype.version>2.21.0</fasterxml.jackson.datatype.version>
         <fasterxml.jackson.annotations.version>2.21</fasterxml.jackson.annotations.version>
-        <com.hubspot.immutables.version>1.11.2</com.hubspot.immutables.version>
+        <com.hubspot.immutables.version>1.11.3</com.hubspot.immutables.version>
         <carbon.commons.version>4.7.55</carbon.commons.version>
         <carbon.rule.version>4.5.3</carbon.rule.version>
         <carbon.deployment.version>4.9.11</carbon.deployment.version>
@@ -2263,7 +2263,7 @@
         <orbit.version.wsdl4j>1.6.2.wso2v4</orbit.version.wsdl4j>
         <version.XmlSchema>1.4.7-wso2v8</version.XmlSchema>
         <commons-xmlschema.version>1.4.7</commons-xmlschema.version>
-        <version.commons.codec>1.17.1</version.commons.codec>
+        <version.commons.codec>1.21.0</version.commons.codec>
         <version.annogen>0.1.0.wso2v1</version.annogen>
         <version.backport.util.concurrent>3.1.0.wso2v1</version.backport.util.concurrent>
         <version.commons.fileupload>1.6.0.wso2v1</version.commons.fileupload>
@@ -2280,9 +2280,9 @@
         <javasysmon.version>0.3.3.wso2v1</javasysmon.version>
         <version.eclipse.ecj>4.4.2</version.eclipse.ecj>
         <version.com.google.code.gson>2.13.2</version.com.google.code.gson>
-        <bcprov-jdk18on.version>1.82</bcprov-jdk18on.version>
-        <bcpg-jdk18on.version>1.82</bcpg-jdk18on.version>
-        <bcutil-jdk18on.version>1.82</bcutil-jdk18on.version>
+        <bcprov-jdk18on.version>1.83</bcprov-jdk18on.version>
+        <bcpg-jdk18on.version>1.83</bcpg-jdk18on.version>
+        <bcutil-jdk18on.version>1.83</bcutil-jdk18on.version>
         <tukaani.xz.version>1.9</tukaani.xz.version>
         <osgi.service.prefs.version>1.1.2</osgi.service.prefs.version>
         <equinox.http.service.api.version>1.2.2</equinox.http.service.api.version>
@@ -2325,7 +2325,7 @@
         <ca.uhn.hapi.wso2.version>2.4.0.wso2v2</ca.uhn.hapi.wso2.version>
         <junit.version>4.12</junit.version>
         <netty.wso2.version>4.2.9.wso2v2</netty.wso2.version>
-        <netty.tcnative.version>2.0.74.Final</netty.tcnative.version>
+        <netty.tcnative.version>2.0.75.Final</netty.tcnative.version>
         <jacoco.agent.version>0.8.12</jacoco.agent.version>
         <activemq.version>5.2.0</activemq.version>
         <activemq.broker.version>5.15.2</activemq.broker.version>
@@ -2456,7 +2456,7 @@
 
         <olingo.orbit.version>4.10.0.wso2v1</olingo.orbit.version>
 
-        <bson4jackson.orbit.version>2.9.0</bson4jackson.orbit.version>
+        <bson4jackson.orbit.version>2.18.0</bson4jackson.orbit.version>
 
         <saxon.orbit.version>8.9.0.wso2v2</saxon.orbit.version>
         <commons-httpclient.orbit.version>3.1.0-wso2v7</commons-httpclient.orbit.version>
@@ -2468,7 +2468,7 @@
         <commons-dbcp.orbit.version>1.4.0.wso2v1</commons-dbcp.orbit.version>
         <commons-pool.orbit.version>1.5.6.wso2v1</commons-pool.orbit.version>
 
-        <metrics.core.version>3.2.5</metrics.core.version>
+        <metrics.core.version>3.2.6</metrics.core.version>
         <xml.apis.version>1.4.01</xml.apis.version>
 
         <carbon-commons.version>${carbon.commons.version}</carbon-commons.version>
@@ -2515,7 +2515,7 @@
         <antlr4.runtime.version>4.5.1.wso2v1</antlr4.runtime.version>
 
         <atomikos.version>3.8.0.wso2v1</atomikos.version>
-        <saxon.wso2.version>10.8</saxon.wso2.version>
+        <saxon.wso2.version>10.9</saxon.wso2.version>
         <xercesImpl.orbit.version>2.12.2.wso2v1</xercesImpl.orbit.version>
         <commons-logging.version>1.2</commons-logging.version>
         <mockito.version>5.3.1</mockito.version>
@@ -2550,7 +2550,7 @@
         <graalvm.version>23.0.9</graalvm.version>
         <icu.version>78.1</icu.version>
         <sparsebitset.version>1.3</sparsebitset.version>
-        <org.bouncycastle.bc.version>1.82</org.bouncycastle.bc.version>
+        <org.bouncycastle.bc.version>1.83</org.bouncycastle.bc.version>
         <failureaccess.version>1.0.3</failureaccess.version>
         <com.google.code.gson.version>2.11.0</com.google.code.gson.version>
         <commons.lang.version>2.6</commons.lang.version>
