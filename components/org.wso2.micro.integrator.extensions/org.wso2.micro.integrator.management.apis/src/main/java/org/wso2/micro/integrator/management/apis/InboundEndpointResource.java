@@ -138,9 +138,9 @@ public class InboundEndpointResource extends APIResource {
                     if (payload.has(STATUS)) {
                         response = handleStatusUpdate(inboundEndpoint, performedBy, info, msgCtx, payload);
                     } else {
-                        response = Utils.handleTracing(performedBy, Constants.AUDIT_LOG_TYPE_INBOUND_ENDPOINT_TRACE,
-                                Constants.INBOUND_ENDPOINTS, info,
-                                inboundEndpoint.getAspectConfiguration(), inboundName, axisMsgCtx);
+                        response = Utils.handleResourceStateChange(performedBy, Constants.AUDIT_LOG_TYPE_INBOUND_ENDPOINT_STATE_CHANGE,
+                                info,
+                                inboundEndpoint.getAspectConfiguration(), inboundName, axisMsgCtx, payload);
                     }
 
                 } else {

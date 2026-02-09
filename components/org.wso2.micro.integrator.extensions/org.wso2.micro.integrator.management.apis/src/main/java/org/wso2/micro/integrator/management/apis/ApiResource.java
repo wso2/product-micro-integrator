@@ -159,8 +159,8 @@ public class ApiResource extends APIResource {
                 JSONObject info = new JSONObject();
                 info.put(API_NAME, apiName);
                 if (api != null) {
-                    response = Utils.handleTracing(performedBy, Constants.AUDIT_LOG_TYPE_API_TRACE, Constants.APIS,
-                                                   info, api.getAspectConfiguration(), apiName, axisMsgCtx);
+                    response = Utils.handleResourceStateChange(performedBy, Constants.AUDIT_LOG_TYPE_API_STATE_CHANGE,
+                                                   info, api.getAspectConfiguration(), apiName, axisMsgCtx, payload);
                 } else {
                     response = Utils.createJsonError("Specified API ('" + apiName + "') not found", axisMsgCtx,
                             Constants.BAD_REQUEST);

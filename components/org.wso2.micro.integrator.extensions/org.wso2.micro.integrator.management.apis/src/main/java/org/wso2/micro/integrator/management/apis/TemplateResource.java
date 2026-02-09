@@ -109,7 +109,7 @@ public class TemplateResource extends APIResource {
                     }
                     if (payload.has(Constants.NAME) && SEQUENCE_TEMPLATE_TYPE.equals(templateTypeParam)) {
                         String seqTempName = payload.get(Constants.NAME).getAsString();
-                        response = handleTracing(seqTempName, msgCtx, axis2MsgCtx);
+                        response = handleStateChange(seqTempName, msgCtx, axis2MsgCtx, payload);
                     } else {
                         response = Utils.createJsonError("Unsupported operation", axis2MsgCtx, Constants.BAD_REQUEST);
                     }
@@ -128,8 +128,8 @@ public class TemplateResource extends APIResource {
         return true;
     }
 
-    private JSONObject handleTracing(String seqTempName, MessageContext msgCtx,
-                                     org.apache.axis2.context.MessageContext axisMsgCtx) {
+    private JSONObject handleStateChange(String seqTempName, MessageContext msgCtx,
+                                     org.apache.axis2.context.MessageContext axisMsgCtx, JsonObject payload) {
 
         JSONObject response;
         SynapseConfiguration configuration = msgCtx.getConfiguration();
@@ -142,9 +142,9 @@ public class TemplateResource extends APIResource {
             JSONObject info = new JSONObject();
             info.put(SEQUENCE_NAME, seqTempName);
             info.put(SEQUENCE_TYPE, SEQUENCE_TEMPLATE_TYPE);
-            response = Utils.handleTracing(performedBy, Constants.AUDIT_LOG_TYPE_SEQUENCE_TEMPLATE_TRACE,
-                                           Constants.SEQUENCE_TEMPLATE, info, sequenceTemplate.getAspectConfiguration(),
-                                           seqTempName, axisMsgCtx);
+            response = Utils.handleResourceStateChange(performedBy, Constants.AUDIT_LOG_TYPE_SEQUENCE_TEMPLATE_STATE_CHANGE,
+                                           info, sequenceTemplate.getAspectConfiguration(),
+                                           seqTempName, axisMsgCtx, payload);
         } else {
             response = Utils.createJsonError("Specified sequence template ('" + seqTempName + "') not found",
                     axisMsgCtx, Constants.BAD_REQUEST);

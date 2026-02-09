@@ -127,6 +127,29 @@ public class AuditLogTestCase extends ESBIntegrationTest {
     }
 
     @Test(groups = {"wso2.esb" }, priority = 3,
+            description = "Test proxy service enable/disable statistics log")
+    public void testProxyServiceStatistics() throws IOException, InterruptedException, AutomationFrameworkException {
+        if (!isManagementApiAvailable) {
+            Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(DEFAULT_TIMEOUT, TimeUnit.SECONDS).
+                    until(isManagementApiAvailable());
+        }
+        String endpoint = "https://" + hostName + ":" + (DEFAULT_INTERNAL_API_HTTPS_PORT + portOffset) + "/management/"
+                + "proxy-services";
+        SimpleHttpClient client = new SimpleHttpClient();
+        HttpResponse response = client.doPost(endpoint, getHeaderMap(), "{\"name\": \"testProxy\",\"statistics\": \"enable\"}", "application/json");
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode(), "Invalid response status " +
+                response.getStatusLine().getStatusCode() +
+                " returned. Expected status code is 200");
+        Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"enabled\",\"type\":\"proxy_service_statistics\",\"info\":\"{\\\"proxyName\\\":\\\"testProxy\\\"}\"}", 120));
+
+        response = client.doPost(endpoint, getHeaderMap(), "{\"name\": \"testProxy\",\"statistics\": \"disable\"}", "application/json");
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode(), "Invalid response status " +
+                response.getStatusLine().getStatusCode() +
+                " returned. Expected status code is 200");
+        Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"disabled\",\"type\":\"proxy_service_statistics\",\"info\":\"{\\\"proxyName\\\":\\\"testProxy\\\"}\"}", 120));
+    }
+
+    @Test(groups = {"wso2.esb" }, priority = 3,
           description = "Test activate/deactivate endpoint")
     public void testEndpoint() throws IOException, InterruptedException, AutomationFrameworkException {
         if (!isManagementApiAvailable) {
@@ -161,6 +184,29 @@ public class AuditLogTestCase extends ESBIntegrationTest {
     }
 
     @Test(groups = {"wso2.esb" }, priority = 3,
+            description = "Test enable disable endpoint statistics")
+    public void testEndpointStatistics() throws IOException, InterruptedException, AutomationFrameworkException {
+        if (!isManagementApiAvailable) {
+            Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(DEFAULT_TIMEOUT, TimeUnit.SECONDS).
+                    until(isManagementApiAvailable());
+        }
+        String endpoint = "https://" + hostName + ":" + (DEFAULT_INTERNAL_API_HTTPS_PORT + portOffset) + "/management/"
+                + "endpoints";
+        SimpleHttpClient client = new SimpleHttpClient();
+        HttpResponse response = client.doPost(endpoint, getHeaderMap(), "{\"name\": \"testEndpoint\",\"statistics\": \"enable\"}", "application/json");
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode(), "Invalid response status " +
+                response.getStatusLine().getStatusCode() +
+                " returned. Expected status code is 200");
+        Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"enabled\",\"type\":\"endpoint_statistics\",\"info\":\"{\\\"endpointName\\\":\\\"testEndpoint\\\"}\"}", 120));
+
+        response = client.doPost(endpoint, getHeaderMap(), "{\"name\": \"testEndpoint\",\"statistics\": \"disable\"}", "application/json");
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode(), "Invalid response status " +
+                response.getStatusLine().getStatusCode() +
+                " returned. Expected status code is 200");
+        Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"disabled\",\"type\":\"endpoint_statistics\",\"info\":\"{\\\"endpointName\\\":\\\"testEndpoint\\\"}\"}", 120));
+    }
+
+    @Test(groups = {"wso2.esb" }, priority = 3,
           description = "Test enable disable API trace")
     public void testAPITrace() throws IOException, InterruptedException, AutomationFrameworkException {
         if (!isManagementApiAvailable) {
@@ -175,6 +221,29 @@ public class AuditLogTestCase extends ESBIntegrationTest {
                                                                            response.getStatusLine().getStatusCode() +
                                                                            " returned. Expected status code is 200");
         Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"enabled\",\"type\":\"api_trace\",\"info\":\"{\\\"apiName\\\":\\\"testApi\\\"}\"}", 120));
+    }
+
+    @Test(groups = {"wso2.esb" }, priority = 3,
+            description = "Test enable disable API statistics")
+    public void testAPIStatistics() throws IOException, InterruptedException, AutomationFrameworkException {
+        if (!isManagementApiAvailable) {
+            Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(DEFAULT_TIMEOUT, TimeUnit.SECONDS).
+                    until(isManagementApiAvailable());
+        }
+        String endpoint = "https://" + hostName + ":" + (DEFAULT_INTERNAL_API_HTTPS_PORT + portOffset) + "/management/"
+                + "apis";
+        SimpleHttpClient client = new SimpleHttpClient();
+        HttpResponse response = client.doPost(endpoint, getHeaderMap(), "{\"name\": \"testApi\",\"statistics\": \"enable\"}", "application/json");
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode(), "Invalid response status " +
+                response.getStatusLine().getStatusCode() +
+                " returned. Expected status code is 200");
+        Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"enabled\",\"type\":\"api_statistics\",\"info\":\"{\\\"apiName\\\":\\\"testApi\\\"}\"}", 120));
+
+        response = client.doPost(endpoint, getHeaderMap(), "{\"name\": \"testApi\",\"statistics\": \"disable\"}", "application/json");
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode(), "Invalid response status " +
+                response.getStatusLine().getStatusCode() +
+                " returned. Expected status code is 200");
+        Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"disabled\",\"type\":\"api_statistics\",\"info\":\"{\\\"apiName\\\":\\\"testApi\\\"}\"}", 120));
     }
 
     @Test(groups = {"wso2.esb" }, priority = 3,
@@ -195,6 +264,29 @@ public class AuditLogTestCase extends ESBIntegrationTest {
     }
 
     @Test(groups = {"wso2.esb" }, priority = 3,
+            description = "Test enable disable sequence statistics")
+    public void testSequenceStatistics() throws IOException, InterruptedException, AutomationFrameworkException {
+        if (!isManagementApiAvailable) {
+            Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(DEFAULT_TIMEOUT, TimeUnit.SECONDS).
+                    until(isManagementApiAvailable());
+        }
+        String endpoint = "https://" + hostName + ":" + (DEFAULT_INTERNAL_API_HTTPS_PORT + portOffset) + "/management/"
+                + "sequences";
+        SimpleHttpClient client = new SimpleHttpClient();
+        HttpResponse response = client.doPost(endpoint, getHeaderMap(), "{\"name\": \"testSequence\",\"statistics\": \"enable\"}", "application/json");
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode(), "Invalid response status " +
+                response.getStatusLine().getStatusCode() +
+                " returned. Expected status code is 200");
+        Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"enabled\",\"type\":\"sequence_statistics\",\"info\":\"{\\\"sequenceName\\\":\\\"testSequence\\\"}\"}", 120));
+
+        response = client.doPost(endpoint, getHeaderMap(), "{\"name\": \"testSequence\",\"statistics\": \"disable\"}", "application/json");
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode(), "Invalid response status " +
+                response.getStatusLine().getStatusCode() +
+                " returned. Expected status code is 200");
+        Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"disabled\",\"type\":\"sequence_statistics\",\"info\":\"{\\\"sequenceName\\\":\\\"testSequence\\\"}\"}", 120));
+    }
+
+    @Test(groups = {"wso2.esb" }, priority = 3,
           description = "Test enable disable inbound endpoint trace")
     public void testInboundEndpointTrace() throws IOException, InterruptedException, AutomationFrameworkException {
         if (!isManagementApiAvailable) {
@@ -212,6 +304,29 @@ public class AuditLogTestCase extends ESBIntegrationTest {
     }
 
     @Test(groups = {"wso2.esb" }, priority = 3,
+            description = "Test enable disable inbound endpoint statistics")
+    public void testInboundEndpointStatistics() throws IOException, InterruptedException, AutomationFrameworkException {
+        if (!isManagementApiAvailable) {
+            Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(DEFAULT_TIMEOUT, TimeUnit.SECONDS).
+                    until(isManagementApiAvailable());
+        }
+        String endpoint = "https://" + hostName + ":" + (DEFAULT_INTERNAL_API_HTTPS_PORT + portOffset) + "/management/"
+                + "inbound-endpoints";
+        SimpleHttpClient client = new SimpleHttpClient();
+        HttpResponse response = client.doPost(endpoint, getHeaderMap(), "{\"name\": \"testInboundEndpoint\",\"statistics\": \"enable\"}", "application/json");
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode(), "Invalid response status " +
+                response.getStatusLine().getStatusCode() +
+                " returned. Expected status code is 200");
+        Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"enabled\",\"type\":\"inbound_endpoint_statistics\",\"info\":\"{\\\"inboundEndpointName\\\":\\\"testInboundEndpoint\\\"}\"}", 120));
+
+        response = client.doPost(endpoint, getHeaderMap(), "{\"name\": \"testInboundEndpoint\",\"statistics\": \"disable\"}", "application/json");
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode(), "Invalid response status " +
+                response.getStatusLine().getStatusCode() +
+                " returned. Expected status code is 200");
+        Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"disabled\",\"type\":\"inbound_endpoint_statistics\",\"info\":\"{\\\"inboundEndpointName\\\":\\\"testInboundEndpoint\\\"}\"}", 120));
+    }
+
+    @Test(groups = {"wso2.esb" }, priority = 3,
           description = "Test enable disable sequence template trace")
     public void testSequenceTemplateTrace() throws IOException, InterruptedException, AutomationFrameworkException {
         if (!isManagementApiAvailable) {
@@ -226,6 +341,29 @@ public class AuditLogTestCase extends ESBIntegrationTest {
                                                                            response.getStatusLine().getStatusCode() +
                                                                            " returned. Expected status code is 200");
         Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"enabled\",\"type\":\"sequence_template_trace\",\"info\":\"{\\\"sequenceName\\\":\\\"testSequenceTemplate\\\",\\\"sequenceType\\\":\\\"sequence\\\"}\"}", 120));
+    }
+
+    @Test(groups = {"wso2.esb" }, priority = 3,
+            description = "Test enable disable sequence template statistics")
+    public void testSequenceTemplateStatistics() throws IOException, InterruptedException, AutomationFrameworkException {
+        if (!isManagementApiAvailable) {
+            Awaitility.await().pollInterval(50, TimeUnit.MILLISECONDS).atMost(DEFAULT_TIMEOUT, TimeUnit.SECONDS).
+                    until(isManagementApiAvailable());
+        }
+        String endpoint = "https://" + hostName + ":" + (DEFAULT_INTERNAL_API_HTTPS_PORT + portOffset) + "/management/"
+                + "templates";
+        SimpleHttpClient client = new SimpleHttpClient();
+        HttpResponse response = client.doPost(endpoint, getHeaderMap(), "{\"name\": \"testSequenceTemplate\", \"type\": \"sequence\",\"statistics\": \"enable\"}", "application/json");
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode(), "Invalid response status " +
+                response.getStatusLine().getStatusCode() +
+                " returned. Expected status code is 200");
+        Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"enabled\",\"type\":\"sequence_template_statistics\",\"info\":\"{\\\"sequenceName\\\":\\\"testSequenceTemplate\\\",\\\"sequenceType\\\":\\\"sequence\\\"}\"}", 120));
+
+        response = client.doPost(endpoint, getHeaderMap(), "{\"name\": \"testSequenceTemplate\", \"type\": \"sequence\",\"statistics\": \"disable\"}", "application/json");
+        Assert.assertEquals(200, response.getStatusLine().getStatusCode(), "Invalid response status " +
+                response.getStatusLine().getStatusCode() +
+                " returned. Expected status code is 200");
+        Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"disabled\",\"type\":\"sequence_template_statistics\",\"info\":\"{\\\"sequenceName\\\":\\\"testSequenceTemplate\\\",\\\"sequenceType\\\":\\\"sequence\\\"}\"}", 120));
     }
 
     @Test(groups = {"wso2.esb" }, priority = 3,

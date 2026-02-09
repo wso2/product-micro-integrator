@@ -152,6 +152,7 @@ public class Constants {
 
     // tracing constants
     static final String TRACE = "trace";
+    static final String STATISTICS = "statistics";
     static final String ENABLE = "enable";
     static final String DISABLE = "disable";
 
@@ -170,12 +171,12 @@ public class Constants {
     public static final String AUDIT_LOG_TYPE_CARBON_APPLICATION = "carbon_application";
     public static final String AUDIT_LOG_TYPE_CONNECTOR = "connector";
 
-    public static final String AUDIT_LOG_TYPE_API_TRACE = "api_trace";
-    public static final String AUDIT_LOG_TYPE_PROXY_SERVICE_TRACE = "proxy_service_trace";
-    public static final String AUDIT_LOG_TYPE_INBOUND_ENDPOINT_TRACE = "inbound_endpoint_trace";
-    public static final String AUDIT_LOG_TYPE_SEQUENCE_TEMPLATE_TRACE = "sequence_template_trace";
-    public static final String AUDIT_LOG_TYPE_SEQUENCE_TRACE = "sequence_trace";
-    public static final String AUDIT_LOG_TYPE_ENDPOINT_TRACE = "endpoint_trace";
+    public static final String AUDIT_LOG_TYPE_API_STATE_CHANGE = "api_";
+    public static final String AUDIT_LOG_TYPE_PROXY_SERVICE_STATE_CHANGE = "proxy_service_";
+    public static final String AUDIT_LOG_TYPE_INBOUND_ENDPOINT_STATE_CHANGE = "inbound_endpoint_";
+    public static final String AUDIT_LOG_TYPE_SEQUENCE_TEMPLATE_STATE_CHANGE = "sequence_template_";
+    public static final String AUDIT_LOG_TYPE_SEQUENCE_STATE_CHANGE = "sequence_";
+    public static final String AUDIT_LOG_TYPE_ENDPOINT_STATE_CHANGE = "endpoint_";
     public static final String AUDIT_LOG_TYPE_REGISTRY_RESOURCE = "registry_resource";
     public static final String AUDIT_LOG_TYPE_REGISTRY_RESOURCE_PROPERTIES = "registry_resource_properties";
 

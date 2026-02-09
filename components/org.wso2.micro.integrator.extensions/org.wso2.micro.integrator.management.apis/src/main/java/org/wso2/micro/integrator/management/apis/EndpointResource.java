@@ -106,7 +106,7 @@ public class EndpointResource implements MiApiResource {
                     if (payload.has(Constants.NAME) && payload.has(STATUS)) {
                         changeEndpointStatus(performedBy, axis2MessageContext, synapseConfiguration, payload);
                     } else {
-                        handleTracing(performedBy, payload, messageContext, axis2MessageContext);
+                        handleStateChange(performedBy, payload, messageContext, axis2MessageContext);
                     }
                 } else {
                     Utils.sendForbiddenFaultResponse(axis2MessageContext);
@@ -134,7 +134,7 @@ public class EndpointResource implements MiApiResource {
         setResponseBody(searchResultList, messageContext);
     }
 
-    private void handleTracing(String performedBy, JsonObject payload, MessageContext msgCtx,
+    private void handleStateChange(String performedBy, JsonObject payload, MessageContext msgCtx,
                                org.apache.axis2.context.MessageContext axisMsgCtx) {
 
         JSONObject response;
@@ -148,10 +148,10 @@ public class EndpointResource implements MiApiResource {
                             .getAspectConfiguration();
                     JSONObject info = new JSONObject();
                     info.put(ENDPOINT_NAME, endpointName);
-                    response = Utils.handleTracing(performedBy, Constants.AUDIT_LOG_TYPE_ENDPOINT_TRACE,
-                            Constants.ENDPOINTS, info, aspectConfiguration, endpointName, axisMsgCtx);
+                    response = Utils.handleResourceStateChange(performedBy, Constants.AUDIT_LOG_TYPE_ENDPOINT_STATE_CHANGE,
+                            info, aspectConfiguration, endpointName, axisMsgCtx, payload);
                 } else {
-                    response = Utils.createJsonError("Tracing is not supported for this endpoint", axisMsgCtx,
+                    response = Utils.createJsonError("Tracing/Statistics is not supported for this endpoint", axisMsgCtx,
                             Constants.BAD_REQUEST);
                 }
             } else {
