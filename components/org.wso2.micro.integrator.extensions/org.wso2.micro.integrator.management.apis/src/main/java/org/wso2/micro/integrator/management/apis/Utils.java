@@ -153,32 +153,70 @@ public class Utils {
         axis2MessageContext.removeProperty(Constants.NO_ENTITY_BODY);
     }
 
-    static JSONObject handleTracing(String performedBy, String type, String artifactType, JSONObject info,
+    static JSONObject handleResourceStateChange(String performedBy, String type, JSONObject info,
                                     AspectConfiguration config, String artifactName,
-                                    org.apache.axis2.context.MessageContext axisMsgCtx) {
+                                    org.apache.axis2.context.MessageContext axisMsgCtx, JsonObject payload) {
 
-        JSONObject payload = new JSONObject(JsonUtil.jsonPayloadToString(axisMsgCtx));
-        JSONObject response = new JSONObject();
+        JSONObject response;
         String msg;
         if (payload.has(Constants.TRACE)) {
-            String traceState = payload.get(Constants.TRACE).toString();
-            if (Constants.ENABLE.equalsIgnoreCase(traceState)) {
-                config.enableTracing();
-                msg = "Enabled tracing for ('" + artifactName + "')";
-                response.put(Constants.MESSAGE, msg);
-                AuditLogger.logAuditMessage(performedBy, type, Constants.AUDIT_LOG_ACTION_ENABLE, info);
-            } else if (Constants.DISABLE.equalsIgnoreCase(traceState)) {
-                config.disableTracing();
-                msg = "Disabled tracing for ('" + artifactName + "')";
-                response.put(Constants.MESSAGE, msg);
-                AuditLogger.logAuditMessage(performedBy, type, Constants.AUDIT_LOG_ACTION_DISABLED, info);
-            } else {
-                msg = "Invalid value for state " + Constants.TRACE;
-                response = createJsonError(msg, axisMsgCtx, Constants.BAD_REQUEST);
-            }
+            String traceType = type + Constants.TRACE;
+            response = handleTracing(performedBy, traceType, info, config, artifactName, axisMsgCtx, payload);
+        } else if (payload.has(Constants.STATISTICS)) {
+            String statisticsType = type + Constants.STATISTICS;
+            response =  handleStatistics(performedBy, statisticsType, info, config, artifactName, axisMsgCtx, payload);
         } else {
-            msg = "Missing attribute " + Constants.TRACE + " in payload";
+            msg = "Invalid payload. Required parameter is missing.";
             response = createJsonError(msg, axisMsgCtx, Constants.BAD_REQUEST);
+        }
+        return response;
+    }
+
+    private static JSONObject handleTracing(String performedBy, String type, JSONObject info,
+                                    AspectConfiguration config, String artifactName,
+                                    org.apache.axis2.context.MessageContext axisMsgCtx, JsonObject payload) {
+
+        JSONObject response = new JSONObject();
+        String msg;
+        String traceState = payload.get(Constants.TRACE).getAsString();
+        if (Constants.ENABLE.equalsIgnoreCase(traceState)) {
+            config.enableTracing();
+            msg = "Enabled tracing for ('" + artifactName + "')";
+            response.put(Constants.MESSAGE, msg);
+            AuditLogger.logAuditMessage(performedBy, type, Constants.AUDIT_LOG_ACTION_ENABLE, info);
+        } else if (Constants.DISABLE.equalsIgnoreCase(traceState)) {
+            config.disableTracing();
+            msg = "Disabled tracing for ('" + artifactName + "')";
+            response.put(Constants.MESSAGE, msg);
+            AuditLogger.logAuditMessage(performedBy, type, Constants.AUDIT_LOG_ACTION_DISABLED, info);
+        } else {
+            msg = "Invalid value for state " + Constants.TRACE;
+            return createJsonError(msg, axisMsgCtx, Constants.BAD_REQUEST);
+        }
+        LOG.info(msg);
+        return response;
+    }
+
+    private static JSONObject handleStatistics(String performedBy, String type, JSONObject info,
+                                    AspectConfiguration config, String artifactName,
+                                    org.apache.axis2.context.MessageContext axisMsgCtx, JsonObject payload) {
+
+        JSONObject response = new JSONObject();
+        String msg;
+        String statisticsState = payload.get(Constants.STATISTICS).getAsString();
+        if (Constants.ENABLE.equalsIgnoreCase(statisticsState)) {
+            config.enableStatistics();
+            msg = "Enabled statistics for ('" + artifactName + "')";
+            response.put(Constants.MESSAGE, msg);
+            AuditLogger.logAuditMessage(performedBy, type, Constants.AUDIT_LOG_ACTION_ENABLE, info);
+        } else if (Constants.DISABLE.equalsIgnoreCase(statisticsState)) {
+            config.disableStatistics();
+            msg = "Disabled statistics for ('" + artifactName + "')";
+            response.put(Constants.MESSAGE, msg);
+            AuditLogger.logAuditMessage(performedBy, type, Constants.AUDIT_LOG_ACTION_DISABLED, info);
+        } else {
+            msg = "Invalid value for state " + Constants.STATISTICS;
+            return createJsonError(msg, axisMsgCtx, Constants.BAD_REQUEST);
         }
         LOG.info(msg);
         return response;
