@@ -72,7 +72,7 @@
         <maven.surefire.version>2.12.4</maven.surefire.version>
         <jacoco.version>0.8.8</jacoco.version>
         <activemq.client.version>5.16.8</activemq.client.version>
-        <pax.logging.api.version>2.1.0-wso2v3</pax.logging.api.version>
+        <pax.logging.api.version>2.3.2-wso2v1</pax.logging.api.version>
     </properties>
     <profiles>
         <profile>
