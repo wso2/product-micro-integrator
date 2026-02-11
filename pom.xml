@@ -2102,7 +2102,7 @@
         <version.equinox.platform.osgi>3.19.0</version.equinox.platform.osgi>
         <version.equinox.http.helper>1.1.0.wso2v1</version.equinox.http.helper>
         <version.equinox.p2.metadata>2.9.0</version.equinox.p2.metadata>
-        <felix.scr.version>2.2.10</felix.scr.version>
+        <felix.scr.version>2.2.14</felix.scr.version>
 
         <!-- Equinox dependency versions -->
         <version.equinox.simpleconfigurator>1.5.200</version.equinox.simpleconfigurator>
@@ -2209,7 +2209,7 @@
         <transport.http.netty.version>6.3.58</transport.http.netty.version>
 
         <esotericsoftware.kryo.version>3.0.3</esotericsoftware.kryo.version>
-        <esotericsoftware.minlog.version>1.3.0</esotericsoftware.minlog.version>
+        <esotericsoftware.minlog.version>1.3.1</esotericsoftware.minlog.version>
         <org.objenesis.version>2.1</org.objenesis.version>
 
         <!-- Apache Axis2 -->
@@ -2304,7 +2304,7 @@
         <commons-lang3.orbit.version>3.20.0.wso2v1</commons-lang3.orbit.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <joda-time.version>2.14.0.wso2v1</joda-time.version>
-        <libthrift.version>0.16.0.wso2v1</libthrift.version>
+        <libthrift.version>0.18.1.wso2v1</libthrift.version>
         <axis2.mar.maven.plugin>1.5.2</axis2.mar.maven.plugin>
 
         <!--PAX Logging related dependency versions-->
@@ -2345,7 +2345,7 @@
         <diagnostics.tool.version>1.1.1</diagnostics.tool.version>
         <jsch.version>0.2.24</jsch.version>
 
-        <config.mapper.version>1.0.26</config.mapper.version>
+        <config.mapper.version>1.1.0</config.mapper.version>
         <javax.xml.parsers.import.pkg.version>[0.0.0, 1.0.0)</javax.xml.parsers.import.pkg.version>
         <imp.pkg.version.javax.servlet>[3.1.0, 4.0.0)</imp.pkg.version.javax.servlet>
         <import.package.version.commons.logging>[1.2.0,2.0.0)</import.package.version.commons.logging>
@@ -2405,7 +2405,7 @@
 
         <carbon.registry.imp.pkg.version>0.0.0</carbon.registry.imp.pkg.version> <!-- todo remove this and use {carbon.kernel.imp.pkg.version} after registry bundles are corrected to export correct versions-->
 
-        <mongodb-driver-sync.version>4.9.1</mongodb-driver-sync.version>
+        <mongodb-driver-sync.version>4.11.5</mongodb-driver-sync.version>
         <mongodb-driver-sync.imp.pkg.version>[4.0.0,6.0.0)</mongodb-driver-sync.imp.pkg.version>
 
         <dataservices.version>4.4.107</dataservices.version>
@@ -2520,8 +2520,8 @@
         <commons-logging.version>1.2</commons-logging.version>
         <mockito.version>5.3.1</mockito.version>
         <wrapper.version>3.2.3</wrapper.version>
-        <nimbus-jose.orbit.version>9.22.0.wso2v1</nimbus-jose.orbit.version>
-        <nimbus-jose.orbit.imp.pkg.version>[9.22,10.0)</nimbus-jose.orbit.imp.pkg.version>
+        <nimbus-jose.orbit.version>10.7.0.wso2v1</nimbus-jose.orbit.version>
+        <nimbus-jose.orbit.imp.pkg.version>[10.0,10.10)</nimbus-jose.orbit.imp.pkg.version>
         <grpc.version>1.59.0</grpc.version>
         <axis2-java2wsdl.version>1.6.2</axis2-java2wsdl.version>
         <!-- Prometheus Library versions-->
@@ -2533,7 +2533,7 @@
         <swagger.parser.orbit.version>2.1.18.wso2v3</swagger.parser.orbit.version>
         <snakeyaml.version>2.5</snakeyaml.version>
         <javax.validation.version>1.1.0.Final</javax.validation.version>
-        <version.disruptor>3.4.2</version.disruptor>
+        <version.disruptor>3.4.4</version.disruptor>
         <version.geronimo.jta.spec>1.1</version.geronimo.jta.spec>
         <quartz.orbit.version>2.3.2.wso2v1</quartz.orbit.version>
         <!-- Maven bundle plugin -->
