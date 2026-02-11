@@ -2517,7 +2517,7 @@
         <atomikos.version>3.8.0.wso2v1</atomikos.version>
         <saxon.wso2.version>10.9</saxon.wso2.version>
         <xercesImpl.orbit.version>2.12.2.wso2v1</xercesImpl.orbit.version>
-        <commons-logging.version>1.3.5</commons-logging.version>
+        <commons-logging.version>1.2</commons-logging.version>
         <mockito.version>5.3.1</mockito.version>
         <wrapper.version>3.2.3</wrapper.version>
         <nimbus-jose.orbit.version>10.7.0.wso2v1</nimbus-jose.orbit.version>
