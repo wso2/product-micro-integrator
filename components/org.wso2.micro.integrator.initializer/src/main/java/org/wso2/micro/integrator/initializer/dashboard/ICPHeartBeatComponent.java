@@ -98,12 +98,11 @@ public class ICPHeartBeatComponent {
     private static String lastRuntimeHash = null;
 
     /**
-     * Lazily initializes and returns the runtime ID.
-     * Only initializes when ICP is configured.
+     * Returns the runtime ID from cache or file.
+     * The runtime ID is generated at the server startup.
      *
      * @return the runtime ID
-     * @throws IOException if there's an error reading or writing the runtime ID
-     *                     file
+     * @throws IOException if there's an error reading the runtime ID file or if the runtime ID does not exist
      */
     private static synchronized String getRuntimeId() throws IOException {
         // Prefer cached value if initialized
@@ -111,8 +110,11 @@ public class ICPHeartBeatComponent {
             return runtimeId;
         }
 
-        // Read from persisted file if present; else generate and persist
+        // Read from persisted file if present
         Path runtimeIdPath = Paths.get(runtimeIdFile);
+        if (Files.exists(runtimeIdPath)) {
+            log.debug("Reading runtime ID from file: " + runtimeIdFile);
+        }
         if (Files.exists(runtimeIdPath)) {
             String existingId = Files.readString(runtimeIdPath).trim();
             if (!existingId.isEmpty()) {
@@ -121,43 +123,9 @@ public class ICPHeartBeatComponent {
             }
         }
 
-        runtimeId = initRuntimeId();
-        return runtimeId;
-    }
-
-    /**
-     * Initializes the runtime ID from file or generates a new one.
-     *
-     * @return the runtime ID
-     * @throws IOException if there's an error reading or writing the runtime ID
-     *                     file
-     */
-    private static String initRuntimeId() throws IOException {
-        // Use current working directory for the runtime ID file
-        Path runtimeIdPath = Paths.get(runtimeIdFile);
-
-        // If file exists, prefer its value
-        if (Files.exists(runtimeIdPath)) {
-            String existingId = Files.readString(runtimeIdPath).trim();
-            if (!existingId.isEmpty()) {
-                return existingId;
-            }
-        }
-
-        // Generate new ID as: <configured-runtime-id>-<uuid> if configured; else <uuid>
-        String configuredPrefix = null;
-        Object configuredRuntimeId = configs.get(ICP_CONFIG_RUNTIME);
-        if (configuredRuntimeId != null) {
-            String cfgId = configuredRuntimeId.toString().trim();
-            if (!cfgId.isEmpty()) {
-                configuredPrefix = cfgId;
-            }
-        }
-
-        String newRuntimeId = (configuredPrefix != null ? configuredPrefix + "-" : "")
-                + UUID.randomUUID().toString();
-        Files.writeString(runtimeIdPath, newRuntimeId);
-        return newRuntimeId;
+        // Runtime ID should have been generated at startup - throw error if not found
+        log.error("Runtime ID file not found at: " + runtimeIdFile);
+        throw new IOException("Error retrieving runtime ID as it was not properly generated during MI startup.");
     }
 
     /**
