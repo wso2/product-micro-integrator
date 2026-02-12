@@ -30,6 +30,7 @@ import org.wso2.micro.integrator.management.apis.Constants;
 import org.wso2.micro.integrator.management.apis.Utils;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -59,7 +60,7 @@ public class ICPGetLocalEntryValueResource extends APIResource {
     @Override
     public boolean invoke(MessageContext messageContext) {
         if (LOG.isDebugEnabled()) {
-            LOG.info("Processing ICP request to fetch local entry value");
+            LOG.debug("Processing ICP request to fetch local entry value");
         }
         buildMessage(messageContext);
 
@@ -140,16 +141,23 @@ public class ICPGetLocalEntryValueResource extends APIResource {
     private String fetchFromUrl(String urlStr) throws Exception {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        conn.setConnectTimeout(5000);
-        conn.setReadTimeout(5000);
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) {
-                sb.append(line).append('\n');
+        try {
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            int responseCode = conn.getResponseCode();
+            InputStream stream = (responseCode >= 200 && responseCode < 300)
+                    ? conn.getInputStream() : conn.getErrorStream();
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(stream))) {
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    sb.append(line).append('\n');
+                }
+                return sb.toString();
             }
-            return sb.toString();
+        } finally {
+            conn.disconnect();
         }
     }
 }
