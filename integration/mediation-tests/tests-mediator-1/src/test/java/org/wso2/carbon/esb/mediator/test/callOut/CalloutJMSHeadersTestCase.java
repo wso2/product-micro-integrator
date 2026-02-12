@@ -35,8 +35,6 @@ public class CalloutJMSHeadersTestCase extends ESBIntegrationTest {
     @BeforeClass(alwaysRun = true)
     protected void init() throws Exception {
         super.init();
-        esbUtils.isProxyServiceExist(contextUrls.getBackEndUrl(), sessionCookie, "JMCalloutClientProxy");
-        esbUtils.isProxyServiceExist(contextUrls.getBackEndUrl(), sessionCookie, "JMSCalloutBEProxy");
         carbonLogReader.start();
     }
 

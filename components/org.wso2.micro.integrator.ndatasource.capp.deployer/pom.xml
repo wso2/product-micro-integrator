@@ -75,7 +75,6 @@
                             org.wso2.micro.application.deployer.*;version="${project.version}",
                             org.osgi.framework;version="${osgi.framework.imp.pkg.version}",
                             org.w3c.dom,
-                            javax.xml.bind
                         </Import-Package>
                         <WSO2-Application-Deployer>Data Source Capp Deployer</WSO2-Application-Deployer>
                     </instructions>

@@ -38,4 +38,6 @@ public class SecurityConstants {
     public static final String CASE_INSENSITIVE_ROLE_NAME_CHECK = "case_insensitive_role_name_check";
 
     public static final String WS_SECURITY_CONFIG = "ws_security";
+
+    public static final String CASE_INSENSITIVE_USERNAME = "CaseInsensitiveUsername";
 }

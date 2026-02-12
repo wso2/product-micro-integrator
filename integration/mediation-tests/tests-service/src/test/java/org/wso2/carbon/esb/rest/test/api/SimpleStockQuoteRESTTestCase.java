@@ -23,13 +23,10 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import org.wso2.carbon.authenticator.stub.LoginAuthenticationExceptionException;
-import org.wso2.carbon.endpoint.stub.types.EndpointAdminEndpointAdminException;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
 
 import java.io.File;
 import java.io.IOException;
-import javax.xml.stream.XMLStreamException;
 
 /**
  * Related to Patch Automation https://wso2.org/jira/browse/CARBON-13203
@@ -46,8 +43,7 @@ public class SimpleStockQuoteRESTTestCase extends ESBIntegrationTest {
 
     @Test(groups = { "wso2.esb" }, description = "Sending a Message Via REST")
     public void testSendingStockQuoteREST()
-            throws IOException, EndpointAdminEndpointAdminException, LoginAuthenticationExceptionException,
-            XMLStreamException {
+            throws IOException {
 
         OMElement response = axis2Client
                 .sendSimpleStockQuoteRequestREST(getProxyServiceURLHttp("restCheck"), null, "WSO2");

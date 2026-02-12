@@ -32,6 +32,7 @@
     <modules>
         <module>cache-mediator/org.wso2.carbon.mediator.cache</module>
         <module>oauth-mediator/org.wso2.micro.integrator.mediator.oauth</module>
+        <module>fastXSLT/org.wso2.micro.integrator.mediator.fastXSLT</module>
         <module>entitlement-mediator/org.wso2.micro.integrator.identity.entitlement.mediator</module>
         <module>dataservices-mediator/org.wso2.micro.integrator.mediator.dataservice</module>
         <module>datamapper-mediator</module>

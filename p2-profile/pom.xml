@@ -95,10 +95,6 @@
                                <featureArtifactDef>
                                     org.wso2.ei:org.wso2.micro.integrator.mediation.ntask.feature:${project.version}
                                 </featureArtifactDef>
-                                <!-- This feature is used for synapse admin service. Hence, commented out as it seems to be unnecessary.
-                                <featureArtifactDef>
-                                    org.wso2.carbon.mediation:org.wso2.carbon.application.mgt.synapse.server.feature:${carbon.mediation.version}>
-                                </featureArtifactDef>-->
 
                                 <!--Core Runtime-->
                                 <featureArtifactDef>
@@ -288,11 +284,6 @@
                                     <id>org.wso2.micro.integrator.mediation.ntask.feature.group</id>
                                     <version>${project.version}</version>
                                 </feature>
-                               <!--TODO This feature corresponds to Admin Services, hence we might not need this
-                                <feature>
-                                    <id>org.wso2.carbon.mediation.configadmin.server.feature.group</id>
-                                    <version>${carbon.mediation.version}</version>
-                                </feature>-->
                                 <feature>
                                     <id>org.wso2.micro.integrator.identity.xacml.mediator.feature.group</id>
                                     <version>${project.version}</version>

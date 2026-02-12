@@ -39,16 +39,6 @@ public class ContentTypeCharsetTestCase extends ESBIntegrationTest {
     public void setEnvironment() throws Exception {
 
         super.init();
-        try {
-            deleteProxyService("echoProxy");
-        } catch (Exception e) {
-            //ignored
-        }
-        try {
-            deleteProxyService("FooProxy");
-        } catch (Exception e) {
-            //ignored
-        }
         loadESBConfigurationFromClasspath(
                 "/artifacts/ESB/synapseconfig/nhttp_transport" + "/content_type_charset_synapse.xml");
     }

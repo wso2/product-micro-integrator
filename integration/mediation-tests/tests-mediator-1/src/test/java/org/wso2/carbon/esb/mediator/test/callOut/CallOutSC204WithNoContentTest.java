@@ -37,8 +37,6 @@ public class CallOutSC204WithNoContentTest extends ESBIntegrationTest {
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
         super.init();
-        verifyAPIExistence("CallOutMediatorNoContentTestAPI");
-        verifyAPIExistence("CallOutMediatorSC204NoContentTMockAPI");
     }
 
     @Test(description = "Test for 204 no content response when using call out mediator")

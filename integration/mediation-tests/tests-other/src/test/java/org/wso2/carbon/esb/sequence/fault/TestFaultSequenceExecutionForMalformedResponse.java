@@ -47,7 +47,6 @@ public class TestFaultSequenceExecutionForMalformedResponse extends ESBIntegrati
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
         super.init();
-        verifyAPIExistence(targetApiName);
 
         //Prepare and start mock back end server
         int port = 8089;

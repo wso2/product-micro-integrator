@@ -92,16 +92,16 @@
             <artifactId>org.wso2.micro.integrator.core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.mediation</groupId>
-            <artifactId>org.wso2.carbon.mediation.commons</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.wso2.orbit.io.swagger.v3</groupId>
             <artifactId>swagger-parser</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.transport.http</groupId>
             <artifactId>org.wso2.transport.http.netty</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.ei</groupId>
+            <artifactId>org.wso2.micro.integrator.mediation.commons</artifactId>
         </dependency>
     </dependencies>
 </project>

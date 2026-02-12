@@ -23,14 +23,10 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import org.wso2.carbon.authenticator.stub.LoginAuthenticationExceptionException;
-import org.wso2.carbon.endpoint.stub.types.EndpointAdminEndpointAdminException;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
 import org.wso2.esb.integration.common.utils.servers.WireMonitorServer;
 
 import java.io.File;
-import java.io.IOException;
-import javax.xml.stream.XMLStreamException;
 
 public class ESBJAVA3047Soap12EndpointTestCase extends ESBIntegrationTest {
 
@@ -54,9 +50,7 @@ public class ESBJAVA3047Soap12EndpointTestCase extends ESBIntegrationTest {
 
     @Test(groups = {
             "wso2.esb" }, description = "Sending a Message to a Soap12 endpoint and checks weather 'action' is present in Content-Type header")
-    public void testSoap12EndpointForAction()
-            throws IOException, EndpointAdminEndpointAdminException, LoginAuthenticationExceptionException,
-            XMLStreamException {
+    public void testSoap12EndpointForAction() {
         try {
             axis2Client.sendSimpleStockQuoteRequest(getProxyServiceURLHttp("soap12ActionHeader"), null, "WSO2");
 

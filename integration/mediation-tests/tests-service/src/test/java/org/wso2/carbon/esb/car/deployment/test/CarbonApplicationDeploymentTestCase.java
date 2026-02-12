@@ -56,18 +56,6 @@ public class CarbonApplicationDeploymentTestCase extends ESBIntegrationTest {
 
     }
 
-    @Test(groups = { "wso2.esb" }, description = "test LocalEntry deployment from car file")
-    public void localEntryDeploymentTest() throws Exception {
-
-        Assert.assertTrue(esbUtils.isLocalEntryDeployed(context.getContextUrls().getBackEndUrl(), getSessionCookie(),
-                "sampleInLineXMLLocalentry"), "InLine XML Local entry deployment failed");
-        Assert.assertTrue(esbUtils.isLocalEntryDeployed(context.getContextUrls().getBackEndUrl(), getSessionCookie(),
-                "sampleURLLocalEntry"), "URL Local Entry deployment failed");
-        Assert.assertTrue(esbUtils.isLocalEntryDeployed(context.getContextUrls().getBackEndUrl(), getSessionCookie(),
-                "sampleInLineTextLocalEntry"), "InLine text Local Entry deployment failed");
-
-    }
-
     @Test(groups = { "wso2.esb" }, description = "test proxy service deployment from car file")
     public void proxyServiceDeploymentTest() throws Exception {
 

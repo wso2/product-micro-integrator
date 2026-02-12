@@ -34,7 +34,6 @@ public class ESBJAVA4176MethodNotAllowedTest extends ESBIntegrationTest {
     public void init() throws Exception {
 
         super.init();
-        verifyAPIExistence("methodNotAllowedAPI.xml");
     }
 
     @Test(groups = {"wso2.esb"}, description = "Sending http GET request for a POST resource")

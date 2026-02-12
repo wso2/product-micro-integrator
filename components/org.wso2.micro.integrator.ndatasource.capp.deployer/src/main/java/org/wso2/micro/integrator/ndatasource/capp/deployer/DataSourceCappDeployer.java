@@ -18,21 +18,17 @@
 package org.wso2.micro.integrator.ndatasource.capp.deployer;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.wso2.micro.application.deployer.AppDeployerConstants;
 import org.wso2.micro.application.deployer.CarbonApplication;
 import org.wso2.micro.application.deployer.config.ApplicationConfiguration;
@@ -42,6 +38,7 @@ import org.wso2.micro.application.deployer.handler.AppDeploymentHandler;
 import org.wso2.micro.integrator.ndatasource.common.DataSourceException;
 import org.wso2.micro.integrator.ndatasource.core.DataSourceManager;
 import org.wso2.micro.integrator.ndatasource.core.DataSourceMetaInfo;
+import org.wso2.micro.integrator.ndatasource.core.JNDIConfig;
 import org.wso2.micro.integrator.ndatasource.core.utils.DataSourceUtils;
 
 /**
@@ -180,21 +177,135 @@ public class DataSourceCappDeployer implements AppDeploymentHandler {
         try {
             OMElement doc = DataSourceUtils.convertToOMElement(file);
             DataSourceUtils.secureResolveOMElement(doc);
-            // create JAXB context and initializing Marshaller
-            JAXBContext jaxbContext = JAXBContext.newInstance(DataSourceMetaInfo.class);
 
-            Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+            // Parse the datasource XML manually
+            DataSourceMetaInfo dataSourceMetaInfo = new DataSourceMetaInfo();
 
-            // this will create Java object - data source from xml file
-            DataSourceMetaInfo dataSourceMetaInfo =
-                    (DataSourceMetaInfo) jaxbUnmarshaller.unmarshal(doc.getXMLStreamReader());
+            // Iterate through child elements
+            Iterator<OMElement> elements = doc.getChildElements();
+            while (elements.hasNext()) {
+                OMElement element = elements.next();
+                String localName = element.getLocalName();
+
+                if ("name".equals(localName)) {
+                    dataSourceMetaInfo.setName(element.getText());
+                } else if ("description".equals(localName)) {
+                    dataSourceMetaInfo.setDescription(element.getText());
+                } else if ("jndiConfig".equals(localName)) {
+                    dataSourceMetaInfo.setJndiConfig(parseJNDIConfig(element));
+                } else if ("definition".equals(localName)) {
+                    dataSourceMetaInfo.setDefinition(parseDataSourceDefinition(element));
+                }
+            }
+
             return dataSourceMetaInfo;
-        } catch (JAXBException e) {
-            throw new DeploymentException("DataSourceCappDeployer::readDataSourceFile --> " +
-                                          "Error in reading data source file: " + e.getMessage(), e);
         } catch (DataSourceException e) {
             throw new DeploymentException("DataSourceCappDeployer::readDataSourceFile --> " +
-                                          "Error in decrypting data source file: " + e.getMessage(), e);
+                                          "Error in reading/decrypting data source file: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new DeploymentException("DataSourceCappDeployer::readDataSourceFile --> " +
+                                          "Error in parsing data source file: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Parse JNDI configuration from OMElement.
+     *
+     * @param jndiElement - jndiConfig element
+     * @return JNDIConfig object
+     */
+    private JNDIConfig parseJNDIConfig(OMElement jndiElement) {
+        JNDIConfig jndiConfig = new JNDIConfig();
+
+        // Check for useDataSourceFactory attribute
+        OMAttribute useDataSourceFactoryAttr = jndiElement.getAttribute(
+                new javax.xml.namespace.QName("useDataSourceFactory"));
+        if (useDataSourceFactoryAttr != null) {
+            jndiConfig.setUseDataSourceFactory(Boolean.parseBoolean(useDataSourceFactoryAttr.getAttributeValue()));
+        }
+
+        // Parse child elements
+        Iterator<OMElement> elements = jndiElement.getChildElements();
+        List<JNDIConfig.EnvEntry> envEntries = new ArrayList<JNDIConfig.EnvEntry>();
+
+        while (elements.hasNext()) {
+            OMElement element = elements.next();
+            String localName = element.getLocalName();
+
+            if ("name".equals(localName)) {
+                jndiConfig.setName(element.getText());
+            } else if ("environment".equals(localName)) {
+                // Parse environment properties
+                Iterator<OMElement> properties = element.getChildElements();
+                while (properties.hasNext()) {
+                    OMElement property = properties.next();
+                    if ("property".equals(property.getLocalName())) {
+                        JNDIConfig.EnvEntry envEntry = parseEnvEntry(property);
+                        envEntries.add(envEntry);
+                    }
+                }
+            }
+        }
+
+        if (!envEntries.isEmpty()) {
+            jndiConfig.setEnvironment(envEntries.toArray(new JNDIConfig.EnvEntry[0]));
+        }
+
+        return jndiConfig;
+    }
+
+    /**
+     * Parse environment entry from OMElement.
+     *
+     * @param propertyElement - property element
+     * @return EnvEntry object
+     */
+    private JNDIConfig.EnvEntry parseEnvEntry(OMElement propertyElement) {
+        JNDIConfig.EnvEntry envEntry = new JNDIConfig.EnvEntry();
+
+        // Parse name attribute
+        OMAttribute nameAttr = propertyElement.getAttribute(new javax.xml.namespace.QName("name"));
+        if (nameAttr != null) {
+            envEntry.setName(nameAttr.getAttributeValue());
+        }
+
+        // Parse encrypted attribute (default is true)
+        OMAttribute encryptedAttr = propertyElement.getAttribute(new javax.xml.namespace.QName("encrypted"));
+        if (encryptedAttr != null) {
+            envEntry.setEncrypted(Boolean.parseBoolean(encryptedAttr.getAttributeValue()));
+        }
+
+        // Parse value
+        envEntry.setValue(propertyElement.getText());
+
+        return envEntry;
+    }
+
+    /**
+     * Parse DataSource definition from OMElement.
+     *
+     * @param definitionElement - definition element
+     * @return DataSourceDefinition object
+     */
+    private DataSourceMetaInfo.DataSourceDefinition parseDataSourceDefinition(OMElement definitionElement) {
+        DataSourceMetaInfo.DataSourceDefinition definition = new DataSourceMetaInfo.DataSourceDefinition();
+
+        // Parse type attribute
+        OMAttribute typeAttr = definitionElement.getAttribute(new javax.xml.namespace.QName("type"));
+        if (typeAttr != null) {
+            definition.setType(typeAttr.getAttributeValue());
+        }
+
+        // Parse configuration element (the actual datasource configuration XML)
+        Iterator<OMElement> elements = definitionElement.getChildElements();
+        if (elements.hasNext()) {
+            OMElement configElement = elements.next();
+            // Convert OMElement to DOM Element by converting to String first
+            String xmlString = configElement.toString();
+            Element domElement = DataSourceUtils.stringToElement(xmlString);
+            definition.setDsXMLConfiguration(domElement);
+        }
+
+        return definition;
     }
 }

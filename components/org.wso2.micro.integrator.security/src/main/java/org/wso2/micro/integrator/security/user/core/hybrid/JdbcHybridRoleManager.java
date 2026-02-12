@@ -41,6 +41,7 @@ import java.sql.Connection;
 import java.sql.SQLTimeoutException;
 import java.util.*;
 
+import static org.wso2.micro.integrator.security.SecurityConstants.CASE_INSENSITIVE_USERNAME;
 import static org.wso2.micro.integrator.security.user.core.constants.UserCoreErrorConstants.ErrorMessages.ERROR_CODE_DUPLICATE_WHILE_ADDING_A_HYBRID_ROLE;
 import static org.wso2.micro.integrator.security.user.core.constants.UserCoreErrorConstants.ErrorMessages.ERROR_CODE_DUPLICATE_WHILE_WRITING_TO_DATABASE;
 
@@ -53,8 +54,6 @@ public class JdbcHybridRoleManager extends HybridRoleManager {
     private String isCascadeDeleteEnabled;
     private static final String APPLICATION_DOMAIN = "Application";
     private static final String WORKFLOW_DOMAIN = "Workflow";
-
-    private static final String CASE_INSENSITIVE_USERNAME = "CaseInsensitiveUsername";
 
     public JdbcHybridRoleManager(DataSource dataSource, int tenantId, RealmConfiguration realmConfig,
                                  UserRealm realm) throws UserStoreException {

@@ -18,9 +18,9 @@ package org.wso2.micro.integrator.security.vault.utils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.micro.integrator.security.vault.SecureVaultException;
 import org.wso2.micro.integrator.security.vault.Constants;
+import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 import org.xml.sax.SAXException;
 
 import java.io.Console;
@@ -223,7 +223,7 @@ public class Utils {
         if (Files.exists(path)) {
             //WSO2 Environment
             try {
-                DocumentBuilderFactory docFactory = IdentityUtil.getSecuredDocumentBuilderFactory();
+                DocumentBuilderFactory docFactory = MicroIntegratorBaseUtils.getSecuredDocumentBuilder();
                 DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
                 Document document = docBuilder.parse(path.toAbsolutePath().toString());
 

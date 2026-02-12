@@ -495,7 +495,7 @@ public class StringUtils {
             }
         }
 
-        return org.wso2.carbon.utils.xml.StringUtils.isEmpty(sb.toString()) ? null : sb.toString();
+        return isEmpty(sb.toString()) ? null : sb.toString();
     }
 
     /**

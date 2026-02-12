@@ -2,7 +2,6 @@ package org.wso2.carbon.esb.scenarios.test.healthcare;
 
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
-import org.wso2.carbon.aarservices.stub.ExceptionException;
 import org.wso2.carbon.authenticator.stub.LoginAuthenticationExceptionException;
 import org.wso2.carbon.automation.engine.annotations.ExecutionEnvironment;
 import org.wso2.carbon.automation.engine.annotations.SetEnvironment;
@@ -18,7 +17,7 @@ public class HealthCareScenarioServerStartupTestCase {
 
     @SetEnvironment(executionEnvironments = { ExecutionEnvironment.STANDALONE })
     @BeforeTest(alwaysRun = true)
-    public void deployServices() throws IOException, LoginAuthenticationExceptionException, ExceptionException {
+    public void deployServices() throws IOException, LoginAuthenticationExceptionException {
 
         axis2Server1 = new SampleAxis2Server("test_axis2_server_9009.xml");
         axis2Server1.start();
@@ -31,7 +30,7 @@ public class HealthCareScenarioServerStartupTestCase {
     @SetEnvironment(executionEnvironments = { ExecutionEnvironment.STANDALONE })
     @AfterTest(alwaysRun = true)
     public void unDeployServices()
-            throws MalformedURLException, LoginAuthenticationExceptionException, ExceptionException, RemoteException {
+            throws MalformedURLException, LoginAuthenticationExceptionException, RemoteException {
         if (axis2Server1 != null && axis2Server1.isStarted()) {
             axis2Server1.stop();
         }

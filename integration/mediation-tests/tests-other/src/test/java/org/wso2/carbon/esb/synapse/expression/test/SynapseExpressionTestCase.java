@@ -45,7 +45,6 @@ public class SynapseExpressionTestCase extends ESBIntegrationTest {
     @BeforeClass(alwaysRun = true)
     public void uploadSynapseConfig() throws Exception {
         super.init();
-        verifyAPIExistence(targetApiName);
         serverConfigurationManager = new ServerConfigurationManager(context);
         carbonLogReader = new CarbonLogReader();
         carbonLogReader.start();

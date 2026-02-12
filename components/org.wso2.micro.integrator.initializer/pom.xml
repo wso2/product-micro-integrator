@@ -102,10 +102,6 @@
             <artifactId>org.wso2.micro.integrator.dataservices.core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.mediation</groupId>
-            <artifactId>org.wso2.carbon.mediation.library</artifactId>
-        </dependency>
-        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
@@ -125,6 +121,30 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemProperties>
+                        <property>
+                            <name>org.apache.commons.logging.Log</name>
+                            <value>org.apache.commons.logging.impl.SimpleLog</value>
+                        </property>
+                        <property>
+                            <name>org.apache.commons.logging.simplelog.defaultlog</name>
+                            <value>error</value>
+                        </property>
+                    </systemProperties>
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExclude>org.wso2.org.ops4j.pax.logging:pax-logging-api</classpathDependencyExclude>
+                        <classpathDependencyExclude>org.wso2.org.ops4j.pax.logging:pax-logging-log4j2</classpathDependencyExclude>
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-core</classpathDependencyExclude>
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-api</classpathDependencyExclude>
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-slf4j-impl</classpathDependencyExclude>
+                        <classpathDependencyExclude>org.apache.logging.log4j:log4j-jcl</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
