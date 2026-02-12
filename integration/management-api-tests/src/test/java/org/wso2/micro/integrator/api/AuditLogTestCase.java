@@ -392,7 +392,8 @@ public class AuditLogTestCase extends ESBIntegrationTest {
         }
         File file = new File(TestConfigurationProvider.getResourceLocation(ESBTestConstant.ESB_PRODUCT_GROUP)
                              + "/capp/esb-artifacts-car_1.0.0.car");
-        deployCarbonApplication(file, getHeaderMap());
+        String response = deployCarbonApplication(file, getHeaderMap());
+        log.info(response);
         Assert.assertTrue(carbonLogReader.checkForLog("{\"performedBy\":\"admin\",\"action\":\"created\",\"type\":\"carbon_application\",\"info\":\"{\\\"cAppFileName\\\":\\\"esb-artifacts-car_1.0.0.car\\\"}\"}", 120));
     }
 

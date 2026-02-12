@@ -56,6 +56,12 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <!-- Override AspectJ version for JDK 25 compatibility -->
+            <dependency>
+                <groupId>org.aspectj</groupId>
+                <artifactId>aspectjweaver</artifactId>
+                <version>${aspectjweaver.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.deployment</groupId>
                 <artifactId>org.wso2.carbon.service.mgt.stub</artifactId>
@@ -714,7 +720,7 @@
         <rampart.apache.version>1.7.0-wso2v1</rampart.apache.version>
         <httpclient.version>4.3.2</httpclient.version>
         <httpcore.wso2.version>4.4.16.wso2v1</httpcore.wso2.version>
-        <automation.framework.version>4.4.4</automation.framework.version>
+        <automation.framework.version>4.5.1</automation.framework.version>
         <automation.framework.utils.version>4.5.0</automation.framework.utils.version>
         <commons-digester.version>2.1</commons-digester.version>
         <groovy.version>1.1-rc-1</groovy.version>
@@ -724,6 +730,7 @@
         <maven.model.version>3.3.9</maven.model.version>
         <testng.suiteXml.location>src/test/resources/testng.xml</testng.suiteXml.location>
         <axiom.api.version>1.2.13</axiom.api.version>
+        <aspectjweaver.version>1.9.22.1</aspectjweaver.version>
 
         <!-- TODO Remove after fixing the test cases, kept for compilation purposes.-->
         <carbon.registry.version>4.6.46</carbon.registry.version>
