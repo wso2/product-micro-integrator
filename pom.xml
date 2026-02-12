@@ -2230,7 +2230,7 @@
         <wss4j.version>1.6.0-wso2v6</wss4j.version>
         <rampart.wso2.version>1.7.0-wso2v7</rampart.wso2.version>
         <siddhi.version>3.2.3</siddhi.version>
-        <opensaml.orbit.version>3.3.1.wso2v116</opensaml.orbit.version>
+        <opensaml.orbit.version>3.3.1.wso2v119</opensaml.orbit.version>
         <saml.common.util.version>1.0.10</saml.common.util.version>
         <imp.pkg.version.xmlsec>[1.4.2, 2.3.0)</imp.pkg.version.xmlsec>
         <xmlsec.version>1.5.6-wso2v2</xmlsec.version>
