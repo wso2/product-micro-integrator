@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.micro.integrator.management.apis;
+package org.wso2.micro.integrator.icp.apis;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,6 +31,8 @@ import org.apache.tomcat.jdbc.pool.PoolConfiguration;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.APIResource;
+import org.wso2.micro.integrator.management.apis.Constants;
+import org.wso2.micro.integrator.management.apis.Utils;
 import org.wso2.micro.integrator.ndatasource.core.CarbonDataSource;
 import org.wso2.micro.integrator.ndatasource.core.DataSourceManager;
 import org.wso2.micro.integrator.ndatasource.core.DataSourceMetaInfo;

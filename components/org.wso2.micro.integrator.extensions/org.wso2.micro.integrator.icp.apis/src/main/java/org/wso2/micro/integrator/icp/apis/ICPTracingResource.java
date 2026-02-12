@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.micro.integrator.management.apis;
+package org.wso2.micro.integrator.icp.apis;
 
 import com.google.gson.JsonObject;
 import org.apache.commons.logging.Log;
@@ -25,6 +25,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.json.JSONObject;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.APIResource;
+import org.wso2.micro.integrator.management.apis.ArtifactTracingManager;
+import org.wso2.micro.integrator.management.apis.Constants;
+import org.wso2.micro.integrator.management.apis.Utils;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -39,16 +42,15 @@ import static org.wso2.micro.integrator.management.apis.Constants.PROXY_SERVICE;
 import static org.wso2.micro.integrator.management.apis.Constants.SEQUENCE;
 
 /**
- * Resource class for handling artifact statistics changes via ICP API.
- * Supports statistics changes for proxy services, endpoints, inbound endpoints,
- * APIs, sequences, and templates.
+ * Resource class for handling artifact tracing changes via ICP API.
+ * Supports tracing changes for proxy services, endpoints, inbound endpoints,
+ * APIs, and sequences.
  */
-public class ICPStatisticsResource extends APIResource {
+public class ICPTracingResource extends APIResource {
 
-    private static final Log LOG = LogFactory.getLog(ICPStatisticsResource.class);
-    private static final String TEMPLATE = "template";
+    private static final Log LOG = LogFactory.getLog(ICPTracingResource.class);
 
-    public ICPStatisticsResource(String urlTemplate) {
+    public ICPTracingResource(String urlTemplate) {
         super(urlTemplate);
     }
 
@@ -81,7 +83,7 @@ public class ICPStatisticsResource extends APIResource {
             }
 
             String artifactType = payload.get(ARTIFACT_TYPE).getAsString();
-            JSONObject response = handleStatisticsChange(performedBy, messageContext, axis2MessageContext,
+            JSONObject response = handleTracingChange(performedBy, messageContext, axis2MessageContext,
                     artifactType);
 
             Utils.setJsonPayLoad(axis2MessageContext, response);
@@ -92,7 +94,7 @@ public class ICPStatisticsResource extends APIResource {
                     Utils.createJsonError("Error parsing request payload", axis2MessageContext,
                             Constants.BAD_REQUEST));
         } catch (Exception e) {
-            LOG.error("Error while processing statistics change request", e);
+            LOG.error("Error while processing tracing change request", e);
             Utils.setJsonPayLoad(axis2MessageContext,
                     Utils.createJsonError("Internal server error", axis2MessageContext,
                             Constants.INTERNAL_SERVER_ERROR));
@@ -102,39 +104,36 @@ public class ICPStatisticsResource extends APIResource {
     }
 
     /**
-     * Routes the statistics change request to the appropriate handler based on
+     * Routes the tracing change request to the appropriate handler based on
      * artifact type.
      */
-    private JSONObject handleStatisticsChange(String performedBy, MessageContext messageContext,
+    private JSONObject handleTracingChange(String performedBy, MessageContext messageContext,
             org.apache.axis2.context.MessageContext axis2MessageContext,
             String artifactType) {
         try {
             switch (artifactType.toLowerCase()) {
                 case PROXY_SERVICE:
-                    return ArtifactStatisticsManager.changeProxyServiceStatistics(performedBy, messageContext,
+                    return ArtifactTracingManager.changeProxyServiceTracing(performedBy, messageContext,
                             axis2MessageContext);
                 case ENDPOINT:
-                    return ArtifactStatisticsManager.changeEndpointStatistics(performedBy, messageContext,
+                    return ArtifactTracingManager.changeEndpointTracing(performedBy, messageContext,
                             axis2MessageContext);
                 case INBOUND_ENDPOINT:
-                    return ArtifactStatisticsManager.changeInboundEndpointStatistics(performedBy, messageContext,
+                    return ArtifactTracingManager.changeInboundEndpointTracing(performedBy, messageContext,
                             axis2MessageContext);
                 case API:
-                    return ArtifactStatisticsManager.changeApiStatistics(performedBy, messageContext,
+                    return ArtifactTracingManager.changeApiTracing(performedBy, messageContext,
                             axis2MessageContext);
                 case SEQUENCE:
-                    return ArtifactStatisticsManager.changeSequenceStatistics(performedBy, messageContext,
-                            axis2MessageContext);
-                case TEMPLATE:
-                    return ArtifactStatisticsManager.changeTemplateStatistics(performedBy, messageContext,
+                    return ArtifactTracingManager.changeSequenceTracing(performedBy, messageContext,
                             axis2MessageContext);
                 default:
                     return Utils.createJsonError("Unsupported artifact type: " + artifactType,
                             axis2MessageContext, Constants.BAD_REQUEST);
             }
         } catch (IOException e) {
-            LOG.error("Error while changing statistics for artifact type: " + artifactType, e);
-            return Utils.createJsonError("Error processing statistics change request",
+            LOG.error("Error while changing tracing for artifact type: " + artifactType, e);
+            return Utils.createJsonError("Error processing tracing change request",
                     axis2MessageContext, Constants.INTERNAL_SERVER_ERROR);
         }
     }

@@ -16,13 +16,14 @@
  * under the License.
  */
 
-package org.wso2.micro.integrator.management.apis.security.handler;
+package org.wso2.micro.integrator.icp.apis.security.handler;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.integrator.management.apis.ManagementApiUndefinedException;
+import org.wso2.micro.integrator.management.apis.security.handler.AuthenticationHandlerAdapter;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -39,7 +40,7 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
 
     private static final Log LOG = LogFactory.getLog(ICPJWTSecurityHandler.class);
     private static final String DEFAULT_JWT_HMAC_SECRET = "default-secret-key-at-least-32-characters-long-for-hs256";
-    
+
     private String name;
     private String jwtHmacSecret = DEFAULT_JWT_HMAC_SECRET;
 
@@ -100,11 +101,11 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
             // Verify signature using HMAC-SHA256
             Mac mac = Mac.getInstance("HmacSHA256");
             SecretKeySpec secretKeySpec = new SecretKeySpec(
-                    jwtHmacSecret.getBytes(StandardCharsets.UTF_8), 
+                    jwtHmacSecret.getBytes(StandardCharsets.UTF_8),
                     "HmacSHA256"
             );
             mac.init(secretKeySpec);
-            
+
             byte[] expectedSignature = mac.doFinal(headerPayload.getBytes(StandardCharsets.UTF_8));
             String expectedSignatureBase64 = Base64.getUrlEncoder().withoutPadding()
                     .encodeToString(expectedSignature);
@@ -116,26 +117,26 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
 
             // Decode payload to check expiry
             String payloadJson = new String(
-                    Base64.getUrlDecoder().decode(parts[1]), 
+                    Base64.getUrlDecoder().decode(parts[1]),
                     StandardCharsets.UTF_8
             );
-            
+
             // Extract exp claim (simple JSON parsing)
             int expIndex = payloadJson.indexOf("\"exp\"");
             if (expIndex != -1) {
                 int colonIndex = payloadJson.indexOf(":", expIndex);
                 int commaIndex = payloadJson.indexOf(",", colonIndex);
                 int braceIndex = payloadJson.indexOf("}", colonIndex);
-                
-                int endIndex = commaIndex != -1 ? 
-                        Math.min(commaIndex, braceIndex != -1 ? braceIndex : Integer.MAX_VALUE) : 
+
+                int endIndex = commaIndex != -1 ?
+                        Math.min(commaIndex, braceIndex != -1 ? braceIndex : Integer.MAX_VALUE) :
                         braceIndex;
-                
+
                 if (endIndex != -1) {
                     String expStr = payloadJson.substring(colonIndex + 1, endIndex).trim();
                     long exp = Long.parseLong(expStr);
                     long currentTime = System.currentTimeMillis() / 1000;
-                    
+
                     if (currentTime >= exp) {
                         LOG.warn("JWT token has expired");
                         return false;
@@ -144,7 +145,7 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
             }
 
             return true;
-            
+
         } catch (Exception e) {
             LOG.error("Error validating HMAC JWT", e);
             return false;

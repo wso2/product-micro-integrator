@@ -51,10 +51,10 @@
                 <allowedHeaders>Authorization, Content-Type</allowedHeaders>
             </cors>
         </api>
-        <api class="org.wso2.micro.integrator.management.apis.ICPInternalApi" name="ICPApi"
+        <api class="org.wso2.micro.integrator.icp.apis.ICPInternalApi" name="ICPApi"
              protocol="https http">
             <handlers>
-                <handler class="org.wso2.micro.integrator.management.apis.security.handler.ICPJWTSecurityHandler" name="ICPJWTSecurityHandler">
+                <handler class="org.wso2.micro.integrator.icp.apis.security.handler.ICPJWTSecurityHandler" name="ICPJWTSecurityHandler">
                     <JwtHmacSecret>default-secret-key-at-least-32-characters-long-for-hs256</JwtHmacSecret>
                 </handler>
             </handlers>

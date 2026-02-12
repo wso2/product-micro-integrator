@@ -106,9 +106,9 @@
             </cors>
         </api>
         {% if icp_config is defined and icp_config.enabled == true %}
-        <api name="ICPApi" protocol="https http" class="org.wso2.micro.integrator.management.apis.ICPInternalApi">
+        <api name="ICPApi" protocol="https http" class="org.wso2.micro.integrator.icp.apis.ICPInternalApi">
             <handlers>
-                <handler name="ICPJWTSecurityHandler" class="org.wso2.micro.integrator.management.apis.security.handler.ICPJWTSecurityHandler">
+                <handler name="ICPJWTSecurityHandler" class="org.wso2.micro.integrator.icp.apis.security.handler.ICPJWTSecurityHandler">
                     {% if icp_config.jwt_hmac_secret is defined %}
                     <JwtHmacSecret>{{icp_config.jwt_hmac_secret}}</JwtHmacSecret>
                     {% else %}

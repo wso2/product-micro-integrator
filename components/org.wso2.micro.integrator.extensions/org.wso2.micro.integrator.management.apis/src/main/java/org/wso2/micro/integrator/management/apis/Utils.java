@@ -279,8 +279,8 @@ public class Utils {
      * @param statusCode          the HTTP status code to be returned
      * @return error response
      */
-    static JSONObject createJsonError(String message, Throwable exception,
-                                      org.apache.axis2.context.MessageContext axis2MessageContext, String statusCode) {
+    public static JSONObject createJsonError(String message, Throwable exception,
+                                             org.apache.axis2.context.MessageContext axis2MessageContext, String statusCode) {
         LOG.error(message, exception);
         return createResponse(message + exception.getMessage(), axis2MessageContext, statusCode);
     }
@@ -293,8 +293,8 @@ public class Utils {
      * @param statusCode          the HTTP status code to be returned
      * @return error response
      */
-    static JSONObject createJsonError(String message, org.apache.axis2.context.MessageContext axis2MessageContext,
-                                      String statusCode) {
+    public static JSONObject createJsonError(String message, org.apache.axis2.context.MessageContext axis2MessageContext,
+                                             String statusCode) {
         LOG.error(message);
         return createResponse(message, axis2MessageContext, statusCode);
     }

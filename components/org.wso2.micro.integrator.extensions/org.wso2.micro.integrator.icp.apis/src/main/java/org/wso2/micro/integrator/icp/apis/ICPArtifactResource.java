@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.micro.integrator.management.apis;
+package org.wso2.micro.integrator.icp.apis;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
@@ -64,6 +64,8 @@ import org.wso2.micro.integrator.dataservices.core.engine.DataService;
 import org.wso2.micro.integrator.dataservices.core.engine.DataServiceSerializer;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.config.xml.TemplateMediatorSerializer;
+import org.wso2.micro.integrator.management.apis.Constants;
+import org.wso2.micro.integrator.management.apis.Utils;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -108,12 +110,12 @@ public class ICPArtifactResource extends APIResource {
     @Override
     public boolean invoke(MessageContext messageContext) {
         buildMessage(messageContext);
-        
+
         org.apache.axis2.context.MessageContext axisMsgCtx =
                 ((Axis2MessageContext) messageContext).getAxis2MessageContext();
 
         if (!messageContext.isDoingGET()) {
-            Utils.setJsonPayLoad(axisMsgCtx, 
+            Utils.setJsonPayLoad(axisMsgCtx,
                 Utils.createJsonError("Only GET method is supported", axisMsgCtx, Constants.BAD_REQUEST));
             return true;
         }
@@ -122,32 +124,32 @@ public class ICPArtifactResource extends APIResource {
         String artifactName = Utils.getQueryParameter(messageContext, PARAM_NAME);
 
         if (Objects.isNull(artifactType) || artifactType.trim().isEmpty()) {
-            Utils.setJsonPayLoad(axisMsgCtx, 
+            Utils.setJsonPayLoad(axisMsgCtx,
                 Utils.createJsonError("Missing required parameter: type", axisMsgCtx, Constants.BAD_REQUEST));
             return true;
         }
 
         if (Objects.isNull(artifactName) || artifactName.trim().isEmpty()) {
-            Utils.setJsonPayLoad(axisMsgCtx, 
+            Utils.setJsonPayLoad(axisMsgCtx,
                 Utils.createJsonError("Missing required parameter: name", axisMsgCtx, Constants.BAD_REQUEST));
             return true;
         }
 
         try {
             JSONObject response = getArtifactConfiguration(messageContext, artifactType.toLowerCase(), artifactName, axisMsgCtx);
-            
+
             if (Objects.nonNull(response)) {
                 Utils.setJsonPayLoad(axisMsgCtx, response);
             } else {
                 axisMsgCtx.setProperty(Constants.HTTP_STATUS_CODE, Constants.NOT_FOUND);
-                Utils.setJsonPayLoad(axisMsgCtx, 
-                    Utils.createJsonError("Artifact not found: " + artifactType + " - " + artifactName, 
+                Utils.setJsonPayLoad(axisMsgCtx,
+                    Utils.createJsonError("Artifact not found: " + artifactType + " - " + artifactName,
                         axisMsgCtx, Constants.NOT_FOUND));
             }
         } catch (Exception e) {
             LOG.error("Error retrieving artifact configuration", e);
-            Utils.setJsonPayLoad(axisMsgCtx, 
-                Utils.createJsonError("Error retrieving artifact configuration: " + e.getMessage(), 
+            Utils.setJsonPayLoad(axisMsgCtx,
+                Utils.createJsonError("Error retrieving artifact configuration: " + e.getMessage(),
                     axisMsgCtx, Constants.INTERNAL_SERVER_ERROR));
         }
 
@@ -163,11 +165,11 @@ public class ICPArtifactResource extends APIResource {
      * @param axisMsgCtx     the axis2 message context
      * @return JSONObject containing the artifact configuration, or null if not found
      */
-    private JSONObject getArtifactConfiguration(MessageContext messageContext, String artifactType, 
+    private JSONObject getArtifactConfiguration(MessageContext messageContext, String artifactType,
                                                 String artifactName, org.apache.axis2.context.MessageContext axisMsgCtx) {
         SynapseConfiguration synapseConfig = messageContext.getConfiguration();
         JSONObject response = new JSONObject();
-        
+
         response.put(Constants.NAME, artifactName);
         response.put(Constants.TYPE, artifactType);
 
@@ -261,10 +263,10 @@ public class ICPArtifactResource extends APIResource {
         if (Objects.nonNull(startup)) {
             // Get the task description from the task manager
             AxisConfiguration axisConfig = axisMsgCtx.getConfigurationContext().getAxisConfiguration();
-            SynapseEnvironment synapseEnvironment = 
+            SynapseEnvironment synapseEnvironment =
                 (SynapseEnvironment) axisConfig.getParameter(SynapseConstants.SYNAPSE_ENV).getValue();
-            
-            if (Objects.nonNull(synapseEnvironment) && 
+
+            if (Objects.nonNull(synapseEnvironment) &&
                 Objects.nonNull(synapseEnvironment.getTaskManager())) {
                 TaskDescription task = synapseEnvironment.getTaskManager()
                     .getTaskDescriptionRepository().getTaskDescription(taskName);
@@ -284,7 +286,7 @@ public class ICPArtifactResource extends APIResource {
         return null;
     }
 
-    private OMElement getMessageProcessorConfiguration(SynapseConfiguration synapseConfig, 
+    private OMElement getMessageProcessorConfiguration(SynapseConfiguration synapseConfig,
                                                        String messageProcessorName) {
         MessageProcessor messageProcessor = synapseConfig.getMessageProcessors().get(messageProcessorName);
         if (Objects.nonNull(messageProcessor)) {

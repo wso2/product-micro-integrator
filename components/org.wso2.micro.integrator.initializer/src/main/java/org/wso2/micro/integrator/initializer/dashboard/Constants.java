@@ -50,7 +50,7 @@ public class Constants {
     public static final String RUNTIME_STATUS_RUNNING = "RUNNING";
 
     public static final String DEFAULT_GROUP_ID = "default";
-    public static final long DEFAULT_HEARTBEAT_INTERVAL = 5;
+    public static final long DEFAULT_HEARTBEAT_INTERVAL = 10;
 
     public static final String HEADER_VALUE_APPLICATION_JSON = "application/json";
     public static final String FORWARD_SLASH = "/";

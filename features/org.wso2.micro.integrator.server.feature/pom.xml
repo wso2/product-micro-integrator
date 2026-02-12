@@ -305,6 +305,9 @@
                                     org.wso2.ei:org.wso2.micro.integrator.management.apis:${project.version}
                                 </bundleDef>
                                 <bundleDef>
+                                    org.wso2.ei:org.wso2.micro.integrator.icp.apis:${project.version}
+                                </bundleDef>
+                                <bundleDef>
                                     org.wso2.ei:org.wso2.micro.integrator.probes:${project.version}
                                 </bundleDef>
                                 <bundleDef>

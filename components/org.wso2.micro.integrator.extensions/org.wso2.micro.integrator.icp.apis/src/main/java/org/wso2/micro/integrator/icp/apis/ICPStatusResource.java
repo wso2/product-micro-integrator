@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.micro.integrator.management.apis;
+package org.wso2.micro.integrator.icp.apis;
 
 import com.google.gson.JsonObject;
 import org.apache.commons.logging.Log;
@@ -26,6 +26,9 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.json.JSONObject;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.APIResource;
+import org.wso2.micro.integrator.management.apis.ArtifactStatusManager;
+import org.wso2.micro.integrator.management.apis.Constants;
+import org.wso2.micro.integrator.management.apis.Utils;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -67,9 +70,9 @@ public class ICPStatusResource extends APIResource {
 
         try {
             JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
-            
+
             if (!payload.has(ARTIFACT_TYPE) || !payload.has(NAME) || !payload.has(STATUS)) {
-                Utils.setJsonPayLoad(axis2MessageContext, 
+                Utils.setJsonPayLoad(axis2MessageContext,
                     Utils.createJsonError("Missing required fields: type, name, and status are required",
                         axis2MessageContext, Constants.BAD_REQUEST));
                 return true;
@@ -81,20 +84,20 @@ public class ICPStatusResource extends APIResource {
             }
 
             String artifactType = payload.get(ARTIFACT_TYPE).getAsString();
-            JSONObject response = handleStatusChange(performedBy, messageContext, axis2MessageContext, 
+            JSONObject response = handleStatusChange(performedBy, messageContext, axis2MessageContext,
                                                       payload, artifactType);
-            
+
             Utils.setJsonPayLoad(axis2MessageContext, response);
 
         } catch (IOException e) {
             LOG.error("Error while parsing JSON payload", e);
-            Utils.setJsonPayLoad(axis2MessageContext, 
-                Utils.createJsonError("Error parsing request payload", axis2MessageContext, 
+            Utils.setJsonPayLoad(axis2MessageContext,
+                Utils.createJsonError("Error parsing request payload", axis2MessageContext,
                     Constants.BAD_REQUEST));
         } catch (Exception e) {
             LOG.error("Error while processing status change request", e);
-            Utils.setJsonPayLoad(axis2MessageContext, 
-                Utils.createJsonError("Internal server error", axis2MessageContext, 
+            Utils.setJsonPayLoad(axis2MessageContext,
+                Utils.createJsonError("Internal server error", axis2MessageContext,
                     Constants.INTERNAL_SERVER_ERROR));
         }
 
@@ -107,27 +110,27 @@ public class ICPStatusResource extends APIResource {
     private JSONObject handleStatusChange(String performedBy, MessageContext messageContext,
                                           org.apache.axis2.context.MessageContext axis2MessageContext,
                                           JsonObject payload, String artifactType) {
-        
+
         SynapseConfiguration synapseConfiguration = messageContext.getConfiguration();
 
         switch (artifactType.toLowerCase()) {
             case PROXY_SERVICE:
-                return ArtifactStatusManager.changeProxyServiceStatus(performedBy, messageContext, 
+                return ArtifactStatusManager.changeProxyServiceStatus(performedBy, messageContext,
                                                                        axis2MessageContext, payload);
             case ENDPOINT:
-                return ArtifactStatusManager.changeEndpointStatus(performedBy, axis2MessageContext, 
+                return ArtifactStatusManager.changeEndpointStatus(performedBy, axis2MessageContext,
                                                                    synapseConfiguration, payload);
             case MESSAGE_PROCESSOR:
-                return ArtifactStatusManager.changeMessageProcessorStatus(performedBy, messageContext, 
+                return ArtifactStatusManager.changeMessageProcessorStatus(performedBy, messageContext,
                                                                            axis2MessageContext, payload);
             case INBOUND_ENDPOINT:
-                return ArtifactStatusManager.changeInboundEndpointStatus(performedBy, messageContext, 
+                return ArtifactStatusManager.changeInboundEndpointStatus(performedBy, messageContext,
                                                                           axis2MessageContext, payload);
             case TASK:
-                return ArtifactStatusManager.changeTaskStatus(performedBy, messageContext, 
+                return ArtifactStatusManager.changeTaskStatus(performedBy, messageContext,
                                                                axis2MessageContext, payload);
             default:
-                return Utils.createJsonError("Unsupported artifact type: " + artifactType, 
+                return Utils.createJsonError("Unsupported artifact type: " + artifactType,
                                             axis2MessageContext, Constants.BAD_REQUEST);
         }
     }
