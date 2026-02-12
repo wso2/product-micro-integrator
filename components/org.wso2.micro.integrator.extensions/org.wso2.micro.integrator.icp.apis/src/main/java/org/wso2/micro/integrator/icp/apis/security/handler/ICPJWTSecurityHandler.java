@@ -18,6 +18,9 @@
 
 package org.wso2.micro.integrator.icp.apis.security.handler;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -30,6 +33,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
 
 /**
@@ -107,10 +111,9 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
             mac.init(secretKeySpec);
 
             byte[] expectedSignature = mac.doFinal(headerPayload.getBytes(StandardCharsets.UTF_8));
-            String expectedSignatureBase64 = Base64.getUrlEncoder().withoutPadding()
-                    .encodeToString(expectedSignature);
+            byte[] providedSignatureBytes = Base64.getUrlDecoder().decode(signature);
 
-            if (!expectedSignatureBase64.equals(signature)) {
+            if (!MessageDigest.isEqual(expectedSignature, providedSignatureBytes)) {
                 LOG.warn("JWT signature verification failed");
                 return false;
             }
@@ -121,27 +124,24 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
                     StandardCharsets.UTF_8
             );
 
-            // Extract exp claim (simple JSON parsing)
-            int expIndex = payloadJson.indexOf("\"exp\"");
-            if (expIndex != -1) {
-                int colonIndex = payloadJson.indexOf(":", expIndex);
-                int commaIndex = payloadJson.indexOf(",", colonIndex);
-                int braceIndex = payloadJson.indexOf("}", colonIndex);
-
-                int endIndex = commaIndex != -1 ?
-                        Math.min(commaIndex, braceIndex != -1 ? braceIndex : Integer.MAX_VALUE) :
-                        braceIndex;
-
-                if (endIndex != -1) {
-                    String expStr = payloadJson.substring(colonIndex + 1, endIndex).trim();
-                    long exp = Long.parseLong(expStr);
+            // Extract exp claim using Gson
+            try {
+                JsonObject claims = new JsonParser().parse(payloadJson).getAsJsonObject();
+                if (claims.has("exp")) {
+                    if (!claims.get("exp").isJsonPrimitive() || !claims.get("exp").getAsJsonPrimitive().isNumber()) {
+                        LOG.warn("JWT exp claim is not a numeric value");
+                        return false;
+                    }
+                    long exp = claims.get("exp").getAsLong();
                     long currentTime = System.currentTimeMillis() / 1000;
-
                     if (currentTime >= exp) {
                         LOG.warn("JWT token has expired");
                         return false;
                     }
                 }
+            } catch (JsonSyntaxException e) {
+                LOG.warn("Failed to parse JWT payload as JSON", e);
+                return false;
             }
 
             return true;
