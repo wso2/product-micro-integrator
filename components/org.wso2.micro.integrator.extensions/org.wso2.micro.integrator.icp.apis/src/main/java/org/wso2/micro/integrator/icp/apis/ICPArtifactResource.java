@@ -123,6 +123,10 @@ public class ICPArtifactResource extends APIResource {
         String artifactType = Utils.getQueryParameter(messageContext, PARAM_TYPE);
         String artifactName = Utils.getQueryParameter(messageContext, PARAM_NAME);
 
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Retrieving artifact configuration for type: " + artifactType + ", name: " + artifactName);
+        }
+
         if (Objects.isNull(artifactType) || artifactType.trim().isEmpty()) {
             Utils.setJsonPayLoad(axisMsgCtx,
                 Utils.createJsonError("Missing required parameter: type", axisMsgCtx, Constants.BAD_REQUEST));
@@ -139,15 +143,17 @@ public class ICPArtifactResource extends APIResource {
             JSONObject response = getArtifactConfiguration(messageContext, artifactType.toLowerCase(), artifactName, axisMsgCtx);
 
             if (Objects.nonNull(response)) {
+                LOG.info("Successfully retrieved configuration for artifact: " + artifactType + " - " + artifactName);
                 Utils.setJsonPayLoad(axisMsgCtx, response);
             } else {
+                LOG.warn("Artifact not found: " + artifactType + " - " + artifactName);
                 axisMsgCtx.setProperty(Constants.HTTP_STATUS_CODE, Constants.NOT_FOUND);
                 Utils.setJsonPayLoad(axisMsgCtx,
                     Utils.createJsonError("Artifact not found: " + artifactType + " - " + artifactName,
                         axisMsgCtx, Constants.NOT_FOUND));
             }
         } catch (Exception e) {
-            LOG.error("Error retrieving artifact configuration", e);
+            LOG.error("Error retrieving artifact configuration for type: " + artifactType + ", name: " + artifactName + ". Error: " + e.getMessage(), e);
             Utils.setJsonPayLoad(axisMsgCtx,
                 Utils.createJsonError("Error retrieving artifact configuration: " + e.getMessage(),
                     axisMsgCtx, Constants.INTERNAL_SERVER_ERROR));

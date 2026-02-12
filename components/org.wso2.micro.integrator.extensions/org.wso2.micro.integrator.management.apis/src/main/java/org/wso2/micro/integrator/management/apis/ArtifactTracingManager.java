@@ -18,6 +18,8 @@
 
 package org.wso2.micro.integrator.management.apis;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.api.API;
 import org.apache.synapse.core.axis2.ProxyService;
@@ -37,6 +39,8 @@ import java.io.IOException;
  */
 public class ArtifactTracingManager {
 
+    private static final Log log = LogFactory.getLog(ArtifactTracingManager.class);
+
     private static final String PROXY_SERVICE_NAME = "proxyServiceName";
     private static final String ENDPOINT_NAME = "endpointName";
     private static final String INBOUND_ENDPOINT_NAME = "inboundEndpointName";
@@ -49,6 +53,9 @@ public class ArtifactTracingManager {
     public static JSONObject changeProxyServiceTracing(String performedBy, MessageContext messageContext,
                                                        org.apache.axis2.context.MessageContext axis2MessageContext)
             throws IOException {
+        if (log.isDebugEnabled()) {
+            log.info("Initiating proxy service tracing change request by: " + performedBy);
+        }
         String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
         ProxyService proxyService = messageContext.getConfiguration().getProxyService(name);
         return ArtifactOperationHelper.handleAspectOperation(
@@ -68,6 +75,7 @@ public class ArtifactTracingManager {
         Endpoint endpoint = messageContext.getConfiguration().getEndpoint(name);
 
         if (endpoint == null) {
+            log.warn("Endpoint tracing change failed: endpoint '" + name + "' not found");
             return Utils.createJsonError("Specified endpoint ('" + name + "') not found",
                     axis2MessageContext, Constants.BAD_REQUEST);
         }

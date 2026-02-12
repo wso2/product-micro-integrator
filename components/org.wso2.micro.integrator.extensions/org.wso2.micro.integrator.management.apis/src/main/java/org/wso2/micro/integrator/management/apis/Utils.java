@@ -228,6 +228,9 @@ public class Utils {
     public static JSONObject handleTracing(String performedBy, String type, String resourceType, JSONObject info,
                                            AspectConfiguration config, String artifactName,
                                            org.apache.axis2.context.MessageContext axisMsgCtx) throws IOException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Handling tracing operation for artifact: " + artifactName + ", type: " + type);
+        }
         JsonObject payload = getJsonPayload(axisMsgCtx);
         return handleTracing(performedBy, type, info, config, artifactName, axisMsgCtx, payload);
     }
@@ -238,6 +241,9 @@ public class Utils {
     public static JSONObject handleStatistics(String performedBy, String type, String resourceType, JSONObject info,
                                               AspectConfiguration config, String artifactName,
                                               org.apache.axis2.context.MessageContext axisMsgCtx) throws IOException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Handling statistics operation for artifact: " + artifactName + ", type: " + type);
+        }
         JsonObject payload = getJsonPayload(axisMsgCtx);
         return handleStatistics(performedBy, type, info, config, artifactName, axisMsgCtx, payload);
     }

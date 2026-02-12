@@ -64,6 +64,9 @@ public class ICPStatusResource extends APIResource {
 
     @Override
     public boolean invoke(MessageContext messageContext) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Received artifact status change request");
+        }
         buildMessage(messageContext);
         org.apache.axis2.context.MessageContext axis2MessageContext =
                 ((Axis2MessageContext) messageContext).getAxis2MessageContext();
@@ -84,6 +87,11 @@ public class ICPStatusResource extends APIResource {
             }
 
             String artifactType = payload.get(ARTIFACT_TYPE).getAsString();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Processing status change for artifact type: " + artifactType + ", name: "
+                        + payload.get(NAME).getAsString() + ", requested status: "
+                        + payload.get(STATUS).getAsString() + ", performed by: " + performedBy);
+            }
             JSONObject response = handleStatusChange(performedBy, messageContext, axis2MessageContext,
                                                       payload, artifactType);
 

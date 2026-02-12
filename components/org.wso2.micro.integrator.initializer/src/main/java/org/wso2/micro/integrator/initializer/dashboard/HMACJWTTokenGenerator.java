@@ -7,16 +7,21 @@ import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 public class HMACJWTTokenGenerator {
 
+    private static final Log log = LogFactory.getLog(HMACJWTTokenGenerator.class);
+
     private final String hmacSecret;
 
     public HMACJWTTokenGenerator(String hmacSecret) {
         if (hmacSecret == null || hmacSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            log.error("Invalid HMAC secret provided - must be at least 256 bits (32 bytes)");
             throw new IllegalArgumentException("HMAC secret must be at least 256 bits (32 bytes)");
         }
         this.hmacSecret = hmacSecret;
@@ -27,6 +32,9 @@ public class HMACJWTTokenGenerator {
      */
     public String generateToken(String issuer, String audience, String scope, long expiryTimeSeconds)
             throws JOSEException {
+        if (log.isDebugEnabled()) {
+            log.debug("Generating HMAC JWT token for issuer: " + issuer + ", audience: " + audience);
+        }
 
         // Calculate expiry
         long expiryMillis = System.currentTimeMillis() + (expiryTimeSeconds * 1000);

@@ -18,6 +18,8 @@
 
 package org.wso2.micro.integrator.management.apis;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.json.JSONObject;
 
@@ -37,6 +39,8 @@ import java.util.function.Function;
  * </ol>
  */
 class ArtifactOperationHelper {
+
+    private static final Log log = LogFactory.getLog(ArtifactOperationHelper.class);
 
     /**
      * Functional interface for aspect operations (statistics / tracing) that accept an
@@ -73,6 +77,7 @@ class ArtifactOperationHelper {
             AspectOperation operation) throws IOException {
 
         if (artifact == null) {
+            log.warn("Artifact lookup failed for name: " + name);
             return Utils.createJsonError(notFoundMsg, axis2MC, Constants.BAD_REQUEST);
         }
         JSONObject info = new JSONObject();
@@ -100,6 +105,7 @@ class ArtifactOperationHelper {
             BiFunction<T, JSONObject, JSONObject> operation) {
 
         if (artifact == null) {
+            log.warn("Artifact not found for status operation: " + name);
             return Utils.createJsonError(notFoundMsg, axis2MC, Constants.NOT_FOUND);
         }
         JSONObject info = new JSONObject();

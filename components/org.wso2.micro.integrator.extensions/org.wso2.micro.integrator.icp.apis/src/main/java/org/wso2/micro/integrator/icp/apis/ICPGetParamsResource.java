@@ -75,6 +75,7 @@ public class ICPGetParamsResource extends APIResource {
                 ((Axis2MessageContext) messageContext).getAxis2MessageContext();
 
         if (!messageContext.isDoingGET()) {
+            LOG.warn("Non-GET request received for ICP parameters endpoint");
             Utils.setJsonPayLoad(axisMsgCtx,
                     Utils.createJsonError("Only GET method is supported", axisMsgCtx, Constants.BAD_REQUEST));
             return true;
@@ -82,6 +83,9 @@ public class ICPGetParamsResource extends APIResource {
 
         String type = Utils.getQueryParameter(messageContext, Constants.TYPE);
         String name = Utils.getQueryParameter(messageContext, Constants.NAME);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Fetching parameters for artifact type: " + type + ", name: " + name);
+        }
         if (StringUtils.isBlank(name)) {
             Utils.setJsonPayLoad(axisMsgCtx,
                     Utils.createJsonError("Missing required parameter: name", axisMsgCtx, Constants.BAD_REQUEST));
@@ -161,13 +165,14 @@ public class ICPGetParamsResource extends APIResource {
                     DataSourceRepository repo = dsManager.getDataSourceRepository();
                     CarbonDataSource cds = repo.getDataSource(name);
                     if (cds == null) {
+                        LOG.warn("Data source not found: " + name);
                         axisMsgCtx.setProperty(Constants.HTTP_STATUS_CODE, Constants.NOT_FOUND);
                         Utils.setJsonPayLoad(axisMsgCtx,
                                 Utils.createJsonError("Data source not found: " + name, axisMsgCtx,
                                         Constants.NOT_FOUND));
                         return true;
                     }
-
+                    LOG.info("Successfully retrieved parameters for data source: " + name);
                     Object dsObj = cds.getDSObject();
                     if (dsObj instanceof DataSource) {
                         PoolConfiguration pool = ((DataSource) dsObj).getPoolProperties();

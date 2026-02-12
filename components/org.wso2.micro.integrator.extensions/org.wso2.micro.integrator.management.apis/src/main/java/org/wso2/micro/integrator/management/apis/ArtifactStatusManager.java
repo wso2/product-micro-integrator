@@ -19,6 +19,8 @@
 package org.wso2.micro.integrator.management.apis;
 
 import com.google.gson.JsonObject;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerConfigurationInformation;
 import org.apache.synapse.Startup;
@@ -46,6 +48,8 @@ import static org.wso2.micro.integrator.management.apis.Constants.TRIGGER_STATUS
  */
 public class ArtifactStatusManager {
 
+    private static final Log log = LogFactory.getLog(ArtifactStatusManager.class);
+
     private static final String PROXY_SERVICE_NAME = "proxyServiceName";
     private static final String ENDPOINT_NAME = "endpointName";
     private static final String MESSAGE_PROCESSOR_NAME = "messageProcessorName";
@@ -58,6 +62,9 @@ public class ArtifactStatusManager {
     public static JSONObject changeProxyServiceStatus(String performedBy, MessageContext messageContext,
                                                       org.apache.axis2.context.MessageContext axis2MessageContext,
                                                       JsonObject payload) {
+        if(log.isDebugEnabled()){
+            log.debug("Attempting to change proxy service status. Performed by: " + performedBy);
+        }
         SynapseConfiguration synapseConfiguration = messageContext.getConfiguration();
         String name = payload.get(NAME).getAsString();
         String status = payload.get(STATUS).getAsString();

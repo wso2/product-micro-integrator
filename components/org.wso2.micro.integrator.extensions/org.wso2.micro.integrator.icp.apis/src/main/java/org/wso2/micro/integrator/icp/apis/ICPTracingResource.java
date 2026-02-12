@@ -66,6 +66,9 @@ public class ICPTracingResource extends APIResource {
         buildMessage(messageContext);
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext)
                 .getAxis2MessageContext();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Received artifact tracing change request");
+        }
 
         try {
             JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
@@ -83,6 +86,11 @@ public class ICPTracingResource extends APIResource {
             }
 
             String artifactType = payload.get(ARTIFACT_TYPE).getAsString();
+            String artifactName = payload.get(NAME).getAsString();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Processing tracing change for artifact type: " + artifactType + ", name: " + artifactName
+                        + ", requested by: " + performedBy);
+            }
             JSONObject response = handleTracingChange(performedBy, messageContext, axis2MessageContext,
                     artifactType);
 

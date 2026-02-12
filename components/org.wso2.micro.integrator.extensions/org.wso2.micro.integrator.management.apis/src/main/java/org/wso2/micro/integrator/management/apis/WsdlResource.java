@@ -66,6 +66,9 @@ public class WsdlResource extends APIResource {
 
     @Override
     public boolean invoke(MessageContext messageContext) {
+        if (LOG.isDebugEnabled()) {
+            LOG.info("Processing WSDL retrieval request");
+        }
         buildMessage(messageContext);
 
         org.apache.axis2.context.MessageContext axisMsgCtx = ((Axis2MessageContext) messageContext)
@@ -115,6 +118,7 @@ public class WsdlResource extends APIResource {
         }
 
         try {
+            LOG.info("Fetching WSDL for " + (isProxyRequest ? "proxy service: " : "data service: ") + targetName);
             OMElement wsdl = null;
 
             ServiceMetaData serviceMetaData = serviceAdmin.getServiceData(targetName);

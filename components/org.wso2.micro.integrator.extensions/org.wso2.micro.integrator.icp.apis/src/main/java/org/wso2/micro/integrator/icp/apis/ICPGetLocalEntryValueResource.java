@@ -58,6 +58,9 @@ public class ICPGetLocalEntryValueResource extends APIResource {
 
     @Override
     public boolean invoke(MessageContext messageContext) {
+        if (LOG.isDebugEnabled()) {
+            LOG.info("Processing ICP request to fetch local entry value");
+        }
         buildMessage(messageContext);
 
         org.apache.axis2.context.MessageContext axisMsgCtx =
@@ -126,7 +129,7 @@ public class ICPGetLocalEntryValueResource extends APIResource {
                 }
             }
         } catch (Exception e) {
-            LOG.error("Failed to read local entry value for: " + name, e);
+            LOG.error("Failed to read local entry value for: " + name + ", error: " + e.getMessage());
             Utils.setJsonPayLoad(axisMsgCtx,
                     Utils.createJsonError("Failed to read local entry value", axisMsgCtx,
                             Constants.INTERNAL_SERVER_ERROR));

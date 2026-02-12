@@ -18,6 +18,8 @@
 
 package org.wso2.micro.integrator.icp.apis;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.api.cors.CORSConfiguration;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.APIResource;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.InternalAPI;
@@ -36,6 +38,8 @@ import static org.wso2.micro.integrator.management.apis.Constants.PREFIX_ICP;
  */
 public class ICPInternalApi implements InternalAPI {
 
+    private static final Log log = LogFactory.getLog(ICPInternalApi.class);
+
     private String name;
     private APIResource[] resources;
     private List<InternalAPIHandler> handlerList = null;
@@ -51,6 +55,7 @@ public class ICPInternalApi implements InternalAPI {
         resourcesList.add(new ICPTracingResource(PREFIX_ARTIFACTS + "/tracing"));
         resourcesList.add(new ICPStatisticsResource(PREFIX_ARTIFACTS + "/statistics"));
         resources = resourcesList.toArray(new APIResource[0]);
+        log.info("ICP Internal API initialized with " + resources.length + " resources");
     }
 
     @Override

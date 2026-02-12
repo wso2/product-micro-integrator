@@ -64,6 +64,9 @@ public class ICPStatisticsResource extends APIResource {
 
     @Override
     public boolean invoke(MessageContext messageContext) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Processing ICP request to change artifact statistics");
+        }
         buildMessage(messageContext);
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext)
                 .getAxis2MessageContext();
@@ -84,6 +87,11 @@ public class ICPStatisticsResource extends APIResource {
             }
 
             String artifactType = payload.get(ARTIFACT_TYPE).getAsString();
+            String artifactName = payload.get(NAME).getAsString();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Changing statistics for artifact type: " + artifactType + ", name: " + artifactName
+                        + " via ICP, performed by: " + performedBy);
+            }
             JSONObject response = handleStatisticsChange(performedBy, messageContext, axis2MessageContext,
                     artifactType);
 

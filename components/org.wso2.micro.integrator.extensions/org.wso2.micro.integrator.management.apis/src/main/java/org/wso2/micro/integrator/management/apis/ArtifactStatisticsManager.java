@@ -18,6 +18,8 @@
 
 package org.wso2.micro.integrator.management.apis;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.api.API;
 import org.apache.synapse.core.axis2.ProxyService;
@@ -39,6 +41,8 @@ import java.io.IOException;
  */
 public class ArtifactStatisticsManager {
 
+    private static final Log log = LogFactory.getLog(ArtifactStatisticsManager.class);
+
     private static final String PROXY_SERVICE_NAME = "proxyServiceName";
     private static final String ENDPOINT_NAME = "endpointName";
     private static final String INBOUND_ENDPOINT_NAME = "inboundEndpointName";
@@ -53,6 +57,9 @@ public class ArtifactStatisticsManager {
     public static JSONObject changeProxyServiceStatistics(String performedBy, MessageContext messageContext,
                                                           org.apache.axis2.context.MessageContext axis2MessageContext)
             throws IOException {
+        if (log.isDebugEnabled()) {
+            log.debug("Changing statistics state for proxy service");
+        }
         String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
         ProxyService proxyService = messageContext.getConfiguration().getProxyService(name);
         return ArtifactOperationHelper.handleAspectOperation(
@@ -72,10 +79,12 @@ public class ArtifactStatisticsManager {
         Endpoint endpoint = messageContext.getConfiguration().getEndpoint(name);
 
         if (endpoint == null) {
+            log.warn("Endpoint not found: " + name);
             return Utils.createJsonError("Specified endpoint ('" + name + "') not found",
                     axis2MessageContext, Constants.BAD_REQUEST);
         }
         if (((AbstractEndpoint) endpoint).getDefinition() == null) {
+            log.warn("Statistics not supported for endpoint: " + name);
             return Utils.createJsonError("Statistics is not supported for this endpoint",
                     axis2MessageContext, Constants.BAD_REQUEST);
         }
