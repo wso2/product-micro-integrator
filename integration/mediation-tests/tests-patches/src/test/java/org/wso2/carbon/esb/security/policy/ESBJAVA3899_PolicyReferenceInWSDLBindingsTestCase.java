@@ -41,7 +41,6 @@ public class ESBJAVA3899_PolicyReferenceInWSDLBindingsTestCase extends ESBIntegr
         super.init();
 
         String cappPath = Paths.get(getESBResourceLocation(), "car", carFileName).toString();
-        uploadCapp(carFileName, new DataHandler(new FileDataSource(new File(cappPath))));
         TimeUnit.SECONDS.sleep(5);
         log.info(carFileName + " uploaded successfully");
     }

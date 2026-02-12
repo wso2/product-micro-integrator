@@ -32,7 +32,6 @@ public class SourceXpathTargetXpath extends ESBIntegrationTest {
     public void setEnvironment() throws Exception {
 
         super.init();
-        esbUtils.isProxyServiceExist(contextUrls.getBackEndUrl(), sessionCookie, "CallOutMediatorXPathProxy");
     }
 
     @Test(groups = { "wso2.esb" })

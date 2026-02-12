@@ -26,7 +26,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.automation.extensions.servers.jmsserver.client.JMSQueueMessageConsumer;
 import org.wso2.carbon.automation.extensions.servers.jmsserver.controller.config.JMSBrokerConfigurationProvider;
-import org.wso2.esb.integration.common.clients.mediation.MessageStoreAdminClient;
 import org.wso2.esb.integration.common.extensions.carbonserver.CarbonServerExtension;
 
 import java.io.BufferedReader;
@@ -192,27 +191,6 @@ public class Utils {
         }
         log.error("File does not exists in " + filePath, new Throwable());
         return false;
-    }
-
-    /**
-     * Wait for expected message count found in the message store until a defined timeout
-     *
-     * @param messageStoreName Message store name
-     * @param expectedCount    Expected message count
-     * @param timeout          Timeout to wait in Milliseconds
-     * @return true if the expected message count found, false otherwise
-     */
-    public static boolean waitForMessageCount(MessageStoreAdminClient messageStoreAdminClient, String messageStoreName,
-                                              int expectedCount, long timeout)
-            throws InterruptedException, RemoteException {
-        long elapsedTime = 0;
-        boolean messageCountFound = false;
-        while (elapsedTime < timeout && !messageCountFound) {
-            Thread.sleep(500);
-            messageCountFound = messageStoreAdminClient.getMessageCount(messageStoreName) == expectedCount;
-            elapsedTime += 500;
-        }
-        return messageCountFound;
     }
 
     public static void deploySynapseConfiguration(File src, ArtifactType type) throws Exception {

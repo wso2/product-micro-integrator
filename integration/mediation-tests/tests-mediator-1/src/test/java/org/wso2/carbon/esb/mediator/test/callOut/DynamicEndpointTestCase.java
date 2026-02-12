@@ -32,8 +32,6 @@ public class DynamicEndpointTestCase extends ESBIntegrationTest {
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
         super.init();
-        esbUtils.isProxyServiceExist(contextUrls.getBackEndUrl(), sessionCookie,
-                "DynamicEndpointWithCallMediatorProxy");
     }
 
     @Test(groups = { "wso2.esb" })

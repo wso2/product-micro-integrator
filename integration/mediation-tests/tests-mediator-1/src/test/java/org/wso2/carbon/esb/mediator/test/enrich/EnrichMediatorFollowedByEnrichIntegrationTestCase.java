@@ -20,7 +20,6 @@ package org.wso2.carbon.esb.mediator.test.enrich;
 import org.apache.axiom.om.OMElement;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import org.wso2.esb.integration.common.clients.registry.ResourceAdminServiceClient;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
 import org.wso2.esb.integration.common.utils.ESBTestConstant;
 import javax.xml.namespace.QName;
@@ -30,14 +29,10 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 public class EnrichMediatorFollowedByEnrichIntegrationTestCase extends ESBIntegrationTest {
-    private ResourceAdminServiceClient resourceAdminServiceStub;
 
     @BeforeClass(alwaysRun = true)
     public void uploadSynapseConfig() throws Exception {
         super.init();
-        resourceAdminServiceStub = new ResourceAdminServiceClient(contextUrls.getBackEndUrl(),
-                context.getContextTenant().getContextUser().getUserName(),
-                context.getContextTenant().getContextUser().getPassword());
     }
 
     @Test(groups = { "wso2.esb" }, description = "Enrich mediator followed by enrich mediator")

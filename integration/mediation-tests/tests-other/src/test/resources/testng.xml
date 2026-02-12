@@ -19,28 +19,6 @@
         <packages>
             <package name="org.wso2.carbon.esb.resource.test.*"/>
         </packages>
-        <classes>
-            <class name="org.wso2.carbon.esb.resource.test.template.SequenceTemplateMediaTypeTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-            <class name="org.wso2.carbon.esb.resource.test.template.EndpointTemplateMediaTypeTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-            <class name="org.wso2.carbon.esb.resource.test.endpoint.EndPointMediaTypeTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-            <class name="org.wso2.carbon.esb.resource.test.sequence.SequenceMediaTypeTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-        </classes>
     </test>
 
     <test name="GZIP-Compression-Test" preserve-order="true" verbose="2">
@@ -108,13 +86,6 @@
         <packages>
             <package name="org.wso2.carbon.esb.mediationstats.*"/>
         </packages>
-        <classes>
-            <class name="org.wso2.carbon.esb.mediationstats.test.MediationStatEnableTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-        </classes>
     </test>
 
     <test name="Stats-Test" preserve-order="true" verbose="2">

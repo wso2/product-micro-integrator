@@ -40,10 +40,6 @@ public class CallMediatorHttpStatusResponseTestCase extends ESBIntegrationTest {
             loadESBConfigurationFromClasspath(
                     File.separator + "artifacts" + File.separator + "ESB" + File.separator + "mediatorconfig"
                             + File.separator + "call" + File.separator + configName + ".xml");
-            if (configName.equals("HTTPStatusResponseAPI")) {
-                verifyAPIExistence(configName);
-            } else
-                verifyProxyServiceExistence(configName);
         }
     }
 

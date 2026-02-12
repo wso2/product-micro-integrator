@@ -24,7 +24,6 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.automation.engine.annotations.ExecutionEnvironment;
 import org.wso2.carbon.automation.engine.annotations.SetEnvironment;
-import org.wso2.esb.integration.common.clients.sequences.SequenceAdminServiceClient;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
 import org.wso2.esb.integration.common.utils.ESBTestConstant;
 import org.wso2.esb.integration.common.utils.clients.stockquoteclient.StockQuoteClient;
@@ -33,13 +32,11 @@ public class ConditionalRouterIntegrationTest extends ESBIntegrationTest {
 
     private String toUrl = null;
     private String mainSeqUrl;
-    private SequenceAdminServiceClient sequenceAdminServiceClient;
 
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
         super.init();
         mainSeqUrl = getMainSequenceURL();
-        sequenceAdminServiceClient = new SequenceAdminServiceClient(contextUrls.getBackEndUrl(), getSessionCookie());
         toUrl = getBackEndServiceUrl(ESBTestConstant.SIMPLE_STOCK_QUOTE_SERVICE);
 
     }
@@ -53,9 +50,6 @@ public class ConditionalRouterIntegrationTest extends ESBIntegrationTest {
     /* https://wso2.org/jira/browse/STRATOS-2239*/
     @Test(groups = { "wso2.esb" })
     public void conditionalRouterMediatorWithContinueAfterTrueTest() throws Exception {
-        esbUtils.isProxyServiceExist(contextUrls.getBackEndUrl(), sessionCookie,
-                "ConRoutingWithContinueAfterTrueProxy");
-        esbUtils.isSequenceExist(contextUrls.getBackEndUrl(), sessionCookie, "cnd_seq4");
 
         OMElement response = axis2Client
                 .sendSimpleStockQuoteRequest(getProxyServiceURLHttp("ConRoutingWithContinueAfterTrueProxy"), toUrl,
@@ -75,9 +69,6 @@ public class ConditionalRouterIntegrationTest extends ESBIntegrationTest {
     /* https://wso2.org/jira/browse/STRATOS-2239*/
     @Test(groups = { "wso2.esb" })
     public void conditionalRouterMediatorWithContinueAfterFalseTest() throws Exception {
-        esbUtils.isProxyServiceExist(contextUrls.getBackEndUrl(), sessionCookie,
-                "ConRoutingWithContinueAfterFalseProxy");
-        esbUtils.isSequenceExist(contextUrls.getBackEndUrl(), sessionCookie, "cnd_seq5");
 
         OMElement response = axis2Client
                 .sendSimpleStockQuoteRequest(getProxyServiceURLHttp("ConRoutingWithContinueAfterFalseProxy"), toUrl,
@@ -152,8 +143,6 @@ public class ConditionalRouterIntegrationTest extends ESBIntegrationTest {
     public void conditionalRouterMediatorWithBreakRouteTrueTest() throws Exception {
 
         loadESBConfigurationFromClasspath("/artifacts/ESB/synapseconfig/filters/conditional_router/synapse3.xml");
-        esbUtils.isSequenceExist(contextUrls.getBackEndUrl(), sessionCookie, "cnd1_seq");
-        esbUtils.isSequenceExist(contextUrls.getBackEndUrl(), sessionCookie, "cnd2_seq");
         StockQuoteClient client = new StockQuoteClient();
 
         client.addHttpHeader("foo", "bar");
@@ -178,8 +167,6 @@ public class ConditionalRouterIntegrationTest extends ESBIntegrationTest {
      */
     @Test(groups = { "wso2.esb" }, enabled = false)
     public void conditionalRouterMediatorWithBreakRouteFalseTest() throws Exception {
-        esbUtils.isProxyServiceExist(contextUrls.getBackEndUrl(), sessionCookie, "cnd1_seq");
-        esbUtils.isProxyServiceExist(contextUrls.getBackEndUrl(), sessionCookie, "cnd2_seq");
         loadESBConfigurationFromClasspath("/artifacts/ESB/synapseconfig/filters/conditional_router/synapse3.xml");
         StockQuoteClient client = new StockQuoteClient();
 

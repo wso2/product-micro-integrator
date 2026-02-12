@@ -68,7 +68,6 @@ public class HL7TransportTests extends ESBIntegrationTest {
 
         CarbonLogReader logReader = new CarbonLogReader();
         logReader.start();
-        verifyAPIExistence("hl7-api");
         // send request
         Map<String, String> headers = new HashMap<>();
         headers.put("Accept", "application/xml");

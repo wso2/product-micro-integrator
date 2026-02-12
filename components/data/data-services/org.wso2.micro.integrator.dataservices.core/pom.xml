@@ -135,6 +135,32 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons-io.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-jcl</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.wso2.orbit.org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
         </dependency>
@@ -278,10 +304,22 @@
                         <exclude>**/OracleTestSuite.java</exclude>
                     </excludes>
                     <systemProperties>
-                        <java.util.logging.manager>org.apache.logging.log4j.jul.LogManager</java.util.logging.manager>
+                        <property>
+                            <name>java.util.logging.manager</name>
+                            <value>org.apache.logging.log4j.jul.LogManager</value>
+                        </property>
+                        <property>
+                            <name>log4j2.level</name>
+                            <value>WARN</value>
+                        </property>
+                        <property>
+                            <name>org.apache.commons.logging.Log</name>
+                            <value>org.apache.commons.logging.impl.NoOpLog</value>
+                        </property>
                     </systemProperties>
                     <classpathDependencyExcludes>
                         <classpathDependencyExclude>org.wso2.org.ops4j.pax.logging:pax-logging-api</classpathDependencyExclude>
+                        <classpathDependencyExclude>org.wso2.org.ops4j.pax.logging:pax-logging-log4j2</classpathDependencyExclude>
                     </classpathDependencyExcludes>
                 </configuration>
             </plugin>

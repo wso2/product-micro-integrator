@@ -29,6 +29,8 @@ import javax.cache.CacheManager;
 import javax.cache.CacheStatistics;
 import javax.cache.Caching;
 
+import static org.wso2.micro.integrator.security.SecurityConstants.CASE_INSENSITIVE_USERNAME;
+
 /**
  * Date: Oct 1, 2010 Time: 10:32:26 AM
  */
@@ -39,7 +41,6 @@ import javax.cache.Caching;
 public class AuthorizationCache {
     public static final String AUTHORIZATION_CACHE_MANAGER = "AUTHORIZATION_CACHE_MANAGER";
     public static final String AUTHORIZATION_CACHE_NAME = "AUTHORIZATION_CACHE";
-    private static final String CASE_INSENSITIVE_USERNAME = "CaseInsensitiveUsername";
     private static Log log = LogFactory.getLog(AuthorizationCache.class);
     private static Boolean isEnable = true;
 

@@ -40,12 +40,7 @@ public class TcpTransportProxyServiceTestCase extends ESBIntegrationTest {
         TcpClient tcpClient = new TcpClient();
         OMElement response;
         String tcpProxyUrl;
-        if (isRunningOnStratos()) {
-            tcpProxyUrl = "tcp://localhost:8290/services/t/" + context.getContextTenant().getDomain()
-                    + "/tcpProxy/tcpProxy?contentType=application/soap+xml";
-        } else {
-            tcpProxyUrl = "tcp://localhost:8290/services/tcpProxy/tcpProxy?contentType=application/soap+xml";
-        }
+        tcpProxyUrl = "tcp://localhost:8290/services/tcpProxy/tcpProxy?contentType=application/soap+xml";
         response = tcpClient
                 .sendSimpleStockQuote12(tcpProxyUrl, "TCPPROXY", tcpClient.CONTENT_TYPE_APPLICATIONS_SOAP_XML);
         Assert.assertTrue(response.toString().contains("TCPPROXY"), "Symbol not found in response message");

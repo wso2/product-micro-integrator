@@ -19,7 +19,6 @@ package org.wso2.carbon.esb.mediator.test.datamapper;
 
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-import org.wso2.esb.integration.common.clients.registry.ResourceAdminServiceClient;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
 
 import java.io.IOException;
@@ -27,18 +26,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import javax.activation.DataHandler;
 
 public class DataMapperIntegrationTest extends ESBIntegrationTest {
-
-    private ResourceAdminServiceClient resourceAdminServiceClient;
 
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
         super.init();
-        resourceAdminServiceClient = new ResourceAdminServiceClient(contextUrls.getBackEndUrl(),
-                context.getContextTenant().getContextUser().getUserName(),
-                context.getContextTenant().getContextUser().getPassword());
     }
 
     protected String sendRequest(String addUrl, String request, String contentType) throws IOException {
@@ -70,43 +63,8 @@ public class DataMapperIntegrationTest extends ESBIntegrationTest {
         return out;
     }
 
-    protected void uploadResourcesToGovernanceRegistry(String registryRoot, String artifactRoot) throws Exception {
-        resourceAdminServiceClient.addCollection("/_system/governance/", registryRoot, "", "");
-        resourceAdminServiceClient.addResource("/_system/governance/" + registryRoot + "testMap.js", "text/plain", "",
-                new DataHandler(new URL("file:///" + getClass().getResource(artifactRoot + "testMap.js").getPath())));
-        resourceAdminServiceClient.addResource("/_system/governance/" + registryRoot + "inschema.jsschema", "", "",
-                new DataHandler(
-                        new URL("file:///" + getClass().getResource(artifactRoot + "inschema.jsschema").getPath())));
-        resourceAdminServiceClient.addResource("/_system/governance/" + registryRoot + "outschema.jsschema", "", "",
-                new DataHandler(
-                        new URL("file:///" + getClass().getResource(artifactRoot + "outschema.jsschema").getPath())));
-    }
-
-    protected void uploadResourcesToGovernanceRegistryWithXSLTStyleSheet(String registryRoot, String artifactRoot)
-            throws Exception {
-        resourceAdminServiceClient.addCollection("/_system/governance/", registryRoot, "", "");
-        resourceAdminServiceClient.addResource("/_system/governance/" + registryRoot + "testMap.js", "text/plain", "",
-                new DataHandler(new URL("file:///" + getClass().getResource(artifactRoot + "testMap.js").getPath())));
-        resourceAdminServiceClient.addResource("/_system/governance/" + registryRoot + "inschema.jsschema", "", "",
-                new DataHandler(
-                        new URL("file:///" + getClass().getResource(artifactRoot + "inschema.jsschema").getPath())));
-        resourceAdminServiceClient.addResource("/_system/governance/" + registryRoot + "outschema.jsschema", "", "",
-                new DataHandler(
-                        new URL("file:///" + getClass().getResource(artifactRoot + "outschema.jsschema").getPath())));
-        resourceAdminServiceClient.addResource("/_system/governance/" + registryRoot + "xsltStyleSheet.xml", "", "",
-                new DataHandler(
-                        new URL("file:///" + getClass().getResource(artifactRoot + "xsltStyleSheet.xml").getPath())));
-    }
-
     @AfterClass(alwaysRun = true)
     public void close() throws Exception {
-        try {
-            resourceAdminServiceClient.deleteResource("/_system/governance/datamapper");
-        } finally {
-            super.cleanup();
-            Thread.sleep(3000);
-            resourceAdminServiceClient = null;
-        }
     }
 
 }

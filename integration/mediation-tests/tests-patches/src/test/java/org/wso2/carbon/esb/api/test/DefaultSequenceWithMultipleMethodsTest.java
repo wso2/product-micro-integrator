@@ -34,7 +34,6 @@ public class DefaultSequenceWithMultipleMethodsTest extends ESBIntegrationTest {
     public void init() throws Exception {
 
         super.init();
-        verifyAPIExistence("DefaultSequenceWithMultipleMethods.xml");
     }
 
     @Test(groups = {"wso2.esb"}, description = "Sending HTTP GET request for the resources")

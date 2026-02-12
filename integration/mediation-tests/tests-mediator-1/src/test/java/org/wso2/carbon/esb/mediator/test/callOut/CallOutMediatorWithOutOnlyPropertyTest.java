@@ -36,7 +36,6 @@ public class CallOutMediatorWithOutOnlyPropertyTest extends ESBIntegrationTest {
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
         super.init();
-        esbUtils.isProxyServiceExist(contextUrls.getBackEndUrl(), sessionCookie, "CallOutMediatorOutOnlyTestProxy");
     }
 
     @Test(groups = { "wso2.esb" }, description = "Call")

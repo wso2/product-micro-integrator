@@ -35,7 +35,6 @@ public class CallOutMediatorWithMTOMTestCase extends ESBIntegrationTest {
         axis2Server = new SampleAxis2Server("test_axis2_server_9001.xml");
         axis2Server.start();
         axis2Server.deployService(MTOM_SERVICE);
-        esbUtils.isProxyServiceExist(contextUrls.getBackEndUrl(), sessionCookie, "CallOutMediatorWithMTOMProxy");
     }
 
     @Test(groups = { "wso2.esb" }, description = "callOutMediatorWithMTOMTest")

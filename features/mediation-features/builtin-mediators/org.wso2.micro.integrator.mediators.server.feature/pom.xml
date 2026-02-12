@@ -50,8 +50,12 @@
             <artifactId>bsf-all</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.mediation</groupId>
-            <artifactId>org.wso2.carbon.connector.core</artifactId>
+            <groupId>org.wso2.ei</groupId>
+            <artifactId>org.wso2.micro.integrator.connector.core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.ei</groupId>
+            <artifactId>org.wso2.micro.integrator.mediator.fastXSLT</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.orbit.javax.activation</groupId>
@@ -90,8 +94,8 @@
                                 <bundleDef>
                                     org.wso2.carbon.identity.inbound.auth.oauth2:org.wso2.carbon.identity.oauth.stub:${carbon.identity.oauth.version}
                                 </bundleDef>
-                                <bundleDef>org.wso2.carbon.mediation:org.wso2.carbon.mediator.fastXSLT</bundleDef>
-                                <bundleDef>org.wso2.carbon.mediation:org.wso2.carbon.connector.core</bundleDef>
+                                <bundleDef>org.wso2.ei:org.wso2.micro.integrator.mediator.fastXSLT</bundleDef>
+                                <bundleDef>org.wso2.ei:org.wso2.micro.integrator.connector.core</bundleDef>
                             </bundles>
                             <importBundles>
                                 <importBundleDef>org.wso2.orbit.org.mozilla:rhino</importBundleDef>

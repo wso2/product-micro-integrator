@@ -87,11 +87,6 @@
             <package name="org.wso2.carbon.esb.mediator.test.script"/>
         </packages>
         <classes>
-            <class name="org.wso2.carbon.esb.mediator.test.script.ScriptIntegrationToGenerateFaultTestCase">
-                <methods>
-                    <exclude name=".*" />
-                </methods>
-            </class>
             <class name="org.wso2.carbon.esb.mediator.test.script.SetRemovePropertiesWithNashornJsTestCase">
                 <methods>
                     <exclude name=".*" />
@@ -131,16 +126,6 @@
             <package name="org.wso2.carbon.esb.message.processor.test.forwarding"/>
         </packages>
         <classes>
-            <class name="org.wso2.carbon.esb.message.processor.test.MessageProcessorAdminTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-            <class name="org.wso2.carbon.esb.message.processor.test.MessageProcessorPersistenceTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
             <class name="org.wso2.carbon.esb.message.processor.test.MessageProcessorWithFaultDeactivateSeqTestCase"/>
         </classes>
     </test>
@@ -159,7 +144,6 @@
             <class name="org.wso2.carbon.esb.mediator.test.iterate.IterateNamedEndpointsTest"/>
             <class name="org.wso2.carbon.esb.mediator.test.iterate.IterateRegistryAsTargetTestCase"/>
             <class name="org.wso2.carbon.esb.mediator.test.iterate.IterateSequentialFaultSequenceTestCase"/>
-            <class name="org.wso2.carbon.esb.mediator.test.iterate.IterateSequentialPropertySavingTestCase"/>
             <class name="org.wso2.carbon.esb.mediator.test.iterate.IterateSequentialPropertyTestCase"/>
             <class name="org.wso2.carbon.esb.mediator.test.iterate.IterateSmallMessageTestCase"/>
             <class name="org.wso2.carbon.esb.mediator.test.iterate.IterateSOAPActionTest"/>
@@ -172,11 +156,6 @@
             <class name="org.wso2.carbon.esb.mediator.test.iterate.InvalidXPathTestCase"/>
             <class name="org.wso2.carbon.esb.mediator.test.iterate.InvalidSoapActionTestCase"/>
             <class name="org.wso2.carbon.esb.mediator.test.iterate.InvalidNamespaceTestCase">
-                <methods>
-                    <exclude name=".*" />
-                </methods>
-            </class>
-            <class name="org.wso2.carbon.esb.mediator.test.iterate.IterateSequentialPropertySavingTestCase">
                 <methods>
                     <exclude name=".*" />
                 </methods>

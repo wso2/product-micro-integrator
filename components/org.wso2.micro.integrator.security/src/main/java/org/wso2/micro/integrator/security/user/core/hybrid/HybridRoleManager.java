@@ -44,8 +44,8 @@ import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
 
-import static org.wso2.carbon.identity.core.util.IdentityCoreConstants.CASE_INSENSITIVE_USERNAME;
 import static org.wso2.micro.core.Constants.SUPER_TENANT_ID;
+import static org.wso2.micro.integrator.security.SecurityConstants.CASE_INSENSITIVE_USERNAME;
 import static org.wso2.micro.integrator.security.user.core.constants.UserCoreErrorConstants.ErrorMessages.ERROR_CODE_DUPLICATE_WHILE_ADDING_A_HYBRID_ROLE;
 import static org.wso2.micro.integrator.security.user.core.constants.UserCoreErrorConstants.ErrorMessages.ERROR_CODE_DUPLICATE_WHILE_WRITING_TO_DATABASE;
 
