@@ -240,19 +240,26 @@ environment = "prod"
 project     = "sample-project"
 integration = "sample-mi-integration"
 
-# Off SSL verification for local setup
-ssl_verify = false
-
-# ICP URL can be configured when changed defaults to "https://localhost:9445"
+# ICP server URL (defaults to "https://localhost:9445")
 # icp_url = "https://localhost:9445"
 
 # Heartbeat interval in seconds (default: 10)
 # heartbeat_interval = 10
 
+# SSL verification (default: true)
+# Set to false ONLY for local/dev setups with self-signed certificates.
+# For production, import the ICP server cert into client-truststore.jks instead.
+# ssl_verify = false
+
 # JWT Configurations
 # ------------------
-# JWT HMAC secret — must be at least 32 characters for HS256
-# jwt_hmac_secret = "<REPLACE-WITH-A-SECURE-SECRET-AT-LEAST-32-CHARS>"
+# Shared HMAC secret for signing/validating JWT tokens exchanged with ICP.
+# Must be at least 32 characters (HS256 requires a 256-bit key).
+# This single value is used by both sides:
+#   - HMACJWTTokenGenerator  (outbound: signs heartbeat tokens sent to ICP)
+#   - ICPJWTSecurityHandler  (inbound:  validates tokens received from ICP)
+# See §5 for full configuration details and Secure Vault usage.
+jwt_hmac_secret = "<REPLACE-WITH-A-SECURE-SECRET-AT-LEAST-32-CHARS>"
 # jwt_issuer         = "icp-runtime-jwt-issuer"
 # jwt_audience       = "icp-server"
 # jwt_scope          = "runtime_agent"
@@ -272,5 +279,50 @@ ssl_verify = false
 ```
 
 > **Note:** The startup script must also pass `-DenableICPApi=true` (already added to `micro-integrator.sh` and `micro-integrator.bat`). Both this `deployment.toml` entry and the system property are required — see §3 above.
+
+---
+
+## 5. JWT HMAC Secret Configuration
+
+The JWT HMAC secret is a shared symmetric key used by both sides of the ICP agent JWT exchange:
+
+| Component | Role | Where the secret is used |
+|---|---|---|
+| `HMACJWTTokenGenerator` | Outbound — signs heartbeat tokens sent to ICP | Reads `icp_config.jwt_hmac_secret` from `deployment.toml` |
+| `ICPJWTSecurityHandler` | Inbound — validates tokens received from ICP | Reads `icp_config.jwt_hmac_secret` from `deployment.toml` |
+
+### How `ICPJWTSecurityHandler` Reads the Secret
+
+`ConfigurationLoader` instantiates the handler via reflection but **does not call property setter methods**. As a result, the `<JwtHmacSecret>` child element in `internal-apis.xml` has no effect. Instead, `authenticate()` reads the secret lazily from `ConfigParser.getParsedConfigs()` on the first inbound request:
+
+```java
+Object secretObj = ConfigParser.getParsedConfigs().get(Constants.ICP_JWT_HMAC_SECRET);
+if (secretObj != null && !secretObj.toString().trim().isEmpty()) {
+    jwtHmacSecret = resolveSecret(secretObj.toString().trim());
+}
+```
+
+`resolveSecret()` passes the value through the WSO2 Secure Vault resolver, so Secure Vault aliases (e.g. `$secret{icp.jwt.hmac.secret}`) are transparently decrypted before use.
+
+### Configuration
+
+Set the secret in **`deployment.toml`**. 
+
+```toml
+[icp_config]
+jwt_hmac_secret = "your-secret-at-least-32-characters-long"
+```
+
+Requirements:
+- Must be **at least 32 characters** — HS256 requires a 256-bit (32-byte) key minimum
+- If not configured, the server logs an error on the first ICP API call and rejects the request
+
+### Using Secure Vault (Recommended for Production)
+
+```toml
+[icp_config]
+jwt_hmac_secret = "$secret{icp.jwt.hmac.secret}"
+```
+
 
 ---

@@ -25,8 +25,10 @@ import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.wso2.config.mapper.ConfigParser;
 import org.wso2.micro.core.util.CarbonException;
 import org.wso2.micro.integrator.icp.apis.internal.ICPApiServiceComponent;
+import org.wso2.micro.integrator.initializer.dashboard.Constants;
 import org.wso2.micro.integrator.management.apis.ManagementApiUndefinedException;
 import org.wso2.micro.integrator.management.apis.security.handler.AuthenticationHandlerAdapter;
 import org.wso2.securevault.SecretResolver;
@@ -81,7 +83,19 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
     @Override
     protected Boolean authenticate(MessageContext messageContext, String authHeaderToken) {
         if (jwtHmacSecret == null || jwtHmacSecret.trim().isEmpty()) {
-            LOG.error("JWT HMAC secret is not configured for ICP JWT security handler");
+            // ConfigurationLoader does not call property setters, so read directly from deployment.toml.
+            // resolveSecret() handles Secure Vault aliases (e.g. $secret{icp.jwt.hmac.secret}).
+            Object secretObj = ConfigParser.getParsedConfigs().get(Constants.ICP_JWT_HMAC_SECRET);
+            if (secretObj != null && !secretObj.toString().trim().isEmpty()) {
+                jwtHmacSecret = resolveSecret(secretObj.toString().trim());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("JWT HMAC secret loaded from deployment.toml");
+                }
+            }
+        }
+        if (jwtHmacSecret == null || jwtHmacSecret.trim().isEmpty()) {
+            LOG.error("JWT HMAC secret is not configured for ICP JWT security handler. "
+                    + "Set icp_config.jwt_hmac_secret in deployment.toml");
             return false;
         }
         // Validate HMAC JWT token
