@@ -55,6 +55,9 @@ import java.util.Set;
 public class ICPGetParamsResource extends APIResource {
 
     private static final Log LOG = LogFactory.getLog(ICPGetParamsResource.class);
+    private static final String TYPE_INBOUND_ENDPOINT = Constants.INBOUND_ENDPOINT;
+    private static final String TYPE_MESSAGE_PROCESSOR = Constants.MESSAGE_PROCESSOR;
+    private static final String TYPE_DATA_SOURCE = "data-source";
 
     public ICPGetParamsResource(String urlTemplate) {
         super(urlTemplate);
@@ -111,7 +114,7 @@ public class ICPGetParamsResource extends APIResource {
         JSONArray paramsArray = new JSONArray();
 
         switch (type.toLowerCase()) {
-            case "inbound-endpoint": {
+            case TYPE_INBOUND_ENDPOINT: {
                 InboundEndpoint inbound = configuration.getInboundEndpoint(name);
                 if (inbound == null) {
                     axisMsgCtx.setProperty(Constants.HTTP_STATUS_CODE, Constants.NOT_FOUND);
@@ -135,7 +138,7 @@ public class ICPGetParamsResource extends APIResource {
                 }
                 break;
             }
-            case "message-processor": {
+            case TYPE_MESSAGE_PROCESSOR: {
                 MessageProcessor mp = configuration.getMessageProcessors().get(name);
                 if (mp == null) {
                     axisMsgCtx.setProperty(Constants.HTTP_STATUS_CODE, Constants.NOT_FOUND);
@@ -159,7 +162,7 @@ public class ICPGetParamsResource extends APIResource {
                 }
                 break;
             }
-            case "data-source": {
+            case TYPE_DATA_SOURCE: {
                 try {
                     DataSourceManager dsManager = DataSourceManager.getInstance();
                     DataSourceRepository repo = dsManager.getDataSourceRepository();

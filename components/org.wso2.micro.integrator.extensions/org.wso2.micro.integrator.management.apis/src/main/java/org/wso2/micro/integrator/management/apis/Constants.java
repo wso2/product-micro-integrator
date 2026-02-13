@@ -213,7 +213,7 @@ public class Constants {
     public static final String LOGGING_RESOURCES = "log-configs";
     public static final String CONNECTORS = "connectors";
     public static final String MESSAGE_PROCESSORS = "message-processors";
-    public static final String MESSAGE_STORE = "message-stores";
+    public static final String MESSAGE_STORES = "message-stores";
     public static final String TEMPLATES = "templates";
     public static final String TASKS = "tasks";
     public static final String REGISTRY_RESOURCES = "registry-resources";
@@ -273,5 +273,10 @@ public class Constants {
     public static final String API = "api";
     public static final String SEQUENCE = "sequence";
     public static final String TASK = "task";
+    public static final String MESSAGE_STORE = "message-store";
+    public static final String CARBON_APPLICATION = "carbonapp";
+    public static final String DATA_SOURCE = "data-source";
+    public static final String DATA_SERVICE = "data-service";
+    public static final String TEMPLATE = "template";
 
 }

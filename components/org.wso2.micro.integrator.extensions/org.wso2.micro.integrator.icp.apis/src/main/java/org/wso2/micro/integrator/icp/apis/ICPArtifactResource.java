@@ -83,18 +83,18 @@ public class ICPArtifactResource extends APIResource {
     private static final String PARAM_NAME = "name";
 
     // Artifact types
-    private static final String TYPE_API = "api";
-    private static final String TYPE_PROXY = "proxy-service";
-    private static final String TYPE_ENDPOINT = "endpoint";
-    private static final String TYPE_SEQUENCE = "sequence";
-    private static final String TYPE_TASK = "task";
-    private static final String TYPE_INBOUND_ENDPOINT = "inbound-endpoint";
-    private static final String TYPE_MESSAGE_PROCESSOR = "message-processor";
-    private static final String TYPE_MESSAGE_STORE = "message-store";
-    private static final String TYPE_CARBON_APPLICATION = "carbonapp";
-    private static final String TYPE_DATA_SOURCE = "data-source";
-    private static final String TYPE_DATA_SERVICE = "data-service";
-    private static final String TYPE_TEMPLATE = "template";
+    // private static final String TYPE_API = "api";
+    // private static final String TYPE_PROXY = "proxy-service";
+    // private static final String TYPE_ENDPOINT = "endpoint";
+    // private static final String TYPE_SEQUENCE = "sequence";
+    // private static final String TYPE_TASK = "task";
+    // private static final String TYPE_INBOUND_ENDPOINT = "inbound-endpoint";
+    // private static final String TYPE_MESSAGE_PROCESSOR = "message-processor";
+    // private static final String TYPE_MESSAGE_STORE = "message-store";
+    // private static final String TYPE_CARBON_APPLICATION = "carbonapp";
+    // private static final String TYPE_DATA_SOURCE = "data-source";
+    // private static final String TYPE_DATA_SERVICE = "data-service";
+    // private static final String TYPE_TEMPLATE = "template";
 
     public ICPArtifactResource(String urlTemplate) {
         super(urlTemplate);
@@ -187,40 +187,40 @@ public class ICPArtifactResource extends APIResource {
         OMElement configuration = null;
 
         switch (artifactType) {
-            case TYPE_API:
+            case Constants.API:
                 configuration = getAPIConfiguration(synapseConfig, artifactName);
                 break;
-            case TYPE_PROXY:
+            case Constants.PROXY_SERVICE:
                 configuration = getProxyServiceConfiguration(synapseConfig, artifactName);
                 break;
-            case TYPE_ENDPOINT:
+            case Constants.ENDPOINT:
                 configuration = getEndpointConfiguration(synapseConfig, artifactName);
                 break;
-            case TYPE_SEQUENCE:
+            case Constants.SEQUENCE:
                 configuration = getSequenceConfiguration(synapseConfig, artifactName);
                 break;
-            case TYPE_TASK:
+            case Constants.TASK:
                 configuration = getTaskConfiguration(synapseConfig, artifactName, axisMsgCtx);
                 break;
-            case TYPE_INBOUND_ENDPOINT:
+            case Constants.INBOUND_ENDPOINT:
                 configuration = getInboundEndpointConfiguration(synapseConfig, artifactName);
                 break;
-            case TYPE_MESSAGE_PROCESSOR:
+            case Constants.MESSAGE_PROCESSOR:
                 configuration = getMessageProcessorConfiguration(synapseConfig, artifactName);
                 break;
-            case TYPE_MESSAGE_STORE:
+            case Constants.MESSAGE_STORES:
                 configuration = getMessageStoreConfiguration(synapseConfig, artifactName);
                 break;
-            case TYPE_CARBON_APPLICATION:
+            case Constants.CARBON_APPLICATION:
                 configuration = getCarbonAppConfigurationElement(artifactName);
                 break;
-            case TYPE_DATA_SOURCE:
+            case Constants.DATA_SOURCE:
                 configuration = getDataSourceConfigurationElement(artifactName);
                 break;
-            case TYPE_DATA_SERVICE:
+            case Constants.DATA_SERVICE:
                 configuration = getDataServiceConfigurationElement(synapseConfig, artifactName);
                 break;
-            case TYPE_TEMPLATE:
+            case Constants.TEMPLATE:
                 configuration = getTemplateConfigurationElement(synapseConfig, artifactName);
                 break;
             default:

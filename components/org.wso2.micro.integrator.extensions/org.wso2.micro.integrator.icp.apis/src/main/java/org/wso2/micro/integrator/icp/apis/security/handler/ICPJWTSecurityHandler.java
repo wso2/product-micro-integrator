@@ -48,11 +48,10 @@ import java.util.Base64;
 public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
 
     private static final Log LOG = LogFactory.getLog(ICPJWTSecurityHandler.class);
-    private static final String DEFAULT_JWT_HMAC_SECRET = "default-secret-key-at-least-32-characters-long-for-hs256";
     private static volatile SecretResolver secretResolver;
 
     private String name;
-    private String jwtHmacSecret = DEFAULT_JWT_HMAC_SECRET;
+    private String jwtHmacSecret;
 
     /**
      * Constructor required by ConfigurationLoader.
@@ -81,6 +80,10 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
 
     @Override
     protected Boolean authenticate(MessageContext messageContext, String authHeaderToken) {
+        if (jwtHmacSecret == null || jwtHmacSecret.trim().isEmpty()) {
+            LOG.error("JWT HMAC secret is not configured for ICP JWT security handler");
+            return false;
+        }
         // Validate HMAC JWT token
         if (validateHMACJWT(authHeaderToken)) {
             if (LOG.isDebugEnabled()) {
