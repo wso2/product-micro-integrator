@@ -94,6 +94,7 @@ public class ICPHeartBeatComponent {
     private static String runtimeId = null;
     private static volatile ScheduledExecutorService heartbeatExecutor = null;
     private static volatile boolean shutdownHookRegistered = false;
+    private static volatile boolean sslWarnLogged = false;
 
     /**
      * Returns the runtime ID from cache or file.
@@ -745,8 +746,10 @@ public class ICPHeartBeatComponent {
     private static CloseableHttpClient createHttpClient() throws Exception {
         boolean sslVerify = !"false".equalsIgnoreCase(getConfigValue(ICP_CONFIG_SSL_VERIFY, "true"));
         if (!sslVerify) {
-            log.warn("SSL certificate verification is disabled for ICP heartbeat client. "
-                    + "Do not use this setting in production.");
+            if (!sslWarnLogged) {
+                log.warn("SSL certificate verification is disabled for ICP heartbeat client. Do not use this setting in production.");
+                sslWarnLogged = true;
+            }
             javax.net.ssl.SSLContext trustAllContext = SSLContexts.custom()
                     .loadTrustMaterial(null, (chain, authType) -> true)
                     .build();
