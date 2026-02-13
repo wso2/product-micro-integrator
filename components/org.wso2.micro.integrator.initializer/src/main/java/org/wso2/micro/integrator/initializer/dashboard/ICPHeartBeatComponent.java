@@ -26,11 +26,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
-import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContexts;
@@ -90,19 +87,20 @@ public class ICPHeartBeatComponent {
 
     private static final Log log = LogFactory.getLog(ICPHeartBeatComponent.class);
     private static final Map<String, Object> configs = ConfigParser.getParsedConfigs();
-    private static String cachedJwtToken = null;
-    private static long jwtTokenExpiry = 0;
-    private static String runtimeIdFile = ".icp_runtime_id";
+    private static volatile String cachedJwtToken = null;
+    private static volatile long jwtTokenExpiry = 0;
+    private static final String RUNTIME_ID_FILENAME = ".icp_runtime_id";
     private static String runtimeId = null;
-    // Track last runtime hash acknowledged by ICP to optimize delta heartbeats
-    private static String lastRuntimeHash = null;
+    private static volatile ScheduledExecutorService heartbeatExecutor = null;
+    private static volatile boolean shutdownHookRegistered = false;
 
     /**
      * Returns the runtime ID from cache or file.
      * The runtime ID is generated at the server startup.
      *
      * @return the runtime ID
-     * @throws IOException if there's an error reading the runtime ID file or if the runtime ID does not exist
+     * @throws IOException if there's an error reading the runtime ID file or if the
+     *                     runtime ID does not exist
      */
     private static synchronized String getRuntimeId() throws IOException {
         // Prefer cached value if initialized
@@ -110,12 +108,16 @@ public class ICPHeartBeatComponent {
             return runtimeId;
         }
 
+        // Resolve from carbon.home to stay consistent with ICP startup runtime ID
+        // creation
+        Path runtimeIdPath = Paths.get(System.getProperty("carbon.home", "."),
+                RUNTIME_ID_FILENAME).toAbsolutePath();
+
         // Read from persisted file if present
-        Path runtimeIdPath = Paths.get(runtimeIdFile);
         if (Files.exists(runtimeIdPath)) {
-            log.debug("Reading runtime ID from file: " + runtimeIdFile);
-        }
-        if (Files.exists(runtimeIdPath)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Reading runtime ID from file: " + runtimeIdPath);
+            }
             String existingId = Files.readString(runtimeIdPath).trim();
             if (!existingId.isEmpty()) {
                 runtimeId = existingId;
@@ -124,7 +126,7 @@ public class ICPHeartBeatComponent {
         }
 
         // Runtime ID should have been generated at startup - throw error if not found
-        log.error("Runtime ID file not found at: " + runtimeIdFile);
+        log.error("Runtime ID file not found at: " + runtimeIdPath);
         throw new IOException("Error retrieving runtime ID as it was not properly generated during MI startup.");
     }
 
@@ -132,16 +134,42 @@ public class ICPHeartBeatComponent {
      * Starts the ICP heartbeat executor service that sends periodic delta
      * heartbeats and full heartbeats when requested by the ICP.
      */
-    public static void invokeICPHeartbeatExecutorService() {
+    public static synchronized void invokeICPHeartbeatExecutorService() {
+        if (heartbeatExecutor != null && !heartbeatExecutor.isShutdown() && !heartbeatExecutor.isTerminated()) {
+            log.warn("ICP heartbeat executor already running. Skipping duplicate start.");
+            return;
+        }
+        if (heartbeatExecutor != null && (heartbeatExecutor.isShutdown() || heartbeatExecutor.isTerminated())) {
+            heartbeatExecutor = null;
+        }
+
         String icpUrl = getConfigValue(ICP_CONFIG_URL, DEFAULT_ICP_URL);
         if (icpUrl == null) {
             log.warn("ICP URL not configured. ICP heartbeat will not be started.");
             return;
         }
+
+        // Fail fast if JWT secret/token generation is unavailable
+        try {
+            generateOrGetCachedJwtToken();
+        } catch (Exception e) {
+            log.error("ICP JWT HMAC secret is not configured or invalid. "
+                    + "Refusing to start ICP heartbeat service.", e);
+            return;
+        }
+
         long interval = getInterval();
         log.info("Starting ICP heartbeat service. Interval: " + interval + "s");
 
-        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        // Ensure executor is stopped during JVM shutdown to allow graceful MI
+        // termination
+        registerHeartbeatShutdownHook();
+
+        heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "ICP-Heartbeat");
+            t.setDaemon(true);
+            return t;
+        });
         Runnable runnableTask = () -> {
             try {
                 sendDeltaHeartbeat(icpUrl);
@@ -151,7 +179,42 @@ public class ICPHeartBeatComponent {
         };
 
         // Initial delay of 5 seconds, then send at configured interval
-        scheduledExecutorService.scheduleAtFixedRate(runnableTask, 5, interval, TimeUnit.SECONDS);
+        heartbeatExecutor.scheduleAtFixedRate(runnableTask, 5, interval, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Stops the ICP heartbeat executor service and allows a safe restart.
+     */
+    public static synchronized void stopICPHeartbeatExecutorService() {
+        if (heartbeatExecutor == null) {
+            return;
+        }
+
+        try {
+            heartbeatExecutor.shutdownNow();
+            if (!heartbeatExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                log.warn("ICP heartbeat executor did not terminate within timeout.");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while stopping ICP heartbeat executor service.", e);
+        } finally {
+            heartbeatExecutor = null;
+        }
+    }
+
+    private static synchronized void registerHeartbeatShutdownHook() {
+        if (shutdownHookRegistered) {
+            return;
+        }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                stopICPHeartbeatExecutorService();
+            } catch (Exception e) {
+                log.warn("Error while shutting down ICP heartbeat executor service.", e);
+            }
+        }, "ICP-Heartbeat-ShutdownHook"));
+        shutdownHookRegistered = true;
     }
 
     /**
@@ -180,14 +243,14 @@ public class ICPHeartBeatComponent {
                     && response.get("fullHeartbeatRequired").getAsBoolean()) {
                 log.info("ICP requested full heartbeat. Sending full heartbeat with all artifacts.");
                 sendFullHeartbeat(icpUrl);
-                lastRuntimeHash = currentHash;
             } else if (response != null && response.has("acknowledged")
                     && response.get("acknowledged").getAsBoolean()) {
-                log.debug("Delta heartbeat acknowledged by ICP.");
-                lastRuntimeHash = currentHash;
+                if (log.isDebugEnabled()) {
+                    log.debug("Delta heartbeat acknowledged by ICP.");
+                }
             }
         } catch (Exception e) {
-            log.error("Error sending full heartbeat to ICP.", e);
+            log.error("Error sending delta heartbeat to ICP.", e);
         }
     }
 
@@ -201,7 +264,9 @@ public class ICPHeartBeatComponent {
 
             JsonObject response = sendHeartbeatRequest(fullEndpoint, fullPayload);
 
-            if (response != null && response.has("acknowledged")
+            if (response == null) {
+                log.error("Unexpected null response from ICP full heartbeat.");
+            } else if (response.has("acknowledged")
                     && response.get("acknowledged").getAsBoolean()) {
                 log.info("Full heartbeat acknowledged by ICP.");
             } else {
@@ -220,12 +285,20 @@ public class ICPHeartBeatComponent {
             HttpPost httpPost = new HttpPost(endpoint);
 
             // Add JWT token to Authorization header
-            String jwtToken = "";
+            String jwtToken;
             try {
                 jwtToken = generateOrGetCachedJwtToken();
             } catch (Exception e) {
-                log.error("Error while jwtToken creation ", e);
+                log.error("Error while jwtToken creation, aborting heartbeat request.", e);
+                return null;
             }
+
+            // Guard against unexpected blank token
+            if (StringUtils.isEmpty(jwtToken)) {
+                log.error("JWT token is empty. Skipping heartbeat request to ICP at: " + endpoint);
+                return null;
+            }
+
             httpPost.setHeader("Authorization", "Bearer " + jwtToken);
             httpPost.setHeader("Accept", HEADER_VALUE_APPLICATION_JSON);
             httpPost.setHeader("Content-type", HEADER_VALUE_APPLICATION_JSON);
@@ -233,8 +306,11 @@ public class ICPHeartBeatComponent {
             StringEntity entity = new StringEntity(payload.toString(), "UTF-8");
             httpPost.setEntity(entity);
 
-            CloseableHttpResponse response = client.execute(httpPost);
-            return getJsonResponse(response);
+            try (CloseableHttpResponse response = client.execute(httpPost)) {
+                // Response is auto-closed by try-with-resources to prevent resource leaks.
+                JsonObject jsonResponse = getJsonResponse(response);
+                return jsonResponse;
+            }
         } catch (Exception e) {
             log.error("Error sending heartbeat request to ICP at: " + endpoint, e);
             return null;
@@ -375,7 +451,9 @@ public class ICPHeartBeatComponent {
             try {
                 carbonApps = CappDeployer.getCarbonApps();
             } catch (Exception e) {
-                log.debug("Error getting carbon apps list, proceeding without carbon app mapping", e);
+                if (log.isDebugEnabled()) {
+                    log.debug("Error getting carbon apps list, proceeding without carbon app mapping", e);
+                }
                 carbonApps = new java.util.ArrayList<>();
             }
             Map<String, String> artifactCappMap = buildArtifactToCappMap(carbonApps);
@@ -426,7 +504,7 @@ public class ICPHeartBeatComponent {
 
             // 15. Registry Resources (requires separate access)
             artifacts.add("registryResources", collectRegistryResources(synapseConfig, artifactCappMap));
-            
+
         } catch (Exception e) {
             log.error("Error collecting artifacts from MI configuration.", e);
             return createEmptyArtifactsStructure();
@@ -452,12 +530,8 @@ public class ICPHeartBeatComponent {
         artifacts.add("dataSources", new JsonArray());
         artifacts.add("connectors", new JsonArray());
         artifacts.add("registryResources", new JsonArray());
-        artifacts.add("logFiles", new JsonArray());
-        artifacts.add("listeners", new JsonArray());
-        artifacts.add("systemInfo", new JsonObject());
         return artifacts;
     }
-
 
     /**
      * Validates the entire heartbeat payload structure for Ballerina GraphQL API
@@ -465,7 +539,9 @@ public class ICPHeartBeatComponent {
      */
     private static JsonObject validateHeartbeatPayload(JsonObject payload) {
         try {
-            log.debug("Validating heartbeat payload structure for ICP GraphQL API compatibility");
+            if (log.isDebugEnabled()) {
+                log.debug("Validating heartbeat payload structure for ICP GraphQL API compatibility");
+            }
 
             // Ensure all required root-level properties exist and have correct types
             if (!payload.has("runtime") || payload.get("runtime").isJsonNull()) {
@@ -544,7 +620,9 @@ public class ICPHeartBeatComponent {
                 }
             }
 
-            log.debug("Heartbeat payload validation completed successfully");
+            if (log.isDebugEnabled()) {
+                log.debug("Heartbeat payload validation completed successfully");
+            }
             return payload;
 
         } catch (Exception e) {
@@ -552,7 +630,19 @@ public class ICPHeartBeatComponent {
 
             // Create minimal valid payload
             JsonObject minimalPayload = new JsonObject();
-            minimalPayload.addProperty("runtime", UUID.randomUUID().toString());
+            String runtimeValue = "";
+            try {
+                if (payload != null && payload.has("runtime") && !payload.get("runtime").isJsonNull()) {
+                    runtimeValue = payload.get("runtime").getAsString();
+                } else if (payload != null && payload.has("runtimeHash") && !payload.get("runtimeHash").isJsonNull()) {
+                    runtimeValue = payload.get("runtimeHash").getAsString();
+                } else if (!StringUtils.isEmpty(runtimeId)) {
+                    runtimeValue = runtimeId;
+                }
+            } catch (Exception ignored) {
+                runtimeValue = !StringUtils.isEmpty(runtimeId) ? runtimeId : "";
+            }
+            minimalPayload.addProperty("runtime", runtimeValue);
             minimalPayload.addProperty("runtimeType", "MI");
             minimalPayload.addProperty("status", "RUNNING");
             minimalPayload.addProperty("environment", "dev");
@@ -615,32 +705,57 @@ public class ICPHeartBeatComponent {
      */
     private static String generateOrGetCachedJwtToken() throws Exception {
         long currentTime = System.currentTimeMillis();
-        // Return cached token if it's still valid (with 5 minute buffer)
+        // Fast path: Return cached token if it's still valid (with 5 minute buffer)
         if (cachedJwtToken != null && currentTime < (jwtTokenExpiry - 300000)) {
             return cachedJwtToken;
         }
-        String jwtHmacSecret = getConfigValue(ICP_JWT_HMAC_SECRET, DEFAULT_JWT_HMAC_SECRET);
-        HMACJWTTokenGenerator hmacJWTTokenGenerator = new HMACJWTTokenGenerator(jwtHmacSecret);
-        String issuer = getConfigValue(ICP_JWT_ISSUER, DEFAULT_JWT_ISSUER);
-        String audience = getConfigValue(ICP_JWT_AUDIENCE, DEFAULT_JWT_AUDIENCE);
-        String scope = getConfigValue(ICP_JWT_SCOPE, DEFAULT_JWT_SCOPE);
-        long expirySeconds = getJwtExpirySeconds();
-        // Generate new token
-        cachedJwtToken = hmacJWTTokenGenerator.generateToken(issuer, audience, scope, expirySeconds);
-        jwtTokenExpiry = currentTime + (expirySeconds * 1000);
-        return cachedJwtToken;
+
+        synchronized (ICPHeartBeatComponent.class) {
+            // Re-check within synchronized block to avoid race conditions
+            currentTime = System.currentTimeMillis();
+            if (cachedJwtToken != null && currentTime < (jwtTokenExpiry - 300000)) {
+                return cachedJwtToken;
+            }
+
+            String jwtHmacSecret = getConfigValue(ICP_JWT_HMAC_SECRET);
+            if (StringUtils.isEmpty(jwtHmacSecret) || jwtHmacSecret.trim().isEmpty()) {
+                throw new Exception("Missing required configuration: '" + ICP_JWT_HMAC_SECRET
+                        + "'. Configure a secure HMAC secret to enable ICP heartbeat authentication.");
+            }
+            HMACJWTTokenGenerator hmacJWTTokenGenerator = new HMACJWTTokenGenerator(jwtHmacSecret);
+            String issuer = getConfigValue(ICP_JWT_ISSUER, DEFAULT_JWT_ISSUER);
+            String audience = getConfigValue(ICP_JWT_AUDIENCE, DEFAULT_JWT_AUDIENCE);
+            String scope = getConfigValue(ICP_JWT_SCOPE, DEFAULT_JWT_SCOPE);
+            long expirySeconds = getJwtExpirySeconds();
+
+            // Generate new token and update cache atomically
+            cachedJwtToken = hmacJWTTokenGenerator.generateToken(issuer, audience, scope, expirySeconds);
+            jwtTokenExpiry = currentTime + (expirySeconds * 1000);
+            return cachedJwtToken;
+        }
     }
 
     /**
      * Creates an HTTP client with SSL support.
+     * If {@code icp_config.ssl_verify} is set to {@code false} in deployment.toml,
+     * server certificate validation and hostname verification are skipped.
+     * This should only be used in development or testing environments.
      */
     private static CloseableHttpClient createHttpClient() throws Exception {
+        boolean sslVerify = !"false".equalsIgnoreCase(getConfigValue(ICP_CONFIG_SSL_VERIFY, "true"));
+        if (!sslVerify) {
+            log.warn("SSL certificate verification is disabled for ICP heartbeat client. "
+                    + "Do not use this setting in production.");
+            javax.net.ssl.SSLContext trustAllContext = SSLContexts.custom()
+                    .loadTrustMaterial(null, (chain, authType) -> true)
+                    .build();
+            return HttpClients.custom()
+                    .setSSLContext(trustAllContext)
+                    .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                    .build();
+        }
         return HttpClients.custom()
-                .setSSLSocketFactory(new SSLConnectionSocketFactory(
-                        SSLContexts.custom()
-                                .loadTrustMaterial(null, (TrustStrategy) new TrustSelfSignedStrategy())
-                                .build(),
-                        NoopHostnameVerifier.INSTANCE))
+                .setSSLContext(SSLContexts.createDefault())
                 .build();
     }
 
@@ -672,7 +787,12 @@ public class ICPHeartBeatComponent {
         long interval = DEFAULT_HEARTBEAT_INTERVAL;
         Object configuredInterval = configs.get(ICP_CONFIG_HEARTBEAT_INTERVAL);
         if (configuredInterval != null) {
-            interval = Integer.parseInt(configuredInterval.toString());
+            try {
+                interval = Integer.parseInt(configuredInterval.toString());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid config for '" + ICP_CONFIG_HEARTBEAT_INTERVAL + "': "
+                        + configuredInterval + ". Using default: " + DEFAULT_HEARTBEAT_INTERVAL);
+            }
         }
         return interval;
     }
@@ -683,7 +803,12 @@ public class ICPHeartBeatComponent {
     private static long getJwtExpirySeconds() {
         Object expiry = configs.get(ICP_JWT_EXPIRY_SECONDS);
         if (expiry != null) {
-            return Long.parseLong(expiry.toString());
+            try {
+                return Long.parseLong(expiry.toString());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid config for '" + ICP_JWT_EXPIRY_SECONDS + "': "
+                        + expiry + ". Using default: " + DEFAULT_JWT_EXPIRY_SECONDS);
+            }
         }
         return DEFAULT_JWT_EXPIRY_SECONDS;
     }
@@ -701,6 +826,14 @@ public class ICPHeartBeatComponent {
     private static String getConfigValue(String key, String defaultValue) {
         Object value = configs.get(key);
         return (value != null) ? value.toString() : defaultValue;
+    }
+
+    /**
+     * Helper method to get required/optional configuration value without fallback.
+     */
+    private static String getConfigValue(String key) {
+        Object value = configs.get(key);
+        return (value != null) ? value.toString() : null;
     }
 
     /**
@@ -724,7 +857,9 @@ public class ICPHeartBeatComponent {
             Gson gson = new Gson();
             return gson.fromJson(stringResponse, JsonObject.class);
         } catch (Exception e) {
-            log.debug("Error parsing JSON response from ICP.", e);
+            if (log.isDebugEnabled()) {
+                log.debug("Error parsing JSON response from ICP.", e);
+            }
             return null;
         }
     }
@@ -759,7 +894,8 @@ public class ICPHeartBeatComponent {
                         String tracingState = api.getAspectConfiguration().isTracingEnabled() ? "enabled" : "disabled";
                         apiObj.addProperty("tracing", tracingState);
                     }
-                } catch (Throwable ignore) { }
+                } catch (Throwable ignore) {
+                }
 
                 // Collect API resources
                 JsonArray resources = new JsonArray();
@@ -818,8 +954,10 @@ public class ICPHeartBeatComponent {
                 // Tracing and statistics as per AspectConfiguration
                 try {
                     if (proxy.getAspectConfiguration() != null) {
-                        String tracingState = proxy.getAspectConfiguration().isTracingEnabled() ? "enabled" : "disabled";
-                        String statsState = proxy.getAspectConfiguration().isStatisticsEnable() ? "enabled" : "disabled";
+                        String tracingState = proxy.getAspectConfiguration().isTracingEnabled() ? "enabled"
+                                : "disabled";
+                        String statsState = proxy.getAspectConfiguration().isStatisticsEnable() ? "enabled"
+                                : "disabled";
                         proxyObj.addProperty("tracing", tracingState);
                         proxyObj.addProperty("statistics", statsState);
                     }
@@ -827,7 +965,8 @@ public class ICPHeartBeatComponent {
                     // ignore if aspect configuration not available for some proxies
                 }
 
-                // Endpoints for this proxy service: use AxisService EPRs (HTTP/HTTPS service URLs)
+                // Endpoints for this proxy service: use AxisService EPRs (HTTP/HTTPS service
+                // URLs)
                 try {
                     JsonArray eprArray = new JsonArray();
                     if (proxy.getAxisService() != null) {
@@ -882,12 +1021,15 @@ public class ICPHeartBeatComponent {
                 try {
                     if (endpoint instanceof AbstractEndpoint) {
                         AbstractEndpoint abstractEndpoint = (AbstractEndpoint) endpoint;
-                        if (abstractEndpoint.getDefinition() != null && abstractEndpoint.getDefinition().getAspectConfiguration() != null) {
-                            String tracingState = abstractEndpoint.getDefinition().getAspectConfiguration().isTracingEnabled() ? "enabled" : "disabled";
+                        if (abstractEndpoint.getDefinition() != null
+                                && abstractEndpoint.getDefinition().getAspectConfiguration() != null) {
+                            String tracingState = abstractEndpoint.getDefinition().getAspectConfiguration()
+                                    .isTracingEnabled() ? "enabled" : "disabled";
                             endpointObj.addProperty("tracing", tracingState);
                         }
                     }
-                } catch (Throwable ignore) { }
+                } catch (Throwable ignore) {
+                }
                 // Collect type-specific attributes in a name/value array
                 JsonArray attributes = new JsonArray();
                 try {
@@ -897,28 +1039,34 @@ public class ICPHeartBeatComponent {
                             addAttrOrEmpty(attributes, "WSDL URI", wsdlEp.getWsdlURI());
                             addAttrOrEmpty(attributes, "Service", wsdlEp.getServiceName());
                             addAttrOrEmpty(attributes, "Port", wsdlEp.getPortName());
-                        } catch (Throwable ignore) {}
+                        } catch (Throwable ignore) {
+                        }
                     } else if (endpoint instanceof HTTPEndpoint) {
                         HTTPEndpoint httpEp = (HTTPEndpoint) endpoint;
                         try {
                             addAttrOrEmpty(attributes, "Method", httpEp.getHttpMethod());
                             String template = httpEp.getUriTemplate().getTemplate();
                             addAttrOrEmpty(attributes, "URI Template", template);
-                        } catch (Throwable ignore) {}
+                        } catch (Throwable ignore) {
+                        }
                     } else if (endpoint instanceof TemplateEndpoint) {
-                         TemplateEndpoint templateEndpoint = (TemplateEndpoint) endpoint;
-                         try{
+                        TemplateEndpoint templateEndpoint = (TemplateEndpoint) endpoint;
+                        try {
                             addAttrOrEmpty(attributes, "template", templateEndpoint.getTemplate());
                             addAttrOrEmpty(attributes, "uri", templateEndpoint.getAddress());
-                         }catch (Throwable ignore) {}
+                        } catch (Throwable ignore) {
+                        }
                     } else if (endpoint instanceof AddressEndpoint) {
                         try {
                             EndpointDefinition def = ((AddressEndpoint) endpoint).getDefinition();
                             addAttrOrEmpty(attributes, "Address", def.getAddress());
-                        } catch (Throwable ignore) {}
+                        } catch (Throwable ignore) {
+                        }
                     } else {
-                        // For Failover/Loadbalance/Recipient List or other types: no additional attributes
-                        // But if AbstractEndpoint exposes a definition with address, include it as Address
+                        // For Failover/Loadbalance/Recipient List or other types: no additional
+                        // attributes
+                        // But if AbstractEndpoint exposes a definition with address, include it as
+                        // Address
                         try {
                             if (endpoint instanceof AbstractEndpoint) {
                                 EndpointDefinition def = ((AbstractEndpoint) endpoint).getDefinition();
@@ -926,7 +1074,8 @@ public class ICPHeartBeatComponent {
                                     addAttrOrEmpty(attributes, "Address", def.getAddress());
                                 }
                             }
-                        } catch (Throwable ignore) {}
+                        } catch (Throwable ignore) {
+                        }
                     }
                 } catch (Throwable t) {
                     // Continue with empty attributes on any error
@@ -941,23 +1090,19 @@ public class ICPHeartBeatComponent {
     }
 
     private static void addAttr(JsonArray attrs, String name, String value) {
-        if (name == null || value == null) { return; }
+        if (name == null || value == null) {
+            return;
+        }
         JsonObject obj = new JsonObject();
         obj.addProperty("name", name);
         obj.addProperty("value", value);
         attrs.add(obj);
     }
 
-    private static void addAttrIfPresent(JsonArray attrs, String name, String value) {
-        if (name == null) { return; }
-        if (value == null) { return; }
-        String v = value.trim();
-        if (v.isEmpty()) { return; }
-        addAttr(attrs, name, v);
-    }
-
     private static void addAttrOrEmpty(JsonArray attrs, String name, String value) {
-        if (name == null) { return; }
+        if (name == null) {
+            return;
+        }
         String v = (value == null) ? "" : value.trim();
         addAttr(attrs, name, v);
     }
@@ -991,18 +1136,22 @@ public class ICPHeartBeatComponent {
                 // Statistics flag via AspectConfiguration
                 try {
                     if (inbound.getAspectConfiguration() != null) {
-                        String statsState = inbound.getAspectConfiguration().isStatisticsEnable() ? "enabled" : "disabled";
+                        String statsState = inbound.getAspectConfiguration().isStatisticsEnable() ? "enabled"
+                                : "disabled";
                         inboundObj.addProperty("statistics", statsState);
                     }
-                } catch (Throwable ignore) { }
+                } catch (Throwable ignore) {
+                }
 
                 // Tracing flag via AspectConfiguration
                 try {
                     if (inbound.getAspectConfiguration() != null) {
-                        String tracingState = inbound.getAspectConfiguration().isTracingEnabled() ? "enabled" : "disabled";
+                        String tracingState = inbound.getAspectConfiguration().isTracingEnabled() ? "enabled"
+                                : "disabled";
                         inboundObj.addProperty("tracing", tracingState);
                     }
-                } catch (Throwable ignore) { }
+                } catch (Throwable ignore) {
+                }
 
                 // Sequences
                 try {
@@ -1010,13 +1159,15 @@ public class ICPHeartBeatComponent {
                     if (seq != null) {
                         inboundObj.addProperty("sequence", seq);
                     }
-                } catch (Throwable ignore) { }
+                } catch (Throwable ignore) {
+                }
                 try {
                     String onErr = inbound.getOnErrorSeq();
                     if (onErr != null) {
                         inboundObj.addProperty("onError", onErr);
                     }
-                } catch (Throwable ignore) { }
+                } catch (Throwable ignore) {
+                }
                 inboundEndpoints.add(inboundObj);
             }
         } catch (Exception e) {
@@ -1047,10 +1198,12 @@ public class ICPHeartBeatComponent {
                 // Tracing flag via AspectConfiguration
                 try {
                     if (sequence.getAspectConfiguration() != null) {
-                        String tracingState = sequence.getAspectConfiguration().isTracingEnabled() ? "enabled" : "disabled";
+                        String tracingState = sequence.getAspectConfiguration().isTracingEnabled() ? "enabled"
+                                : "disabled";
                         seqObj.addProperty("tracing", tracingState);
                     }
-                } catch (Throwable ignore) { }
+                } catch (Throwable ignore) {
+                }
                 sequences.add(seqObj);
             }
         } catch (Exception e) {
@@ -1073,7 +1226,7 @@ public class ICPHeartBeatComponent {
                 String name = startup.getName();
                 String taskGroup = null;
                 String state = "enabled"; // default state
-                
+
                 try {
                     if (synapseEnv != null && synapseEnv.getTaskManager() != null
                             && synapseEnv.getTaskManager().getTaskDescriptionRepository() != null) {
@@ -1086,12 +1239,11 @@ public class ICPHeartBeatComponent {
                 } catch (Exception ignored) {
                     // If repository lookup fails, leave taskGroup null
                 }
-                
+
                 // Check task state
                 try {
                     if (startup instanceof org.apache.synapse.startup.quartz.StartUpController) {
-                        org.apache.synapse.startup.quartz.StartUpController controller = 
-                            (org.apache.synapse.startup.quartz.StartUpController) startup;
+                        org.apache.synapse.startup.quartz.StartUpController controller = (org.apache.synapse.startup.quartz.StartUpController) startup;
                         // isTaskActive() returns true when task is active/running
                         state = controller.isTaskActive() ? "enabled" : "disabled";
                     }
@@ -1102,13 +1254,13 @@ public class ICPHeartBeatComponent {
                 JsonObject taskObj = new JsonObject();
                 taskObj.addProperty("name", name);
                 taskObj.addProperty("state", state);
-                
+
                 // Add carbon app name
                 String carbonApp = lookupCarbonApp(name, "task", cappMap);
                 if (carbonApp != null) {
                     taskObj.addProperty("carbonApp", carbonApp);
                 }
-                
+
                 if (taskGroup != null) {
                     taskObj.addProperty("taskGroup", taskGroup);
                 } else {
@@ -1140,23 +1292,23 @@ public class ICPHeartBeatComponent {
                 if (carbonApp != null) {
                     templateObj.addProperty("carbonApp", carbonApp);
                 }
-                
+
                 templates.add(templateObj);
             }
-            //Sequence Templates
+            // Sequence Templates
             Map<String, TemplateMediator> sequenceTemplates = synapseConfig
                     .getSequenceTemplates();
             for (Map.Entry<String, TemplateMediator> entry : sequenceTemplates.entrySet()) {
                 JsonObject templateObj = new JsonObject();
                 templateObj.addProperty("name", entry.getKey());
                 templateObj.addProperty("type", Constants.SEQUENCE_TEMPLATE_TYPE);
-                
+
                 // Add carbon app name
                 String carbonApp = lookupCarbonApp(entry.getKey(), "template", cappMap);
                 if (carbonApp != null) {
                     templateObj.addProperty("carbonApp", carbonApp);
                 }
-                
+
                 templates.add(templateObj);
             }
         } catch (Exception e) {
@@ -1184,7 +1336,7 @@ public class ICPHeartBeatComponent {
                 if (carbonApp != null) {
                     storeObj.addProperty("carbonApp", carbonApp);
                 }
-                
+
                 messageStores.add(storeObj);
             }
         } catch (Exception e) {
@@ -1213,7 +1365,7 @@ public class ICPHeartBeatComponent {
                 if (carbonApp != null) {
                     processorObj.addProperty("carbonApp", carbonApp);
                 }
-                
+
                 try {
                     boolean deactivated = processor.isDeactivated();
                     processorObj.addProperty("state", deactivated ? "disabled" : "enabled");
@@ -1262,7 +1414,7 @@ public class ICPHeartBeatComponent {
                 if (carbonApp != null) {
                     entryObj.addProperty("carbonApp", carbonApp);
                 }
-                
+
                 String entryType;
                 switch (entry.getType()) {
                     case org.apache.synapse.config.Entry.REMOTE_ENTRY:
@@ -1297,7 +1449,10 @@ public class ICPHeartBeatComponent {
         JsonArray dataServices = new JsonArray();
         try {
             if (synapseConfig == null || synapseConfig.getAxisConfiguration() == null) {
-                log.debug("Synapse configuration or Axis configuration is not available for data services collection");
+                if (log.isDebugEnabled()) {
+                    log.debug(
+                            "Synapse configuration or Axis configuration is not available for data services collection");
+                }
                 return dataServices;
             }
 
@@ -1405,7 +1560,9 @@ public class ICPHeartBeatComponent {
                     map.put(artifact.getName() + ":" + type.toLowerCase(), carbonApp.getAppName());
                 }
             } catch (Exception e) {
-                log.debug("Error building artifact-to-capp map for app: " + carbonApp.getAppName(), e);
+                if (log.isDebugEnabled()) {
+                    log.debug("Error building artifact-to-capp map for app: " + carbonApp.getAppName(), e);
+                }
             }
         }
         return map;
@@ -1511,22 +1668,22 @@ public class ICPHeartBeatComponent {
         JsonArray dataSources = new JsonArray();
         try {
             // Use Carbon DataSourceManager to list configured data sources
-            org.wso2.micro.integrator.ndatasource.core.DataSourceManager dsManager =
-                    org.wso2.micro.integrator.ndatasource.core.DataSourceManager.getInstance();
+            org.wso2.micro.integrator.ndatasource.core.DataSourceManager dsManager = org.wso2.micro.integrator.ndatasource.core.DataSourceManager
+                    .getInstance();
             if (dsManager == null) {
                 log.warn("DataSourceManager instance is null; no data sources available");
                 return dataSources;
             }
 
-            org.wso2.micro.integrator.ndatasource.core.DataSourceRepository repository =
-                    dsManager.getDataSourceRepository();
+            org.wso2.micro.integrator.ndatasource.core.DataSourceRepository repository = dsManager
+                    .getDataSourceRepository();
             if (repository == null) {
                 log.warn("DataSourceRepository is null; no data sources available");
                 return dataSources;
             }
 
-            java.util.Collection<org.wso2.micro.integrator.ndatasource.core.CarbonDataSource> allDataSources =
-                    repository.getAllDataSources();
+            java.util.Collection<org.wso2.micro.integrator.ndatasource.core.CarbonDataSource> allDataSources = repository
+                    .getAllDataSources();
 
             for (org.wso2.micro.integrator.ndatasource.core.CarbonDataSource cds : allDataSources) {
                 try {
@@ -1542,10 +1699,10 @@ public class ICPHeartBeatComponent {
                         dsObj.addProperty("type", "");
                     }
 
-                    // Try to extract driver, url (masked), and username
+                    // Try to extract driver, url (masked), and username availability
                     String driver = null;
                     String url = null;
-                    String username = null;
+                    boolean hasUsername = false;
 
                     Object dsInstance = null;
                     try {
@@ -1560,8 +1717,7 @@ public class ICPHeartBeatComponent {
                     try {
                         if (dsInstance instanceof javax.sql.DataSource) {
                             if (dsInstance instanceof org.apache.tomcat.jdbc.pool.DataSource) {
-                                org.apache.tomcat.jdbc.pool.DataSource tomcat =
-                                        (org.apache.tomcat.jdbc.pool.DataSource) dsInstance;
+                                org.apache.tomcat.jdbc.pool.DataSource tomcat = (org.apache.tomcat.jdbc.pool.DataSource) dsInstance;
                                 org.apache.tomcat.jdbc.pool.PoolConfiguration pool = tomcat.getPoolProperties();
                                 if (pool != null) {
                                     if (pool.getDataSource() == null) {
@@ -1571,7 +1727,7 @@ public class ICPHeartBeatComponent {
                                             url = org.wso2.micro.integrator.ndatasource.core.utils.DataSourceUtils
                                                     .maskURLPassword(pool.getUrl());
                                         }
-                                        username = pool.getUsername();
+                                        hasUsername = !StringUtils.isEmpty(pool.getUsername());
                                     }
                                     // If external DataSource factory is used (pool.getDataSource() != null),
                                     // we'll fall back to reading XML definition below.
@@ -1584,20 +1740,23 @@ public class ICPHeartBeatComponent {
                         }
                     }
 
-                    // Fallback: parse the XML definition to extract fields (works for external datasources too)
-                    if ((driver == null && url == null && username == null)
+                    // Fallback: parse the XML definition to extract fields (works for external
+                    // datasources too)
+                    if ((driver == null && url == null && !hasUsername)
                             && meta.getDefinition() != null
                             && meta.getDefinition().getDsXMLConfiguration() != null) {
                         try {
-                            org.w3c.dom.Element root =
-                                    (org.w3c.dom.Element) meta.getDefinition().getDsXMLConfiguration();
+                            org.w3c.dom.Element root = (org.w3c.dom.Element) meta.getDefinition()
+                                    .getDsXMLConfiguration();
                             // direct children like <driverClassName>, <url>, <username>
-                            for (org.w3c.dom.Node child = root.getFirstChild(); child != null; child = child.getNextSibling()) {
+                            for (org.w3c.dom.Node child = root.getFirstChild(); child != null; child = child
+                                    .getNextSibling()) {
                                 if (!(child instanceof org.w3c.dom.Element)) {
                                     continue;
                                 }
                                 String nodeName = child.getNodeName();
-                                String text = (child.getFirstChild() != null) ? child.getFirstChild().getNodeValue() : null;
+                                String text = (child.getFirstChild() != null) ? child.getFirstChild().getNodeValue()
+                                        : null;
                                 if (text == null || text.trim().isEmpty()) {
                                     continue;
                                 }
@@ -1606,20 +1765,23 @@ public class ICPHeartBeatComponent {
                                 } else if ("url".equals(nodeName) && url == null) {
                                     url = org.wso2.micro.integrator.ndatasource.core.utils.DataSourceUtils
                                             .maskURLPassword(text);
-                                } else if ("username".equals(nodeName) && username == null) {
-                                    username = text;
+                                } else if ("username".equals(nodeName) && !hasUsername) {
+                                    hasUsername = true;
                                 } else if ("dataSourceProps".equals(nodeName)) {
                                     // <dataSourceProps><property name="url">...</property> ...</dataSourceProps>
-                                    for (org.w3c.dom.Node prop = child.getFirstChild(); prop != null; prop = prop.getNextSibling()) {
+                                    for (org.w3c.dom.Node prop = child.getFirstChild(); prop != null; prop = prop
+                                            .getNextSibling()) {
                                         if (!(prop instanceof org.w3c.dom.Element)) {
                                             continue;
                                         }
                                         org.w3c.dom.Element propEl = (org.w3c.dom.Element) prop;
                                         org.w3c.dom.Node nameAttr = propEl.getAttributes() != null
-                                                ? propEl.getAttributes().getNamedItem("name") : null;
+                                                ? propEl.getAttributes().getNamedItem("name")
+                                                : null;
                                         String propName = (nameAttr != null) ? nameAttr.getNodeValue() : null;
                                         String propVal = (propEl.getFirstChild() != null)
-                                                ? propEl.getFirstChild().getNodeValue() : null;
+                                                ? propEl.getFirstChild().getNodeValue()
+                                                : null;
                                         if (propName == null || propVal == null) {
                                             continue;
                                         }
@@ -1628,8 +1790,9 @@ public class ICPHeartBeatComponent {
                                         } else if (url == null && "url".equals(propName)) {
                                             url = org.wso2.micro.integrator.ndatasource.core.utils.DataSourceUtils
                                                     .maskURLPassword(propVal);
-                                        } else if (username == null && ("username".equals(propName) || "user".equals(propName))) {
-                                            username = propVal;
+                                        } else if (!hasUsername
+                                                && ("username".equals(propName) || "user".equals(propName))) {
+                                            hasUsername = true;
                                         }
                                     }
                                 }
@@ -1647,13 +1810,13 @@ public class ICPHeartBeatComponent {
                     if (url != null) {
                         dsObj.addProperty("url", url);
                     }
-                    if (username != null) {
-                        dsObj.addProperty("username", username);
-                    }
+                    dsObj.addProperty("hasUsername", hasUsername);
 
                     dataSources.add(dsObj);
                 } catch (Exception inner) {
-                    log.debug("Skipping a datasource due to processing error", inner);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Skipping a datasource due to processing error", inner);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -1668,10 +1831,14 @@ public class ICPHeartBeatComponent {
     private static JsonArray collectConnectors(SynapseConfiguration synapseConfig, Map<String, String> cappMap) {
         JsonArray connectors = new JsonArray();
         try {
-            log.info("Starting connector collection for ICP heartbeat");
+            if (log.isDebugEnabled()) {
+                log.debug("Starting connector collection for ICP heartbeat");
+            }
 
             if (synapseConfig == null) {
-                log.warn("SynapseConfiguration is null, returning empty connector list");
+                if (log.isDebugEnabled()) {
+                    log.debug("SynapseConfiguration is null, returning empty connector list");
+                }
                 return connectors;
             }
 
@@ -1679,11 +1846,15 @@ public class ICPHeartBeatComponent {
             Map<String, org.apache.synapse.libraries.model.Library> libraryMap = synapseConfig.getSynapseLibraries();
 
             if (libraryMap == null || libraryMap.isEmpty()) {
-                log.info("No connectors/libraries found in SynapseConfiguration");
+                if (log.isDebugEnabled()) {
+                    log.debug("No connectors/libraries found in SynapseConfiguration");
+                }
                 return connectors;
             }
 
-            log.info("Found " + libraryMap.size() + " libraries/connectors to process");
+            if (log.isDebugEnabled()) {
+                log.debug("Found " + libraryMap.size() + " libraries/connectors to process");
+            }
 
             int processedCount = 0;
             int errorCount = 0;
@@ -1699,13 +1870,14 @@ public class ICPHeartBeatComponent {
                         JsonObject connectorObj = new JsonObject();
                         connectorObj.addProperty("name", synapseLibrary.getName());
                         connectorObj.addProperty("package", synapseLibrary.getPackage());
-                        
+
                         // Add carbon app name
-                        String carbonApp = lookupCarbonApp(synapseLibrary.getQName().toString(), "lib/synapse/import", cappMap);
+                        String carbonApp = lookupCarbonApp(synapseLibrary.getQName().toString(), "lib/synapse/import",
+                                cappMap);
                         if (carbonApp != null) {
                             connectorObj.addProperty("carbonApp", carbonApp);
                         }
-                        
+
                         // Add description if available
                         if (synapseLibrary.getDescription() != null) {
                             connectorObj.addProperty("description", synapseLibrary.getDescription());
@@ -1721,8 +1893,10 @@ public class ICPHeartBeatComponent {
                                     " (package: " + synapseLibrary.getPackage() + ", status: " + status + ")");
                         }
                     } else {
-                        log.debug("Skipping non-SynapseLibrary entry: " + qualifiedName +
-                                " (type: " + library.getClass().getSimpleName() + ")");
+                        if (log.isDebugEnabled()) {
+                            log.debug("Skipping non-SynapseLibrary entry: " + qualifiedName +
+                                    " (type: " + library.getClass().getSimpleName() + ")");
+                        }
                     }
                 } catch (Exception e) {
                     errorCount++;
@@ -1738,8 +1912,10 @@ public class ICPHeartBeatComponent {
                 }
             }
 
-            log.info("Connector collection completed. Processed: " + processedCount +
-                    ", Errors: " + errorCount + ", Total connectors collected: " + connectors.size());
+            if (log.isDebugEnabled()) {
+                log.debug("Connector collection completed. Processed: " + processedCount +
+                        ", Errors: " + errorCount + ", Total connectors collected: " + connectors.size());
+            }
 
         } catch (Exception e) {
             log.error("Error collecting Connectors from SynapseConfiguration", e);
@@ -1752,15 +1928,21 @@ public class ICPHeartBeatComponent {
      */
     private static JsonArray collectRegistryResources(SynapseConfiguration synapseConfig, Map<String, String> cappMap) {
         JsonArray registryResources = new JsonArray();
-        log.info("Starting registry resources collection for ICP heartbeat");
+        if (log.isDebugEnabled()) {
+            log.debug("Starting registry resources collection for ICP heartbeat");
+        }
         if (synapseConfig == null) {
-            log.warn("SynapseConfiguration is null, returning empty registry resources list");
+            if (log.isDebugEnabled()) {
+                log.debug("SynapseConfiguration is null, returning empty registry resources list");
+            }
             return registryResources;
         }
         // Get the registry from synapse configuration
         Registry synapseRegistry = synapseConfig.getRegistry();
         if (synapseRegistry == null) {
-            log.warn("No registry found in SynapseConfiguration, returning empty registry resources list");
+            if (log.isDebugEnabled()) {
+                log.debug("No registry found in SynapseConfiguration, returning empty registry resources list");
+            }
             return registryResources;
         }
         if (!(synapseRegistry instanceof MicroIntegratorRegistry)) {
@@ -1772,7 +1954,9 @@ public class ICPHeartBeatComponent {
         String regRoot = microIntegratorRegistry.getRegRoot();
 
         if (regRoot == null || regRoot.trim().isEmpty()) {
-            log.warn("Registry root path is null or empty, returning empty registry resources list");
+            if (log.isDebugEnabled()) {
+                log.debug("Registry root path is null or empty, returning empty registry resources list");
+            }
             return registryResources;
         }
         String registryPath = Utils.formatPath(regRoot + File.separator + "registry");
@@ -1795,7 +1979,9 @@ public class ICPHeartBeatComponent {
                 }
             }
         } else {
-            log.warn("Registry path does not exist or is not a directory: " + registryPath);
+            if (log.isDebugEnabled()) {
+                log.debug("Registry path does not exist or is not a directory: " + registryPath);
+            }
         }
         return registryResources;
     }

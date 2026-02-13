@@ -30,6 +30,7 @@ import org.wso2.micro.integrator.management.apis.Constants;
 import org.wso2.micro.integrator.management.apis.Utils;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -138,7 +139,7 @@ public class ICPGetLocalEntryValueResource extends APIResource {
         }
     }
 
-    private String fetchFromUrl(String urlStr) throws Exception {
+    private String fetchFromUrl(String urlStr) throws IOException {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         try {
@@ -146,18 +147,32 @@ public class ICPGetLocalEntryValueResource extends APIResource {
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
             int responseCode = conn.getResponseCode();
-            InputStream stream = (responseCode >= 200 && responseCode < 300)
-                    ? conn.getInputStream() : conn.getErrorStream();
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(stream))) {
-                StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = br.readLine()) != null) {
-                    sb.append(line).append('\n');
+            if (responseCode < 200 || responseCode >= 300) {
+                String errorMessage = "HTTP " + responseCode + " when fetching URL: " + urlStr;
+                String errorBody = null;
+                InputStream errorStream = conn.getErrorStream();
+                if (errorStream != null) {
+                    errorBody = readStream(errorStream);
                 }
-                return sb.toString();
+                if (StringUtils.isNotBlank(errorBody)) {
+                    throw new IOException(errorMessage + ". Response: " + errorBody);
+                }
+                throw new IOException(errorMessage + ". No error body returned.");
             }
+            return readStream(conn.getInputStream());
         } finally {
             conn.disconnect();
+        }
+    }
+
+    private String readStream(InputStream inputStream) throws IOException {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line).append('\n');
+            }
+            return sb.toString();
         }
     }
 }

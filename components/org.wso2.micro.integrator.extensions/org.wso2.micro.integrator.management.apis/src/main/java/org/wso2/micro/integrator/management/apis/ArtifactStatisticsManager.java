@@ -18,6 +18,7 @@
 
 package org.wso2.micro.integrator.management.apis;
 
+import com.google.gson.JsonObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -60,7 +61,11 @@ public class ArtifactStatisticsManager {
         if (log.isDebugEnabled()) {
             log.debug("Changing statistics state for proxy service");
         }
-        String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
+        JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+        if (!payload.has(NAME) || payload.get(NAME).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: name", axis2MessageContext, Constants.BAD_REQUEST);
+        }
+        String name = payload.get(NAME).getAsString();
         ProxyService proxyService = messageContext.getConfiguration().getProxyService(name);
         return ArtifactOperationHelper.handleAspectOperation(
                 proxyService, name, "Specified proxy ('" + name + "') not found", PROXY_SERVICE_NAME,
@@ -75,12 +80,20 @@ public class ArtifactStatisticsManager {
     public static JSONObject changeEndpointStatistics(String performedBy, MessageContext messageContext,
                                                       org.apache.axis2.context.MessageContext axis2MessageContext)
             throws IOException {
-        String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
+        JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+        if (!payload.has(NAME) || payload.get(NAME).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: name", axis2MessageContext, Constants.BAD_REQUEST);
+        }
+        String name = payload.get(NAME).getAsString();
         Endpoint endpoint = messageContext.getConfiguration().getEndpoint(name);
 
         if (endpoint == null) {
             log.warn("Endpoint not found: " + name);
             return Utils.createJsonError("Specified endpoint ('" + name + "') not found",
+                    axis2MessageContext, Constants.BAD_REQUEST);
+        }
+        if (!(endpoint instanceof AbstractEndpoint)) {
+            return Utils.createJsonError("Statistics is not supported for this endpoint",
                     axis2MessageContext, Constants.BAD_REQUEST);
         }
         if (((AbstractEndpoint) endpoint).getDefinition() == null) {
@@ -92,9 +105,8 @@ public class ArtifactStatisticsManager {
         JSONObject info = new JSONObject();
         info.put(ENDPOINT_NAME, name);
         return Utils.handleStatistics(performedBy, Constants.AUDIT_LOG_TYPE_ENDPOINT_STATISTICS,
-                Constants.ENDPOINTS, info,
-                ((AbstractEndpoint) endpoint).getDefinition().getAspectConfiguration(),
-                name, axis2MessageContext);
+                info, ((AbstractEndpoint) endpoint).getDefinition().getAspectConfiguration(),
+                name, axis2MessageContext, payload);
     }
 
     /**
@@ -103,7 +115,11 @@ public class ArtifactStatisticsManager {
     public static JSONObject changeInboundEndpointStatistics(String performedBy, MessageContext messageContext,
                                                              org.apache.axis2.context.MessageContext axis2MessageContext)
             throws IOException {
-        String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
+        JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+        if (!payload.has(NAME) || payload.get(NAME).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: name", axis2MessageContext, Constants.BAD_REQUEST);
+        }
+        String name = payload.get(NAME).getAsString();
         InboundEndpoint inboundEndpoint = messageContext.getConfiguration().getInboundEndpoint(name);
         return ArtifactOperationHelper.handleAspectOperation(
                 inboundEndpoint, name, "Specified inbound endpoint ('" + name + "') not found",
@@ -118,7 +134,11 @@ public class ArtifactStatisticsManager {
     public static JSONObject changeApiStatistics(String performedBy, MessageContext messageContext,
                                                  org.apache.axis2.context.MessageContext axis2MessageContext)
             throws IOException {
-        String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
+        JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+        if (!payload.has(NAME) || payload.get(NAME).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: name", axis2MessageContext, Constants.BAD_REQUEST);
+        }
+        String name = payload.get(NAME).getAsString();
         API api = messageContext.getConfiguration().getAPI(name);
         return ArtifactOperationHelper.handleAspectOperation(
                 api, name, "Specified API ('" + name + "') not found", API_NAME,
@@ -132,7 +152,11 @@ public class ArtifactStatisticsManager {
     public static JSONObject changeSequenceStatistics(String performedBy, MessageContext messageContext,
                                                       org.apache.axis2.context.MessageContext axis2MessageContext)
             throws IOException {
-        String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
+        JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+        if (!payload.has(NAME) || payload.get(NAME).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: name", axis2MessageContext, Constants.BAD_REQUEST);
+        }
+        String name = payload.get(NAME).getAsString();
         SequenceMediator sequence = messageContext.getConfiguration().getDefinedSequences().get(name);
         return ArtifactOperationHelper.handleAspectOperation(
                 sequence, name, "Specified sequence ('" + name + "') not found", SEQUENCE_NAME,
@@ -148,13 +172,15 @@ public class ArtifactStatisticsManager {
     public static JSONObject changeTemplateStatistics(String performedBy, MessageContext messageContext,
                                                       org.apache.axis2.context.MessageContext axis2MessageContext)
             throws IOException {
-        String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
-        String type = Utils.getJsonPayload(axis2MessageContext).get(TYPE).getAsString();
-
-        if (type == null || type.isEmpty()) {
-            return Utils.createJsonError("Template type is required",
-                    axis2MessageContext, Constants.BAD_REQUEST);
+        JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+        if (!payload.has(NAME) || payload.get(NAME).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: name", axis2MessageContext, Constants.BAD_REQUEST);
         }
+        if (!payload.has(TYPE) || payload.get(TYPE).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: type", axis2MessageContext, Constants.BAD_REQUEST);
+        }
+        String name = payload.get(NAME).getAsString();
+        String type = payload.get(TYPE).getAsString();
 
         JSONObject info = new JSONObject();
         info.put(TEMPLATE_NAME, name);
@@ -168,6 +194,6 @@ public class ArtifactStatisticsManager {
                     axis2MessageContext, Constants.BAD_REQUEST);
         }
         return Utils.handleStatistics(performedBy, Constants.AUDIT_LOG_TYPE_SEQUENCE_TEMPLATE_STATISTICS,
-                Constants.TEMPLATES, info, sequenceTemplate.getAspectConfiguration(), name, axis2MessageContext);
+                info, sequenceTemplate.getAspectConfiguration(), name, axis2MessageContext, payload);
     }
 }

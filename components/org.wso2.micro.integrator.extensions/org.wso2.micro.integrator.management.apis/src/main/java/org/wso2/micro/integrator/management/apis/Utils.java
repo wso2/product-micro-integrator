@@ -197,7 +197,7 @@ public class Utils {
         return response;
     }
 
-    private static JSONObject handleStatistics(String performedBy, String type, JSONObject info,
+    public static JSONObject handleStatistics(String performedBy, String type, JSONObject info,
                                     AspectConfiguration config, String artifactName,
                                     org.apache.axis2.context.MessageContext axisMsgCtx, JsonObject payload) {
 

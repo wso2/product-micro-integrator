@@ -24,7 +24,7 @@ The legacy dashboard communicated with MI via a minimal heartbeat (`{ product, g
 
 | Mode | What is Sent | When |
 |---|---|---|
-| **Delta heartbeat** | `{ runtime, runtimeHash, timestamp }` | Every interval (default: 5 s) |
+| **Delta heartbeat** | `{ runtime, runtimeHash, timestamp }` | Every interval (default: 10 s) |
 | **Full heartbeat** | Complete artifact inventory for all 15 types | When ICP responds with `fullHeartbeatRequired: true` |
 
 The hash is computed over the full payload (excluding dynamic fields like memory). A stable runtime therefore sends only tiny delta packets each interval — the full payload is only requested when ICP detects a hash change.
@@ -91,14 +91,14 @@ A new utility class that captures the repeated pattern shared across all three m
 
 **Two generic methods:**
 
-```
+```java
 handleAspectOperation(artifact, name, notFoundMsg, infoKey,
     performedBy, auditLogType, artifactType,
     getConfig, axis2MC, operation)
 ```
 Used by `ArtifactStatisticsManager` and `ArtifactTracingManager` for all artifact types except Endpoint (which needs an extra null-check on `getDefinition()`).
 
-```
+```java
 handleStatusOperation(artifact, notFoundMsg, infoKey, name,
     axis2MC, operation)
 ```
@@ -203,7 +203,8 @@ This design pattern provides:
 2. **Runtime toggle** — The system property acts as a runtime switch to enable/disable APIs without modifying configuration files
 3. **Startup optimization** — Allows selectively enabling internal APIs for specific deployments (e.g., enable Management API but not ICP API)
 4. **Consistency across internal APIs** — All internal APIs (ManagementApi, ReadinessProbe, LivenessProbe, ICPApi) use the same loading mechanism
-**both conditions must be satisfied**:
+
+**Both conditions must be satisfied:**
 
 1. ✅ Set `icp_config.enabled = true` in `deployment.toml` → Generates the `<api name="ICPApi">` entry in `internal-apis.xml`
 2. ✅ Include `-DenableICPApi=true` in the startup script → Tells ConfigurationLoader to actually load the API
@@ -216,8 +217,7 @@ This design pattern provides:
 | ❌ Missing system property | `true` | `false` or unset | **Not loaded** — XML entry exists but loader skips it |
 | ✅ Both conditions met | `true` | `true` | **Loaded** — API is active |
 
-The Jinja template controls *what can be loaded* (structural availability), while the system property controls *what actually gets loaded* (runtime activation). Both gates must be open
-2. ✅ Include `-DenableICPApi=true` in the startup script (loads the API at runtime)
+The Jinja template controls *what can be loaded* (structural availability), while the system property controls *what actually gets loaded* (runtime activation). Both gates must be open.
 
 ---
 
@@ -240,6 +240,9 @@ environment = "prod"
 project     = "sample-project"
 integration = "sample-mi-integration"
 
+# Off SSL verification for local setup
+ssl_verify = false
+
 # ICP URL can be configured when changed defaults to "https://localhost:9445"
 # icp_url = "https://localhost:9445"
 
@@ -249,7 +252,7 @@ integration = "sample-mi-integration"
 # JWT Configurations
 # ------------------
 # JWT HMAC secret — must be at least 32 characters for HS256
-# jwt_hmac_secret = "default-secret-key-at-least-32-characters-long-for-hs256"
+# jwt_hmac_secret = "<REPLACE-WITH-A-SECURE-SECRET-AT-LEAST-32-CHARS>"
 # jwt_issuer         = "icp-runtime-jwt-issuer"
 # jwt_audience       = "icp-server"
 # jwt_scope          = "runtime_agent"

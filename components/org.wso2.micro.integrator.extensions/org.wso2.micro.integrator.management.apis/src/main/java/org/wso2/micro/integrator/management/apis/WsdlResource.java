@@ -33,6 +33,7 @@ import org.wso2.micro.service.mgt.ServiceMetaData;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -51,7 +52,7 @@ public class WsdlResource extends APIResource {
     private static final String PARAM_SERVICE = "service";
     private static final String PARAM_PROXY = "proxy";
 
-    private static ServiceAdmin serviceAdmin = null;
+    private static volatile ServiceAdmin serviceAdmin = null;
 
     public WsdlResource(String urlTemplate) {
         super(urlTemplate);
@@ -67,7 +68,7 @@ public class WsdlResource extends APIResource {
     @Override
     public boolean invoke(MessageContext messageContext) {
         if (LOG.isDebugEnabled()) {
-            LOG.info("Processing WSDL retrieval request");
+            LOG.debug("Processing WSDL retrieval request");
         }
         buildMessage(messageContext);
 
@@ -75,7 +76,11 @@ public class WsdlResource extends APIResource {
                 .getAxis2MessageContext();
 
         if (serviceAdmin == null) {
-            serviceAdmin = Utils.getServiceAdmin(messageContext);
+            synchronized (WsdlResource.class) {
+                if (serviceAdmin == null) {
+                    serviceAdmin = Utils.getServiceAdmin(messageContext);
+                }
+            }
         }
 
         if (!messageContext.isDoingGET()) {
@@ -121,8 +126,16 @@ public class WsdlResource extends APIResource {
             LOG.info("Fetching WSDL for " + (isProxyRequest ? "proxy service: " : "data service: ") + targetName);
             OMElement wsdl = null;
 
-            ServiceMetaData serviceMetaData = serviceAdmin.getServiceData(targetName);
-            String wsdlUrl = serviceMetaData.getWsdlURLs()[0];
+                ServiceMetaData serviceMetaData = serviceAdmin.getServiceData(targetName);
+                if (serviceMetaData == null || serviceMetaData.getWsdlURLs() == null
+                    || serviceMetaData.getWsdlURLs().length == 0) {
+                String kind = isProxyRequest ? "proxy service" : "data service";
+                Utils.setJsonPayLoad(axisMsgCtx,
+                    Utils.createJsonError("WSDL URL not available for " + kind + ": " + targetName,
+                        axisMsgCtx, Constants.NOT_FOUND));
+                return true;
+                }
+                String wsdlUrl = serviceMetaData.getWsdlURLs()[0];
             String wsdlText = fetchUrl(wsdlUrl, 5000);
             
             if (wsdlText != null && !wsdlText.trim().isEmpty()) {
@@ -131,7 +144,7 @@ public class WsdlResource extends APIResource {
                 } catch (Exception e) {
                     LOG.error("Failed to parse WSDL XML from URL: " + wsdlUrl, e);
                     Utils.setJsonPayLoad(axisMsgCtx,
-                            Utils.createJsonError("Failed to parse WSDL XML: " + e.getMessage(),
+                            Utils.createJsonError("Internal server error while fetching WSDL",
                                     axisMsgCtx, Constants.INTERNAL_SERVER_ERROR));
                     return true;
                 }
@@ -159,7 +172,7 @@ public class WsdlResource extends APIResource {
         } catch (Exception e) {
             LOG.error("Error fetching WSDL for " + (isProxyRequest ? "proxy" : "data service") + ": " + targetName, e);
             Utils.setJsonPayLoad(axisMsgCtx,
-                    Utils.createJsonError("Error fetching WSDL: " + e.getMessage(),
+                Utils.createJsonError("Internal server error while fetching WSDL",
                             axisMsgCtx, Constants.INTERNAL_SERVER_ERROR));
         }
 
@@ -167,6 +180,8 @@ public class WsdlResource extends APIResource {
     }
 
     private String fetchUrl(String urlStr, int timeoutMs) {
+        final int maxSize = 10 * 1024 * 1024;
+        final int bufferSize = 8 * 1024;
         HttpURLConnection conn = null;
         try {
             URL url = new URL(urlStr);
@@ -177,8 +192,20 @@ public class WsdlResource extends APIResource {
             int code = conn.getResponseCode();
             if (code >= 200 && code < 300) {
                 try (InputStream in = conn.getInputStream()) {
-                    byte[] buf = in.readAllBytes();
-                    return new String(buf, StandardCharsets.UTF_8);
+                    byte[] buffer = new byte[bufferSize];
+                    int bytesRead;
+                    int totalRead = 0;
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    while ((bytesRead = in.read(buffer)) != -1) {
+                        totalRead += bytesRead;
+                        if (totalRead > maxSize) {
+                            LOG.warn("WSDL response exceeded max size limit (" + maxSize + " bytes) for URL: "
+                                    + urlStr + ", read: " + totalRead + " bytes");
+                            return null;
+                        }
+                        out.write(buffer, 0, bytesRead);
+                    }
+                    return out.toString(StandardCharsets.UTF_8.name());
                 }
             } else {
                 LOG.warn("WSDL fetch returned non-2xx: " + code + " for URL: " + urlStr);

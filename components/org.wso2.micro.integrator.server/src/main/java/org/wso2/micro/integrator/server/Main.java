@@ -138,8 +138,9 @@ public class Main {
                 if (logger.isDebugEnabled()) {
                     logger.debug("ICP runtime ID initialized successfully.");
                 }
-            } catch (IOException e) {
-                logger.error("Error initializing the ICP runtime ID during startup: " + e.getMessage());
+            } catch (IOException | IllegalStateException e) {
+                logger.error("Error initializing the ICP runtime ID during startup", e);
+                throw new RuntimeException("Failed to initialize ICP runtime ID", e);
             }
         }
         if (!skipExtensions) {

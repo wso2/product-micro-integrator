@@ -27,6 +27,7 @@ public class Constants {
     public static final String ICP_CONFIG_RUNTIME = "icp_config.runtime";
     public static final String ICP_CONFIG_ENABLED = "icp_config.enabled";
     public static final String  ICP_CONFIG_HEARTBEAT_INTERVAL = "icp_config.heartbeat_interval";
+    public static final String ICP_CONFIG_SSL_VERIFY = "icp_config.ssl_verify";
 
     // JWT Configuration
     public static final String ICP_JWT_ISSUER = "icp_config.jwt_issuer";

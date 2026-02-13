@@ -152,10 +152,14 @@ public class ICPArtifactResource extends APIResource {
                     Utils.createJsonError("Artifact not found: " + artifactType + " - " + artifactName,
                         axisMsgCtx, Constants.NOT_FOUND));
             }
-        } catch (Exception e) {
-            LOG.error("Error retrieving artifact configuration for type: " + artifactType + ", name: " + artifactName + ". Error: " + e.getMessage(), e);
+        } catch (IllegalArgumentException e) {
+            LOG.warn("Bad request for artifact type: " + artifactType + ", name: " + artifactName, e);
             Utils.setJsonPayLoad(axisMsgCtx,
-                Utils.createJsonError("Error retrieving artifact configuration: " + e.getMessage(),
+                Utils.createJsonError("Bad request", axisMsgCtx, Constants.BAD_REQUEST));
+        } catch (Exception e) {
+            LOG.error("Error retrieving artifact configuration for type: " + artifactType + ", name: " + artifactName, e);
+            Utils.setJsonPayLoad(axisMsgCtx,
+                Utils.createJsonError("Error retrieving artifact configuration",
                     axisMsgCtx, Constants.INTERNAL_SERVER_ERROR));
         }
 
@@ -170,6 +174,7 @@ public class ICPArtifactResource extends APIResource {
      * @param artifactName   the name of the artifact
      * @param axisMsgCtx     the axis2 message context
      * @return JSONObject containing the artifact configuration, or null if not found
+     * @throws IllegalArgumentException if the artifact type is not supported
      */
     private JSONObject getArtifactConfiguration(MessageContext messageContext, String artifactType,
                                                 String artifactName, org.apache.axis2.context.MessageContext axisMsgCtx) {
@@ -219,8 +224,7 @@ public class ICPArtifactResource extends APIResource {
                 configuration = getTemplateConfigurationElement(synapseConfig, artifactName);
                 break;
             default:
-                LOG.warn("Unsupported artifact type: " + artifactType);
-                return null;
+                throw new IllegalArgumentException("Unsupported artifact type: " + artifactType);
         }
 
         if (Objects.nonNull(configuration)) {
@@ -269,8 +273,11 @@ public class ICPArtifactResource extends APIResource {
         if (Objects.nonNull(startup)) {
             // Get the task description from the task manager
             AxisConfiguration axisConfig = axisMsgCtx.getConfigurationContext().getAxisConfiguration();
-            SynapseEnvironment synapseEnvironment =
-                (SynapseEnvironment) axisConfig.getParameter(SynapseConstants.SYNAPSE_ENV).getValue();
+            Parameter synapseEnvParam = axisConfig.getParameter(SynapseConstants.SYNAPSE_ENV);
+            if (synapseEnvParam == null || !(synapseEnvParam.getValue() instanceof SynapseEnvironment)) {
+                return null;
+            }
+            SynapseEnvironment synapseEnvironment = (SynapseEnvironment) synapseEnvParam.getValue();
 
             if (Objects.nonNull(synapseEnvironment) &&
                 Objects.nonNull(synapseEnvironment.getTaskManager())) {
@@ -320,8 +327,12 @@ public class ICPArtifactResource extends APIResource {
                 OMElement artifactsEl = fac.createOMElement("artifacts", null);
                 root.addChild(artifactsEl);
 
-                java.util.List<Artifact.Dependency> dependencies = app.getAppConfig()
-                        .getApplicationArtifact().getDependencies();
+                java.util.List<Artifact.Dependency> dependencies =
+                    (app.getAppConfig() != null
+                        && app.getAppConfig().getApplicationArtifact() != null
+                        && app.getAppConfig().getApplicationArtifact().getDependencies() != null)
+                        ? app.getAppConfig().getApplicationArtifact().getDependencies()
+                        : java.util.Collections.emptyList();
                 for (Artifact.Dependency dependency : dependencies) {
                     Artifact artifact = dependency.getArtifact();
                     String fullType = artifact.getType();

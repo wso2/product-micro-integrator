@@ -18,6 +18,7 @@
 
 package org.wso2.micro.integrator.management.apis;
 
+import com.google.gson.JsonObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -47,6 +48,17 @@ public class ArtifactTracingManager {
     private static final String API_NAME = "apiName";
     private static final String SEQUENCE_NAME = "sequenceName";
 
+    private static boolean hasValidNameField(JsonObject payload) {
+        return payload != null && payload.has(NAME) && !payload.get(NAME).isJsonNull()
+                && payload.get(NAME).isJsonPrimitive();
+    }
+
+    private static JSONObject createMissingNameFieldError(
+            org.apache.axis2.context.MessageContext axis2MessageContext) {
+        return Utils.createJsonError("Missing required field: name",
+                axis2MessageContext, Constants.BAD_REQUEST);
+    }
+
     /**
      * Changes the tracing state of a proxy service.
      */
@@ -54,9 +66,13 @@ public class ArtifactTracingManager {
                                                        org.apache.axis2.context.MessageContext axis2MessageContext)
             throws IOException {
         if (log.isDebugEnabled()) {
-            log.info("Initiating proxy service tracing change request by: " + performedBy);
+            log.debug("Initiating proxy service tracing change request by: " + performedBy);
         }
-        String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
+        JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+        if (!hasValidNameField(payload)) {
+            return createMissingNameFieldError(axis2MessageContext);
+        }
+        String name = payload.get(NAME).getAsString();
         ProxyService proxyService = messageContext.getConfiguration().getProxyService(name);
         return ArtifactOperationHelper.handleAspectOperation(
                 proxyService, name, "Specified proxy ('" + name + "') not found", PROXY_SERVICE_NAME,
@@ -71,7 +87,11 @@ public class ArtifactTracingManager {
     public static JSONObject changeEndpointTracing(String performedBy, MessageContext messageContext,
                                                    org.apache.axis2.context.MessageContext axis2MessageContext)
             throws IOException {
-        String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
+        JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+        if (!hasValidNameField(payload)) {
+            return createMissingNameFieldError(axis2MessageContext);
+        }
+        String name = payload.get(NAME).getAsString();
         Endpoint endpoint = messageContext.getConfiguration().getEndpoint(name);
 
         if (endpoint == null) {
@@ -79,7 +99,13 @@ public class ArtifactTracingManager {
             return Utils.createJsonError("Specified endpoint ('" + name + "') not found",
                     axis2MessageContext, Constants.BAD_REQUEST);
         }
-        if (((AbstractEndpoint) endpoint).getDefinition() == null) {
+        if (!(endpoint instanceof AbstractEndpoint)) {
+            return Utils.createJsonError("Tracing is not supported for this endpoint",
+                    axis2MessageContext, Constants.BAD_REQUEST);
+        }
+
+        AbstractEndpoint abstractEndpoint = (AbstractEndpoint) endpoint;
+        if (abstractEndpoint.getDefinition() == null) {
             return Utils.createJsonError("Tracing is not supported for this endpoint",
                     axis2MessageContext, Constants.BAD_REQUEST);
         }
@@ -88,7 +114,7 @@ public class ArtifactTracingManager {
         info.put(ENDPOINT_NAME, name);
         return Utils.handleTracing(performedBy, Constants.AUDIT_LOG_TYPE_ENDPOINT_TRACE,
                 Constants.ENDPOINTS, info,
-                ((AbstractEndpoint) endpoint).getDefinition().getAspectConfiguration(),
+                abstractEndpoint.getDefinition().getAspectConfiguration(),
                 name, axis2MessageContext);
     }
 
@@ -98,7 +124,11 @@ public class ArtifactTracingManager {
     public static JSONObject changeInboundEndpointTracing(String performedBy, MessageContext messageContext,
                                                           org.apache.axis2.context.MessageContext axis2MessageContext)
             throws IOException {
-        String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
+        JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+        if (!hasValidNameField(payload)) {
+            return createMissingNameFieldError(axis2MessageContext);
+        }
+        String name = payload.get(NAME).getAsString();
         InboundEndpoint inboundEndpoint = messageContext.getConfiguration().getInboundEndpoint(name);
         return ArtifactOperationHelper.handleAspectOperation(
                 inboundEndpoint, name, "Specified inbound endpoint ('" + name + "') not found",
@@ -113,7 +143,11 @@ public class ArtifactTracingManager {
     public static JSONObject changeApiTracing(String performedBy, MessageContext messageContext,
                                               org.apache.axis2.context.MessageContext axis2MessageContext)
             throws IOException {
-        String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
+        JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+        if (!hasValidNameField(payload)) {
+            return createMissingNameFieldError(axis2MessageContext);
+        }
+        String name = payload.get(NAME).getAsString();
         API api = messageContext.getConfiguration().getAPI(name);
         return ArtifactOperationHelper.handleAspectOperation(
                 api, name, "Specified API ('" + name + "') not found", API_NAME,
@@ -127,7 +161,11 @@ public class ArtifactTracingManager {
     public static JSONObject changeSequenceTracing(String performedBy, MessageContext messageContext,
                                                    org.apache.axis2.context.MessageContext axis2MessageContext)
             throws IOException {
-        String name = Utils.getJsonPayload(axis2MessageContext).get(NAME).getAsString();
+        JsonObject payload = Utils.getJsonPayload(axis2MessageContext);
+        if (!hasValidNameField(payload)) {
+            return createMissingNameFieldError(axis2MessageContext);
+        }
+        String name = payload.get(NAME).getAsString();
         SequenceMediator sequence = messageContext.getConfiguration().getDefinedSequences().get(name);
         return ArtifactOperationHelper.handleAspectOperation(
                 sequence, name, "Specified sequence ('" + name + "') not found", SEQUENCE_NAME,

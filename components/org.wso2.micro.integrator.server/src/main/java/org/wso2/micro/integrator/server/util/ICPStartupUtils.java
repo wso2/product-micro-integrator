@@ -20,6 +20,7 @@ package org.wso2.micro.integrator.server.util;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.config.mapper.ConfigParser;
+import org.wso2.micro.integrator.server.LauncherConstants;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,10 +31,9 @@ import java.util.UUID;
 
 public class ICPStartupUtils {
     private static final Log log = LogFactory.getLog(ICPStartupUtils.class);
-    private static final Map<String, Object> configs = ConfigParser.getParsedConfigs();
     public static final String ICP_CONFIG_ENABLED = "icp_config.enabled";
-    private static String runtimeId = null;
-    private static final String runtimeIdFile = ".icp_runtime_id";
+    private static volatile String runtimeId = null;
+    private static final String RUNTIME_ID_FILENAME = ".icp_runtime_id";
     protected static final String ICP_RUNTIME_LOG_SUFFIX = "icp.runtime.log.suffix";
     public static final String ICP_CONFIG_RUNTIME = "icp_config.runtime";
 
@@ -44,7 +44,7 @@ public class ICPStartupUtils {
      * @return true if ICP is enabled, false otherwise
      */
     public static boolean isICPConfigured() {
-        Object icpEnabled = configs.get(ICP_CONFIG_ENABLED);
+        Object icpEnabled = getConfigs().get(ICP_CONFIG_ENABLED);
         return icpEnabled != null && "true".equalsIgnoreCase(icpEnabled.toString());
     }
 
@@ -52,7 +52,8 @@ public class ICPStartupUtils {
      * Initializes the runtime ID from cache, file, or generates a new one.
      * Also sets the runtime ID as a system property for logging.
      *
-     * @throws IOException if there's an error reading or writing the runtime ID file
+    * @throws IOException if the runtime ID file path cannot be resolved (e.g., carbon.home is missing),
+    *                     or if there's an error reading or writing the runtime ID file
      */
     public static synchronized void initRuntimeId() throws IOException {
         // Return if already initialized
@@ -63,7 +64,12 @@ public class ICPStartupUtils {
             return;
         }
 
-        Path runtimeIdPath = Paths.get(runtimeIdFile);
+        Path runtimeIdPath;
+        try {
+            runtimeIdPath = getRuntimeIdPath();
+        } catch (IllegalStateException e) {
+            throw new IOException("Cannot resolve ICP runtime ID file path", e);
+        }
 
         // Read from persisted file if present
         if (Files.exists(runtimeIdPath)) {
@@ -77,7 +83,7 @@ public class ICPStartupUtils {
 
         // Generate new ID as: <configured-runtime-id>-<uuid> if configured; else <uuid>
         String configuredPrefix = null;
-        Object configuredRuntimeId = configs.get(ICP_CONFIG_RUNTIME);
+        Object configuredRuntimeId = getConfigs().get(ICP_CONFIG_RUNTIME);
         if (configuredRuntimeId != null) {
             String cfgId = configuredRuntimeId.toString().trim();
             if (!cfgId.isEmpty()) {
@@ -93,6 +99,45 @@ public class ICPStartupUtils {
         if (log.isDebugEnabled()) {
             log.debug("Generated new runtime ID: " + newRuntimeId);
         }
+    }
+
+    /**
+     * Returns the initialized runtime ID from the in-memory cache without performing any I/O.
+     * This accessor is thread-safe since {@code runtimeId} is declared {@code volatile}.
+     * Returns {@code null} only if {@link #initRuntimeId()} has not completed initialization.
+     *
+     * @return cached runtime ID, or {@code null} if not initialized yet
+     */
+    public static String getRuntimeId() {
+        return runtimeId;
+    }
+
+    /**
+     * Returns the parsed configuration map by querying {@link ConfigParser} at call time,
+     * ensuring the most up-to-date configuration is used rather than a snapshot taken at
+     * class-load time.
+     *
+     * @return the current parsed configuration map
+     */
+    private static Map<String, Object> getConfigs() {
+        return ConfigParser.getParsedConfigs();
+    }
+
+    /**
+     * Resolves the absolute path to the runtime ID file under the MI home directory.
+     * Uses the {@code carbon.home} system property to locate the home directory.
+     *
+     * @return absolute Path to the runtime ID file
+     * @throws IllegalStateException if the carbon.home system property is not set
+     */
+    private static Path getRuntimeIdPath() {
+        String carbonHome = System.getProperty(LauncherConstants.CARBON_HOME);
+        if (carbonHome == null || carbonHome.trim().isEmpty()) {
+            throw new IllegalStateException(
+                    "System property '" + LauncherConstants.CARBON_HOME + "' is not set; "
+                    + "cannot resolve the ICP runtime ID file path.");
+        }
+        return Paths.get(carbonHome, RUNTIME_ID_FILENAME);
     }
 
     /**

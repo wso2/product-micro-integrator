@@ -126,18 +126,20 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
 
             // Extract exp claim using Gson
             try {
-                JsonObject claims = new JsonParser().parse(payloadJson).getAsJsonObject();
-                if (claims.has("exp")) {
-                    if (!claims.get("exp").isJsonPrimitive() || !claims.get("exp").getAsJsonPrimitive().isNumber()) {
-                        LOG.warn("JWT exp claim is not a numeric value");
-                        return false;
-                    }
-                    long exp = claims.get("exp").getAsLong();
-                    long currentTime = System.currentTimeMillis() / 1000;
-                    if (currentTime >= exp) {
-                        LOG.warn("JWT token has expired");
-                        return false;
-                    }
+                JsonObject claims = JsonParser.parseString(payloadJson).getAsJsonObject();
+                if (!claims.has("exp")) {
+                    LOG.warn("JWT token is missing the required exp claim");
+                    return false;
+                }
+                if (!claims.get("exp").isJsonPrimitive() || !claims.get("exp").getAsJsonPrimitive().isNumber()) {
+                    LOG.warn("JWT exp claim is not a numeric value");
+                    return false;
+                }
+                long exp = claims.get("exp").getAsLong();
+                long currentTime = System.currentTimeMillis() / 1000;
+                if (currentTime >= exp) {
+                    LOG.warn("JWT token has expired");
+                    return false;
                 }
             } catch (JsonSyntaxException e) {
                 LOG.warn("Failed to parse JWT payload as JSON", e);
@@ -169,10 +171,4 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
         }
     }
 
-    /**
-     * Gets the JWT HMAC secret.
-     */
-    public String getJwtHmacSecret() {
-        return this.jwtHmacSecret;
-    }
 }

@@ -19,6 +19,7 @@
 package org.wso2.micro.integrator.management.apis;
 
 import com.google.gson.JsonObject;
+import org.apache.axis2.description.Parameter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -65,6 +66,12 @@ public class ArtifactStatusManager {
         if(log.isDebugEnabled()){
             log.debug("Attempting to change proxy service status. Performed by: " + performedBy);
         }
+        if (!payload.has(NAME) || payload.get(NAME).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: name", axis2MessageContext, Constants.BAD_REQUEST);
+        }
+        if (!payload.has(STATUS) || payload.get(STATUS).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: status", axis2MessageContext, Constants.BAD_REQUEST);
+        }
         SynapseConfiguration synapseConfiguration = messageContext.getConfiguration();
         String name = payload.get(NAME).getAsString();
         String status = payload.get(STATUS).getAsString();
@@ -74,22 +81,32 @@ public class ArtifactStatusManager {
                 proxyService, "Proxy service could not be found", PROXY_SERVICE_NAME, name,
                 axis2MessageContext, (ps, info) -> {
                     List pinnedServers = ps.getPinnedServers();
+                    ServerConfigurationInformation serverConfigInformation =
+                        getServerConfigInformation(synapseConfiguration);
                     JSONObject jsonResponse = new JSONObject();
                     if (ACTIVE_STATUS.equalsIgnoreCase(status)) {
                         if (pinnedServers.isEmpty() ||
-                                pinnedServers.contains(getServerConfigInformation(synapseConfiguration).getServerName())) {
+                        (serverConfigInformation != null &&
+                            pinnedServers.contains(serverConfigInformation.getServerName()))) {
                             ps.start(synapseConfiguration);
                             jsonResponse.put("Message", "Proxy service " + name + " started successfully");
                             AuditLogger.logAuditMessage(performedBy, Constants.AUDIT_LOG_TYPE_PROXY_SERVICE,
                                     Constants.AUDIT_LOG_ACTION_ENABLE, info);
+                        } else {
+                            jsonResponse.put("Message", "Operation skipped: proxy service " + name +
+                                    " is pinned to other servers");
                         }
                     } else if (INACTIVE_STATUS.equalsIgnoreCase(status)) {
                         if (pinnedServers.isEmpty() ||
-                                pinnedServers.contains(getServerConfigInformation(synapseConfiguration).getSynapseXMLLocation())) {
+                        (serverConfigInformation != null &&
+                            pinnedServers.contains(serverConfigInformation.getServerName()))) {
                             ps.stop(synapseConfiguration);
                             jsonResponse.put("Message", "Proxy service " + name + " stopped successfully");
                             AuditLogger.logAuditMessage(performedBy, Constants.AUDIT_LOG_TYPE_PROXY_SERVICE,
                                     Constants.AUDIT_LOG_ACTION_DISABLED, info);
+                        } else {
+                            jsonResponse.put("Message", "Operation skipped: proxy service " + name +
+                                    " is pinned to other servers");
                         }
                     } else {
                         return Utils.createJsonError("Provided state is not valid", axis2MessageContext,
@@ -105,6 +122,12 @@ public class ArtifactStatusManager {
     public static JSONObject changeEndpointStatus(String performedBy,
                                                   org.apache.axis2.context.MessageContext axis2MessageContext,
                                                   SynapseConfiguration configuration, JsonObject payload) {
+        if (!payload.has(NAME) || payload.get(NAME).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: name", axis2MessageContext, Constants.BAD_REQUEST);
+        }
+        if (!payload.has(STATUS) || payload.get(STATUS).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: status", axis2MessageContext, Constants.BAD_REQUEST);
+        }
         String endpointName = payload.get(NAME).getAsString();
         String status = payload.get(STATUS).getAsString();
         Endpoint ep = configuration.getEndpoint(endpointName);
@@ -137,6 +160,12 @@ public class ArtifactStatusManager {
     public static JSONObject changeMessageProcessorStatus(String performedBy, MessageContext messageContext,
                                                           org.apache.axis2.context.MessageContext axis2MessageContext,
                                                           JsonObject payload) {
+        if (!payload.has(NAME) || payload.get(NAME).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: name", axis2MessageContext, Constants.BAD_REQUEST);
+        }
+        if (!payload.has(STATUS) || payload.get(STATUS).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: status", axis2MessageContext, Constants.BAD_REQUEST);
+        }
         String processorName = payload.get(NAME).getAsString();
         String status = payload.get(STATUS).getAsString();
         MessageProcessor messageProcessor =
@@ -170,6 +199,12 @@ public class ArtifactStatusManager {
     public static JSONObject changeInboundEndpointStatus(String performedBy, MessageContext messageContext,
                                                          org.apache.axis2.context.MessageContext axis2MessageContext,
                                                          JsonObject payload) {
+        if (!payload.has(NAME) || payload.get(NAME).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: name", axis2MessageContext, Constants.BAD_REQUEST);
+        }
+        if (!payload.has(STATUS) || payload.get(STATUS).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: status", axis2MessageContext, Constants.BAD_REQUEST);
+        }
         String name = payload.get(NAME).getAsString();
         String status = payload.get(STATUS).getAsString();
         InboundEndpoint inboundEndpoint = messageContext.getConfiguration().getInboundEndpoint(name);
@@ -212,6 +247,12 @@ public class ArtifactStatusManager {
     public static JSONObject changeTaskStatus(String performedBy, MessageContext messageContext,
                                               org.apache.axis2.context.MessageContext axis2MessageContext,
                                               JsonObject payload) {
+        if (!payload.has(NAME) || payload.get(NAME).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: name", axis2MessageContext, Constants.BAD_REQUEST);
+        }
+        if (!payload.has(STATUS) || payload.get(STATUS).isJsonNull()) {
+            return Utils.createJsonError("Missing required field: status", axis2MessageContext, Constants.BAD_REQUEST);
+        }
         String name = payload.get(NAME).getAsString();
         String status = payload.get(STATUS).getAsString();
         Startup task = messageContext.getConfiguration().getStartup(name);
@@ -267,7 +308,16 @@ public class ArtifactStatusManager {
      * Helper method to get server configuration information.
      */
     private static ServerConfigurationInformation getServerConfigInformation(SynapseConfiguration synapseConfiguration) {
-        return (ServerConfigurationInformation) synapseConfiguration.getAxisConfiguration()
-                .getParameter(SynapseConstants.SYNAPSE_SERVER_CONFIG_INFO).getValue();
+        Parameter parameter = synapseConfiguration.getAxisConfiguration()
+                .getParameter(SynapseConstants.SYNAPSE_SERVER_CONFIG_INFO);
+        if (parameter == null) {
+            return null;
+        }
+
+        Object value = parameter.getValue();
+        if (value instanceof ServerConfigurationInformation) {
+            return (ServerConfigurationInformation) value;
+        }
+        return null;
     }
 }
