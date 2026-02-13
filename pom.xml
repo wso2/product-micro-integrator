@@ -1961,6 +1961,11 @@
                 <artifactId>org.osgi.service.http.whiteboard</artifactId>
                 <version>${osgi.service.http.whiteboard.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.orbit.io.opentelemetry</groupId>
+                <artifactId>opentelemetry-all</artifactId>
+                <version>${opentelemetry.all.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -2499,6 +2504,7 @@
         <javax.persistence.version>1.0</javax.persistence.version>
         <javax.activation.version>0.0</javax.activation.version>
         <javax.xml.soap.imp.pkg.version>0.0.0</javax.xml.soap.imp.pkg.version>
+        <opentelemetry.all.version>1.57.0.wso2v2</opentelemetry.all.version>
     </properties>
 
     <repositories>
