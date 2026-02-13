@@ -1367,6 +1367,11 @@
                 <version>${orbit.version.tomcat}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.tomcat</groupId>
+                <artifactId>tomcat-juli</artifactId>
+                <version>${version.tomcat}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wso2.ei</groupId>
                 <artifactId>org.wso2.micro.integrator.ndatasource.common</artifactId>
                 <version>${project.version}</version>
