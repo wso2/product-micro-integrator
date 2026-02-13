@@ -187,6 +187,7 @@
                 <exclude>build.xml</exclude>
                 <exclude>version.txt</exclude>
                 <exclude>README.txt</exclude>
+                <exclude>tomcat-juli-*.jar</exclude>
             </excludes>
         </fileSet>
 
@@ -645,6 +646,13 @@
     </files>
 
     <dependencySets>
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>wso2mi-${pom.version}/bin</outputDirectory>
+            <includes>
+                <include>org.apache.tomcat:tomcat-juli:jar</include>
+            </includes>
+        </dependencySet>
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>wso2mi-${pom.version}/wso2/lib</outputDirectory>
