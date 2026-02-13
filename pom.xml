@@ -2035,7 +2035,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <rabbitmq.version>5.20.0</rabbitmq.version>
+        <rabbitmq.version>5.28.0</rabbitmq.version>
 
         <!--Product Version-->
         <carbon.identity.framework.version>5.15.17</carbon.identity.framework.version>
@@ -2153,7 +2153,7 @@
 
         <esotericsoftware.kryo.version>3.0.3</esotericsoftware.kryo.version>
         <esotericsoftware.minlog.version>1.3.1</esotericsoftware.minlog.version>
-        <org.objenesis.version>2.1</org.objenesis.version>
+        <org.objenesis.version>2.6</org.objenesis.version>
 
         <!-- Apache Axis2 -->
         <axis2.wso2.version>1.6.1-wso2v120</axis2.wso2.version>
@@ -2285,8 +2285,9 @@
         <!-- Diagnostic Tool -->
         <commons.math.version>3.6.1</commons.math.version>
         <commons.net.version>3.10.0</commons.net.version>
+
         <diagnostics.tool.version>1.1.2</diagnostics.tool.version>
-        <jsch.version>0.2.24</jsch.version>
+        <jsch.version>2.27.7</jsch.version>
 
         <config.mapper.version>1.1.0</config.mapper.version>
         <javax.xml.parsers.import.pkg.version>[0.0.0, 1.0.0)</javax.xml.parsers.import.pkg.version>
@@ -2491,16 +2492,16 @@
         <grpc-context.orbit.version>1.59.0.wso2v1</grpc-context.orbit.version>
         <opencensus.orbit.version>0.31.1.wso2v3</opencensus.orbit.version>
         <graalvm.version>25.0.2</graalvm.version>
-        <icu.version>78.1</icu.version>
+        <icu.version>78.2</icu.version>
         <sparsebitset.version>1.3</sparsebitset.version>
         <org.bouncycastle.bc.version>1.83</org.bouncycastle.bc.version>
         <failureaccess.version>1.0.3</failureaccess.version>
         <commons.lang.version>2.6</commons.lang.version>
-        <orbit.version.json>3.0.0.wso2v4</orbit.version.json>
+        <orbit.version.json>3.0.0.wso2v8</orbit.version.json>
         <opencsv.version>2.3</opencsv.version>
         <json.simple.version>1.1.1</json.simple.version>
         <javax.xml.namespace.version>0.0.0</javax.xml.namespace.version>
-        <org.milyn.wso2.version>1.5.1.wso2v5</org.milyn.wso2.version>
+        <org.milyn.wso2.version>1.5.2.wso2v1</org.milyn.wso2.version>
         <javax.persistence.version>1.0</javax.persistence.version>
         <javax.activation.version>0.0</javax.activation.version>
         <javax.xml.soap.imp.pkg.version>0.0.0</javax.xml.soap.imp.pkg.version>
