@@ -889,11 +889,13 @@ public class ICPHeartBeatComponent {
                     apiObj.addProperty("carbonApp", carbonApp);
                 }
 
-                // Tracing flag via AspectConfiguration
+                // Tracing and statistics via AspectConfiguration
                 try {
                     if (api.getAspectConfiguration() != null) {
                         String tracingState = api.getAspectConfiguration().isTracingEnabled() ? "enabled" : "disabled";
+                        String statsState = api.getAspectConfiguration().isStatisticsEnable() ? "enabled" : "disabled";
                         apiObj.addProperty("tracing", tracingState);
+                        apiObj.addProperty("statistics", statsState);
                     }
                 } catch (Throwable ignore) {
                 }
@@ -1018,7 +1020,7 @@ public class ICPHeartBeatComponent {
                 } catch (Throwable t) {
                     endpointObj.addProperty("state", "enabled");
                 }
-                // Tracing flag via AspectConfiguration
+                // Tracing and statistics via AspectConfiguration
                 try {
                     if (endpoint instanceof AbstractEndpoint) {
                         AbstractEndpoint abstractEndpoint = (AbstractEndpoint) endpoint;
@@ -1026,7 +1028,10 @@ public class ICPHeartBeatComponent {
                                 && abstractEndpoint.getDefinition().getAspectConfiguration() != null) {
                             String tracingState = abstractEndpoint.getDefinition().getAspectConfiguration()
                                     .isTracingEnabled() ? "enabled" : "disabled";
+                            String statsState = abstractEndpoint.getDefinition().getAspectConfiguration()
+                                    .isStatisticsEnable() ? "enabled" : "disabled";
                             endpointObj.addProperty("tracing", tracingState);
+                            endpointObj.addProperty("statistics", statsState);
                         }
                     }
                 } catch (Throwable ignore) {
@@ -1196,12 +1201,15 @@ public class ICPHeartBeatComponent {
                 if (carbonApp != null) {
                     seqObj.addProperty("carbonApp", carbonApp);
                 }
-                // Tracing flag via AspectConfiguration
+                // Tracing and statistics via AspectConfiguration
                 try {
                     if (sequence.getAspectConfiguration() != null) {
                         String tracingState = sequence.getAspectConfiguration().isTracingEnabled() ? "enabled"
                                 : "disabled";
+                        String statsState = sequence.getAspectConfiguration().isStatisticsEnable() ? "enabled"
+                                : "disabled";
                         seqObj.addProperty("tracing", tracingState);
+                        seqObj.addProperty("statistics", statsState);
                     }
                 } catch (Throwable ignore) {
                 }
@@ -1301,6 +1309,7 @@ public class ICPHeartBeatComponent {
                     .getSequenceTemplates();
             for (Map.Entry<String, TemplateMediator> entry : sequenceTemplates.entrySet()) {
                 JsonObject templateObj = new JsonObject();
+                TemplateMediator seqTemplate = entry.getValue();
                 templateObj.addProperty("name", entry.getKey());
                 templateObj.addProperty("type", Constants.SEQUENCE_TEMPLATE_TYPE);
 
@@ -1308,6 +1317,16 @@ public class ICPHeartBeatComponent {
                 String carbonApp = lookupCarbonApp(entry.getKey(), "template", cappMap);
                 if (carbonApp != null) {
                     templateObj.addProperty("carbonApp", carbonApp);
+                }
+
+                // Statistics via AspectConfiguration
+                try {
+                    if (seqTemplate.getAspectConfiguration() != null) {
+                        String statsState = seqTemplate.getAspectConfiguration().isStatisticsEnable()
+                                ? "enabled" : "disabled";
+                        templateObj.addProperty("statistics", statsState);
+                    }
+                } catch (Throwable ignore) {
                 }
 
                 templates.add(templateObj);

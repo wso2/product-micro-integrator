@@ -55,6 +55,7 @@
              protocol="https http">
             <handlers>
                 <handler class="org.wso2.micro.integrator.icp.apis.security.handler.ICPJWTSecurityHandler" name="ICPJWTSecurityHandler">
+                    <!-- Use secure vault alias format when needed, e.g. $secret{icp.jwt.hmac.secret} -->
                     <JwtHmacSecret>default-secret-key-at-least-32-characters-long-for-hs256</JwtHmacSecret>
                 </handler>
             </handlers>

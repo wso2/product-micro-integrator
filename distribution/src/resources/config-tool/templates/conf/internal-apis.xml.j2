@@ -109,6 +109,7 @@
         <api name="ICPApi" protocol="https http" class="org.wso2.micro.integrator.icp.apis.ICPInternalApi">
             <handlers>
                 <handler name="ICPJWTSecurityHandler" class="org.wso2.micro.integrator.icp.apis.security.handler.ICPJWTSecurityHandler">
+                    <!-- Use secure vault alias format when needed, e.g. $secret{icp.jwt.hmac.secret} -->
                     {% if icp_config.jwt_hmac_secret is defined %}
                     <JwtHmacSecret>{{icp_config.jwt_hmac_secret}}</JwtHmacSecret>
                     {% else %}

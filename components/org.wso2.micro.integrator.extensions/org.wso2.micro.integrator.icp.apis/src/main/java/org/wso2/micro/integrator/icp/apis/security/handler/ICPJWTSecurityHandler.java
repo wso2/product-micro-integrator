@@ -21,12 +21,17 @@ package org.wso2.micro.integrator.icp.apis.security.handler;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.wso2.micro.core.util.CarbonException;
+import org.wso2.micro.integrator.icp.apis.internal.ICPApiServiceComponent;
 import org.wso2.micro.integrator.management.apis.ManagementApiUndefinedException;
 import org.wso2.micro.integrator.management.apis.security.handler.AuthenticationHandlerAdapter;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -44,6 +49,7 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
 
     private static final Log LOG = LogFactory.getLog(ICPJWTSecurityHandler.class);
     private static final String DEFAULT_JWT_HMAC_SECRET = "default-secret-key-at-least-32-characters-long-for-hs256";
+    private static volatile SecretResolver secretResolver;
 
     private String name;
     private String jwtHmacSecret = DEFAULT_JWT_HMAC_SECRET;
@@ -158,17 +164,53 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
      * Sets the JWT HMAC secret. Called by the handler configuration parser.
      * Can be configured in internal-apis.xml as:
      * <handler class="..." name="ICPJWTSecurityHandler">
-     *     <JwtHmacSecret>your-secret-here</JwtHmacSecret>
+     *     <JwtHmacSecret>$secret{icp.jwt.hmac.secret}</JwtHmacSecret>
      * </handler>
      */
     public void setJwtHmacSecret(String secret) {
         if (secret != null && !secret.trim().isEmpty()) {
-            if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            String resolvedSecret = resolveSecret(secret);
+            if (resolvedSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
                 LOG.warn("JWT HMAC secret should be at least 32 bytes. Using provided secret anyway.");
             }
-            this.jwtHmacSecret = secret;
+            this.jwtHmacSecret = resolvedSecret;
             LOG.info("JWT HMAC secret configured from internal-apis.xml");
         }
+    }
+
+    private String resolveSecret(String value) {
+        String alias = MiscellaneousUtil.getProtectedToken(value);
+        if (alias == null || alias.isEmpty()) {
+            return value;
+        }
+        try {
+            SecretResolver resolver = getSecretResolver();
+            if (resolver == null || !resolver.isInitialized()) {
+                LOG.warn("Secure Vault is not initialized for ICP JWT secret. Using configured value as-is.");
+                return value;
+            }
+            return resolver.resolve(alias);
+        } catch (Exception e) {
+            LOG.error("Error resolving ICP JWT HMAC secret from Secure Vault. Using configured value as-is.", e);
+            return value;
+        }
+    }
+
+    private SecretResolver getSecretResolver() {
+        if (secretResolver == null) {
+            synchronized (ICPJWTSecurityHandler.class) {
+                if (secretResolver == null) {
+                    secretResolver = SecretResolverFactory.create((OMElement) null, false);
+                }
+            }
+        }
+        if (!secretResolver.isInitialized()) {
+            if (ICPApiServiceComponent.getSecretCallbackHandlerService() != null) {
+                secretResolver.init(
+                        ICPApiServiceComponent.getSecretCallbackHandlerService().getSecretCallbackHandler());
+            }
+        }
+        return secretResolver;
     }
 
 }
