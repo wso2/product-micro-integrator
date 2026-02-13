@@ -393,6 +393,7 @@ do
     -DskipStartupExtensions=false \
     -Dautomation.mode.seq.car.name="$CAR_NAME" \
     -Dpolyglot.engine.WarnInterpreterOnly=false \
+    -Dpolyglot.js.ecmascript-version=2022 \
     -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector \
     -Dorg.ops4j.pax.logging.logReaderEnabled=false \
     -Dorg.ops4j.pax.logging.eventAdminEnabled=false \
