@@ -2506,7 +2506,7 @@
         <opencsv.version>2.3</opencsv.version>
         <json.simple.version>1.1.1</json.simple.version>
         <javax.xml.namespace.version>0.0.0</javax.xml.namespace.version>
-        <org.milyn.wso2.version>1.5.2.wso2v1</org.milyn.wso2.version>
+        <org.milyn.wso2.version>1.5.1.wso2v5</org.milyn.wso2.version>
         <javax.persistence.version>1.0</javax.persistence.version>
         <javax.activation.version>0.0</javax.activation.version>
         <javax.xml.soap.imp.pkg.version>0.0.0</javax.xml.soap.imp.pkg.version>
