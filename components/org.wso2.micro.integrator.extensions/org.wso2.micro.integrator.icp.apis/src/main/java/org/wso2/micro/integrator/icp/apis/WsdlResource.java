@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.micro.integrator.management.apis;
+package org.wso2.micro.integrator.icp.apis;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
@@ -27,6 +27,8 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.APIResource;
+import org.wso2.micro.integrator.management.apis.Constants;
+import org.wso2.micro.integrator.management.apis.Utils;
 import org.wso2.micro.service.mgt.ServiceAdmin;
 import org.wso2.micro.service.mgt.ServiceMetaData;
 

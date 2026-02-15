@@ -16,12 +16,14 @@
  * under the License.
  */
 
-package org.wso2.micro.integrator.management.apis;
+package org.wso2.micro.integrator.icp.apis;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.json.JSONObject;
+import org.wso2.micro.integrator.management.apis.Constants;
+import org.wso2.micro.integrator.management.apis.Utils;
 
 import java.io.IOException;
 import java.util.function.BiFunction;
@@ -38,7 +40,7 @@ import java.util.function.Function;
  *   <li>Delegate to the operation-specific handler</li>
  * </ol>
  */
-class ArtifactOperationHelper {
+public class ArtifactOperationHelper {
 
     private static final Log log = LogFactory.getLog(ArtifactOperationHelper.class);
 
@@ -48,7 +50,7 @@ class ArtifactOperationHelper {
      * Both {@code Utils::handleStatistics} and {@code Utils::handleTracing} satisfy this shape.
      */
     @FunctionalInterface
-    interface AspectOperation {
+    public interface AspectOperation {
         JSONObject perform(String performedBy, String auditLogType, String artifactType,
                            JSONObject info, AspectConfiguration config, String artifactName,
                            org.apache.axis2.context.MessageContext axis2MC) throws IOException;
@@ -69,7 +71,7 @@ class ArtifactOperationHelper {
      * @param axis2MC       Axis2 message context used for error responses
      * @param operation     delegate to invoke, e.g. {@code Utils::handleStatistics}
      */
-    static <T> JSONObject handleAspectOperation(
+    public static <T> JSONObject handleAspectOperation(
             T artifact, String name, String notFoundMsg, String infoKey,
             String performedBy, String auditLogType, String artifactType,
             Function<T, AspectConfiguration> getConfig,
@@ -99,7 +101,7 @@ class ArtifactOperationHelper {
      * @param axis2MC     Axis2 message context used for error responses
      * @param operation   status-change operation receiving {@code (artifact, info)}
      */
-    static <T> JSONObject handleStatusOperation(
+    public static <T> JSONObject handleStatusOperation(
             T artifact, String notFoundMsg, String infoKey, String name,
             org.apache.axis2.context.MessageContext axis2MC,
             BiFunction<T, JSONObject, JSONObject> operation) {

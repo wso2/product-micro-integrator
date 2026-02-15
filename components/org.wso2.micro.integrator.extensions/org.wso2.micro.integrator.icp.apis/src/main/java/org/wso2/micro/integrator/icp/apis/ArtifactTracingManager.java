@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.micro.integrator.management.apis;
+package org.wso2.micro.integrator.icp.apis;
 
 import com.google.gson.JsonObject;
 import org.apache.commons.logging.Log;
@@ -29,6 +29,8 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.json.JSONObject;
+import org.wso2.micro.integrator.management.apis.Constants;
+import org.wso2.micro.integrator.management.apis.Utils;
 
 import static org.wso2.micro.integrator.management.apis.Constants.NAME;
 

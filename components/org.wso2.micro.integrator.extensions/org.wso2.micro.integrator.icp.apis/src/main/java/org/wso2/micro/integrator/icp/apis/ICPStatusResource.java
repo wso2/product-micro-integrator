@@ -26,7 +26,6 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.json.JSONObject;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.APIResource;
-import org.wso2.micro.integrator.management.apis.ArtifactStatusManager;
 import org.wso2.micro.integrator.management.apis.Constants;
 import org.wso2.micro.integrator.management.apis.Utils;
 
