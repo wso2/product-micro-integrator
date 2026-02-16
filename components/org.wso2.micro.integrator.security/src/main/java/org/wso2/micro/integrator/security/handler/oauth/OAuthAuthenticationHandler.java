@@ -59,31 +59,30 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
     private static final Log log = LogFactory.getLog(OAuthAuthenticationHandler.class);
 
     // Handler properties
-    private static final String DEFAULT_SECURITY_HEADER = HttpHeaders.AUTHORIZATION;
-    private String authorizationHeader = DEFAULT_SECURITY_HEADER;
+    private String authorizationHeader = HttpHeaders.AUTHORIZATION;
     private ArrayList<String> trustedIssuers;
     private String jwksEndpoint;
     private Boolean removeOAuthHeadersFromOutMessage = true;
     private TokenRevocationChecker tokenRevocationChecker;
 
     // Global properties
-    private int tokenCacheTimeout;
+    private int cacheExpiry;
     private HttpClientConfiguration httpClientConfiguration;
 
     @Override
     public void init(SynapseEnvironment synapseEnvironment) {
 
-        if (tokenCacheTimeout == 0) {
+        if (cacheExpiry == 0) {
             Object tokenCacheTimeoutConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.CACHE_EXPIRY);
             if (tokenCacheTimeoutConfig != null) {
-                this.tokenCacheTimeout = ((Long) tokenCacheTimeoutConfig).intValue();
+                this.cacheExpiry = ((Number) tokenCacheTimeoutConfig).intValue();
             }
         }
 
         if (trustedIssuers == null) {
             Object trustedIssuersConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.TRUSTED_ISSUERS);
             if (trustedIssuersConfig != null) {
-                this.trustedIssuers = (ArrayList<String>) Arrays.asList(((String)trustedIssuersConfig).split("\\s*,\\s*"));
+                this.trustedIssuers = new ArrayList<>(Arrays.asList(((String) trustedIssuersConfig).split("\\s*,\\s*")));
             }
         }
 
@@ -91,9 +90,9 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
         int connectionTimeout = 3000;
         int socketTimeout = 3000;
         int requestTimeout = 3000;
-        HttpClientConfiguration.Builder builder  = new HttpClientConfiguration.Builder();
-        new HttpClientConfiguration.Builder().withConnectionParams(connectionTimeout, requestTimeout, socketTimeout);
-        httpClientConfiguration = builder.build();
+        httpClientConfiguration = new HttpClientConfiguration.Builder()
+                .withConnectionParams(connectionTimeout, requestTimeout, socketTimeout)
+                .build();
     }
 
     @Override
@@ -131,8 +130,13 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
             }
 
             String[] elements = authHeader.split(OAuthConstants.CONSUMER_KEY_SEGMENT_DELIMITER);
-            String authScheme = elements[0];
-            String accessToken = elements[1];
+            if (elements.length < 2) {
+                log.error("Invalid jwt authorization header format.");
+                throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
+                        OAuthConstants.API_AUTH_INVALID_CREDENTIALS_MESSAGE);
+            }
+            String authScheme = elements[0].trim();
+            String accessToken = elements[1].trim();
 
             // Currently, this handler only supports JWT tokens. Hence, the authentication scheme should be Bearer.
             if (!OAuthConstants.BEARER.equals(authScheme)) {
@@ -159,13 +163,19 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
             SignedJWTInfo signedJWTInfo;
             try {
                 signedJWTInfo = getSignedJwtInfo(accessToken);
-                // TODO: check what happens if the claimset is null
-                String issuer = signedJWTInfo.getJwtClaimsSet().getIssuer();
+
+                JWTClaimsSet jwtClaimsSet = signedJWTInfo.getJwtClaimsSet();
+                if (jwtClaimsSet == null) {
+                    log.error("JWT claim set is null for token: " + OAuthUtil.getMaskedToken(accessToken));
+                    throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
+                            OAuthConstants.API_AUTH_INVALID_CREDENTIALS_MESSAGE);
+                }
+                String issuer = jwtClaimsSet.getIssuer();
 
                 if (StringUtils.isNotEmpty(issuer) && trustedIssuers != null
                         && trustedIssuers.contains(issuer)) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Issuer: " + issuer + "found for authenticate token "
+                        log.debug("Issuer: " + issuer + " found for authenticate token "
                                 + OAuthUtil.getMaskedToken(accessToken));
                     }
                 } else {
@@ -207,7 +217,7 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
     @Override
     public boolean handleResponse(MessageContext messageContext) {
 
-        return false;
+        return true;
     }
 
     private String getSecurityHeader() {
@@ -233,7 +243,7 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
                 clazz = JWTValidator.class.getClassLoader().loadClass(revocationChecker);
                 this.tokenRevocationChecker = (TokenRevocationChecker) clazz.newInstance();
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                //TODO: Do we need to throw an exception here?
+                log.error("Failed to instantiate TokenRevocationChecker: " + revocationChecker, e);
             }
         }
     }
@@ -242,13 +252,6 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
 
         if (trustedIssuers != null && !trustedIssuers.isEmpty()) {
             this.trustedIssuers = new ArrayList<>(Arrays.asList(trustedIssuers.split("\\s*,\\s*")));
-        }
-    }
-
-    public void setTokenCacheTimeout(String tokenCacheTimeout) {
-
-        if (tokenCacheTimeout != null) {
-            this.tokenCacheTimeout = Integer.parseInt(tokenCacheTimeout);
         }
     }
 
@@ -332,7 +335,7 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
             Map<String, String> headers =
                     (Map) axis2MC.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
             if (headers != null) {
-                headers.put(HttpHeaders.WWW_AUTHENTICATE, "Bearer realm=\"WSO2 API Manager\""
+                headers.put(HttpHeaders.WWW_AUTHENTICATE, "Bearer realm=\"WSO2 Micro Integrator\""
                         + " error=\"invalid_token\""
                         + ", error_description=\"The provided token is invalid\"");
             }
@@ -355,7 +358,7 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
 
         if (selectedApi == null) {
             String msg = "Could not find the API for "
-                    + messageContext.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);;
+                    + messageContext.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);
             log.error(msg);
             throw new OAuthSecurityException(msg);
         }

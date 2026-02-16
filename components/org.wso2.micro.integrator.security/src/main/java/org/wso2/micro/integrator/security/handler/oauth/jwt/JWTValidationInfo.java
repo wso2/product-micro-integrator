@@ -53,15 +53,17 @@ public class JWTValidationInfo implements Serializable {
         this.user = jwtValidationInfo.getUser();
         this.issuer = jwtValidationInfo.getIssuer();
         this.expiryTime = jwtValidationInfo.getExpiryTime();
+        this.issuedTime = jwtValidationInfo.getIssuedTime();
         this.consumerKey = jwtValidationInfo.getConsumerKey();
         this.valid = jwtValidationInfo.isValid();
-        this.scopes = jwtValidationInfo.getScopes();
-        this.claims = jwtValidationInfo.getClaims();
+        this.scopes = new ArrayList<>(jwtValidationInfo.getScopes());
+        this.claims = new HashMap<>(jwtValidationInfo.getClaims());
         this.jti = jwtValidationInfo.getJti();
         this.validationCode = jwtValidationInfo.getValidationCode();
         this.rawPayload = jwtValidationInfo.getRawPayload();
         this.keyManager = jwtValidationInfo.getKeyManager();
         this.isAppToken = jwtValidationInfo.getAppToken();
+        this.isExpired = jwtValidationInfo.isExpired();
     }
 
     public Boolean getAppToken() {

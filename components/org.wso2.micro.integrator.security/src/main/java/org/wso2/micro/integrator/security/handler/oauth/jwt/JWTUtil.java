@@ -90,7 +90,7 @@ public class JWTUtil {
         proxyConfigs.setProxyPort(String.valueOf(httpClientConfiguration.getProxyPort()));
         proxyConfigs.setProxyProtocol(httpClientConfiguration.getProxyProtocol());
         proxyConfigs.setProxyUsername(httpClientConfiguration.getProxyUsername());
-        proxyConfigs.setProxyPassword(Arrays.toString(httpClientConfiguration.getProxyPassword()));
+        proxyConfigs.setProxyPassword(new String(httpClientConfiguration.getProxyPassword()));
         return proxyConfigs;
     }
 

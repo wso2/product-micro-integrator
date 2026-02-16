@@ -55,7 +55,6 @@ public class JWTValidator {
 
     private static final Log log = LogFactory.getLog(JWTValidator.class);
 
-    private JWKSet jwkSet;
     private final TokenRevocationChecker tokenRevocationChecker;
     private final String jwksEndpoint;
     private final HttpClientConfiguration httpClientConfiguration;
@@ -124,25 +123,23 @@ public class JWTValidator {
 
         JWTValidationInfo jwtValidationInfo = getJwtValidationInfo(signedJWTInfo, jwtTokenIdentifier, synCtx);
 
-        if (jwtValidationInfo != null) {
-            if (jwtValidationInfo.isValid()) {
-                // Validate scopes
-                JWTClaimsSet jwtClaimsSet = signedJWTInfo.getJwtClaimsSet();
-                validateScopes(matchingResource, httpMethod, synCtx, jwtClaimsSet);
-                synCtx.setProperty(OAuthConstants.SCOPES, jwtValidationInfo.getScopes().toString());
-                synCtx.setProperty(OAuthConstants.JWT_CLAIMS, jwtValidationInfo.getClaims());
-
-                if (log.isDebugEnabled()) {
-                    log.debug("JWT authentication successful.");
-                }
-
-            } else {
-                throw new OAuthSecurityException(jwtValidationInfo.getValidationCode(),
-                        OAuthConstants.getAuthenticationFailureMessage(jwtValidationInfo.getValidationCode()));
+        if (jwtValidationInfo.isValid()) {
+            // Validate scopes
+            JWTClaimsSet jwtClaimsSet = signedJWTInfo.getJwtClaimsSet();
+            if (!validateScopes(matchingResource, httpMethod, synCtx, jwtClaimsSet)) {
+                throw new OAuthSecurityException(OAuthConstants.INVALID_SCOPE,
+                        OAuthConstants.INVALID_SCOPE_MESSAGE);
             }
+            synCtx.setProperty(OAuthConstants.SCOPES, jwtValidationInfo.getScopes().toString());
+            synCtx.setProperty(OAuthConstants.JWT_CLAIMS, jwtValidationInfo.getClaims());
+
+            if (log.isDebugEnabled()) {
+                log.debug("JWT authentication successful.");
+            }
+
         } else {
-            throw new OAuthSecurityException(OAuthConstants.API_AUTH_GENERAL_ERROR,
-                    OAuthConstants.API_AUTH_GENERAL_ERROR_MESSAGE);
+            throw new OAuthSecurityException(jwtValidationInfo.getValidationCode(),
+                    OAuthConstants.getAuthenticationFailureMessage(jwtValidationInfo.getValidationCode()));
         }
     }
 
@@ -244,8 +241,8 @@ public class JWTValidator {
      * Check whether the jwt token is expired or not.
      *
      * @param tokenIdentifier The token Identifier of JWT.
-     * @param payload        The payload of the JWT token
-     * @return
+     * @param payload         The payload of the JWT token.
+     * @return the {@link JWTValidationInfo} containing the updated validation and expiration status of the token
      */
     private JWTValidationInfo checkTokenExpiration(String tokenIdentifier, JWTValidationInfo payload) {
 
@@ -257,7 +254,7 @@ public class JWTValidator {
             CacheProvider.getTokenCache().remove(tokenIdentifier);
             CacheProvider.getInvalidTokenCache().put(tokenIdentifier, Boolean.TRUE);
             payload.setValid(false);
-            payload.setValidationCode(OAuthConstants.API_AUTH_INVALID_CREDENTIALS);
+            payload.setValidationCode(OAuthConstants.API_AUTH_ACCESS_TOKEN_EXPIRED);
             payload.setExpired(true);
             return payload;
         }
@@ -346,6 +343,7 @@ public class JWTValidator {
                 return false;
             }
             if (jwksEndpoint != null) {
+                JWKSet jwkSet;
                 // Check JWKSet Available in Cache
                 Object jwksCache = CacheProvider.getJwksCache().get(jwksEndpoint);
                 if (jwksCache != null) {
@@ -362,9 +360,17 @@ public class JWTValidator {
 
                 if (jwkSet.getKeyByKeyId(keyID) == null) {
                     jwkSet = retrieveJWKSet(jwksEndpoint, messageContext);
+                    if (jwkSet != null) {
+                        CacheProvider.getJwksCache().put(jwksEndpoint, jwkSet);
+                    }
                 }
 
-                if (jwkSet.getKeyByKeyId(keyID) instanceof RSAKey) {
+                if (jwkSet.getKeyByKeyId(keyID) == null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Key with ID " + keyID + " not found in JWKS endpoint");
+                    }
+                    return false;
+                } else if (jwkSet.getKeyByKeyId(keyID) instanceof RSAKey) {
                     RSAKey keyByKeyId = (RSAKey) jwkSet.getKeyByKeyId(keyID);
                     RSAPublicKey rsaPublicKey = keyByKeyId.toRSAPublicKey();
                     if (rsaPublicKey != null) {
@@ -383,10 +389,10 @@ public class JWTValidator {
             throw new OAuthSecurityException("Error while parsing JWT", e);
         } catch (JOSEException e) {
             log.error("Error while verifying token signature", e);
-            throw new OAuthSecurityException("Error while parsing JWT", e);
+            throw new OAuthSecurityException("Error while verifying token signature", e);
         } catch (IOException | AuthException e) {
             log.error("Error while connecting to JWKS endpoint", e);
-            throw new OAuthSecurityException("Error while parsing JWT", e);
+            throw new OAuthSecurityException("Error while connecting to JWKS endpoint", e);
         } catch (OAuthSecurityException e) {
             log.error("Error while retrieving JWKS information", e);
             throw new OAuthSecurityException(e.getMessage(), e);
@@ -396,6 +402,7 @@ public class JWTValidator {
     private JWKSet retrieveJWKSet(String jwksEndpoint, MessageContext messageContext)
             throws IOException, ParseException, OAuthSecurityException, AuthException {
 
+        JWKSet jwkSet;
         String jwksInfo = JWTUtil.retrieveJWKSConfiguration(jwksEndpoint, httpClientConfiguration, messageContext);
         if (jwksInfo != null) {
             jwkSet = JWKSet.parse(jwksInfo);
@@ -444,7 +451,13 @@ public class JWTValidator {
 
         // Get the required scopes from our pre-processed map
         Map<String, List<String>> resourceScopeMap =
-                (Map<String, List<String>>) synCtx.getProperty("RESOURCE_SCOPE_MAP");
+                (Map<String, List<String>>) synCtx.getProperty(RESTConstants.RESOURCE_SCOPE_MAP);
+        if (resourceScopeMap == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("RESOURCE_SCOPE_MAP not found in message context. Skipping scope validation.");
+            }
+            return true;
+        }
         List<String> requiredScopes = resourceScopeMap.get(lookupKey);
 
         if (requiredScopes == null || requiredScopes.isEmpty()) {

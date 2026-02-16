@@ -45,51 +45,41 @@ public class CacheProvider {
      * Create and return SIGNED_JWT_CACHE
      */
     public static Cache createParsedSignJWTCache() {
-        long tokenCacheExpiry = DEFAULT_TIMEOUT;
-        Object tokenCacheTimeoutConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.CACHE_EXPIRY);
-        if (tokenCacheTimeoutConfig != null) {
-            tokenCacheExpiry = (Long) tokenCacheTimeoutConfig;
-        }
-        return getCache(CACHE_MANAGER_NAME, SIGNED_JWT_CACHE,
-                tokenCacheExpiry, tokenCacheExpiry);
+
+        return createCache(SIGNED_JWT_CACHE);
     }
 
     /**
      * Create and return TOKEN_CACHE
      */
     public static Cache createTokenCache() {
-        long tokenCacheExpiry = DEFAULT_TIMEOUT;
-        Object tokenCacheTimeoutConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.CACHE_EXPIRY);
-        if (tokenCacheTimeoutConfig != null) {
-            tokenCacheExpiry = (Long) tokenCacheTimeoutConfig;
-        }
-        return getCache(CACHE_MANAGER_NAME, TOKEN_CACHE_NAME,
-                tokenCacheExpiry, tokenCacheExpiry);
+
+        return createCache(TOKEN_CACHE_NAME);
     }
 
     /**
      * Create and return JWKS_CACHE_NAME
      */
     public static Cache createJwksCache() {
-        long tokenCacheExpiry = DEFAULT_TIMEOUT;
-        Object tokenCacheTimeoutConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.CACHE_EXPIRY);
-        if (tokenCacheTimeoutConfig != null) {
-            tokenCacheExpiry = (Long) tokenCacheTimeoutConfig;
-        }
-        return getCache(CACHE_MANAGER_NAME, JWKS_CACHE_NAME, tokenCacheExpiry, tokenCacheExpiry);
+
+        return createCache(JWKS_CACHE_NAME);
     }
 
     /**
-     * Create and return GATEWAY_INVALID_TOKEN_CACHE
+     * Create and return INVALID_TOKEN_CACHE_NAME
      */
     public static Cache createInvalidTokenCache() {
-        long tokenCacheExpiry = DEFAULT_TIMEOUT;
-        Object tokenCacheTimeoutConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.CACHE_EXPIRY);
-        if (tokenCacheTimeoutConfig != null) {
-            tokenCacheExpiry = (Long) tokenCacheTimeoutConfig;
+
+        return createCache(INVALID_TOKEN_CACHE_NAME);
+    }
+
+    private static Cache createCache(String cacheName) {
+        long cacheExpiry = DEFAULT_TIMEOUT;
+        Object cacheExpiryConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.CACHE_EXPIRY);
+        if (cacheExpiryConfig != null) {
+            cacheExpiry = ((Number) cacheExpiryConfig).longValue();
         }
-        return getCache(CACHE_MANAGER_NAME, INVALID_TOKEN_CACHE_NAME,
-                tokenCacheExpiry, tokenCacheExpiry);
+        return getCache(CACHE_MANAGER_NAME, cacheName, cacheExpiry, cacheExpiry);
     }
 
     /**

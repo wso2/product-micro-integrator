@@ -24,18 +24,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.Serializable;
-import java.util.Map;
 
 /**
  * JWT internal Representation
  */
 public class SignedJWTInfo implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private String token;
-    private SignedJWT signedJWT;
+    private transient SignedJWT signedJWT;
     private JWTClaimsSet jwtClaimsSet;
     private ValidationStatus validationStatus = ValidationStatus.NOT_VALIDATED;
-    private static final Log log = LogFactory.getLog(SignedJWTInfo.class);
 
     public enum ValidationStatus {
         NOT_VALIDATED, INVALID, VALID
