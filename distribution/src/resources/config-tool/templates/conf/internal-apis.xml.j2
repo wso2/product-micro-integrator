@@ -105,6 +105,18 @@
                 <allowedHeaders>{{management_api.cors.allowed_headers}}</allowedHeaders>
             </cors>
         </api>
+        {% if icp_config is defined and icp_config.enabled == true %}
+        <api name="ICPApi" protocol="https http" class="org.wso2.micro.integrator.icp.apis.ICPInternalApi">
+            <handlers>
+                <handler name="ICPJWTSecurityHandler" class="org.wso2.micro.integrator.icp.apis.security.handler.ICPJWTSecurityHandler"/>
+            </handlers>
+            <cors>
+                <enabled>{{ icp_config.cors.enable | default('true') }}</enabled>
+                <allowedOrigins>{{ icp_config.cors.allowed_origins | default('https://localhost') }}</allowedOrigins>
+                <allowedHeaders>{{ icp_config.cors.allowed_headers | default('Authorization, Content-Type') }}</allowedHeaders>
+            </cors>
+        </api>
+        {% endif %}
     </apis>
     {% if internal_apis.file_user_store.enable == true %}
     <userStore>

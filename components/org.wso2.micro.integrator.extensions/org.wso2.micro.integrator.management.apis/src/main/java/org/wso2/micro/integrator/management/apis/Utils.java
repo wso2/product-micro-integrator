@@ -197,7 +197,7 @@ public class Utils {
         return response;
     }
 
-    private static JSONObject handleStatistics(String performedBy, String type, JSONObject info,
+    public static JSONObject handleStatistics(String performedBy, String type, JSONObject info,
                                     AspectConfiguration config, String artifactName,
                                     org.apache.axis2.context.MessageContext axisMsgCtx, JsonObject payload) {
 
@@ -220,6 +220,32 @@ public class Utils {
         }
         LOG.info(msg);
         return response;
+    }
+
+    /**
+     * Public wrapper method for handling tracing operations.
+     */
+    public static JSONObject handleTracing(String performedBy, String type, String resourceType, JSONObject info,
+                                           AspectConfiguration config, String artifactName,
+                                           org.apache.axis2.context.MessageContext axisMsgCtx) throws IOException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Handling tracing operation for artifact: " + artifactName + ", type: " + type);
+        }
+        JsonObject payload = getJsonPayload(axisMsgCtx);
+        return handleTracing(performedBy, type, info, config, artifactName, axisMsgCtx, payload);
+    }
+
+    /**
+     * Public wrapper method for handling statistics operations.
+     */
+    public static JSONObject handleStatistics(String performedBy, String type, String resourceType, JSONObject info,
+                                              AspectConfiguration config, String artifactName,
+                                              org.apache.axis2.context.MessageContext axisMsgCtx) throws IOException {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Handling statistics operation for artifact: " + artifactName + ", type: " + type);
+        }
+        JsonObject payload = getJsonPayload(axisMsgCtx);
+        return handleStatistics(performedBy, type, info, config, artifactName, axisMsgCtx, payload);
     }
 
     public static JSONObject createJSONList(int count) {
@@ -259,8 +285,8 @@ public class Utils {
      * @param statusCode          the HTTP status code to be returned
      * @return error response
      */
-    static JSONObject createJsonError(String message, Throwable exception,
-                                      org.apache.axis2.context.MessageContext axis2MessageContext, String statusCode) {
+    public static JSONObject createJsonError(String message, Throwable exception,
+                                             org.apache.axis2.context.MessageContext axis2MessageContext, String statusCode) {
         LOG.error(message, exception);
         return createResponse(message + exception.getMessage(), axis2MessageContext, statusCode);
     }
@@ -273,8 +299,8 @@ public class Utils {
      * @param statusCode          the HTTP status code to be returned
      * @return error response
      */
-    static JSONObject createJsonError(String message, org.apache.axis2.context.MessageContext axis2MessageContext,
-                                      String statusCode) {
+    public static JSONObject createJsonError(String message, org.apache.axis2.context.MessageContext axis2MessageContext,
+                                             String statusCode) {
         LOG.error(message);
         return createResponse(message, axis2MessageContext, statusCode);
     }
