@@ -2,10 +2,6 @@ package org.wso2.micro.integrator.security.handler.oauth;
 
 public class OAuthUtil {
 
-    public static boolean isRemoveOAuthHeadersFromOutMessage() {
-        return true;
-    }
-
     public static String getMaskedToken(String token) {
 
         if (token.length() >= 10) {

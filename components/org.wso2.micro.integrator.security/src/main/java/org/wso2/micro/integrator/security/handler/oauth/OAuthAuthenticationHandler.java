@@ -190,6 +190,15 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
         } catch (OAuthSecurityException e) {
             handleAuthFailure(messageContext, e);
             return false;
+        } finally {
+            if (removeOAuthHeadersFromOutMessage) {
+                // Remove the auth header from the transport headers to prevent it from being propagated to the backend.
+                Map headers = (Map) ((Axis2MessageContext) messageContext).getAxis2MessageContext().
+                        getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+                if (headers != null) {
+                    headers.remove(authorizationHeader);
+                }
+            }
         }
 
         return true;
@@ -199,14 +208,6 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
     public boolean handleResponse(MessageContext messageContext) {
 
         return false;
-    }
-
-    public static void sendFault(MessageContext messageContext, int status) {
-        messageContext.setTo(null);
-        org.apache.axis2.context.MessageContext axis2MC = ((Axis2MessageContext) messageContext).
-                getAxis2MessageContext();
-        axis2MC.setProperty(NhttpConstants.HTTP_SC, status);
-        Axis2Sender.sendBack(messageContext);
     }
 
     private String getSecurityHeader() {
@@ -337,6 +338,14 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
             }
         }
         sendFault(messageContext, status);
+    }
+
+    public static void sendFault(MessageContext messageContext, int status) {
+        messageContext.setTo(null);
+        org.apache.axis2.context.MessageContext axis2MC = ((Axis2MessageContext) messageContext).
+                getAxis2MessageContext();
+        axis2MC.setProperty(NhttpConstants.HTTP_SC, status);
+        Axis2Sender.sendBack(messageContext);
     }
 
     public String getApiElectedResource(MessageContext messageContext)
