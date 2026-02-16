@@ -59,6 +59,8 @@ public class Constants {
     public static final String PATH_PARAM_TRANSACTION = "/" + "{param}";
     public static final String ROOT_CONTEXT = "/";
     public static final String PREFIX_CONFIGS = "/configs";
+    public static final String PREFIX_ICP = "/icp";
+    public static final String PREFIX_ARTIFACTS = "/artifacts";
 
     public static final String COUNT = "count";
     public static final String TOTAL_COUNT = "totalCount";
@@ -180,6 +182,22 @@ public class Constants {
     public static final String AUDIT_LOG_TYPE_REGISTRY_RESOURCE = "registry_resource";
     public static final String AUDIT_LOG_TYPE_REGISTRY_RESOURCE_PROPERTIES = "registry_resource_properties";
 
+    // Audit log types for tracing
+    public static final String AUDIT_LOG_TYPE_PROXY_SERVICE_TRACE = "proxy_service_trace";
+    public static final String AUDIT_LOG_TYPE_ENDPOINT_TRACE = "endpoint_trace";
+    public static final String AUDIT_LOG_TYPE_INBOUND_ENDPOINT_TRACE = "inbound_endpoint_trace";
+    public static final String AUDIT_LOG_TYPE_API_TRACE = "api_trace";
+    public static final String AUDIT_LOG_TYPE_SEQUENCE_TRACE = "sequence_trace";
+    public static final String AUDIT_LOG_TYPE_SEQUENCE_TEMPLATE_TRACE = "sequence_template_trace";
+
+    // Audit log types for statistics
+    public static final String AUDIT_LOG_TYPE_PROXY_SERVICE_STATISTICS = "proxy_service_statistics";
+    public static final String AUDIT_LOG_TYPE_ENDPOINT_STATISTICS = "endpoint_statistics";
+    public static final String AUDIT_LOG_TYPE_INBOUND_ENDPOINT_STATISTICS = "inbound_endpoint_statistics";
+    public static final String AUDIT_LOG_TYPE_API_STATISTICS = "api_statistics";
+    public static final String AUDIT_LOG_TYPE_SEQUENCE_STATISTICS = "sequence_statistics";
+    public static final String AUDIT_LOG_TYPE_SEQUENCE_TEMPLATE_STATISTICS = "sequence_template_statistics";
+
     public static final String PROXY_SERVICES = "proxy-services";
     public static final String NODES = "nodes";
     public static final String APIS = "apis";
@@ -195,7 +213,7 @@ public class Constants {
     public static final String LOGGING_RESOURCES = "log-configs";
     public static final String CONNECTORS = "connectors";
     public static final String MESSAGE_PROCESSORS = "message-processors";
-    public static final String MESSAGE_STORE = "message-stores";
+    public static final String MESSAGE_STORES = "message-stores";
     public static final String TEMPLATES = "templates";
     public static final String TASKS = "tasks";
     public static final String REGISTRY_RESOURCES = "registry-resources";
@@ -246,5 +264,19 @@ public class Constants {
     // Searching constants
     public static final String SEARCH_KEY = "searchKey";
     public static final Character BASIC_AUTH_SEPARATOR_CHAR = ':';
+
+    public static final String ARTIFACT_TYPE = "type";
+    public static final String PROXY_SERVICE = "proxy-service";
+    public static final String ENDPOINT = "endpoint";
+    public static final String INBOUND_ENDPOINT = "inbound-endpoint";
+    public static final String MESSAGE_PROCESSOR = "message-processor";
+    public static final String API = "api";
+    public static final String SEQUENCE = "sequence";
+    public static final String TASK = "task";
+    public static final String MESSAGE_STORE = "message-store";
+    public static final String CARBON_APPLICATION = "carbonapp";
+    public static final String DATA_SOURCE = "data-source";
+    public static final String DATA_SERVICE = "data-service";
+    public static final String TEMPLATE = "template";
 
 }
