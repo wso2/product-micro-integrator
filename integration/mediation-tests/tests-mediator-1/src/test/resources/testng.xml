@@ -35,12 +35,6 @@
                     <exclude name=".*" />
                 </methods>
             </class>
-            <!-- Removing due to https://github.com/wso2/micro-integrator/issues/486 -->
-            <class name="org.wso2.carbon.esb.mediator.test.aggregate.SoapHeaderBlocksTestCase">
-                <methods>
-                    <exclude name=".*" />
-                </methods>
-            </class>
         </classes>
     </test>
 
@@ -75,12 +69,6 @@
                 </methods>
             </class>
             <class name="org.wso2.carbon.esb.mediator.test.callOut.SecurityTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-            <!-- Disable the testcase as config files are getting dynamically changed -->
-            <class name="org.wso2.carbon.esb.mediator.test.callOut.ValidPathAxis2XmlTestCase">
                 <methods>
                     <exclude name=".*"/>
                 </methods>
@@ -175,41 +163,6 @@
         <packages>
             <package name="org.wso2.carbon.esb.mediator.test.drop"/>
         </packages>
-    </test>
-    <test name="Message-Store-Test" preserve-order="true" verbose="2">
-        <classes>
-            <!--<class name="org.wso2.carbon.esb.message.store.test.JMSEndpointSuspensionViaVFSTest"/>-->
-            <class name="org.wso2.carbon.esb.message.store.test.MessageStoreMessageCleaningTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-            <class name="org.wso2.carbon.esb.message.store.test.MessageStoreMessageConcurrencyTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-            <class name="org.wso2.carbon.esb.message.store.test.MessageStoreMessageDeleteTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-            <class name="org.wso2.carbon.esb.message.store.test.MessageStoreMessageStoringTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-            <class name="org.wso2.carbon.esb.message.store.test.MessageStorePersistenceTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-            <class name="org.wso2.carbon.esb.message.store.test.DynamicMessageRoutingTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-        </classes>
     </test>
 
     <test name="Enrich-mediator-Test" preserve-order="true" verbose="2">

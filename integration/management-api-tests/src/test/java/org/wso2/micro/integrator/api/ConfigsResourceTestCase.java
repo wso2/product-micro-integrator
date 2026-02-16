@@ -131,6 +131,7 @@ public class ConfigsResourceTestCase extends ESBIntegrationTest {
 
         getCorrelationLogStateAndAssert(offset, false);
         logLine = bufferedReader.readLine();
+        log.info("Read the following line from the correlation log file after disabling : " + logLine);
         Assert.assertNull(logLine);
     }
 

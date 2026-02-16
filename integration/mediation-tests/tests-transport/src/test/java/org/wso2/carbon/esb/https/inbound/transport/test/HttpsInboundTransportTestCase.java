@@ -23,6 +23,7 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.automation.engine.context.TestUserMode;
+import org.wso2.carbon.automation.engine.context.beans.User;
 import org.wso2.esb.integration.common.utils.CarbonLogReader;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
 import org.wso2.esb.integration.common.utils.Utils;
@@ -38,7 +39,7 @@ public class HttpsInboundTransportTestCase extends ESBIntegrationTest {
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
 
-        init(TestUserMode.SUPER_TENANT_ADMIN);
+        init();
         secureAxisServiceClient = new SecureServiceClient();
         CarbonLogReader reader = new CarbonLogReader();
         reader.start();
@@ -56,7 +57,7 @@ public class HttpsInboundTransportTestCase extends ESBIntegrationTest {
     public void testSecureProxyEndPointThruUri() throws Exception {
 
         OMElement response = secureAxisServiceClient.
-                sendSecuredStockQuoteRequest(userInfo, "https://localhost:8087/", "WSO2", false);
+                sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(), "https://localhost:8087/", "WSO2", false);
         Assert.assertNotNull(response);
         Assert.assertEquals("getQuoteResponse", response.getLocalName());
         Utils.undeploySynapseConfiguration(INBOUND_NAME, Utils.ArtifactType.INBOUND_ENDPOINT, false);

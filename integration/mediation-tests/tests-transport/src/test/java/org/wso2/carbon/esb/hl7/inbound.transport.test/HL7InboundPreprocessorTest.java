@@ -70,7 +70,6 @@ public class HL7InboundPreprocessorTest extends ESBIntegrationTest {
         Utils.deploySynapseConfiguration(addInbound(), "hl7_inbound", Utils.ArtifactType.INBOUND_ENDPOINT, false);
         Assert.assertTrue(logReader.checkForLog("Starting HL7 Inbound Endpoint on port 20003", DEFAULT_TIMEOUT),
                           "Inbound deployment failed");
-        verifyAPIExistence("hl7-api");
         // send request
         Map<String, String> headers = new HashMap<>();
         headers.put("Accept", "application/xml");

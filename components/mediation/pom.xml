@@ -41,6 +41,7 @@
         <module>security</module>
         <module>mediation-commons</module>
         <module>message-relay</module>
+        <module>connectors</module>
     </modules>
 
 </project>

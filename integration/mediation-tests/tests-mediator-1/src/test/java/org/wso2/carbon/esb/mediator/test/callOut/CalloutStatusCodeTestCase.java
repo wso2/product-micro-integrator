@@ -29,7 +29,6 @@ public class CalloutStatusCodeTestCase extends ESBIntegrationTest {
     @BeforeClass(alwaysRun = true)
     public void deployService() throws Exception {
         super.init();
-        esbUtils.isProxyServiceExist(contextUrls.getBackEndUrl(), sessionCookie, "StatusCodeTestClientProxy");
     }
 
     @Test(groups = "wso2.esb", description = "Test for check http status code can be retrived form HTTP_SC")

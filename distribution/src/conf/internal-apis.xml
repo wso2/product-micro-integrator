@@ -51,6 +51,17 @@
                 <allowedHeaders>Authorization, Content-Type</allowedHeaders>
             </cors>
         </api>
+        <api class="org.wso2.micro.integrator.icp.apis.ICPInternalApi" name="ICPApi"
+             protocol="https http">
+            <handlers>
+                <handler class="org.wso2.micro.integrator.icp.apis.security.handler.ICPJWTSecurityHandler" name="ICPJWTSecurityHandler"/>
+            </handlers>
+            <cors>
+                <enabled>true</enabled>
+                <allowedOrigins>*</allowedOrigins>
+                <allowedHeaders>Authorization, Content-Type</allowedHeaders>
+            </cors>
+        </api>
     </apis>
     <userStore>
         <users>

@@ -30,8 +30,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.automation.engine.annotations.ExecutionEnvironment;
 import org.wso2.carbon.automation.engine.annotations.SetEnvironment;
-import org.wso2.esb.integration.common.clients.endpoint.EndPointAdminClient;
-import org.wso2.esb.integration.common.clients.registry.ResourceAdminServiceClient;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
 import org.wso2.esb.integration.common.utils.ESBTestConstant;
 import org.wso2.esb.integration.common.utils.clients.LoadbalanceFailoverClient;
@@ -40,8 +38,6 @@ import org.wso2.esb.integration.common.utils.servers.axis2.SampleAxis2Server;
 
 public class FailoverEndpointTestCase extends ESBIntegrationTest {
 
-    private EndPointAdminClient endPointAdminClient;
-    private ResourceAdminServiceClient resourceAdminServiceClient;
     private SampleAxis2Server axis2Server1;
     private SampleAxis2Server axis2Server2;
     private SampleAxis2Server axis2Server3;
@@ -99,8 +95,6 @@ public class FailoverEndpointTestCase extends ESBIntegrationTest {
         axis2Server1 = null;
         axis2Server2 = null;
         axis2Server3 = null;
-        resourceAdminServiceClient = null;
-        endPointAdminClient = null;
         lbClient = null;
         super.cleanup();
     }

@@ -145,9 +145,9 @@ public class SequenceResource extends APIResource {
                     }
                     JSONObject info = new JSONObject();
                     info.put(SEQUENCE_NAME, seqName);
-                    response = Utils.handleTracing(performedBy, Constants.AUDIT_LOG_TYPE_SEQUENCE_TRACE,
-                                                   Constants.SEQUENCES, info, sequence.getAspectConfiguration(),
-                                                   seqName, axisMsgCtx);
+                    response = Utils.handleResourceStateChange(performedBy, Constants.AUDIT_LOG_TYPE_SEQUENCE_STATE_CHANGE,
+                                                   info, sequence.getAspectConfiguration(),
+                                                   seqName, axisMsgCtx, payload);
                 } else {
                     response = Utils.createJsonError("Specified sequence ('" + seqName + "') not found", axisMsgCtx,
                             Constants.BAD_REQUEST);

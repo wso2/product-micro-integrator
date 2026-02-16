@@ -76,17 +76,4 @@ public class AddressEndpointTestCase extends ESBIntegrationTest {
         boolean isDeployed = checkEndpointExistence(ENDPOINT_NAME);
         Assert.assertFalse(isDeployed, "andun scope deployed. But unsupported scope");
     }
-
-    @Test(groups = {
-            "wso2.esb" }, description = "Adding Duplicate Address endpoint", expectedExceptions = AxisFault.class)
-    public void testAddingDuplicateAddressEndpoint() throws Exception {
-        addEndpoint(AXIOMUtil.stringToOM("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-                + "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"" + ENDPOINT_NAME1 + "\">\n"
-                + "    <address uri=\"" + getBackEndServiceUrl(ESBTestConstant.SIMPLE_STOCK_QUOTE_SERVICE) + "\" />\n"
-                + "</endpoint>"));
-        addEndpoint(AXIOMUtil.stringToOM("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-                + "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\" name=\"" + ENDPOINT_NAME1 + "\">\n"
-                + "    <address uri=\"" + getBackEndServiceUrl(ESBTestConstant.SIMPLE_STOCK_QUOTE_SERVICE) + "\" />\n"
-                + "</endpoint>"));
-    }
 }

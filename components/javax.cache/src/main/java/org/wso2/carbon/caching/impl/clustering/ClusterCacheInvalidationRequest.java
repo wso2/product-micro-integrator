@@ -23,7 +23,6 @@ import org.apache.axis2.clustering.ClusteringMessage;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.base.api.IdempotentMessage;
 import org.wso2.carbon.caching.impl.CacheImpl;
 
 import java.io.Serializable;
@@ -40,7 +39,6 @@ import static org.wso2.carbon.caching.impl.CachingConstants.CLEAR_ALL_PREFIX;
  * This is based on Axis2 clustering.
  *
  */
-@IdempotentMessage
 public class ClusterCacheInvalidationRequest extends ClusteringMessage {
 
     private static final transient Log log = LogFactory.getLog(ClusterCacheInvalidationRequest.class);

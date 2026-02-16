@@ -94,14 +94,6 @@
             <artifactId>org.osgi.service.coordinator</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.service.cm</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.xml.soap</groupId>
-            <artifactId>javax.xml.soap-api</artifactId>
-        </dependency>
-        <dependency>
             <groupId>javax.xml.soap</groupId>
             <artifactId>javax.xml.soap-api</artifactId>
         </dependency>
@@ -113,6 +105,7 @@
             <groupId>javax.el</groupId>
             <artifactId>javax.el-api</artifactId>
         </dependency>
+
     </dependencies>
 
     <build>
@@ -300,28 +293,8 @@
                                 </bundleDef>
                                 <bundleDef>org.wso2.orbit.commons-text:commons-text:${commons-text.orbit.version}
                                 </bundleDef>
-<!--                                <bundleDef>-->
-<!--                                    org.wso2.carbon:org.wso2.carbon.server.admin.common:${carbon.kernel.version}-->
-<!--                                </bundleDef>-->
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.registry.core:${carbon.kernel.version}-->
-<!--                                </bundleDef>-->
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.feature.mgt.core:${carbon.kernel.version}-->
-<!--                                </bundleDef>-->
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.queuing:${carbon.kernel.version}</bundleDef>-->
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.base:${carbon.kernel.version}</bundleDef>-->
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.registry.api:${carbon.kernel.version}-->
-<!--                                </bundleDef>-->
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.ndatasource.common:${carbon.kernel.version}-->
-<!--                                </bundleDef>-->
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.ndatasource.core:${carbon.kernel.version}-->
-<!--                                </bundleDef>-->
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.ndatasource.rdbms:${carbon.kernel.version}-->
-<!--                                </bundleDef>-->
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.user.api:${carbon.kernel.version}</bundleDef>-->
                                 <bundleDef>org.wso2.carbon:org.wso2.carbon.framework.exporter:${carbon.kernel.version}
                                 </bundleDef>
-<!--                                <bundleDef>org.wso2.carbon:org.wso2.carbon.addressing:${carbon.kernel.version}-->
-<!--                                </bundleDef>-->
                                 <!--Management API-->
                                 <bundleDef>jakarta.servlet:jakarta.servlet-api:${jakarta.servlet.api.version}</bundleDef>
                                 <bundleDef>javax.servlet:javax.servlet-api:${javax.servlet.api.version}</bundleDef>
@@ -330,6 +303,9 @@
                                 <bundleDef>org.apache.commons:commons-configuration2:${commons.configuration2.version}</bundleDef>
                                 <bundleDef>
                                     org.wso2.ei:org.wso2.micro.integrator.management.apis:${project.version}
+                                </bundleDef>
+                                <bundleDef>
+                                    org.wso2.ei:org.wso2.micro.integrator.icp.apis:${project.version}
                                 </bundleDef>
                                 <bundleDef>
                                     org.wso2.ei:org.wso2.micro.integrator.probes:${project.version}

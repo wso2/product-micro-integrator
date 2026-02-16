@@ -104,11 +104,27 @@
         <!--            GraalVM related dependencies-->
         <dependency>
             <groupId>org.graalvm.sdk</groupId>
-            <artifactId>graal-sdk</artifactId>
+            <artifactId>nativeimage</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>polyglot</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>word</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>collections</artifactId>
         </dependency>
         <dependency>
             <groupId>org.graalvm.js</groupId>
-            <artifactId>js</artifactId>
+            <artifactId>js-language</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.truffle</groupId>
+            <artifactId>truffle-runtime</artifactId>
         </dependency>
         <dependency>
             <groupId>org.graalvm.truffle</groupId>
@@ -119,7 +135,7 @@
             <artifactId>regex</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.ibm.icu</groupId>
+            <groupId>org.graalvm.shadowed</groupId>
             <artifactId>icu4j</artifactId>
         </dependency>
         <dependency>

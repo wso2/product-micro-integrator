@@ -65,7 +65,6 @@
             <class name="org.wso2.carbon.esb.mediators.aggregate.ESBJAVA5103CorrelateOnExpressionTestCase"/>
             <class name="org.wso2.carbon.esb.mediators.aggregate.EI5523TestJsonStreamAfterAggregateMediator"/>
             <class name="org.wso2.carbon.esb.mediators.cache.DistributedCachingHeaderSerializationTestcase"/>
-            <!--class name="org.wso2.carbon.esb.mediators.cache.ESBJAVA4318Testcase"/-->
             <class name="org.wso2.carbon.esb.mediators.rule.ESBJAVA2506RuleFetchFromRegistryFailsForTheFirstTime"/>
             <class name="org.wso2.carbon.esb.mediators.script.ScriptMediatorWithImports"/>
             <class name="org.wso2.carbon.esb.mediators.foreach.ForEachContinueLoopTestCase"/>

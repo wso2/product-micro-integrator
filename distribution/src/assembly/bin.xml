@@ -187,6 +187,7 @@
                 <exclude>build.xml</exclude>
                 <exclude>version.txt</exclude>
                 <exclude>README.txt</exclude>
+                <exclude>tomcat-juli-*.jar</exclude>
             </excludes>
         </fileSet>
 
@@ -647,6 +648,13 @@
     <dependencySets>
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>wso2mi-${pom.version}/bin</outputDirectory>
+            <includes>
+                <include>org.apache.tomcat:tomcat-juli:jar</include>
+            </includes>
+        </dependencySet>
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>wso2mi-${pom.version}/wso2/lib</outputDirectory>
             <includes>
                 <include>org.wso2.ei:org.wso2.micro.integrator.server:jar</include>
@@ -690,12 +698,17 @@
                 <include>com.github.mwiede:jsch</include>
                 <include>org.wso2.runtime.diagnostics:runtime-diagnostics-tool:jar</include>
                 <include>org.wso2.carbon.mediation:org.wso2.carbon.mediation.diagnostics:jar</include>
-                <include>org.graalvm.sdk:graal-sdk:jar</include>
-                <include>org.graalvm.js:js:jar</include>
+                <include>org.graalvm.sdk:nativeimage:jar</include>
+                <include>org.graalvm.polyglot:polyglot:jar</include>
+                <include>org.graalvm.sdk:word:jar</include>
+                <include>org.graalvm.sdk:collections:jar</include>
+                <include>org.graalvm.truffle:truffle-runtime:jar</include>
                 <include>org.graalvm.truffle:truffle-api:jar</include>
+                <include>org.graalvm.truffle:truffle-compiler:jar</include>
                 <include>org.graalvm.regex:regex:jar</include>
-                <include>com.ibm.icu:icu4j:jar</include>
+                <include>org.graalvm.shadowed:icu4j:jar</include>
                 <include>org.graalvm.js:js-scriptengine:jar</include>
+                <include>org.graalvm.js:js-language:jar</include>
                 <!--
                 javax jms-api need to be in class path for axis2
                 ( needs javax.jms.JMSException )

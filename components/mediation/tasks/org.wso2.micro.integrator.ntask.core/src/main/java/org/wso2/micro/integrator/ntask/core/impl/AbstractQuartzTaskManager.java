@@ -338,7 +338,10 @@ public abstract class AbstractQuartzTaskManager implements TaskManager {
                                                                 CronScheduleBuilder cb) throws TaskException {
         switch (triggerInfo.getMisfirePolicy()) {
         case DEFAULT:
-            return cb;
+            // DO_NOTHING as the default behaviour of cron misfire. In a cluster scenario
+            // default behaviour can result in multiple nodes triggering the same task.
+            // We are prioritizing avoiding duplicates over missing a task execution.
+            return cb.withMisfireHandlingInstructionDoNothing();
         case IGNORE_MISFIRES:
             return cb.withMisfireHandlingInstructionIgnoreMisfires();
         case FIRE_AND_PROCEED:

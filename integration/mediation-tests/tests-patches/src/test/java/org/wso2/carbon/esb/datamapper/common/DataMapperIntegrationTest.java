@@ -19,7 +19,6 @@
 package org.wso2.carbon.esb.datamapper.common;
 
 import org.testng.annotations.BeforeClass;
-import org.wso2.esb.integration.common.clients.registry.ResourceAdminServiceClient;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
 
 import java.io.IOException;
@@ -30,14 +29,9 @@ import java.net.URLConnection;
 
 public class DataMapperIntegrationTest extends ESBIntegrationTest {
 
-    private ResourceAdminServiceClient resourceAdminServiceClient;
-
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
         super.init();
-        resourceAdminServiceClient = new ResourceAdminServiceClient(contextUrls.getBackEndUrl(),
-                context.getContextTenant().getContextUser().getUserName(),
-                context.getContextTenant().getContextUser().getPassword());
     }
 
     protected String sendRequest(String addUrl, String request, String contentType) throws IOException {

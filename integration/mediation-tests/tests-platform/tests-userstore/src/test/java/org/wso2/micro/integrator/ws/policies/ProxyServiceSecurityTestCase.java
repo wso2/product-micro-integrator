@@ -24,6 +24,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wso2.carbon.automation.engine.context.TestUserMode;
+import org.wso2.carbon.automation.engine.context.beans.User;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
 import org.wso2.esb.integration.common.utils.clients.SecureServiceClient;
 import org.wso2.esb.integration.common.utils.clients.SimpleHttpClient;
@@ -43,7 +44,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
 
-        super.init(TestUserMode.SUPER_TENANT_ADMIN);
+        super.init();
         axis2Server = new SampleAxis2Server();
         axis2Server.deployService(SampleAxis2Server.SIMPLE_STOCK_QUOTE_SERVICE);
         axis2Server.start();
@@ -61,7 +62,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttps("SecureStockQuoteProxy1"), policyId, "Secured");
             verifyResponse(response);
 
@@ -76,7 +77,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy2"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -89,7 +90,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy3"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -102,7 +103,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy4"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -115,7 +116,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy5"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -128,7 +129,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy6"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -141,7 +142,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy7"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -154,7 +155,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy8"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -167,7 +168,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy9"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -181,7 +182,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy10"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -196,7 +197,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy11"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -209,7 +210,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy12"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -223,7 +224,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy13"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -237,7 +238,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy14"), policyId, "Secured");
             verifyResponse(response);
         }
@@ -251,7 +252,7 @@ public class ProxyServiceSecurityTestCase extends ESBIntegrationTest {
         SecureServiceClient secureAxisServiceClient = new SecureServiceClient();
         OMElement response;
         for (int i = 0; i < 5; i++) {
-            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(userInfo,
+            response = secureAxisServiceClient.sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
                     getProxyServiceURLHttp("SecureStockQuoteProxy15"), policyId, "Secured");
             verifyResponse(response);
         }

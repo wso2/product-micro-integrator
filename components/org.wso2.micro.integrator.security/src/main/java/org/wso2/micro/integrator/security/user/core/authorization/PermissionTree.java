@@ -45,11 +45,12 @@ import javax.cache.CacheManager;
 import javax.cache.Caching;
 import javax.sql.DataSource;
 
+import static org.wso2.micro.integrator.security.SecurityConstants.CASE_INSENSITIVE_USERNAME;
+
 public class PermissionTree {
 
     private static final String PERMISSION_CACHE_MANAGER = "PERMISSION_CACHE_MANAGER";
     private static final String PERMISSION_CACHE = "PERMISSION_CACHE";
-    private static final String CASE_INSENSITIVE_USERNAME = "CaseInsensitiveUsername";
     private static Log log = LogFactory.getLog(PermissionTree.class);
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     private final Lock read = readWriteLock.readLock();

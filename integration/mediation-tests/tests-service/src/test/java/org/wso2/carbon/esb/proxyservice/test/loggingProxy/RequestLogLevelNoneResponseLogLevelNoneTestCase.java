@@ -28,10 +28,6 @@ public class RequestLogLevelNoneResponseLogLevelNoneTestCase extends ESBIntegrat
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
         super.init();
-        loadESBConfigurationFromClasspath(
-                "/artifacts/ESB/proxyconfig/proxy/loggingProxy/request_log_level_none_response_log_level_none.xml");
-        isProxyDeployed("reqLogNoneResLogNoneLoggingProxy");
-
     }
 
     @Test(groups = "wso2.esb", description = "- Logging proxy -Request log level none response log level none", enabled = false)

@@ -43,7 +43,6 @@
             <class name="org.wso2.carbon.esb.proxyservice.test.loggingProxy.PickEndPointFromRegistryTestCase"/>
             <class name="org.wso2.carbon.esb.proxyservice.test.loggingProxy.ProxyServiceEnablingHTTPTestCase"/>
             <class name="org.wso2.carbon.esb.proxyservice.test.loggingProxy.ProxyServiceEndPointThroughURLTestCase"/>
-            <class name="org.wso2.carbon.esb.proxyservice.test.loggingProxy.RequestLogLevelFullResponseLogLevelFullTestCase"/>
             <class name="org.wso2.carbon.esb.proxyservice.test.loggingProxy.RequestLogLevelNoneResponseLogLevelNoneTestCase"/>
             <class name="org.wso2.carbon.esb.proxyservice.test.loggingProxy.RequestLogLevelSimpleResponseLogLevelSimpleTestCase"/>
             <class name="org.wso2.carbon.esb.proxyservice.test.loggingProxy.WSDLOptionsSpecifiedInlineTestCase"/>
@@ -78,13 +77,6 @@
             <package name="org.wso2.carbon.esb.rest.test.header"/>
         </packages>
     </test>
-    <!-- org.wso2.carbon.esb.rest.test.security  package commented since it requires carbon-identity release for
-        applySecurity functionality in SecurityConfigAdmin -->
-    <!--test name="POX-security-Test" preserve-order="true" verbose="2">
-    	<packages>
-    		<package name="org.wso2.carbon.esb.rest.test.security"/>
-    	</packages>
-    </test-->
     <test name="Rest-JSON-Test" preserve-order="true" verbose="2" parallel="false">
         <packages>
             <package name="org.wso2.carbon.esb.json.test"/>
@@ -94,13 +86,6 @@
         <packages>
             <package name="org.wso2.carbon.esb.car.deployment.test"/>
         </packages>
-        <classes>
-            <class name="org.wso2.carbon.esb.car.deployment.test.CAppDeactivateAndRestartTestCase">
-                <methods>
-                    <exclude name=".*"/>
-                </methods>
-            </class>
-        </classes>
     </test>
 
     <test name="ScheduleTask-Test" preserve-order="true" verbose="2" parallel="false">

@@ -18,18 +18,8 @@
 package org.wso2.carbon.esb.car.deployment.test;
 
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import org.wso2.carbon.integration.common.admin.client.CarbonAppUploaderClient;
-import org.wso2.carbon.service.mgt.stub.types.carbon.ServiceMetaData;
-import org.wso2.esb.integration.common.clients.service.mgt.ServiceAdminClient;
 import org.wso2.esb.integration.common.utils.ESBIntegrationTest;
-
-import java.io.File;
-import java.util.concurrent.TimeUnit;
-import javax.activation.DataHandler;
-import javax.activation.FileDataSource;
 
 /**
  * This class can be used to upload .car application to the server and verify whether that proxy service artifact got
@@ -37,7 +27,6 @@ import javax.activation.FileDataSource;
  * Related JIRA: https://wso2.org/jira/browse/ESBJAVA-3438
  */
 public class CAppArtifactIndicationTestCase extends ESBIntegrationTest {
-    private ServiceAdminClient serviceAdminClient;
 
     String carFileName = "esb-artifacts-car";
 

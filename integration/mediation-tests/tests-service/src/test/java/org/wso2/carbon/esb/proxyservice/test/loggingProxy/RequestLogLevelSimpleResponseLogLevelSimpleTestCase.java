@@ -28,9 +28,6 @@ public class RequestLogLevelSimpleResponseLogLevelSimpleTestCase extends ESBInte
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
         super.init();
-        loadESBConfigurationFromClasspath(
-                "/artifacts/ESB/proxyconfig/proxy/loggingProxy/request_log_level_simple_response_log_level_simple.xml");
-        isProxyDeployed("reqLogSimpleResLogSimpleLoggingProxy");
 
     }
 

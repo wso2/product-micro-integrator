@@ -40,7 +40,7 @@ public class SecureProxyTestCase extends ESBIntegrationTest {
     @BeforeClass(alwaysRun = true)
     public void setEnvironment() throws Exception {
 
-        super.init(TestUserMode.SUPER_TENANT_ADMIN);
+        super.init();
         secureAxisServiceClient = new SecureServiceClient();
         axis2Server = new SampleAxis2Server();
         axis2Server.deployService(SampleAxis2Server.SIMPLE_STOCK_QUOTE_SERVICE);
@@ -57,7 +57,7 @@ public class SecureProxyTestCase extends ESBIntegrationTest {
     public void testSecureProxyEndPointThruUri() throws Exception {
 
         OMElement response = secureAxisServiceClient
-                .sendSecuredStockQuoteRequest(userInfo, getProxyServiceURLHttps("StockQuoteProxyScenario11"), 1, "WSO2");
+                .sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(), getProxyServiceURLHttps("StockQuoteProxyScenario11"), 1, "WSO2");
 
         String lastPrice = response.getFirstElement()
                 .getFirstChildWithName(new QName("http://services.samples/xsd", "last")).getText();
@@ -73,7 +73,8 @@ public class SecureProxyTestCase extends ESBIntegrationTest {
     public void testSecureProxyEndPointFromReg() throws Exception {
 
         OMElement response = secureAxisServiceClient
-                .sendSecuredStockQuoteRequest(userInfo, getProxyServiceURLHttps("StockQuoteProxyScenario12"), 1, "WSO2");
+                .sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
+                        getProxyServiceURLHttps("StockQuoteProxyScenario12"), 1, "WSO2");
 
         String lastPrice = response.getFirstElement()
                 .getFirstChildWithName(new QName("http://services.samples/xsd", "last")).getText();
@@ -89,7 +90,8 @@ public class SecureProxyTestCase extends ESBIntegrationTest {
     public void testSecureProxyWSDLInline() throws Exception {
 
         OMElement response = secureAxisServiceClient
-                .sendSecuredStockQuoteRequest(userInfo, getProxyServiceURLHttps("StockQuoteProxyScenario13"), 1, "WSO2");
+                .sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
+                        getProxyServiceURLHttps("StockQuoteProxyScenario13"), 1, "WSO2");
 
         String lastPrice = response.getFirstElement()
                 .getFirstChildWithName(new QName("http://services.samples/xsd", "last")).getText();
@@ -105,7 +107,8 @@ public class SecureProxyTestCase extends ESBIntegrationTest {
     public void testSecureProxyWSDLSourceUri() throws Exception {
 
         OMElement response = secureAxisServiceClient
-                .sendSecuredStockQuoteRequest(userInfo, getProxyServiceURLHttps("StockQuoteProxyScenario14"), 1, "WSO2");
+                .sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
+                        getProxyServiceURLHttps("StockQuoteProxyScenario14"), 1, "WSO2");
 
         String lastPrice = response.getFirstElement()
                 .getFirstChildWithName(new QName("http://services.samples/xsd", "last")).getText();
@@ -121,7 +124,8 @@ public class SecureProxyTestCase extends ESBIntegrationTest {
     public void testSecureProxyWSDLFromReg() throws Exception {
 
         OMElement response = secureAxisServiceClient
-                .sendSecuredStockQuoteRequest(userInfo, getProxyServiceURLHttps("StockQuoteProxyScenario15"), 1, "WSO2");
+                .sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
+                        getProxyServiceURLHttps("StockQuoteProxyScenario15"), 1, "WSO2");
 
         String lastPrice = response.getFirstElement()
                 .getFirstChildWithName(new QName("http://services.samples/xsd", "last")).getText();
@@ -137,7 +141,8 @@ public class SecureProxyTestCase extends ESBIntegrationTest {
     public void testSecureProxyEnableOnlyHTTPS() throws Exception {
 
         OMElement response = secureAxisServiceClient
-                .sendSecuredStockQuoteRequest(userInfo, getProxyServiceURLHttps("StockQuoteProxyScenario16"), 1, "WSO2");
+                .sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
+                        getProxyServiceURLHttps("StockQuoteProxyScenario16"), 1, "WSO2");
 
         String lastPrice = response.getFirstElement()
                 .getFirstChildWithName(new QName("http://services.samples/xsd", "last")).getText();
@@ -153,7 +158,8 @@ public class SecureProxyTestCase extends ESBIntegrationTest {
     public void testSecureProxyEnableOnlyHTTP() throws Exception {
 
         OMElement response = secureAxisServiceClient
-                .sendSecuredStockQuoteRequest(userInfo, getProxyServiceURLHttp("StockQuoteProxyScenario17"), 5, "WSO2");
+                .sendSecuredStockQuoteRequest(context.getSuperTenant().getContextUser(),
+                        getProxyServiceURLHttp("StockQuoteProxyScenario17"), 5, "WSO2");
 
         String lastPrice = response.getFirstElement()
                 .getFirstChildWithName(new QName("http://services.samples/xsd", "last")).getText();

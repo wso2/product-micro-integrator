@@ -40,9 +40,12 @@ import org.wso2.carbon.automation.extensions.servers.utils.ServerLogReader;
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
@@ -353,10 +356,13 @@ public class CarbonServerManager {
 
     private void generateCoverageReport(File classesDir) throws IOException, AutomationFrameworkException {
 
+        Set<String> classesDirectories = new HashSet<>();
+        classesDirectories.add("wso2" + File.separator + "components" + File.separator
+                + "plugins" + File.separator);
         CodeCoverageUtils
                 .executeMerge(FrameworkPathUtil.getJacocoCoverageHome(), FrameworkPathUtil.getCoverageMergeFilePath());
         ReportGenerator reportGenerator = new ReportGenerator(new File(FrameworkPathUtil.getCoverageMergeFilePath()),
-                classesDir, new File(CodeCoverageUtils.getJacocoReportDirectory()), null);
+                classesDirectories, new File(CodeCoverageUtils.getJacocoReportDirectory()), null);
         reportGenerator.create();
 
         log.info("Jacoco coverage dump file path : " + FrameworkPathUtil.getCoverageDumpFilePath());
@@ -495,6 +501,9 @@ public class CarbonServerManager {
                 "-javaagent:" + jacocoAgentFile + "=destfile=" + coverageDumpFilePath + "" + ",append=true,includes="
                         + CodeCoverageUtils.getInclusionJarsPattern(":") + ",excludes=" + CodeCoverageUtils
                         .getExclusionJarsPattern(":"));
+        // print the content of the modified startup script for debugging purpose
+        Path batfile = Paths.get(carbonHome, "tmp", scriptName + ".bat");
+        log.info("Modified startup script content : " + Files.readString(batfile));
     }
 
     /**

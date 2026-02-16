@@ -178,9 +178,9 @@ public class ProxyServiceResource extends APIResource {
             SynapseConfiguration configuration = msgCtx.getConfiguration();
             ProxyService proxyService = configuration.getProxyService(proxyName);
             if (proxyService != null) {
-                response = Utils.handleTracing(performedBy, Constants.AUDIT_LOG_TYPE_PROXY_SERVICE_TRACE,
-                                               Constants.PROXY_SERVICES, info, proxyService.getAspectConfiguration(),
-                                               proxyName, axisMsgCtx);
+                response = Utils.handleResourceStateChange(performedBy, Constants.AUDIT_LOG_TYPE_PROXY_SERVICE_STATE_CHANGE,
+                                               info, proxyService.getAspectConfiguration(),
+                                               proxyName, axisMsgCtx, payload);
             } else {
                 response = Utils.createJsonError("Specified proxy ('" + proxyName + "') not found", axisMsgCtx,
                                                  Constants.BAD_REQUEST);

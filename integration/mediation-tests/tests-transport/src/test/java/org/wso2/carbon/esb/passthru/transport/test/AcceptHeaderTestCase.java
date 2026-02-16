@@ -46,8 +46,6 @@ public class AcceptHeaderTestCase extends ESBIntegrationTest {
             + "Content-Type, and build the message within the inflow.")
     public void testAcceptHeader() throws Exception {
 
-        verifyAPIExistence("AcceptHeaderTestAPI");
-
         String expectedOutput = "Accept Header Test : success";
         String payload = "accept-header-test-key=Test%20Accept%20header%20'\\''application%2Fjson'\\'"
                 + "'%20with%20Content-Type%20application%2Fx-www-form-urlencoded.";

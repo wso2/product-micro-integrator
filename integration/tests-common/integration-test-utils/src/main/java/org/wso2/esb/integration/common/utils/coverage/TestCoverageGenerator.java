@@ -28,6 +28,8 @@ import org.wso2.carbon.automation.engine.frameworkutils.ReportGenerator;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Coverage generator class for multi module test project.
@@ -53,14 +55,15 @@ public class TestCoverageGenerator {
 
         CodeCoverageUtils.executeMerge(parentDirectory.getAbsolutePath(), FrameworkPathUtil.getCoverageMergeFilePath());
 
-        File carbonPluginDir = new File(
-                carbonHome + File.separator + "wso2" + File.separator + "components" + File.separator + "plugins"
-                        + File.separator);
+        String carbonPluginDir = "wso2" + File.separator + "components" + File.separator
+                + "plugins" + File.separator;
+        Set<String> classesDirectories = new HashSet<>();
+        classesDirectories.add(carbonPluginDir);
 
         ReportGenerator reportGenerator = new ReportGenerator(new File(FrameworkPathUtil.getCoverageMergeFilePath()),
-                                                              carbonPluginDir,
-                                                              new File(CodeCoverageUtils.getJacocoReportDirectory()),
-                                                              null);
+                classesDirectories,
+                new File(CodeCoverageUtils.getJacocoReportDirectory()),
+                null);
         reportGenerator.create();
 
         File carbonHomeDir = new File(carbonHome);
@@ -70,7 +73,7 @@ public class TestCoverageGenerator {
         }
 
         log.info("Jacoco coverage merged file : " + FrameworkPathUtil.getCoverageMergeFilePath());
-        log.info("Jacoco class file path : " + carbonPluginDir.getAbsolutePath());
+        log.info("Jacoco class file path : " + carbonPluginDir);
         log.info("Jacoco coverage HTML report path : " + CodeCoverageUtils.getJacocoReportDirectory() + File.separator
                          + "index.html");
     }

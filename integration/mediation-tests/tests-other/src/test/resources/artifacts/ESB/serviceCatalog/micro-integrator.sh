@@ -234,9 +234,9 @@ fi
 # ---------- Handle the SSL Issue with proper JDK version --------------------
 java_version=$("$JAVACMD" -version 2>&1 | awk -F '"' '/version/ {print $2}')
 java_version_formatted=$(echo "$java_version" | awk -F. '{printf("%02d%02d",$1,$2);}')
-if [ $java_version_formatted -lt 1100 ] || [ $java_version_formatted -gt 2100 ]; then
+if [ $java_version_formatted -lt 2100 ] || [ $java_version_formatted -gt 2500 ]; then
    echo " Starting WSO2 MI (in unsupported JDK)"
-   echo " [ERROR] WSO2 MI is supported only between JDK 11 and JDK 21"
+   echo " [ERROR] WSO2 MI is supported only between JDK 21 and JDK 25"
    exit 0
 fi
 
@@ -373,6 +373,7 @@ do
     -Dproperties.file.path=default \
     -DenableReadinessProbe=true \
     -DenableManagementApi=true \
+    -DenableICPApi=true \
     $NODE_PARAMS \
     -Dorg.apache.activemq.SERIALIZABLE_PACKAGES="*" \
     org.wso2.micro.integrator.bootstrap.Bootstrap $*

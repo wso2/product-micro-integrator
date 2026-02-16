@@ -422,7 +422,7 @@ public class MicroIntegratorBaseUtils {
         serviceClient.getOptions().setProperty(HTTPConstants.HTTP_HEADERS, headers);
     }
 
-    private static DocumentBuilderFactory getSecuredDocumentBuilder() {
+    public static DocumentBuilderFactory getSecuredDocumentBuilder() {
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);

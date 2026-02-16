@@ -30,11 +30,12 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
 
+import static org.wso2.micro.integrator.security.SecurityConstants.CASE_INSENSITIVE_USERNAME;
+
 public class UserRolesCache {
 
     private static final String USER_ROLES_CACHE_MANAGER = "USER_ROLES_CACHE_MANAGER";
     private static final String USER_ROLES_CACHE = "USER_ROLES_CACHE";
-    private static final String CASE_INSENSITIVE_USERNAME = "CaseInsensitiveUsername";
     private static Log log = LogFactory.getLog(UserRolesCache.class);
     private static UserRolesCache userRolesCache = new UserRolesCache();
 
