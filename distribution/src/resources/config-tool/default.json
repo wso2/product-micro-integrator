@@ -739,7 +739,9 @@
   },
   "log_watcher": {
     "enabled": "true",
-    "interval": 0.1
+    "interval": 0.1,
+    "max_pre_error_context_size": "5",
+    "max_post_error_context_size": "5"
   },
   "traffic_analyzer": {
     "last_second_requests_enabled": "false",
