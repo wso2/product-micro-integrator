@@ -91,6 +91,8 @@ action_executors = "{{memory_watcher.action_executors}}"
 [log_watcher]
 enabled = "{{log_watcher.enabled}}"
 interval = {{log_watcher.interval}}
+max_pre_error_context_size = {{log_watcher.max_pre_error_context_size}}
+max_post_error_context_size = {{log_watcher.max_post_error_context_size}}
 
 [[custom_watchers]]
 class = "org.wso2.carbon.diagnostics.trafficanalyzer.TrafficAnalyzer"
