@@ -39,7 +39,6 @@ import org.wso2.micro.integrator.security.handler.oauth.HttpClientConfiguration;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Arrays;
 import java.nio.charset.StandardCharsets;
 
 public class JWTUtil {
@@ -121,8 +120,8 @@ public class JWTUtil {
     public static boolean verifyTokenSignature(SignedJWT jwt, RSAPublicKey publicKey) {
 
         JWSAlgorithm algorithm = jwt.getHeader().getAlgorithm();
-        if ((JWSAlgorithm.RS256.equals(algorithm) || JWSAlgorithm.RS512.equals(algorithm) ||
-                JWSAlgorithm.RS384.equals(algorithm)) || JWSAlgorithm.PS256.equals(algorithm)) {
+        if (JWSAlgorithm.RS256.equals(algorithm) || JWSAlgorithm.RS512.equals(algorithm) ||
+                JWSAlgorithm.RS384.equals(algorithm) || JWSAlgorithm.PS256.equals(algorithm)) {
             try {
                 JWSVerifier jwsVerifier = new RSASSAVerifier(publicKey);
                 return jwt.verify(jwsVerifier);
@@ -131,7 +130,7 @@ public class JWTUtil {
                 return false;
             }
         } else {
-            log.error("Public key is not a RSA");
+            log.error("Unsupported JWT signature algorithm: " + algorithm);
             return false;
         }
     }

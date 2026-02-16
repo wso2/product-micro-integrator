@@ -166,7 +166,7 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
 
                 JWTClaimsSet jwtClaimsSet = signedJWTInfo.getJwtClaimsSet();
                 if (jwtClaimsSet == null) {
-                    log.error("JWT claim set is null for token: " + OAuthUtil.getMaskedToken(accessToken));
+                    log.error("JWT claim set is null for token.");
                     throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                             OAuthConstants.API_AUTH_INVALID_CREDENTIALS_MESSAGE);
                 }
@@ -175,8 +175,8 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
                 if (StringUtils.isNotEmpty(issuer) && trustedIssuers != null
                         && trustedIssuers.contains(issuer)) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Issuer: " + issuer + " found for authenticate token "
-                                + OAuthUtil.getMaskedToken(accessToken));
+                        log.debug("Issuer: " + issuer + " found for authentication token. "
+                                + "Proceeding with authentication.");
                     }
                 } else {
                     log.error("The token issuer is not in the list of trusted issuers.");
@@ -184,7 +184,7 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
                             OAuthConstants.API_AUTH_INVALID_CREDENTIALS_MESSAGE);
                 }
             } catch (ParseException e) {
-                log.error("Error while parsing the access token: " + OAuthUtil.getMaskedToken(accessToken), e);
+                log.error("Error while parsing the access token.", e);
                 throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                         OAuthConstants.API_AUTH_INVALID_CREDENTIALS_MESSAGE, e);
             }
@@ -244,6 +244,7 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
                 this.tokenRevocationChecker = (TokenRevocationChecker) clazz.newInstance();
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 log.error("Failed to instantiate TokenRevocationChecker: " + revocationChecker, e);
+                throw new IllegalStateException("Failed to initialize TokenRevocationChecker: " + revocationChecker, e);
             }
         }
     }
@@ -420,7 +421,7 @@ public class OAuthAuthenticationHandler extends AbstractHandler implements Manag
         if (selectedResource == null) {
             //No matching resource found.
             String msg = "Could not find matching resource for "
-                    + messageContext.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);;
+                    + messageContext.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);
             log.error(msg);
             return null;
         }

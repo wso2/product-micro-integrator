@@ -107,16 +107,14 @@ public class JWTValidator {
                 if (tokenRevocationChecker.isRevoked(signedJWTInfo.getToken(),
                         signedJWTInfo.getJwtClaimsSet().getClaims())) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Token retrieved from the revoked jwt token map. Token: "
-                                + OAuthUtil.getMaskedToken(jwtHeader));
+                        log.debug("Token retrieved from the revoked jwt token map.");
                     }
-                    log.error("Invalid JWT token. " + OAuthUtil.getMaskedToken(jwtHeader));
+                    log.error("Invalid JWT token.");
                     throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                             "Invalid JWT token");
                 }
             } catch (RevocationCheckException e) {
-                log.error("Error while checking token revocation status for token: " + OAuthUtil
-                        .getMaskedToken(jwtHeader), e);
+                log.error("Error while checking token revocation status for token.", e);
                 throw new OAuthSecurityException("Error while checking token revocation status", e);
             }
         }
@@ -213,10 +211,9 @@ public class JWTValidator {
             jwtValidationInfo = tempJWTValidationInfo;
         } else if (CacheProvider.getInvalidTokenCache().get(jti) != null) {
             if (log.isDebugEnabled()) {
-                log.debug("Token retrieved from the invalid token cache. Token: " + OAuthUtil
-                        .getMaskedToken(jwtHeader));
+                log.debug("Token retrieved from the invalid token cache.");
             }
-            log.error("Invalid JWT token. " + OAuthUtil.getMaskedToken(jwtHeader));
+            log.error("Invalid JWT token.");
 
             jwtValidationInfo = new JWTValidationInfo();
             jwtValidationInfo.setValidationCode(OAuthConstants.API_AUTH_INVALID_CREDENTIALS);
@@ -315,10 +312,10 @@ public class JWTValidator {
                     jwtValidationInfo.setRawPayload(signedJWTInfo.getToken());
                     return jwtValidationInfo;
                 } else {
-                    errorMessage = "JWT token is expired. Token: " + OAuthUtil.getMaskedToken(signedJWTInfo.getToken());
+                    errorMessage = "JWT token is expired. Token";
                 }
             } else {
-                errorMessage = "JWT signature validation failed. Token: " + OAuthUtil.getMaskedToken(signedJWTInfo.getToken());
+                errorMessage = "JWT signature validation failed.";
 
             }
             log.error(errorMessage);
@@ -326,8 +323,7 @@ public class JWTValidator {
             jwtValidationInfo.setValidationCode(OAuthConstants.API_AUTH_INVALID_CREDENTIALS);
             return jwtValidationInfo;
         } catch (ParseException e) {
-            throw new OAuthSecurityException("Error while parsing JWT Token: "
-                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()), e);
+            throw new OAuthSecurityException("Error while parsing JWT Token", e);
         }
     }
 
@@ -464,24 +460,14 @@ public class JWTValidator {
             return true; // No scopes required = Open Access
         }
 
-        List<String> tokenScopesClaims = Collections.emptyList();
-
-        try {
-            String scopeClaim = OAuthConstants.SCOPE;
-            if (jwtClaimsSet.getClaim(scopeClaim) instanceof String) {
-                tokenScopesClaims = Arrays.asList(jwtClaimsSet.getStringClaim(scopeClaim)
-                        .split(OAuthConstants.SCOPE_DELIMITER));
-            } else if (jwtClaimsSet.getClaim(scopeClaim) instanceof List) {
-                tokenScopesClaims = jwtClaimsSet.getStringListClaim(scopeClaim);
-            }
-        } catch (ParseException e) {
-            throw new OAuthSecurityException("Error while parsing JWT claims", e);
-        }
+        List<String> tokenScopesClaims = getTransformedScopes(jwtClaimsSet);
 
         // Intersection Check (Does the user have ANY of the required scopes?)
         for (String required : requiredScopes) {
-            if (tokenScopesClaims.contains(required)) {
-                return true;
+            for (String tokenScope : tokenScopesClaims) {
+                if (required.equals(tokenScope)) { // exact, case-sensitive match
+                    return true;
+                }
             }
         }
         return false;

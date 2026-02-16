@@ -23,14 +23,11 @@ public class OAuthUtil {
     public static String getMaskedToken(String token) {
 
         if (token == null || token.isEmpty()) {
-            return "XXXXX";
+            return "";
         }
-
-        if (token.length() >= 10) {
-            return "XXXXX" + token.substring(token.length() - 10);
-        } else {
-            return "XXXXX" + token.substring(token.length() / 2);
-        }
+        // Do not expose any part of the original token in logs.
+        // Return a fully masked string of the same length instead.
+        return "X".repeat(token.length());
     }
 
 }

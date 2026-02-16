@@ -83,7 +83,7 @@ public class HttpClientConfiguration {
     }
 
     /**
-     * Builder class for @code{HttpClientConfiguration}
+     * Builder class for {@code HttpClientConfiguration}
      */
     public static class Builder {
 
