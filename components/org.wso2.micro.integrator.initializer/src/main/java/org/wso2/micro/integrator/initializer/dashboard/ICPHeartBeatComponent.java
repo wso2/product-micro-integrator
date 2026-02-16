@@ -45,7 +45,9 @@ import org.json.JSONObject;
 import org.apache.axis2.deployment.util.Utils;
 import org.apache.axis2.description.AxisService;
 import org.apache.axis2.description.Parameter;
+import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.wso2.micro.core.util.NetworkUtils;
 import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.endpoints.HTTPEndpoint;
 import org.apache.synapse.endpoints.WSDLEndpoint;
@@ -61,19 +63,26 @@ import org.wso2.micro.integrator.registry.MicroIntegratorRegistry;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.SocketException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.wso2.micro.integrator.initializer.dashboard.Constants.*;
 
@@ -871,19 +880,76 @@ public class ICPHeartBeatComponent {
     // ===== ARTIFACT COLLECTION METHODS =====
 
     /**
+     * Builds the list of base server URLs
+     * from the Axis2 transport configuration, mirroring the logic in ApiResource.
+     */
+    private static List<String> getServerContext(AxisConfiguration configuration) {
+        List<String> protocols = Arrays.asList("http", "https");
+        Map<String, String> protocolPortMap = protocols.stream()
+                .map(configuration::getTransportIn)
+                .filter(transport -> transport != null)
+                .collect(Collectors.toMap(
+                        TransportInDescription::getName,
+                        t -> (String) t.getParameter("port").getValue()
+                ));
+
+        if (protocolPortMap.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String host = Optional.ofNullable(configuration.getParameter("hostname"))
+                .map(Parameter::getValue)
+                .map(String.class::cast)
+                .orElseGet(() -> {
+                    try {
+                        return NetworkUtils.getLocalHostname();
+                    } catch (SocketException e) {
+                        return "localhost";
+                    }
+                });
+
+        return protocolPortMap.entrySet().stream()
+                .map(entry -> {
+                    try {
+                        return new URL(entry.getKey(), host, Integer.parseInt(entry.getValue()), "").toExternalForm();
+                    } catch (MalformedURLException e) {
+                        return null;
+                    }
+                })
+                .filter(url -> url != null)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Collects REST API information from Synapse Configuration
      */
     private static JsonArray collectRestApis(SynapseConfiguration synapseConfig, Map<String, String> cappMap) {
         JsonArray apis = new JsonArray();
         try {
+            AxisConfiguration axisConfig = synapseConfig.getAxisConfiguration();
+            List<String> serverUrls = axisConfig != null ? getServerContext(axisConfig) : Collections.emptyList();
+
             Collection<API> apiCollection = synapseConfig.getAPIs();
             for (API api : apiCollection) {
                 JsonObject apiObj = new JsonObject();
                 apiObj.addProperty("name", api.getName());
                 apiObj.addProperty("context", api.getContext());
                 apiObj.addProperty("version", api.getVersion());
-                apiObj.addProperty("host", api.getHost());
-                apiObj.addProperty("port", api.getPort());
+
+                // Build full URL(s) the same way as ApiResource
+                String versionSuffix = "url".equals(api.getVersionStrategy().getVersionType())
+                        ? "/" + api.getVersion() : "";
+                if (!serverUrls.isEmpty()) {
+                    List<String> apiUrls = serverUrls.stream()
+                            .map(base -> base + api.getContext() + versionSuffix)
+                            .collect(Collectors.toList());
+                    apiObj.addProperty("url", apiUrls.get(0));
+                    com.google.gson.JsonArray urlArray = new com.google.gson.JsonArray();
+                    apiUrls.forEach(urlArray::add);
+                    apiObj.add("urls", urlArray);
+                } else {
+                    apiObj.addProperty("url", api.getContext() + versionSuffix);
+                }
                 apiObj.addProperty("type", "API");
 
                 // Add carbon app name
