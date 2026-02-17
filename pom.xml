@@ -812,6 +812,16 @@
             </dependency>
             <dependency>
                 <groupId>org.wso2.ei</groupId>
+                <artifactId>org.wso2.micro.integrator.management.apis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.ei</groupId>
+                <artifactId>org.wso2.micro.integrator.icp.apis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.ei</groupId>
                 <artifactId>org.wso2.micro.integrator.websocket.transport</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -2138,7 +2148,7 @@
         <version.jaxb.api>2.4.0-b180830.0359</version.jaxb.api>
         <com.sun.jaxb.version>2.3.0</com.sun.jaxb.version>
         <com.sun.jaxb.impl.version>2.3.1</com.sun.jaxb.impl.version>
-        <synapse.version>4.1.0-wso2v17</synapse.version>
+        <synapse.version>4.1.0-wso2v18</synapse.version>
         <imp.pkg.version.synapse>[4.1.0, 4.2.0)</imp.pkg.version.synapse>
         <carbon.mediation.version>4.7.269</carbon.mediation.version>
         <carbon.crypto.version>1.1.3</carbon.crypto.version>
@@ -2152,7 +2162,7 @@
         <!-- SAP adapter - sap transport feature version -->
         <sap-adapter.feature.version>4.7.37</sap-adapter.feature.version>
 
-        <cipher.tool.version>1.2.7</cipher.tool.version>
+        <cipher.tool.version>1.2.9</cipher.tool.version>
         <axis2.transport.version>2.0.0-wso2v83</axis2.transport.version>
         <transport.http.netty.version>6.3.59</transport.http.netty.version>
 

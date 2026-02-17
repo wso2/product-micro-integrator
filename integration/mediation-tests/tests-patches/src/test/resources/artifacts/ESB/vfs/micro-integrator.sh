@@ -379,6 +379,7 @@ do
     -DenableReadinessProbe=true \
     -DenableLivenessProbe=true \
     -DenableManagementApi=true \
+    -DenableICPApi=true \
     -DskipStartupExtensions=false \
     -Dautomation.mode.seq.car.name="$CAR_NAME" \
     -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector \
