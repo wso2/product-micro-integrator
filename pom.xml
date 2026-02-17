@@ -2166,7 +2166,7 @@
         <axis2.wso2.integration.test.version>1.6.1-wso2v120</axis2.wso2.integration.test.version>
         <imp.pkg.version.axis2>[1.6.1, 1.7.0)</imp.pkg.version.axis2>
 
-        <carbon.analytics.common.version>5.2.66</carbon.analytics.common.version>
+        <carbon.analytics.common.version>5.2.67</carbon.analytics.common.version>
         <carbon.analytics.common.imp.pkg.version>[5.2.0, 6.0.0)</carbon.analytics.common.imp.pkg.version>
         <fasterxml.jackson.version>2.21.0</fasterxml.jackson.version>
         <fasterxml.jackson.datatype.version>2.21.0</fasterxml.jackson.datatype.version>
@@ -2186,7 +2186,7 @@
         <saml.common.util.version.range>[1.0.0,2.0.0)</saml.common.util.version.range>
         <bouncycastle.orbit.version>1.83.0.wso2v1</bouncycastle.orbit.version>
         <orbit.version.poi.ooxml>5.5.1.wso2v1</orbit.version.poi.ooxml>
-        <org.wso2.json.version>3.0.0.wso2v7</org.wso2.json.version>
+        <org.wso2.json.version>3.0.0.wso2v8</org.wso2.json.version>
         <version.equinox.http.servlet>1.8.100</version.equinox.http.servlet>
         <version.tomcat>11.0.18</version.tomcat>
         <orbit.version.tomcat.jsp.api>${version.tomcat}.wso2v1</orbit.version.tomcat.jsp.api>
@@ -2252,7 +2252,7 @@
         <commons-lang3.orbit.version>3.20.0.wso2v1</commons-lang3.orbit.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <joda-time.version>2.14.0.wso2v1</joda-time.version>
-        <libthrift.version>0.18.1.wso2v1</libthrift.version>
+        <libthrift.version>0.16.0.wso2v1</libthrift.version>
         <axis2.mar.maven.plugin>1.5.2</axis2.mar.maven.plugin>
 
         <!--PAX Logging related dependency versions-->
