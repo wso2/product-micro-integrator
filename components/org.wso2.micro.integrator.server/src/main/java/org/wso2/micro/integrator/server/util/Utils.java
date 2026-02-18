@@ -17,6 +17,8 @@
  */
 package org.wso2.micro.integrator.server.util;
 
+import org.apache.commons.lang.StringUtils;
+import org.wso2.config.mapper.ConfigParser;
 import org.wso2.micro.integrator.server.LauncherConstants;
 
 import java.io.BufferedInputStream;
@@ -755,6 +757,20 @@ public class Utils {
             }
         }
         return properties;
+    }
+
+    /**
+     * getConfig is a convenience method to get a config value from the parsed configs
+     *
+     * @param configName - name of the config to be retrieved
+     * @return the config value as a String, or null if not found or empty
+     */
+    public static String getConfig(String configName) {
+        Object configValue = ConfigParser.getParsedConfigs().get(configName);
+        if (configValue != null && StringUtils.isNotEmpty(configValue.toString())) {
+            return configValue.toString().trim();
+        }
+        return null;
     }
 
 }
