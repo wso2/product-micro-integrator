@@ -1,0 +1,447 @@
+################################################################################
+#   Copyright (c) 2026, WSO2 LLC. (http://www.wso2.org) All Rights Reserved
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+################################################################################
+
+openapi: 3.0.0
+info:
+  title: WSO2 MI ICP Internal API Documentation
+  description: Documentation for the WSO2 Micro Integrator ICP (Integrated Control Plane) Internal API
+  version: 1.0.0
+servers:
+  - url: https://localhost:9164/icp
+paths:
+  /artifacts:
+    get:
+      summary: Get Artifact Configuration
+      description: Retrieves the Synapse XML configuration of a specified artifact by type and name.
+      tags:
+        - Artifacts
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - api
+              - proxy-service
+              - endpoint
+              - sequence
+              - task
+              - inbound-endpoint
+              - message-processor
+              - message-store
+              - carbonapp
+              - data-source
+              - data-service
+              - template
+          description: The type of the artifact to retrieve the configuration for.
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The name of the artifact to retrieve the configuration for.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: TestAPI
+                    description: The name of the artifact.
+                  type:
+                    type: string
+                    example: api
+                    description: The type of the artifact.
+                  synapseConfiguration:
+                    type: string
+                    example: "<api name=\"TestAPI\" context=\"/test\">...</api>"
+                    description: The Synapse XML configuration of the artifact as a string.
+        '400':
+          description: Bad request - missing or unsupported parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Artifact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+  /artifacts/wsdl:
+    get:
+      summary: Get WSDL
+      description: Retrieves the WSDL of a specified data service or proxy service.
+      tags:
+        - Artifacts
+      parameters:
+        - name: service
+          in: query
+          required: false
+          schema:
+            type: string
+          description: The name of the data service to retrieve the WSDL for. Either `service` or `proxy` must be provided.
+        - name: proxy
+          in: query
+          required: false
+          schema:
+            type: string
+          description: The name of the proxy service to retrieve the WSDL for. Either `service` or `proxy` must be provided.
+      responses:
+        '200':
+          description: Successful response with WSDL XML content
+          content:
+            application/xml:
+              schema:
+                type: string
+                format: xml
+                description: The WSDL content of the specified service.
+        '400':
+          description: Bad request - missing required parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Service not found or WSDL URL not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+  /artifacts/local-entry:
+    get:
+      summary: Get Local Entry Value
+      description: Retrieves the value of a specified local entry by name.
+      tags:
+        - Artifacts
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The name (key) of the local entry to retrieve.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: testEntry
+                    description: The name of the local entry.
+                  value:
+                    type: string
+                    example: "some inline value"
+                    description: The value of the local entry. Present for inline text, inline XML, and URL source types.
+                  registryKey:
+                    type: string
+                    example: "conf:/path/to/resource"
+                    description: The registry key for remote entry types (present instead of `value`).
+        '400':
+          description: Bad request - missing required parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Local entry not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+  /artifacts/parameters:
+    get:
+      summary: Get Artifact Parameters
+      description: Retrieves the key-value parameters of an inbound endpoint, message processor, or data source.
+      tags:
+        - Artifacts
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - inbound-endpoint
+              - message-processor
+              - data-source
+          description: The type of the artifact to retrieve parameters for.
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The name of the artifact to retrieve parameters for.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: inbound-endpoint
+                    description: The type of the artifact.
+                  name:
+                    type: string
+                    example: HTTPIEP
+                    description: The name of the artifact.
+                  parameters:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: inbound.http.port
+                          description: The parameter name.
+                        value:
+                          type: string
+                          example: "8285"
+                          description: The parameter value.
+        '400':
+          description: Bad request - missing or unsupported parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Artifact not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+  /artifacts/status:
+    post:
+      summary: Change Artifact Status
+      description: |
+        Changes the status (active/inactive) of a specified artifact.
+        Supported artifact types and their valid statuses:
+
+        - **proxy-service**: `active`, `inactive`
+        - **endpoint**: `active`, `inactive`
+        - **message-processor**: `active`, `inactive`
+        - **inbound-endpoint**: `active`, `inactive`
+        - **task**: `active`, `inactive`, `trigger`
+      tags:
+        - Artifacts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - name
+                - status
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - proxy-service
+                    - endpoint
+                    - message-processor
+                    - inbound-endpoint
+                    - task
+                  example: proxy-service
+                  description: The type of the artifact.
+                name:
+                  type: string
+                  example: HelloWorldProxy
+                  description: The name of the artifact.
+                status:
+                  type: string
+                  enum:
+                    - active
+                    - inactive
+                    - trigger
+                  example: inactive
+                  description: |
+                    The desired status. Use `active` to activate, `inactive` to deactivate.
+                    For tasks, `trigger` immediately triggers a single execution.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Message:
+                    type: string
+                    example: "Proxy service HelloWorldProxy stopped successfully"
+        '400':
+          description: Bad request - missing fields or unsupported artifact type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+  /artifacts/tracing:
+    post:
+      summary: Enable or Disable Artifact Tracing
+      description: |
+        Enables or disables message tracing for a specified artifact.
+        Supported artifact types: `proxy-service`, `endpoint`, `inbound-endpoint`, `api`, `sequence`.
+      tags:
+        - Artifacts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - name
+                - trace
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - proxy-service
+                    - endpoint
+                    - inbound-endpoint
+                    - api
+                    - sequence
+                  example: api
+                  description: The type of the artifact.
+                name:
+                  type: string
+                  example: TestAPI
+                  description: The name of the artifact.
+                trace:
+                  type: string
+                  enum:
+                    - enable
+                    - disable
+                  example: enable
+                  description: Whether to enable or disable tracing.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Enabled tracing for ('TestAPI')"
+        '400':
+          description: Bad request - missing fields or unsupported artifact type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+  /artifacts/statistics:
+    post:
+      summary: Enable or Disable Artifact Statistics
+      description: |
+        Enables or disables statistics collection for a specified artifact.
+        Supported artifact types: `proxy-service`, `endpoint`, `inbound-endpoint`, `api`, `sequence`, `template`.
+
+        For `template` type, only sequence templates are supported. The `type` field must be included in the request body.
+      tags:
+        - Artifacts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - name
+                - statistics
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - proxy-service
+                    - endpoint
+                    - inbound-endpoint
+                    - api
+                    - sequence
+                    - template
+                  example: sequence
+                  description: The type of the artifact.
+                name:
+                  type: string
+                  example: helloSequence
+                  description: The name of the artifact.
+                statistics:
+                  type: string
+                  enum:
+                    - enable
+                    - disable
+                  example: enable
+                  description: Whether to enable or disable statistics collection.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Enabled statistics for ('helloSequence')"
+        '400':
+          description: Bad request - missing fields or unsupported artifact type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        Error:
+          type: string
+          example: "Missing required parameter: type"
+          description: The error message.
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
