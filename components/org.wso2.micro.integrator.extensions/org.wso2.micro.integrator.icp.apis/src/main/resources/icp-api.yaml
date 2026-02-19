@@ -300,7 +300,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  Message:
+                  message:
                     type: string
                     example: "Proxy service HelloWorldProxy stopped successfully"
         '400':
