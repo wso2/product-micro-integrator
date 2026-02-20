@@ -22,13 +22,16 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSSigner;
+import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.Date;
 
 public class HMACJWTTokenGenerator {
@@ -77,6 +80,32 @@ public class HMACJWTTokenGenerator {
 
         signedJWT.sign(signer);
         return signedJWT.serialize();
+    }
+
+    /**
+     * Validate a JWT token signed with HMAC SHA256.
+     *
+     * @param token the serialized JWT string
+     * @return true if the signature is valid and the token has not expired
+     */
+    public boolean validateToken(String token) {
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            JWSVerifier verifier = new MACVerifier(hmacSecret.getBytes(StandardCharsets.UTF_8));
+            if (!signedJWT.verify(verifier)) {
+                log.warn("JWT signature verification failed");
+                return false;
+            }
+            Date expiry = signedJWT.getJWTClaimsSet().getExpirationTime();
+            if (expiry == null || !new Date().before(expiry)) {
+                log.warn("JWT token has expired or is missing expiry claim");
+                return false;
+            }
+            return true;
+        } catch (ParseException | JOSEException e) {
+            log.error("Error validating HMAC JWT token", e);
+            return false;
+        }
     }
 
 }
