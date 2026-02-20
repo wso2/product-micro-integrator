@@ -85,6 +85,7 @@
   "synapse_properties.'opentelemetry.enable'": false,
   "synapse_properties.'opentelemetry.host'": "localhost",
   "synapse_properties.'opentelemetry.port'":  "14250",
+  "synapse_properties.'opentelemetry.service.name'": "WSO2-SYNAPSE",
   "synapse_properties.'opentelemetry.class'": "org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.JaegerTelemetryManager",
   "synapse_properties.'opentelemetry.protocol'": "grpc",
 
