@@ -617,4 +617,11 @@
     {% if jce_provider.provider_name is defined %}
         <JCEProvider>{{jce_provider.provider_name}}</JCEProvider>
     {% endif %}
+    <!-- Configure JSSE provider -->
+    {% if jsse_provider.provider_name is defined %}
+        <JSSEProvider>
+            <ProviderName>{{jsse_provider.provider_name}}</ProviderName>
+            <NamedGroups>{{jsse_provider.tls_named_groups}}</NamedGroups>
+        </JSSEProvider>
+    {% endif %}
 </Server>

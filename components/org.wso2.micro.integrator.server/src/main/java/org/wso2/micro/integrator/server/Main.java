@@ -79,6 +79,9 @@ public class Main {
     private static final String JSSE_CLASS_NAME = "org.bouncycastle.jsse.provider.BouncyCastleJsseProvider";
     private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
     private static final String FIPS_APPROVED_ONLY = "org.bouncycastle.fips.approved_only";
+    private static final String JCE_PROVIDER_NAME = "jce_provider.provider_name";
+    private static final String JSSE_PROVIDER_NAME = "jsse_provider.provider_name";
+    private static final String JSSE_PROVIDER_TLS_NAMED_GROUPS = "jsse_provider.tls_named_groups";
 
     public static void main(String[] args) {
 
@@ -418,6 +421,9 @@ public class Main {
 
     private static void addBcProviders() {
         String jceProvider = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (jceProvider == null) {
+            jceProvider = Utils.getConfig(JCE_PROVIDER_NAME);
+        }
         if (jceProvider != null) {
             if (BOUNCY_CASTLE_FIPS_PROVIDER.equals(jceProvider)) {
                 System.setProperty(FIPS_APPROVED_ONLY, "true");
@@ -435,10 +441,16 @@ public class Main {
         try {
             Security.insertProviderAt((Provider) Class.forName(className).getDeclaredConstructor().newInstance(),
                     1);
-            Security.insertProviderAt((Provider) Class.forName(JSSE_CLASS_NAME).getConstructor(String.class)
-                    .newInstance(jceProvider), 2);
             logger.info("JCE provider: " + className + " is set properly");
-            logger.info("JSSE provider: " + JSSE_CLASS_NAME + " is set properly");
+            if (Utils.getConfig(JSSE_PROVIDER_NAME) != null) {
+                Security.insertProviderAt((Provider) Class.forName(JSSE_CLASS_NAME).getConstructor(String.class)
+                        .newInstance(jceProvider), 2);
+                String jsseNamedGroups = Utils.getConfig(JSSE_PROVIDER_TLS_NAMED_GROUPS);
+                if  (jsseNamedGroups != null) {
+                    System.setProperty("jdk.tls.namedGroups", jsseNamedGroups);
+                }
+                logger.info("JSSE provider: " + JSSE_CLASS_NAME + " is set properly");
+            }
         } catch (InstantiationException e) {
             throw new RuntimeException("Failed to instantiate the class. Ensure it has " +
                     "a public no-argument constructor.", e);
