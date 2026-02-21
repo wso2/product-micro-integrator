@@ -52,15 +52,17 @@ public abstract class AuthorizationHandlerAdapter extends SecurityHandlerAdapter
         if (Boolean.TRUE.equals(messageContext.getProperty(ICP_AUTHENTICATED_PROPERTY))) {
             // Already authenticated by ICP HMAC JWT — skip admin authorization check
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Request authenticated by ICP HMAC JWT, skipping admin authorization check");
+                LOG.debug("Skipping admin authorization check for ICP authenticated request");
             }
-            LOG.debug("Skipping admin authorization check for ICP authenticated request");
             return true;
         }
 
         String userName = Utils.getStringPropertyFromMessageContext(messageContext, USERNAME_PROPERTY);
 
         String resourcePath = messageContext.getTo().getAddress();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Authorizing user: " + userName + " for resource: " + resourcePath);
+        }
         String resourceHttpMethod = String.valueOf(((Axis2MessageContext) messageContext).getAxis2MessageContext()
                 .getProperty(Constants.HTTP_METHOD_PROPERTY));
         // PATCH type requests are being skipped for the /users resource to allow users to update their passwords.
