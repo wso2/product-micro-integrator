@@ -32,6 +32,7 @@ import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.util.Objects;
 
+import static org.wso2.micro.integrator.management.apis.Constants.ICP_AUTHENTICATED_PROPERTY;
 import static org.wso2.micro.integrator.management.apis.Constants.USERNAME_PROPERTY;
 
 /**
@@ -48,9 +49,20 @@ public abstract class AuthorizationHandlerAdapter extends SecurityHandlerAdapter
 
     @Override
     public Boolean handle(MessageContext messageContext) {
+        if (Boolean.TRUE.equals(messageContext.getProperty(ICP_AUTHENTICATED_PROPERTY))) {
+            // Already authenticated by ICP HMAC JWT — skip admin authorization check
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Skipping admin authorization check for ICP authenticated request");
+            }
+            return true;
+        }
+
         String userName = Utils.getStringPropertyFromMessageContext(messageContext, USERNAME_PROPERTY);
 
         String resourcePath = messageContext.getTo().getAddress();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Authorizing user: " + userName + " for resource: " + resourcePath);
+        }
         String resourceHttpMethod = String.valueOf(((Axis2MessageContext) messageContext).getAxis2MessageContext()
                 .getProperty(Constants.HTTP_METHOD_PROPERTY));
         // PATCH type requests are being skipped for the /users resource to allow users to update their passwords.
