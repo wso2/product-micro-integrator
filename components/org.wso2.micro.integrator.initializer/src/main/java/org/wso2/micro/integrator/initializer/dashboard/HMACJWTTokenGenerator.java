@@ -91,6 +91,9 @@ public class HMACJWTTokenGenerator {
     public boolean validateToken(String token) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
+            if (log.isDebugEnabled()) {
+                log.debug("Validating HMAC JWT token");
+            }
             JWSVerifier verifier = new MACVerifier(hmacSecret.getBytes(StandardCharsets.UTF_8));
             if (!signedJWT.verify(verifier)) {
                 log.warn("JWT signature verification failed");
@@ -100,6 +103,9 @@ public class HMACJWTTokenGenerator {
             if (expiry == null || !new Date().before(expiry)) {
                 log.warn("JWT token has expired or is missing expiry claim");
                 return false;
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("JWT token validated successfully");
             }
             return true;
         } catch (ParseException | JOSEException e) {
