@@ -114,4 +114,45 @@ public class HMACJWTTokenGenerator {
         }
     }
 
+    /**
+     * Validates the JWT token signed with HMAC SHA256 and returns the username extracted from the
+     * claims. Checks the {@code sub} (subject) claim first, then falls back to the {@code iss}
+     * (issuer) claim. Returns {@code null} if the token signature is invalid or the token has
+     * expired, so callers can treat a non-null return as proof of a valid token.
+     *
+     * @param token the serialized JWT string
+     * @return the username from the token claims if the token is valid, or {@code null} if invalid
+     */
+    public String getUsernameFromToken(String token) {
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            JWSVerifier verifier = new MACVerifier(hmacSecret.getBytes(StandardCharsets.UTF_8));
+            if (!signedJWT.verify(verifier)) {
+                log.warn("JWT signature verification failed");
+                return null;
+            }
+            JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
+            Date expiry = claims.getExpirationTime();
+            if (expiry == null || !new Date().before(expiry)) {
+                log.warn("JWT token has expired or is missing expiry claim");
+                return null;
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("JWT token validated successfully, extracting username claim");
+            }
+            String subject = claims.getSubject();
+            if (subject != null && !subject.isEmpty()) {
+                return subject;
+            }
+            String issuer = claims.getIssuer();
+            if (issuer != null && !issuer.isEmpty()) {
+                return issuer;
+            }
+            return "icp-service";
+        } catch (ParseException | JOSEException e) {
+            log.error("Error validating HMAC JWT token", e);
+            return null;
+        }
+    }
+
 }
