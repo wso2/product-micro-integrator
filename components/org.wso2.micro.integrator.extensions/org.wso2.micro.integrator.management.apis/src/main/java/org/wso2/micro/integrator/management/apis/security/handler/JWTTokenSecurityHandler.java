@@ -101,13 +101,18 @@ public class JWTTokenSecurityHandler extends AuthenticationHandlerAdapter {
         Object icpEnabled = ConfigParser.getParsedConfigs().get(ICP_CONFIG_ENABLED);
         if (!Boolean.TRUE.equals(icpEnabled)) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("ICP is not enabled. Skipping ICP HMAC JWT authentication attempt.");
+                LOG.debug("ICP is not enabled, skipping HMAC JWT authentication");
             }
             return false;
         }
         Object secretObj = ConfigParser.getParsedConfigs().get(ICP_JWT_HMAC_SECRET);
-        if (secretObj == null || secretObj.toString().trim().isEmpty()) {
+        if (secretObj == null) {
             LOG.warn("HMAC secret not configured for ICP JWT validation");
+            return false;
+        }
+        String secret = secretObj.toString().trim();
+        if (secret.isEmpty()) {
+            LOG.warn("HMAC secret is empty for ICP JWT validation");
             return false;
         }
         try {
