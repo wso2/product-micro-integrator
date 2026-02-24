@@ -42,6 +42,7 @@
         <module>mediation-commons</module>
         <module>message-relay</module>
         <module>connectors</module>
+        <module>mediation-diagnostics</module>
     </modules>
 
 </project>
