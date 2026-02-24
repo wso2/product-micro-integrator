@@ -24,6 +24,7 @@ import org.wso2.diagnostics.actionexecutor.ServerProcess;
 import org.wso2.diagnostics.watchers.Watcher;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -56,11 +57,18 @@ public class TrafficAnalyzer implements Watcher {
 
     public void init(Map<String, Object> configMap) {
 
+        if (globalExecutorService != null && !globalExecutorService.isShutdown()) {
+            globalExecutorService.shutdownNow();
+        }
         this.globalExecutorService = Executors.newSingleThreadScheduledExecutor();
-        this.configMap = configMap;
+        this.configMap = Objects.requireNonNull(configMap, "configMap");
     }
 
     public void start() {
+
+        if (globalExecutorService == null || configMap == null) {
+            throw new IllegalStateException("init() must be called before start()");
+        }
 
         boolean isLastSecondRequestsEnabled = getBooleanValue(configMap.get(LAST_SECOND_REQUESTS_ENABLED), false);
         if (isLastSecondRequestsEnabled) {

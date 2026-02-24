@@ -47,16 +47,15 @@ public class MetricsSnapshot implements ActionExecutor {
     @Override
     public void execute(String folderPath) {
 
-        if (new File(folderPath).exists()) {
+        File folder = new File(folderPath);
+        if (folder.isDirectory()) {
 
             String filepath = folderPath + "/metrics-snapshot.txt";
-            try {
-                FileWriter writer = new FileWriter(filepath);
+            try (FileWriter writer = new FileWriter(filepath)) {
                 writer.write(getServerMetrics());
-                writer.close();
                 log.info("MetricsSnapshot executed successfully.");
             } catch (IOException e) {
-                log.error("Unable to do write server information to file.");
+                log.error("Unable to write server information to file.", e);
             }
         }
     }

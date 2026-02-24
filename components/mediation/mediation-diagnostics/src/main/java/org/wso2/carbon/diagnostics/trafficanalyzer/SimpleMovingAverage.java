@@ -39,6 +39,10 @@ public class SimpleMovingAverage {
 
     public SimpleMovingAverage(int windowSize) {
 
+        if (windowSize <= 0) {
+            throw new IllegalArgumentException("windowSize must be > 0");
+        }
+
         this.windowSize = windowSize;
         this.ma = Double.NaN;
         this.currentThreshold = Double.NaN;
@@ -51,9 +55,9 @@ public class SimpleMovingAverage {
             log.debug("Updating Simple Moving Average with new data point: " + newDataPoint);
         }
         addDataToList(newDataPoint);
-        List<Integer> tempList = getTempList();
         Double ma = findAverage(tempList);
         setMa(ma);
+        updateThresholdStd();
         return ma;
     }
 
@@ -72,7 +76,6 @@ public class SimpleMovingAverage {
 
     public void addDataToList(int newData) {
 
-        updateThresholdStd();
         if (tempList.size() < windowSize) {
             tempList.add(newData);
         } else {
@@ -83,6 +86,10 @@ public class SimpleMovingAverage {
 
     // Update the threshold using the standard deviation
     private void updateThresholdStd() {
+        if (tempList.isEmpty() || Double.isNaN(ma)) {
+            currentThreshold = Double.NaN;
+            return;
+        }
 
         double sumSquaredDiff = 0.0;
         double k = 2;
