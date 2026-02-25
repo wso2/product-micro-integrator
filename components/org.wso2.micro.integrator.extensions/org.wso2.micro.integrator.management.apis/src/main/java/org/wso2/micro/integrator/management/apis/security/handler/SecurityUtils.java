@@ -29,12 +29,17 @@ import org.wso2.micro.integrator.security.MicroIntegratorSecurityUtils;
 import org.wso2.micro.integrator.security.user.api.UserStoreException;
 import org.wso2.micro.integrator.security.user.core.file.FileBasedUserStoreManager;
 import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
 import org.wso2.securevault.SecureVaultException;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.util.Map;
 import javax.xml.namespace.QName;
 
 public class SecurityUtils {
+
+    private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(
+            SecurityUtils.class);
 
     /**
      * Returns the transport header map of a given axis2 message context.
@@ -146,5 +151,45 @@ public class SecurityUtils {
             return true;
         }
         return isAdmin(userName) || !isNonAdminUsersReadOnly();
+    }
+
+    /**
+     * Resolves a secret value from secure vault if it's in the format $secret{alias}.
+     * If the value is not a secure vault reference or secure vault is not initialized,
+     * returns the value as-is.
+     *
+     * @param value the value to resolve (may be a plain value or $secret{alias} format)
+     * @return the resolved secret value or the original value if not a secure vault reference
+     */
+    public static String resolveSecretValue(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+
+        // Extract alias from $secret{alias} format
+        String alias = MiscellaneousUtil.getProtectedToken(value);
+        if (alias == null || alias.isEmpty()) {
+            // Not a secure vault reference, return as-is
+            return value;
+        }
+
+        try {
+            // Create a secret resolver without requiring XML configuration
+            SecretResolver secretResolver = SecretResolverFactory.create((OMElement) null, false);
+            if (secretResolver != null && secretResolver.isInitialized()) {
+                String resolvedValue = secretResolver.resolve(alias);
+                if (resolvedValue != null && !resolvedValue.isEmpty()) {
+                    return resolvedValue;
+                }
+            } else {
+                log.warn("Secure Vault is not initialized. Using configured value as-is for alias: " + alias);
+            }
+        } catch (Exception e) {
+            log.error("Error resolving secret from Secure Vault for alias: " + alias +
+                      ". Using configured value as-is.", e);
+        }
+
+        // Fallback to original value if resolution fails
+        return value;
     }
 }
