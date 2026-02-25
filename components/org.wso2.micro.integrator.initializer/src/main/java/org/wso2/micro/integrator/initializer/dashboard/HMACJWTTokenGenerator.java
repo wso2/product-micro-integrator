@@ -38,6 +38,12 @@ public class HMACJWTTokenGenerator {
 
     private static final Log log = LogFactory.getLog(HMACJWTTokenGenerator.class);
 
+    /**
+     * Clock skew tolerance in milliseconds (60 seconds) to account for time differences
+     * between ICP and MI servers in distributed environments.
+     */
+    private static final long CLOCK_SKEW_TOLERANCE_MS = 60_000L;
+
     private final String hmacSecret;
 
     public HMACJWTTokenGenerator(String hmacSecret) {
@@ -83,6 +89,51 @@ public class HMACJWTTokenGenerator {
     }
 
     /**
+     * Validates the JWT signature and expiry with clock skew tolerance.
+     * Returns the validated JWTClaimsSet if valid, or null if invalid.
+     *
+     * @param token the serialized JWT string
+     * @return validated JWTClaimsSet if token is valid, null otherwise
+     */
+    private JWTClaimsSet verifyAndGetClaims(String token) {
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            JWSVerifier verifier = new MACVerifier(hmacSecret.getBytes(StandardCharsets.UTF_8));
+
+            // Verify signature
+            if (!signedJWT.verify(verifier)) {
+                log.warn("JWT signature verification failed");
+                return null;
+            }
+
+            JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
+            Date expiry = claims.getExpirationTime();
+
+            // Verify expiry with clock skew tolerance
+            if (expiry == null) {
+                log.warn("JWT token is missing expiry claim");
+                return null;
+            }
+
+            // Apply clock skew tolerance: allow tokens that expired within the last 60 seconds
+            Date now = new Date(System.currentTimeMillis() - CLOCK_SKEW_TOLERANCE_MS);
+            if (!now.before(expiry)) {
+                log.warn("JWT token has expired (with " + CLOCK_SKEW_TOLERANCE_MS + "ms clock skew tolerance)");
+                return null;
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("JWT token validated successfully");
+            }
+            return claims;
+
+        } catch (ParseException | JOSEException e) {
+            log.error("Error validating HMAC JWT token", e);
+            return null;
+        }
+    }
+
+    /**
      * Validates the JWT token signed with HMAC SHA256 and returns the username extracted from the
      * claims. Checks the {@code sub} (subject) claim first, then falls back to the {@code iss}
      * (issuer) claim. If neither is present, returns the provided default username.
@@ -94,22 +145,12 @@ public class HMACJWTTokenGenerator {
      * @return the username from the token claims if the token is valid, or {@code null} if invalid
      */
     public String getUsernameFromToken(String token, String defaultUsername) {
+        JWTClaimsSet claims = verifyAndGetClaims(token);
+        if (claims == null) {
+            return null;
+        }
+
         try {
-            SignedJWT signedJWT = SignedJWT.parse(token);
-            JWSVerifier verifier = new MACVerifier(hmacSecret.getBytes(StandardCharsets.UTF_8));
-            if (!signedJWT.verify(verifier)) {
-                log.warn("JWT signature verification failed");
-                return null;
-            }
-            JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
-            Date expiry = claims.getExpirationTime();
-            if (expiry == null || !new Date().before(expiry)) {
-                log.warn("JWT token has expired or is missing expiry claim");
-                return null;
-            }
-            if (log.isDebugEnabled()) {
-                log.debug("JWT token validated successfully, extracting username claim");
-            }
             String subject = claims.getSubject();
             if (subject != null && !subject.isEmpty()) {
                 return subject;
@@ -119,8 +160,8 @@ public class HMACJWTTokenGenerator {
                 return issuer;
             }
             return defaultUsername;
-        } catch (ParseException | JOSEException e) {
-            log.error("Error validating HMAC JWT token", e);
+        } catch (Exception e) {
+            log.error("Error extracting username from JWT claims", e);
             return null;
         }
     }
