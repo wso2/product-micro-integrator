@@ -33,7 +33,9 @@ import org.wso2.micro.integrator.security.MicroIntegratorSecurityUtils;
 import org.wso2.micro.integrator.security.user.api.UserStoreException;
 import org.wso2.micro.integrator.security.user.core.file.FileBasedUserStoreManager;
 import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
 import org.wso2.securevault.SecureVaultException;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -232,68 +234,42 @@ public class SecurityUtils {
     }
 
     /**
-     * Resolves a Secure Vault alias to its actual secret value.
-     * Uses the default SecretCallbackHandlerService from AppDeployerServiceComponent.
+     * Resolves a secret value from secure vault if it's in the format $secret{alias}.
+     * If the value is not a secure vault reference or secure vault is not initialized,
+     * returns the value as-is.
      *
-     * If the value is not a Secure Vault alias (doesn't match the $secret{...} pattern),
-     * it returns the value as-is.
-     *
-     * If the value is a Secure Vault alias but resolution fails (e.g., alias not found),
-     * this method may return {@code null}.
-     *
-     * This method delegates to SecretResolverUtil for the actual resolution.
-     *
-     * Usage example:
-     * <pre>
-     * try {
-     *     String secret = SecurityUtils.resolveSecret(configuredValue);
-     *     if (secret == null) {
-     *         // Handle unresolved secret (e.g., alias not found)
-     *     }
-     * } catch (IllegalStateException e) {
-     *     // Handle Secure Vault initialization errors
-     * }
-     * </pre>
-     *
-     * @param value the value to resolve (may be a plain value or a Secure Vault alias like $secret{alias})
-     * @return the resolved secret value, the original value if not an alias, or {@code null} if a secret alias cannot be resolved
-     * @throws IllegalStateException if Secure Vault is not properly initialized
+     * @param value the value to resolve (may be a plain value or $secret{alias} format)
+     * @return the resolved secret value or the original value if not a secure vault reference
      */
-    public static String resolveSecret(String value) {
-        return SecretResolverUtil.resolveSecret(value);
-    }
+    public static String resolveSecretValue(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
 
-    /**
-     * Resolves a Secure Vault alias to its actual secret value.
-     * Allows providing a custom SecretCallbackHandlerService supplier.
-     *
-     * If the value is not a Secure Vault alias (doesn't match the $secret{...} pattern),
-     * it returns the value as-is.
-     *
-     * If the value is a Secure Vault alias but resolution fails (e.g., Secure Vault not initialized,
-     * or alias not found), this method throws an IllegalStateException.
-     *
-     * This method delegates to SecretResolverUtil for the actual resolution.
-     *
-     * Usage example:
-     * <pre>
-     * try {
-     *     String secret = SecurityUtils.resolveSecret(
-     *         configuredValue,
-     *         () -> ICPApiServiceComponent.getSecretCallbackHandlerService()
-     *     );
-     * } catch (IllegalStateException e) {
-     *     // Handle unresolved secret
-     * }
-     * </pre>
-     *
-     * @param value the value to resolve (may be a plain value or a Secure Vault alias like $secret{alias})
-     * @param secretCallbackHandlerServiceSupplier supplier that provides the SecretCallbackHandlerService
-     *                                             (e.g., () -> ICPApiServiceComponent.getSecretCallbackHandlerService())
-     * @return the resolved secret value, or the original value if not an alias
-     * @throws IllegalStateException if the value is a secret placeholder but resolution fails
-     */
-    public static String resolveSecret(String value, Supplier<SecretCallbackHandlerService> secretCallbackHandlerServiceSupplier) {
-        return SecretResolverUtil.resolveSecret(value, secretCallbackHandlerServiceSupplier);
+        // Extract alias from $secret{alias} format
+        String alias = MiscellaneousUtil.getProtectedToken(value);
+        if (alias == null || alias.isEmpty()) {
+            // Not a secure vault reference, return as-is
+            return value;
+        }
+
+        try {
+            // Create a secret resolver without requiring XML configuration
+            SecretResolver secretResolver = SecretResolverFactory.create((OMElement) null, false);
+            if (secretResolver != null && secretResolver.isInitialized()) {
+                String resolvedValue = secretResolver.resolve(alias);
+                if (resolvedValue != null && !resolvedValue.isEmpty()) {
+                    return resolvedValue;
+                }
+            } else {
+                LOG.warn("Secure Vault is not initialized. Using configured value as-is for alias: " + alias);
+            }
+        } catch (Exception e) {
+            LOG.error("Error resolving secret from Secure Vault for alias: " + alias +
+                      ". Using configured value as-is.", e);
+        }
+
+        // Fallback to original value if resolution fails
+        return value;
     }
 }

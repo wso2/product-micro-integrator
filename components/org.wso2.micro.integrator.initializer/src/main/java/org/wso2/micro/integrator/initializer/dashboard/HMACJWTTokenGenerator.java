@@ -83,47 +83,17 @@ public class HMACJWTTokenGenerator {
     }
 
     /**
-     * Validate a JWT token signed with HMAC SHA256.
-     *
-     * @param token the serialized JWT string
-     * @return true if the signature is valid and the token has not expired
-     */
-    public boolean validateToken(String token) {
-        try {
-            SignedJWT signedJWT = SignedJWT.parse(token);
-            if (log.isDebugEnabled()) {
-                log.debug("Validating HMAC JWT token");
-            }
-            JWSVerifier verifier = new MACVerifier(hmacSecret.getBytes(StandardCharsets.UTF_8));
-            if (!signedJWT.verify(verifier)) {
-                log.warn("JWT signature verification failed");
-                return false;
-            }
-            Date expiry = signedJWT.getJWTClaimsSet().getExpirationTime();
-            if (expiry == null || !new Date().before(expiry)) {
-                log.warn("JWT token has expired or is missing expiry claim");
-                return false;
-            }
-            if (log.isDebugEnabled()) {
-                log.debug("JWT token validated successfully");
-            }
-            return true;
-        } catch (ParseException | JOSEException e) {
-            log.error("Error validating HMAC JWT token", e);
-            return false;
-        }
-    }
-
-    /**
      * Validates the JWT token signed with HMAC SHA256 and returns the username extracted from the
      * claims. Checks the {@code sub} (subject) claim first, then falls back to the {@code iss}
-     * (issuer) claim. Returns {@code null} if the token signature is invalid or the token has
-     * expired, so callers can treat a non-null return as proof of a valid token.
+     * (issuer) claim. If neither is present, returns the provided default username.
+     * Returns {@code null} if the token signature is invalid or the token has expired,
+     * so callers can treat a non-null return as proof of a valid token.
      *
      * @param token the serialized JWT string
+     * @param defaultUsername the default username to return if neither subject nor issuer is present
      * @return the username from the token claims if the token is valid, or {@code null} if invalid
      */
-    public String getUsernameFromToken(String token) {
+    public String getUsernameFromToken(String token, String defaultUsername) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
             JWSVerifier verifier = new MACVerifier(hmacSecret.getBytes(StandardCharsets.UTF_8));
@@ -148,11 +118,24 @@ public class HMACJWTTokenGenerator {
             if (issuer != null && !issuer.isEmpty()) {
                 return issuer;
             }
-            return "icp-service";
+            return defaultUsername;
         } catch (ParseException | JOSEException e) {
             log.error("Error validating HMAC JWT token", e);
             return null;
         }
+    }
+
+    /**
+     * Validates the JWT token signed with HMAC SHA256 and returns the username extracted from the
+     * claims. Checks the {@code sub} (subject) claim first, then falls back to the {@code iss}
+     * (issuer) claim. Returns {@code null} if the token signature is invalid, the token has expired,
+     * or if neither subject nor issuer is present.
+     *
+     * @param token the serialized JWT string
+     * @return the username from the token claims if the token is valid, or {@code null} if invalid
+     */
+    public String getUsernameFromToken(String token) {
+        return getUsernameFromToken(token, null);
     }
 
 }
