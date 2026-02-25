@@ -145,9 +145,8 @@ public class JWTTokenSecurityHandler extends AuthenticationHandlerAdapter {
                 if ("icp-service".equals(username)) {
                     LOG.warn("HMAC JWT token username defaulted to 'icp-service' (no subject or issuer in token)");
                 }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("HMAC JWT token validated successfully for ICP Management API request");
-                }
+                // Log at INFO level for security audit trail
+                LOG.info("HMAC JWT authentication successful for ICP Management API request. User: " + username);
                 messageContext.setProperty(ICP_AUTHENTICATED_PROPERTY, true);
                 messageContext.setProperty(USERNAME_PROPERTY, username);
                 return true;
