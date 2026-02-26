@@ -133,8 +133,8 @@
             <artifactId>runtime-diagnostics-tool</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon.mediation</groupId>
-            <artifactId>org.wso2.carbon.mediation.diagnostics</artifactId>
+            <groupId>org.wso2.ei</groupId>
+            <artifactId>org.wso2.micro.integrator.mediation.diagnostics</artifactId>
         </dependency>
         <dependency>
             <groupId>org.graalvm.sdk</groupId>
