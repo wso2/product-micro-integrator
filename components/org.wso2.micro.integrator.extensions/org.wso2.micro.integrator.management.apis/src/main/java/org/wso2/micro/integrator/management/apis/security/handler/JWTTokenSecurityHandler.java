@@ -40,9 +40,14 @@ import static org.wso2.micro.integrator.management.apis.Constants.USERNAME_PROPE
 public class JWTTokenSecurityHandler extends AuthenticationHandlerAdapter {
 
     private static final Log LOG = LogFactory.getLog(JWTTokenSecurityHandler.class);
+    private static final String DEFAULT_ICP_USERNAME = "icp-service";
+    private static final Map<String, Object> configs = ConfigParser.getParsedConfigs();
+
     private String name;
     private HMACJWTTokenGenerator hmacValidator = null;
     private String cachedHmacSecret = null;
+    private Boolean icpConfigValid = null; // Cache ICP configuration validation state
+
 
     public JWTTokenSecurityHandler(String context) throws CarbonException, XMLStreamException, IOException,
             ManagementApiUndefinedException {
@@ -93,23 +98,33 @@ public class JWTTokenSecurityHandler extends AuthenticationHandlerAdapter {
                 return true;
             }
             // Fallback: if ICP is enabled, try validating as an HMAC JWT issued by ICP
-            if (tryICPHmacAuthentication(messageContext, authHeaderToken)) {
-                return true;
-            }
+            return tryICPHmacAuthentication(messageContext, authHeaderToken);
         }
         return false;
     }
 
     private synchronized HMACJWTTokenGenerator getOrCreateHmacValidator(String secret) {
         if (hmacValidator == null || !secret.equals(cachedHmacSecret)) {
-            hmacValidator = new HMACJWTTokenGenerator(secret);
-            cachedHmacSecret = secret;
+            try {
+                hmacValidator = new HMACJWTTokenGenerator(secret);
+                cachedHmacSecret = secret;
+                icpConfigValid = true;
+            } catch (IllegalArgumentException e) {
+                // Secret validation failed in constructor (less than 32 bytes)
+                LOG.error("Invalid HMAC secret configured for ICP JWT validation: " + e.getMessage());
+                icpConfigValid = false;
+                throw e;
+            }
         }
         return hmacValidator;
     }
 
     private boolean tryICPHmacAuthentication(MessageContext messageContext, String token) {
-        Map<String, Object> configs = ConfigParser.getParsedConfigs();
+        // Return early if we've already determined ICP config is invalid
+        if (Boolean.FALSE.equals(icpConfigValid)) {
+            return false;
+        }
+
         Object icpEnabled = configs.get(ICP_CONFIG_ENABLED);
         // Handle both Boolean and String "true" from config
         if (icpEnabled == null || !Boolean.parseBoolean(String.valueOf(icpEnabled))) {
@@ -121,29 +136,27 @@ public class JWTTokenSecurityHandler extends AuthenticationHandlerAdapter {
         Object secretObj = configs.get(ICP_JWT_HMAC_SECRET);
         if (secretObj == null) {
             LOG.warn("HMAC secret not configured for ICP JWT validation");
+            icpConfigValid = false;
             return false;
         }
         String secret = secretObj.toString().trim();
         if (secret.isEmpty()) {
             LOG.warn("HMAC secret is empty for ICP JWT validation");
+            icpConfigValid = false;
             return false;
         }
 
         // Resolve secret from secure vault if it's in $secret{alias} format
         secret = SecurityUtils.resolveSecretValue(secret);
 
-        // Validate secret length before creating validator
-        if (secret.getBytes(java.nio.charset.StandardCharsets.UTF_8).length < 32) {
-            LOG.error("Configured HMAC secret is shorter than 32 bytes for ICP JWT validation");
-            return false;
-        }
-
+        // Secret length validation now happens in HMACJWTTokenGenerator constructor
+        // No need to validate here - constructor will throw IllegalArgumentException if invalid
         try {
             HMACJWTTokenGenerator validator = getOrCreateHmacValidator(secret);
-            String username = validator.getUsernameFromToken(token, "icp-service");
+            String username = validator.getUsernameFromToken(token, DEFAULT_ICP_USERNAME);
             if (username != null) {
-                if ("icp-service".equals(username)) {
-                    LOG.warn("HMAC JWT token username defaulted to 'icp-service' (no subject or issuer in token)");
+                if (DEFAULT_ICP_USERNAME.equals(username)) {
+                    LOG.warn("HMAC JWT token username defaulted to '" + DEFAULT_ICP_USERNAME + "' (no subject or issuer in token)");
                 }
                 // Log at INFO level for security audit trail
                 LOG.info("HMAC JWT authentication successful for ICP Management API request. User: " + username);
@@ -152,6 +165,7 @@ public class JWTTokenSecurityHandler extends AuthenticationHandlerAdapter {
                 return true;
             }
         } catch (IllegalArgumentException e) {
+            // Constructor validation failed - this is cached so we won't retry
             LOG.error("Invalid HMAC secret configured for ICP JWT validation", e);
         }
         return false;

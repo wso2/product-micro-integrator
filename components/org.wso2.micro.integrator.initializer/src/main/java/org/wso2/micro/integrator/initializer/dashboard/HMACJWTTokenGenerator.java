@@ -29,22 +29,45 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.config.mapper.ConfigParser;
 
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Map;
 
 public class HMACJWTTokenGenerator {
 
     private static final Log log = LogFactory.getLog(HMACJWTTokenGenerator.class);
+    private static final Map<String, Object> configs = ConfigParser.getParsedConfigs();
 
     /**
-     * Clock skew tolerance in milliseconds (60 seconds) to account for time differences
+     * Clock skew tolerance in milliseconds to account for time differences
      * between ICP and MI servers in distributed environments.
+     * Configurable via deployment.toml (icp_config.jwt_clock_skew_tolerance_ms), defaults to 60 seconds.
      */
-    private static final long CLOCK_SKEW_TOLERANCE_MS = 60_000L;
+    private static final long CLOCK_SKEW_TOLERANCE_MS = getClockSkewTolerance();
 
     private final String hmacSecret;
+
+    /**
+     * Retrieves the clock skew tolerance configuration from deployment.toml.
+     * Falls back to the default value if not configured.
+     *
+     * @return clock skew tolerance in milliseconds
+     */
+    private static long getClockSkewTolerance() {
+        Object configuredClockSkew = configs.get(Constants.ICP_JWT_CLOCK_SKEW_TOLERANCE_MS);
+        if (configuredClockSkew != null) {
+            try {
+                return Long.parseLong(configuredClockSkew.toString());
+            } catch (NumberFormatException e) {
+                log.warn("Invalid clock skew tolerance configured: " + configuredClockSkew
+                        + ". Using default: " + Constants.DEFAULT_JWT_CLOCK_SKEW_TOLERANCE_MS + "ms", e);
+            }
+        }
+        return Constants.DEFAULT_JWT_CLOCK_SKEW_TOLERANCE_MS;
+    }
 
     public HMACJWTTokenGenerator(String hmacSecret) {
         if (hmacSecret == null || hmacSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
@@ -107,6 +130,11 @@ public class HMACJWTTokenGenerator {
             }
 
             JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
+            if (claims == null) {
+                log.warn("JWT token has no claims");
+                return null;
+            }
+
             Date expiry = claims.getExpirationTime();
 
             // Verify expiry with clock skew tolerance
@@ -149,21 +177,15 @@ public class HMACJWTTokenGenerator {
         if (claims == null) {
             return null;
         }
-
-        try {
-            String subject = claims.getSubject();
-            if (subject != null && !subject.isEmpty()) {
-                return subject;
-            }
-            String issuer = claims.getIssuer();
-            if (issuer != null && !issuer.isEmpty()) {
-                return issuer;
-            }
-            return defaultUsername;
-        } catch (Exception e) {
-            log.error("Error extracting username from JWT claims", e);
-            return null;
+        String subject = claims.getSubject();
+        if (subject != null && !subject.isEmpty()) {
+            return subject;
         }
+        String issuer = claims.getIssuer();
+        if (issuer != null && !issuer.isEmpty()) {
+            return issuer;
+        }
+        return defaultUsername;
     }
 
     /**
