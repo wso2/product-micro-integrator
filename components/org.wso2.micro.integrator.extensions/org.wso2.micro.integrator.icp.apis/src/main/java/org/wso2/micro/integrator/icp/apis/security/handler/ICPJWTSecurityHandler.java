@@ -85,7 +85,7 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
         if (jwtHmacSecret == null || jwtHmacSecret.trim().isEmpty()) {
             // ConfigurationLoader does not call property setters, so read directly from deployment.toml.
             // resolveSecret() handles Secure Vault aliases (e.g. $secret{icp.jwt.hmac.secret}).
-            Object secretObj = ConfigParser.getParsedConfigs().get(Constants.ICP_JWT_HMAC_SECRET);
+            Object secretObj = ConfigParser.getParsedConfigs().get(Constants.ICP_SHARED_SECRET);
             if (secretObj != null && !secretObj.toString().trim().isEmpty()) {
                 jwtHmacSecret = resolveSecret(secretObj.toString().trim());
                 if (LOG.isDebugEnabled()) {

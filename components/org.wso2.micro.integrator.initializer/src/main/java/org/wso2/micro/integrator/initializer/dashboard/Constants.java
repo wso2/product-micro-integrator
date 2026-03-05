@@ -34,7 +34,7 @@ public class Constants {
     public static final String ICP_JWT_AUDIENCE = "icp_config.jwt_audience";
     public static final String ICP_JWT_SCOPE = "icp_config.jwt_scope";
     public static final String ICP_JWT_EXPIRY_SECONDS = "icp_config.jwt_expiry_seconds";
-    public static final String ICP_JWT_HMAC_SECRET = "icp_config.jwt_hmac_secret";
+    public static final String ICP_SHARED_SECRET = "icp_config.secret";
     
     // Default ICP Configuration
     public static final String DEFAULT_ENVIRONMENT = "production";
@@ -46,7 +46,6 @@ public class Constants {
     public static final String DEFAULT_JWT_AUDIENCE = "icp-server";
     public static final String DEFAULT_JWT_SCOPE = "runtime_agent";
     public static final long DEFAULT_JWT_EXPIRY_SECONDS = 3600;
-    public static final String DEFAULT_JWT_HMAC_SECRET = "default-secret-key-at-least-32-characters-long-for-hs256";
     public static final String RUNTIME_TYPE_MI = "MI";
     public static final String RUNTIME_STATUS_RUNNING = "RUNNING";
 
