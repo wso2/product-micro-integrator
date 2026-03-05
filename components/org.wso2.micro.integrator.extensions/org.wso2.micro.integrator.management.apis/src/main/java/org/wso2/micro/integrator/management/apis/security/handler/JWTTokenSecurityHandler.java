@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import static org.wso2.micro.integrator.management.apis.Constants.ICP_AUTHENTICATED_PROPERTY;
+import static org.wso2.micro.integrator.management.apis.Constants.IS_ADMIN_USER_PROPERTY;
 import static org.wso2.micro.integrator.management.apis.Constants.USERNAME_PROPERTY;
 
 public class JWTTokenSecurityHandler extends AuthenticationHandlerAdapter {
@@ -98,7 +99,14 @@ public class JWTTokenSecurityHandler extends AuthenticationHandlerAdapter {
                 return true;
             }
             // Fallback: if ICP is enabled, try validating as an HMAC JWT issued by ICP
-            return tryICPHmacAuthentication(messageContext, authHeaderToken);
+            Object icpEnabled = configs.get(ICP_CONFIG_ENABLED);
+            // Handle both Boolean and String "true" from config
+            if (icpEnabled != null && Boolean.parseBoolean(String.valueOf(icpEnabled))) {
+                return tryICPHmacAuthentication(messageContext, authHeaderToken);
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("ICP is not enabled, skipping HMAC JWT authentication");
+            }
         }
         return false;
     }
@@ -147,7 +155,7 @@ public class JWTTokenSecurityHandler extends AuthenticationHandlerAdapter {
         }
 
         // Resolve secret from secure vault if it's in $secret{alias} format
-        secret = SecurityUtils.resolveSecretValue(secret);
+        secret = SecurityUtils.resolveSecret(secret);
 
         // Secret length validation now happens in HMACJWTTokenGenerator constructor
         // No need to validate here - constructor will throw IllegalArgumentException if invalid
@@ -164,6 +172,7 @@ public class JWTTokenSecurityHandler extends AuthenticationHandlerAdapter {
                 }
                 messageContext.setProperty(ICP_AUTHENTICATED_PROPERTY, true);
                 messageContext.setProperty(USERNAME_PROPERTY, username);
+                messageContext.setProperty(IS_ADMIN_USER_PROPERTY, true);
                 return true;
             }
         } catch (IllegalArgumentException e) {
