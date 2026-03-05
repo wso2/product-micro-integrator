@@ -102,7 +102,7 @@ public class TaskResource extends APIResource {
             org.apache.axis2.context.MessageContext axisMsgCtx =
                     ((Axis2MessageContext) messageContext).getAxis2MessageContext();
             try {
-                if (SecurityUtils.canUserEdit(userName)) {
+                if (SecurityUtils.canUserEdit(messageContext, userName)) {
                     handlePost(messageContext, axisMsgCtx);
                 } else {
                     Utils.sendForbiddenFaultResponse(axisMsgCtx);

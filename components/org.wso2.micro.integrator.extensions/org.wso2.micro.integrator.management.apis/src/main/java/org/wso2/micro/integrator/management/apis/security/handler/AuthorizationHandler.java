@@ -80,13 +80,28 @@ public class AuthorizationHandler extends AuthorizationHandlerAdapter {
             try {
                 return processAuthorizationWithCarbonUserStore(userName);
             } catch (UserStoreException e) {
-                LOG.error("Error while authenticating with carbon user store", e);
+                LOG.error("Error while authorizing with carbon user store", e);
                 return false;
             }
         } else {
             //Uses in memory user store
             return processAuthorizationWithFileBasedUserStore(userName);
         }
+    }
+
+    @Override
+    protected Boolean authorize(String userName, MessageContext messageContext) {
+        // Delegate to single-arg overload to obtain admin status
+        Boolean isAdmin = authorize(userName);
+
+        // Set IS_ADMIN_USER property for the logged-in user to optimize subsequent admin checks
+        if (messageContext != null) {
+            messageContext.setProperty(Constants.IS_ADMIN_USER_PROPERTY, isAdmin);
+        } else {
+            LOG.warn("MessageContext is null; cannot set admin user property.");
+        }
+
+        return isAdmin;
     }
 
     /**

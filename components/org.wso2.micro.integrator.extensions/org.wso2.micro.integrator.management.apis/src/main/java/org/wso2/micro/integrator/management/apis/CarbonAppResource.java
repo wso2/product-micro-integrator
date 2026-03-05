@@ -135,7 +135,7 @@ public class CarbonAppResource extends APIResource {
             }
             case Constants.HTTP_POST: {
                 try {
-                    if (SecurityUtils.canUserEdit(userName)) {
+                    if (SecurityUtils.canUserEdit(messageContext, userName)) {
                         handlePost(performedBy, axis2MessageContext);
                     } else {
                         Utils.sendForbiddenFaultResponse(axis2MessageContext);
@@ -148,7 +148,7 @@ public class CarbonAppResource extends APIResource {
             }
             case Constants.HTTP_DELETE: {
                 try {
-                    if (SecurityUtils.canUserEdit(userName)) {
+                    if (SecurityUtils.canUserEdit(messageContext, userName)) {
                         handleDelete(performedBy, messageContext, axis2MessageContext);
                     } else {
                         Utils.sendForbiddenFaultResponse(axis2MessageContext);

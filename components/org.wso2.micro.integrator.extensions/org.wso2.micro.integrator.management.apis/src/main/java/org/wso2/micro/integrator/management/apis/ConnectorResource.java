@@ -103,7 +103,7 @@ public class ConnectorResource implements MiApiResource {
         } else {
             String userName = (String) messageContext.getProperty(USERNAME_PROPERTY);
             try {
-                if (SecurityUtils.canUserEdit(userName)) {
+                if (SecurityUtils.canUserEdit(messageContext, userName)) {
                     if (!JsonUtil.hasAJsonPayload(axis2MessageContext)) {
                         Utils.setJsonPayLoad(axis2MessageContext, Utils.createJsonErrorObject("POST method required json payload"));
                     } else {

@@ -78,7 +78,7 @@ public class ConfigsResource implements MiApiResource {
                     break;
                 }
                 case Constants.HTTP_PUT: {
-                    if (SecurityUtils.canUserEdit(userName)) {
+                    if (SecurityUtils.canUserEdit(messageContext, userName)) {
                         response = handlePut(axis2MessageContext);
                     } else {
                         Utils.sendForbiddenFaultResponse(axis2MessageContext);
