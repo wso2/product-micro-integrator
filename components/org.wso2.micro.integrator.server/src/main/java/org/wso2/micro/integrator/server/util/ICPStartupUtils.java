@@ -82,18 +82,20 @@ public class ICPStartupUtils {
             }
         }
 
-        // Generate new ID as: <configured-runtime-id>-<uuid> if configured; else <uuid>
-        String configuredPrefix = null;
+        // Use configured runtime ID if available
+        String newRuntimeId = null;
         Object configuredRuntimeId = getConfigs().get(ICP_CONFIG_RUNTIME);
         if (configuredRuntimeId != null) {
             String cfgId = configuredRuntimeId.toString().trim();
             if (!cfgId.isEmpty()) {
-                configuredPrefix = cfgId;
+                newRuntimeId = cfgId;
             }
         }
-
-        String newRuntimeId = (configuredPrefix != null ? configuredPrefix + "-" : "")
-                + UUID.randomUUID();
+        
+        log.info("No existing ICP runtime ID found. " + (newRuntimeId != null
+                ? "Using configured runtime ID: " + newRuntimeId
+                : "No configured runtime ID found, generating a new one."));
+        newRuntimeId = UUID.randomUUID().toString();
         Files.writeString(runtimeIdPath, newRuntimeId);
         runtimeId = newRuntimeId;
         setRuntimeIdSystemProperty(newRuntimeId);
