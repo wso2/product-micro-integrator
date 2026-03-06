@@ -2112,7 +2112,7 @@
         <version.apache.felix.gogo.command>1.1.2</version.apache.felix.gogo.command>
         <version.equinox.p2.publisher.eclipse>1.6.0</version.equinox.p2.publisher.eclipse>
         <version.equinox.p2.publisher>1.9.100</version.equinox.p2.publisher>
-        <version.equinox.p2.transport.ecf>1.4.200</version.equinox.p2.transport.ecf>
+        <version.equinox.p2.transport.ecf>1.4.600</version.equinox.p2.transport.ecf>
 
         <!-- javax.xml.soap version -->
         <javax.xml.soap-api.version>1.4.0</javax.xml.soap-api.version>
