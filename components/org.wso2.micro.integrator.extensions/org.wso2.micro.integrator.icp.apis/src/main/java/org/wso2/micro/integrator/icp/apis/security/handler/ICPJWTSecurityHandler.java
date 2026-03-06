@@ -84,12 +84,15 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
     protected Boolean authenticate(MessageContext messageContext, String authHeaderToken) {
         if (jwtHmacSecret == null || jwtHmacSecret.trim().isEmpty()) {
             // ConfigurationLoader does not call property setters, so read directly from deployment.toml.
-            // resolveSecret() handles Secure Vault aliases (e.g. $secret{icp.jwt.hmac.secret}).
+            // resolveSecret() handles Secure Vault aliases (e.g. $secret{icp_config.secret}).
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Attempting to retrieve ICP shared secret from configuration");
+            }
             Object secretObj = ConfigParser.getParsedConfigs().get(Constants.ICP_SHARED_SECRET);
             if (secretObj != null && !secretObj.toString().trim().isEmpty()) {
                 jwtHmacSecret = resolveSecret(secretObj.toString().trim());
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("JWT HMAC secret loaded from deployment.toml");
+                    LOG.debug("Successfully resolved ICP JWT HMAC secret from configuration");
                 }
             }
         }

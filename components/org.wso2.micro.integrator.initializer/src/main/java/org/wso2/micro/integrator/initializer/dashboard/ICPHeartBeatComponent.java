@@ -731,7 +731,7 @@ public class ICPHeartBeatComponent {
             String jwtHmacSecret = getConfigValue(ICP_SHARED_SECRET);
             if (StringUtils.isEmpty(jwtHmacSecret) || jwtHmacSecret.trim().isEmpty()) {
                 throw new Exception("Missing required configuration: '" + ICP_SHARED_SECRET
-                        + "'. Configure a secure HMAC secret to enable ICP heartbeat authentication.");
+                        + "'. Configure a secure shared secret (HMAC key) to enable ICP heartbeat authentication.");
             }
             HMACJWTTokenGenerator hmacJWTTokenGenerator = new HMACJWTTokenGenerator(jwtHmacSecret);
             String issuer = getConfigValue(ICP_JWT_ISSUER, DEFAULT_JWT_ISSUER);
