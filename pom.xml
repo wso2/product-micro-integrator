@@ -2112,7 +2112,7 @@
         <version.apache.felix.gogo.command>1.1.2</version.apache.felix.gogo.command>
         <version.equinox.p2.publisher.eclipse>1.6.0</version.equinox.p2.publisher.eclipse>
         <version.equinox.p2.publisher>1.9.100</version.equinox.p2.publisher>
-        <version.equinox.p2.transport.ecf>1.4.200</version.equinox.p2.transport.ecf>
+        <version.equinox.p2.transport.ecf>1.4.600</version.equinox.p2.transport.ecf>
 
         <!-- javax.xml.soap version -->
         <javax.xml.soap-api.version>1.4.0</javax.xml.soap-api.version>
@@ -2177,7 +2177,7 @@
 
         <carbon.analytics.common.version>5.2.67</carbon.analytics.common.version>
         <carbon.analytics.common.imp.pkg.version>[5.2.0, 6.0.0)</carbon.analytics.common.imp.pkg.version>
-        <fasterxml.jackson.version>2.21.0</fasterxml.jackson.version>
+        <fasterxml.jackson.version>2.21.1</fasterxml.jackson.version>
         <fasterxml.jackson.datatype.version>2.21.0</fasterxml.jackson.datatype.version>
         <fasterxml.jackson.annotations.version>2.21</fasterxml.jackson.annotations.version>
         <com.hubspot.immutables.version>1.11.3</com.hubspot.immutables.version>
