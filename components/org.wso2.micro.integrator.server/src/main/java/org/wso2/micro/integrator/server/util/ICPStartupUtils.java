@@ -82,24 +82,39 @@ public class ICPStartupUtils {
             }
         }
 
-        // Generate new ID as: <configured-runtime-id>-<uuid> if configured; else <uuid>
-        String configuredPrefix = null;
+        // Use configured runtime ID if available
         Object configuredRuntimeId = getConfigs().get(ICP_CONFIG_RUNTIME);
         if (configuredRuntimeId != null) {
             String cfgId = configuredRuntimeId.toString().trim();
             if (!cfgId.isEmpty()) {
-                configuredPrefix = cfgId;
+                if (log.isDebugEnabled()) {
+                    log.debug("Using configured runtime ID: " + cfgId);
+                }
+                runtimeId = cfgId;
+                if (log.isDebugEnabled()) {
+                    log.debug("No existing ICP runtime ID found. Using configured runtime ID: " + runtimeId
+                            + " and persisting it for future use.");
+                }
+                persistAndSetRuntimeId(runtimeIdPath);
+                return;
             }
         }
-
-        String newRuntimeId = (configuredPrefix != null ? configuredPrefix + "-" : "")
-                + UUID.randomUUID();
-        Files.writeString(runtimeIdPath, newRuntimeId);
-        runtimeId = newRuntimeId;
-        setRuntimeIdSystemProperty(newRuntimeId);
         if (log.isDebugEnabled()) {
-            log.debug("Generated new runtime ID: " + newRuntimeId);
+            log.debug("No configured runtime ID found, generating a new one.");
         }
+        runtimeId = UUID.randomUUID().toString();
+        if (log.isDebugEnabled()) {
+            log.debug("Generated new runtime ID: " + runtimeId);
+        }
+        persistAndSetRuntimeId(runtimeIdPath);
+        if (log.isDebugEnabled()) {
+            log.debug("Persisted the generated runtime ID: " + runtimeId);
+        }
+    }
+
+    private static void persistAndSetRuntimeId(Path runtimeIdPath) throws IOException {
+        Files.writeString(runtimeIdPath, runtimeId);
+        setRuntimeIdSystemProperty(runtimeId);
     }
 
     /**
