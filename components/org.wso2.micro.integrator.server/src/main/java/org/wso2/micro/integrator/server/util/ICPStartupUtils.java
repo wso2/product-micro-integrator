@@ -83,24 +83,26 @@ public class ICPStartupUtils {
         }
 
         // Use configured runtime ID if available
-        String newRuntimeId = null;
         Object configuredRuntimeId = getConfigs().get(ICP_CONFIG_RUNTIME);
         if (configuredRuntimeId != null) {
             String cfgId = configuredRuntimeId.toString().trim();
             if (!cfgId.isEmpty()) {
-                newRuntimeId = cfgId;
+                runtimeId = cfgId;
+                if (log.isDebugEnabled()) {
+                    log.debug("No existing ICP runtime ID found. Using configured runtime ID: " + runtimeId
+                            + " and persisting it for future use.");
+                }
+                Files.writeString(runtimeIdPath, runtimeId);
+                setRuntimeIdSystemProperty(runtimeId);
+                return;
             }
         }
-        
-        log.info("No existing ICP runtime ID found. " + (newRuntimeId != null
-                ? "Using configured runtime ID: " + newRuntimeId
-                : "No configured runtime ID found, generating a new one."));
-        newRuntimeId = UUID.randomUUID().toString();
-        Files.writeString(runtimeIdPath, newRuntimeId);
-        runtimeId = newRuntimeId;
-        setRuntimeIdSystemProperty(newRuntimeId);
+        log.info("No configured runtime ID found, generating a new one.");
+        runtimeId = UUID.randomUUID().toString();
+        Files.writeString(runtimeIdPath, runtimeId);
+        setRuntimeIdSystemProperty(runtimeId);
         if (log.isDebugEnabled()) {
-            log.debug("Generated new runtime ID: " + newRuntimeId);
+            log.debug("Persisted the generated runtime ID: " + runtimeId);
         }
     }
 
