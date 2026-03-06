@@ -104,7 +104,12 @@ public class RegistryPropertiesResource implements MiApiResource {
         case HTTP_POST:
             try {
                 axis2MessageContext.removeProperty(Constants.NO_ENTITY_BODY);
-                if (SecurityUtils.isAdmin(messageContext.getProperty(USERNAME_PROPERTY).toString())) {
+                String username = Utils.getStringPropertyFromMessageContext(messageContext, USERNAME_PROPERTY);
+                if (username != null && SecurityUtils.isAdmin(messageContext, username)) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Admin user '" + username + "' authorized to POST registry properties at: "
+                                + registryPath);
+                    }
                     handlePost(messageContext, axis2MessageContext, registryPath, validatedPath);
                 } else {
                     Utils.sendForbiddenFaultResponse(axis2MessageContext);
@@ -118,7 +123,12 @@ public class RegistryPropertiesResource implements MiApiResource {
         case HTTP_DELETE:
             try {
                 axis2MessageContext.removeProperty(Constants.NO_ENTITY_BODY);
-                if (SecurityUtils.isAdmin(messageContext.getProperty(USERNAME_PROPERTY).toString())) {
+                String username = Utils.getStringPropertyFromMessageContext(messageContext, USERNAME_PROPERTY);
+                if (username != null && SecurityUtils.isAdmin(messageContext, username)) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Admin user '" + username + "' authorized to DELETE registry properties at: "
+                                + registryPath);
+                    }
                     handleDelete(messageContext, axis2MessageContext, registryPath, validatedPath);
                 } else {
                     Utils.sendForbiddenFaultResponse(axis2MessageContext);

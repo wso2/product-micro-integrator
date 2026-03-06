@@ -106,7 +106,7 @@ public class ProxyServiceResource extends APIResource {
         } else {
             String userName = (String) messageContext.getProperty(USERNAME_PROPERTY);
             try {
-                if (SecurityUtils.canUserEdit(userName)) {
+                if (SecurityUtils.canUserEdit(messageContext, userName)) {
                     if (!JsonUtil.hasAJsonPayload(axis2MessageContext)) {
                         Utils.setJsonPayLoad(axis2MessageContext, Utils.createJsonErrorObject("JSON payload is missing"));
                         return true;

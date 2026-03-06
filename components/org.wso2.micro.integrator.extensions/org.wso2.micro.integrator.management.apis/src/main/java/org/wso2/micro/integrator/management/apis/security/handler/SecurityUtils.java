@@ -20,6 +20,8 @@ package org.wso2.micro.integrator.management.apis.security.handler;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.crypto.CryptoConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -35,6 +37,8 @@ import java.util.Map;
 import javax.xml.namespace.QName;
 
 public class SecurityUtils {
+
+    private static final Log LOG = LogFactory.getLog(SecurityUtils.class);
 
     /**
      * Returns the transport header map of a given axis2 message context.
@@ -109,17 +113,71 @@ public class SecurityUtils {
     /**
      * Method to assert if a user is an admin.
      *
+     * Note: For better performance, use isAdmin(MessageContext, String) when MessageContext is available,
+     * as it can leverage the IS_ADMIN_USER property set by authentication/authorization handlers.
+     *
      * @param username the user to be validated as an admin
      * @return true if the admin role is assigned to the user
      * @throws UserStoreException if any error occurs while retrieving the user store manager or reading the user realm
      *                            configuration
      */
     public static boolean isAdmin(String username) throws UserStoreException {
+        // Early null check to prevent NPEs in user store methods
+        if (username == null) {
+            return false;
+        }
+        // Fall back to user store check
         if (isFileBasedUserStoreEnabled()) {
             return FileBasedUserStoreManager.getUserStoreManager().isAdmin(username);
         } else {
             return MicroIntegratorSecurityUtils.isAdmin(username);
         }
+    }
+
+    /**
+     * Method to assert if a user is an admin, with support for generic IS_ADMIN_USER property.
+     * This method first checks if the IS_ADMIN_USER property is set in the MessageContext
+     * (which can be set by any authentication/authorization handler such as ICP JWT, OAuth, etc.).
+     * If not set, it falls back to the regular user store lookup.
+     *
+     * SECURITY: The cached property only applies to the logged-in user. If checking a different user,
+     * this method will fall back to user store query.
+     *
+     * @param messageContext the message context that may contain the IS_ADMIN_USER property
+     * @param username the user to be validated as an admin
+     * @return true if the admin role is assigned to the user or if IS_ADMIN_USER property is true
+     * @throws UserStoreException if any error occurs while retrieving the user store manager or reading the user realm
+     *                            configuration
+     */
+    public static boolean isAdmin(MessageContext messageContext, String username) throws UserStoreException {
+        // Early null check to prevent NPEs in user store methods
+        if (username == null) {
+            return false;
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Checking admin status for user: " + username);
+        }
+        // First check if IS_ADMIN_USER property is set by authentication handler
+        if (messageContext != null) {
+            Object isAdminProperty = messageContext.getProperty(Constants.IS_ADMIN_USER_PROPERTY);
+            if (Boolean.TRUE.equals(isAdminProperty)) {
+                // SECURITY: Only use cached property if checking the logged-in user
+                Object loggedInUserObj = messageContext.getProperty(Constants.USERNAME_PROPERTY);
+                if (loggedInUserObj != null) {
+                    String loggedInUser = loggedInUserObj.toString();
+                    if (username.equals(loggedInUser)) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Admin status retrieved from cached IS_ADMIN_USER property for user: "
+                                    + username);
+                        }
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Fall back to regular user store check
+        return isAdmin(username);
     }
 
     /**
@@ -145,6 +203,28 @@ public class SecurityUtils {
         if (userName == null) {
             return true;
         }
-        return isAdmin(userName) || !isNonAdminUsersReadOnly();
+        // Return true if non-admin users can edit, or if user is admin (short-circuits to avoid unnecessary lookup)
+        return !isNonAdminUsersReadOnly() || isAdmin(userName);
+    }
+
+    /**
+     * Determines if the specified user has permission to edit, with support for generic IS_ADMIN_USER property.
+     * This method first checks if the IS_ADMIN_USER property is set in the MessageContext
+     * (which can be set by any authentication/authorization handler such as ICP JWT, OAuth, etc.).
+     *
+     * Admin users always have edit permissions. For non-admin users, the edit permission depends
+     * on the configuration: if make_non_admin_users_read_only == true, they cannot edit; otherwise, they can.
+     *
+     * @param messageContext the message context that may contain the IS_ADMIN_USER property
+     * @param userName the name of the user to check for edit permissions
+     * @return {@code true} if the user has edit permissions, {@code false} otherwise
+     * @throws UserStoreException if there is an error accessing the user store
+     */
+    public static boolean canUserEdit(MessageContext messageContext, String userName) throws UserStoreException {
+        if (userName == null) {
+            return true;
+        }
+        // Return true if non-admin users can edit, or if user is admin (short-circuits to avoid unnecessary lookup)
+        return !isNonAdminUsersReadOnly() || isAdmin(messageContext, userName);
     }
 }

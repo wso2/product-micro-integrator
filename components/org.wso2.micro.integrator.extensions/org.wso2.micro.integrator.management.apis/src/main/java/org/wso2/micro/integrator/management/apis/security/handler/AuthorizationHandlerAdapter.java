@@ -60,7 +60,7 @@ public abstract class AuthorizationHandlerAdapter extends SecurityHandlerAdapter
         }
 
         if (Objects.nonNull(userName)) {
-            if (authorize(userName)) {
+            if (authorize(userName, messageContext)) {
                 return true;
             } else {
                 SecurityUtils.setStatusCode(messageContext, AuthConstants.SC_FORBIDDEN);
@@ -74,10 +74,27 @@ public abstract class AuthorizationHandlerAdapter extends SecurityHandlerAdapter
     }
 
     /**
-     * Executes the authentication logic relevant to the handler.
+     * Executes the authorization logic relevant to the handler.
+     * Default implementation calls authorize(String) for backward compatibility.
+     * Implementations should override this method if they need to set properties in the MessageContext
+     * (e.g., IS_ADMIN_USER_PROPERTY if checking admin status).
      *
      * @param userName user name of the logged in user
-     * @return Boolean authenticated
+     * @param messageContext the message context where properties can be set
+     * @return Boolean authorized
+     */
+    protected Boolean authorize(String userName, MessageContext messageContext) {
+        // Default implementation calls the original method for backward compatibility
+        return authorize(userName);
+    }
+
+    /**
+     * Executes the authorization logic relevant to the handler.
+     * This method is called by the default implementation of authorize(String, MessageContext).
+     * Legacy implementations should implement this method.
+     *
+     * @param userName user name of the logged in user
+     * @return Boolean authorized
      */
     protected abstract Boolean authorize(String userName);
 

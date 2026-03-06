@@ -113,7 +113,7 @@ public class MessageProcessorResource extends APIResource {
         } else if (Utils.isDoingPOST(axis2MessageContext)) {
             String userName = (String) messageContext.getProperty(USERNAME_PROPERTY);
             try {
-                if (SecurityUtils.canUserEdit(userName)) {
+                if (SecurityUtils.canUserEdit(messageContext, userName)) {
                     if (!JsonUtil.hasAJsonPayload(axis2MessageContext)) {
                         return false;
                     }

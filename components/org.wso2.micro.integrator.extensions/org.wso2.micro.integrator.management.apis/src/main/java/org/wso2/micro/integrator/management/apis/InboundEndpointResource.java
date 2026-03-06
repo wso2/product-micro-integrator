@@ -91,7 +91,7 @@ public class InboundEndpointResource extends APIResource {
         } else {
             String userName = (String) messageContext.getProperty(USERNAME_PROPERTY);
             try {
-                if (SecurityUtils.canUserEdit(userName)) {
+                if (SecurityUtils.canUserEdit(messageContext, userName)) {
                     handlePost(messageContext, axisMsgCtx);
                 } else {
                     Utils.sendForbiddenFaultResponse(axisMsgCtx);

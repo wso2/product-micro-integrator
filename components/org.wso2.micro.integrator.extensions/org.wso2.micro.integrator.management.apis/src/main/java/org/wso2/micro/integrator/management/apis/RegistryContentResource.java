@@ -117,7 +117,11 @@ public class RegistryContentResource implements MiApiResource {
         } else {
             try {
                 axis2MessageContext.removeProperty(Constants.NO_ENTITY_BODY);
-                if (SecurityUtils.isAdmin(messageContext.getProperty(USERNAME_PROPERTY).toString())) {
+                String username = Utils.getStringPropertyFromMessageContext(messageContext, USERNAME_PROPERTY);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Processing registry " + httpMethod + " request for user: " + username);
+                }
+                if (username != null && SecurityUtils.isAdmin(messageContext, username)) {
                     switch (httpMethod) {
                     case HTTP_POST:
                         handlePost(messageContext, axis2MessageContext, registryPath, validatedPath);

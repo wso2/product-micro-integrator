@@ -96,7 +96,7 @@ public class LoginResource implements MiApiResource {
         JWTTokenInfoDTO newToken = new JWTTokenInfoDTO(username);
         newToken.setToken(randomUUIDString);
         try {
-            if (SecurityUtils.isAdmin(username)) {
+            if (SecurityUtils.isAdmin(messageContext, username)) {
                 newToken.setScope(AuthConstants.JWT_TOKEN_ADMIN_SCOPE);
             } else {
                 newToken.setScope(AuthConstants.JWT_TOKEN_DEFAULT_SCOPE);

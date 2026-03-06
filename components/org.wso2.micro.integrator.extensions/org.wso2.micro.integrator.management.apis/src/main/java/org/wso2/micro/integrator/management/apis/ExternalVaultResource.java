@@ -69,7 +69,7 @@ public class ExternalVaultResource extends APIResource {
             if (Utils.isDoingPOST(axis2MessageContext)) {
                 String userName = (String) messageContext.getProperty(USERNAME_PROPERTY);
                 try {
-                    if (SecurityUtils.canUserEdit(userName)) {
+                    if (SecurityUtils.canUserEdit(messageContext, userName)) {
                         handleHashiCorpPost(axis2MessageContext);
                     } else {
                         Utils.sendForbiddenFaultResponse(axis2MessageContext);
