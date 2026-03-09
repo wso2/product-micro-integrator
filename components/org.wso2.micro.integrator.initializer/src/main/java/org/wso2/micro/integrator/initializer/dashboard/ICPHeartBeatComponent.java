@@ -22,6 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -60,6 +61,9 @@ import org.wso2.micro.core.util.StringUtils;
 import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 import org.wso2.micro.integrator.initializer.deployment.application.deployer.CappDeployer;
 import org.wso2.micro.integrator.registry.MicroIntegratorRegistry;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -104,6 +108,7 @@ public class ICPHeartBeatComponent {
     private static volatile ScheduledExecutorService heartbeatExecutor = null;
     private static volatile boolean shutdownHookRegistered = false;
     private static volatile boolean sslWarnLogged = false;
+    private static volatile SecretResolver secretResolver = null;
 
     /**
      * Returns the runtime ID from cache or file.
@@ -728,10 +733,18 @@ public class ICPHeartBeatComponent {
                 return cachedJwtToken;
             }
 
-            String jwtHmacSecret = getConfigValue(ICP_SHARED_SECRET);
-            if (StringUtils.isEmpty(jwtHmacSecret) || jwtHmacSecret.trim().isEmpty()) {
+            String jwtHmacSecretRaw = getConfigValue(ICP_SHARED_SECRET);
+            if (StringUtils.isEmpty(jwtHmacSecretRaw) || jwtHmacSecretRaw.trim().isEmpty()) {
                 throw new Exception("Missing required configuration: '" + ICP_SHARED_SECRET
                         + "'. Configure a secure shared secret (HMAC key) to enable ICP heartbeat authentication.");
+            }
+            // Resolve Secure Vault alias if present (e.g., $secret{icp_config.secret})
+            String jwtHmacSecret = resolveSecret(jwtHmacSecretRaw);
+            if (StringUtils.isEmpty(jwtHmacSecret) || jwtHmacSecret.trim().isEmpty()) {
+                throw new Exception("Failed to resolve ICP shared secret. The resolved value is empty.");
+            }
+            if (StringUtils.isEmpty(jwtHmacSecret) || jwtHmacSecret.trim().isEmpty()) {
+                throw new Exception("Failed to resolve ICP shared secret. The resolved value is empty.");
             }
             HMACJWTTokenGenerator hmacJWTTokenGenerator = new HMACJWTTokenGenerator(jwtHmacSecret);
             String issuer = getConfigValue(ICP_JWT_ISSUER, DEFAULT_JWT_ISSUER);
@@ -847,6 +860,48 @@ public class ICPHeartBeatComponent {
     private static String getConfigValue(String key) {
         Object value = configs.get(key);
         return (value != null) ? value.toString() : null;
+    }
+
+    /**
+     * Resolves a secret value, handling Secure Vault aliases (e.g., $secret{icp_config.secret}).
+     * If the value contains a Secure Vault alias, it will be resolved using the SecretResolver.
+     * Otherwise, the value is returned as-is.
+     *
+     * @param value the value to resolve (may be a plain value or a Secure Vault alias)
+     * @return the resolved secret value
+     */
+    private static String resolveSecret(String value) {
+        String alias = MiscellaneousUtil.getProtectedToken(value);
+        if (alias == null || alias.isEmpty()) {
+            return value;
+        }
+        try {
+            SecretResolver resolver = getSecretResolver();
+            if (resolver == null || !resolver.isInitialized()) {
+                log.warn("Secure Vault is not initialized for ICP shared secret. Using configured value as-is.");
+                return value;
+            }
+            return resolver.resolve(alias);
+        } catch (Exception e) {
+            log.error("Error resolving ICP shared secret from Secure Vault. Using configured value as-is.", e);
+            return value;
+        }
+    }
+
+    /**
+     * Gets or creates the SecretResolver instance for resolving Secure Vault aliases.
+     *
+     * @return the SecretResolver instance
+     */
+    private static SecretResolver getSecretResolver() {
+        if (secretResolver == null) {
+            synchronized (ICPHeartBeatComponent.class) {
+                if (secretResolver == null) {
+                    secretResolver = SecretResolverFactory.create((OMElement) null, false);
+                }
+            }
+        }
+        return secretResolver;
     }
 
     /**

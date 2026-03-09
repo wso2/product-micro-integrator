@@ -98,7 +98,7 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
         }
         if (jwtHmacSecret == null || jwtHmacSecret.trim().isEmpty()) {
             LOG.error("JWT HMAC secret is not configured for ICP JWT security handler. "
-                    + "Set icp_config.jwt_hmac_secret in deployment.toml");
+                    + "Set icp_config.secret in deployment.toml");
             return false;
         }
         // Validate HMAC JWT token

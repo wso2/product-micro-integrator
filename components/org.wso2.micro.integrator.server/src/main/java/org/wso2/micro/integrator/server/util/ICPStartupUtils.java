@@ -89,32 +89,30 @@ public class ICPStartupUtils {
             if (!cfgId.isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("Using configured runtime ID: " + cfgId);
-                }
-                runtimeId = cfgId;
-                if (log.isDebugEnabled()) {
-                    log.debug("No existing ICP runtime ID found. Using configured runtime ID: " + runtimeId
+                    log.debug("No existing ICP runtime ID found. Using configured runtime ID: " + cfgId
                             + " and persisting it for future use.");
                 }
-                persistAndSetRuntimeId(runtimeIdPath);
+                persistAndSetRuntimeId(runtimeIdPath, cfgId);
                 return;
             }
         }
         if (log.isDebugEnabled()) {
             log.debug("No configured runtime ID found, generating a new one.");
         }
-        runtimeId = UUID.randomUUID().toString();
+        String generatedId = UUID.randomUUID().toString();
         if (log.isDebugEnabled()) {
-            log.debug("Generated new runtime ID: " + runtimeId);
+            log.debug("Generated new runtime ID: " + generatedId);
         }
-        persistAndSetRuntimeId(runtimeIdPath);
+        persistAndSetRuntimeId(runtimeIdPath, generatedId);
         if (log.isDebugEnabled()) {
-            log.debug("Persisted the generated runtime ID: " + runtimeId);
+            log.debug("Persisted the generated runtime ID: " + generatedId);
         }
     }
 
-    private static void persistAndSetRuntimeId(Path runtimeIdPath) throws IOException {
-        Files.writeString(runtimeIdPath, runtimeId);
-        setRuntimeIdSystemProperty(runtimeId);
+    private static void persistAndSetRuntimeId(Path runtimeIdPath, String idTopersist) throws IOException {
+        Files.writeString(runtimeIdPath, idTopersist);
+        runtimeId = idTopersist;
+        setRuntimeIdSystemProperty(idTopersist);
     }
 
     /**
