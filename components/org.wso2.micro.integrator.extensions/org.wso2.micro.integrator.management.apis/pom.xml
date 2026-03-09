@@ -87,6 +87,7 @@
                             com.nimbusds.jwt;version="${nimbus-jose.orbit.imp.pkg.version}",
                             org.osgi.service.cm;version=${osgi.service.cm.version},
                             org.apache.commons.configuration2;version="${commons.configuration2.imp.pkg.version}",
+                            org.wso2.micro.integrator.initializer.utils,
                             *;resolution:=optional
                         </Import-Package>
                     </instructions>
