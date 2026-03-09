@@ -86,12 +86,21 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
             }
             Object secretObj = ConfigParser.getParsedConfigs().get(Constants.ICP_SHARED_SECRET);
             if (secretObj != null && !secretObj.toString().trim().isEmpty()) {
-                jwtHmacSecret = SecurityUtils.resolveSecret(
-                        secretObj.toString().trim(),
-                        ICPApiServiceComponent::getSecretCallbackHandlerService
-                );
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Successfully resolved ICP JWT HMAC secret from configuration");
+                String originalValue = secretObj.toString().trim();
+                try {
+                    jwtHmacSecret = SecurityUtils.resolveSecret(
+                            originalValue,
+                            ICPApiServiceComponent::getSecretCallbackHandlerService
+                    );
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Successfully resolved ICP JWT HMAC secret from configuration");
+                    }
+                } catch (IllegalStateException e) {
+                    // Secret placeholder detected but resolution failed (Secure Vault not ready)
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("ICP JWT HMAC secret not yet resolved from Secure Vault, will retry later: "
+                                + e.getMessage());
+                    }
                 }
             }
         }
@@ -188,15 +197,21 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
      */
     public void setJwtHmacSecret(String secret) {
         if (secret != null && !secret.trim().isEmpty()) {
-            String resolvedSecret = SecurityUtils.resolveSecret(
-                    secret,
-                    ICPApiServiceComponent::getSecretCallbackHandlerService
-            );
-            if (resolvedSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
-                LOG.warn("JWT HMAC secret should be at least 32 bytes. Using provided secret anyway.");
+            try {
+                String resolvedSecret = SecurityUtils.resolveSecret(
+                        secret,
+                        ICPApiServiceComponent::getSecretCallbackHandlerService
+                );
+                if (resolvedSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
+                    LOG.warn("JWT HMAC secret should be at least 32 bytes. Using provided secret anyway.");
+                }
+                this.jwtHmacSecret = resolvedSecret;
+                LOG.info("JWT HMAC secret configured from internal-apis.xml");
+            } catch (IllegalStateException e) {
+                // Secret placeholder detected but resolution failed (Secure Vault not ready)
+                LOG.warn("JWT HMAC secret not yet resolved from Secure Vault: " + e.getMessage()
+                        + ". Secret will need to be provided at runtime.");
             }
-            this.jwtHmacSecret = resolvedSecret;
-            LOG.info("JWT HMAC secret configured from internal-apis.xml");
         }
     }
 

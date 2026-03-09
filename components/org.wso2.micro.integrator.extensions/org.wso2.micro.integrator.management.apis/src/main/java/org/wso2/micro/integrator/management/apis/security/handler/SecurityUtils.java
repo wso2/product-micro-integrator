@@ -238,15 +238,23 @@ public class SecurityUtils {
      * If the value is not a Secure Vault alias (doesn't match the $secret{...} pattern),
      * it returns the value as-is.
      *
+     * If the value is a Secure Vault alias but resolution fails (e.g., Secure Vault not initialized,
+     * or alias not found), this method throws an IllegalStateException.
+     *
      * This method delegates to SecretResolverUtil for the actual resolution.
      *
      * Usage example:
      * <pre>
-     * String secret = SecurityUtils.resolveSecret(configuredValue);
+     * try {
+     *     String secret = SecurityUtils.resolveSecret(configuredValue);
+     * } catch (IllegalStateException e) {
+     *     // Handle unresolved secret
+     * }
      * </pre>
      *
      * @param value the value to resolve (may be a plain value or a Secure Vault alias like $secret{alias})
-     * @return the resolved secret value, or the original value if not an alias or if resolution fails
+     * @return the resolved secret value, or the original value if not an alias
+     * @throws IllegalStateException if the value is a secret placeholder but resolution fails
      */
     public static String resolveSecret(String value) {
         return SecretResolverUtil.resolveSecret(value);
@@ -259,20 +267,28 @@ public class SecurityUtils {
      * If the value is not a Secure Vault alias (doesn't match the $secret{...} pattern),
      * it returns the value as-is.
      *
+     * If the value is a Secure Vault alias but resolution fails (e.g., Secure Vault not initialized,
+     * or alias not found), this method throws an IllegalStateException.
+     *
      * This method delegates to SecretResolverUtil for the actual resolution.
      *
      * Usage example:
      * <pre>
-     * String secret = SecurityUtils.resolveSecret(
-     *     configuredValue,
-     *     () -> ICPApiServiceComponent.getSecretCallbackHandlerService()
-     * );
+     * try {
+     *     String secret = SecurityUtils.resolveSecret(
+     *         configuredValue,
+     *         () -> ICPApiServiceComponent.getSecretCallbackHandlerService()
+     *     );
+     * } catch (IllegalStateException e) {
+     *     // Handle unresolved secret
+     * }
      * </pre>
      *
      * @param value the value to resolve (may be a plain value or a Secure Vault alias like $secret{alias})
      * @param secretCallbackHandlerServiceSupplier supplier that provides the SecretCallbackHandlerService
      *                                             (e.g., () -> ICPApiServiceComponent.getSecretCallbackHandlerService())
-     * @return the resolved secret value, or the original value if not an alias or if resolution fails
+     * @return the resolved secret value, or the original value if not an alias
+     * @throws IllegalStateException if the value is a secret placeholder but resolution fails
      */
     public static String resolveSecret(String value, Supplier<SecretCallbackHandlerService> secretCallbackHandlerServiceSupplier) {
         return SecretResolverUtil.resolveSecret(value, secretCallbackHandlerServiceSupplier);

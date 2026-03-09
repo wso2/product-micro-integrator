@@ -48,7 +48,7 @@ import org.wso2.micro.integrator.ndatasource.capp.deployer.DataSourceCappDeploye
 @Component(name = "org.wso2.micro.integrator.initializer.deployment.AppDeployerServiceComponent", immediate = true)
 public class AppDeployerServiceComponent {
 
-    private static SecretCallbackHandlerService secretCallbackHandlerService;
+    private static volatile SecretCallbackHandlerService secretCallbackHandlerService;
     private static UserStoreTemporaryService userStoreTemporaryService;
     private static final Log log = LogFactory.getLog(AppDeployerServiceComponent.class);
 

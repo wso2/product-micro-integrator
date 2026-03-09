@@ -38,12 +38,6 @@ public class SecretResolverUtil {
     private static final Log LOG = LogFactory.getLog(SecretResolverUtil.class);
 
     /**
-     * Thread-local cache for SecretResolver instances.
-     * Each thread can have its own resolver to avoid synchronization overhead.
-     */
-    private static final ThreadLocal<SecretResolver> secretResolverCache = new ThreadLocal<>();
-
-    /**
      * Private constructor to prevent instantiation.
      */
     private SecretResolverUtil() {
@@ -56,13 +50,22 @@ public class SecretResolverUtil {
      * If the value is not a Secure Vault alias (doesn't match the $secret{...} pattern),
      * it returns the value as-is.
      *
+     * If the value is a Secure Vault alias but resolution fails (e.g., Secure Vault not initialized,
+     * or alias not found), this method throws an IllegalStateException to prevent using unresolved
+     * secret placeholders.
+     *
      * Usage example:
      * <pre>
-     * String secret = SecretResolverUtil.resolveSecret(configuredValue);
+     * try {
+     *     String secret = SecretResolverUtil.resolveSecret(configuredValue);
+     * } catch (IllegalStateException e) {
+     *     // Handle unresolved secret
+     * }
      * </pre>
      *
      * @param value the value to resolve (may be a plain value or a Secure Vault alias like $secret{alias})
-     * @return the resolved secret value, or the original value if not an alias or if resolution fails
+     * @return the resolved secret value, or the original value if not an alias
+     * @throws IllegalStateException if the value is a secret placeholder but resolution fails
      */
     public static String resolveSecret(String value) {
         return resolveSecret(value, AppDeployerServiceComponent::getSecretCallbackHandlerService);
@@ -75,58 +78,75 @@ public class SecretResolverUtil {
      * If the value is not a Secure Vault alias (doesn't match the $secret{...} pattern),
      * it returns the value as-is.
      *
-     * This method creates and initializes a SecretResolver on demand using the provided
-     * SecretCallbackHandlerService supplier. The resolver is thread-safe through thread-local caching.
+     * If the value is a Secure Vault alias but resolution fails (e.g., Secure Vault not initialized,
+     * or alias not found), this method throws an IllegalStateException to prevent using unresolved
+     * secret placeholders.
+     *
+     * This method creates and initializes a fresh SecretResolver for each call using the provided
+     * SecretCallbackHandlerService supplier, ensuring the resolver uses the correct service instance.
      *
      * Usage example:
      * <pre>
-     * String secret = SecretResolverUtil.resolveSecret(
-     *     configuredValue,
-     *     () -> ICPApiServiceComponent.getSecretCallbackHandlerService()
-     * );
+     * try {
+     *     String secret = SecretResolverUtil.resolveSecret(
+     *         configuredValue,
+     *         () -> ICPApiServiceComponent.getSecretCallbackHandlerService()
+     *     );
+     * } catch (IllegalStateException e) {
+     *     // Handle unresolved secret
+     * }
      * </pre>
      *
      * @param value the value to resolve (may be a plain value or a Secure Vault alias like $secret{alias})
      * @param secretCallbackHandlerServiceSupplier supplier that provides the SecretCallbackHandlerService
      *                                             (e.g., () -> AppDeployerServiceComponent.getSecretCallbackHandlerService())
-     * @return the resolved secret value, or the original value if not an alias or if resolution fails
+     * @return the resolved secret value, or the original value if not an alias
+     * @throws IllegalStateException if the value is a secret placeholder but resolution fails
      */
     public static String resolveSecret(String value, Supplier<SecretCallbackHandlerService> secretCallbackHandlerServiceSupplier) {
         String alias = MiscellaneousUtil.getProtectedToken(value);
         if (alias == null || alias.isEmpty()) {
+            // Not a secret placeholder, return as-is
             return value;
         }
+        // Value is a secret placeholder like $secret{...}, must resolve it
         try {
             SecretResolver resolver = getOrCreateSecretResolver(secretCallbackHandlerServiceSupplier);
             if (resolver == null || !resolver.isInitialized()) {
-                LOG.warn("Secure Vault is not initialized. Using configured value as-is.");
-                return value;
+                String errorMsg = "Secure Vault is not initialized but secret placeholder detected: " + value;
+                LOG.error(errorMsg);
+                throw new IllegalStateException(errorMsg);
             }
-            return MiscellaneousUtil.resolve(alias, resolver);
+            String resolved = resolver.resolve(alias);
+            // Verify that resolution succeeded (resolved value should not contain $secret{)
+            if (resolved != null && resolved.startsWith("$secret{")) {
+                String errorMsg = "Failed to resolve secret placeholder: " + value;
+                LOG.error(errorMsg);
+                throw new IllegalStateException(errorMsg);
+            }
+            return resolved;
+        } catch (IllegalStateException e) {
+            // Re-throw IllegalStateException (already logged above)
+            throw e;
         } catch (Exception e) {
-            LOG.error("Error resolving secret from Secure Vault. Using configured value as-is.", e);
-            return value;
+            String errorMsg = "Error resolving secret from Secure Vault for placeholder: " + value;
+            LOG.error(errorMsg, e);
+            throw new IllegalStateException(errorMsg, e);
         }
     }
 
     /**
-     * Gets or creates a SecretResolver instance, initializing it if necessary.
-     * This method uses thread-local caching to avoid creating multiple resolvers.
+     * Creates and initializes a SecretResolver instance using the provided supplier.
+     * Each call creates a fresh resolver to ensure it uses the correct SecretCallbackHandlerService.
      *
      * @param secretCallbackHandlerServiceSupplier supplier that provides the SecretCallbackHandlerService
      * @return an initialized SecretResolver instance, or null if initialization fails
      */
     private static SecretResolver getOrCreateSecretResolver(Supplier<SecretCallbackHandlerService> secretCallbackHandlerServiceSupplier) {
-        SecretResolver resolver = secretResolverCache.get();
-        if (resolver == null) {
-            resolver = SecretResolverFactory.create((OMElement) null, false);
-            secretResolverCache.set(resolver);
-        }
-        if (!resolver.isInitialized()) {
-            SecretCallbackHandlerService service = secretCallbackHandlerServiceSupplier.get();
-            if (service != null) {
-                resolver.init(service.getSecretCallbackHandler());
-            }
+        SecretResolver resolver = SecretResolverFactory.create((OMElement) null, false);
+        SecretCallbackHandlerService service = secretCallbackHandlerServiceSupplier.get();
+        if (service != null) {
+            resolver.init(service.getSecretCallbackHandler());
         }
         return resolver;
     }
