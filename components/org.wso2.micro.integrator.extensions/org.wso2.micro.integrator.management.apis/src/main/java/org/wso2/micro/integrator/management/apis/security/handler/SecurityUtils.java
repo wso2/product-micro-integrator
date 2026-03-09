@@ -238,8 +238,8 @@ public class SecurityUtils {
      * If the value is not a Secure Vault alias (doesn't match the $secret{...} pattern),
      * it returns the value as-is.
      *
-     * If the value is a Secure Vault alias but resolution fails (e.g., Secure Vault not initialized,
-     * or alias not found), this method throws an IllegalStateException.
+     * If the value is a Secure Vault alias but resolution fails (e.g., alias not found),
+     * this method may return {@code null}.
      *
      * This method delegates to SecretResolverUtil for the actual resolution.
      *
@@ -247,14 +247,17 @@ public class SecurityUtils {
      * <pre>
      * try {
      *     String secret = SecurityUtils.resolveSecret(configuredValue);
+     *     if (secret == null) {
+     *         // Handle unresolved secret (e.g., alias not found)
+     *     }
      * } catch (IllegalStateException e) {
-     *     // Handle unresolved secret
+     *     // Handle Secure Vault initialization errors
      * }
      * </pre>
      *
      * @param value the value to resolve (may be a plain value or a Secure Vault alias like $secret{alias})
-     * @return the resolved secret value, or the original value if not an alias
-     * @throws IllegalStateException if the value is a secret placeholder but resolution fails
+     * @return the resolved secret value, the original value if not an alias, or {@code null} if a secret alias cannot be resolved
+     * @throws IllegalStateException if Secure Vault is not properly initialized
      */
     public static String resolveSecret(String value) {
         return SecretResolverUtil.resolveSecret(value);
