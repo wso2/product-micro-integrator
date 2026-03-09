@@ -22,7 +22,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -60,10 +59,8 @@ import org.wso2.micro.application.deployer.config.Artifact;
 import org.wso2.micro.core.util.StringUtils;
 import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 import org.wso2.micro.integrator.initializer.deployment.application.deployer.CappDeployer;
+import org.wso2.micro.integrator.initializer.utils.SecretResolverUtil;
 import org.wso2.micro.integrator.registry.MicroIntegratorRegistry;
-import org.wso2.securevault.SecretResolver;
-import org.wso2.securevault.SecretResolverFactory;
-import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -108,7 +105,6 @@ public class ICPHeartBeatComponent {
     private static volatile ScheduledExecutorService heartbeatExecutor = null;
     private static volatile boolean shutdownHookRegistered = false;
     private static volatile boolean sslWarnLogged = false;
-    private static volatile SecretResolver secretResolver = null;
 
     /**
      * Returns the runtime ID from cache or file.
@@ -871,37 +867,7 @@ public class ICPHeartBeatComponent {
      * @return the resolved secret value
      */
     private static String resolveSecret(String value) {
-        String alias = MiscellaneousUtil.getProtectedToken(value);
-        if (alias == null || alias.isEmpty()) {
-            return value;
-        }
-        try {
-            SecretResolver resolver = getSecretResolver();
-            if (resolver == null || !resolver.isInitialized()) {
-                log.warn("Secure Vault is not initialized for ICP shared secret. Using configured value as-is.");
-                return value;
-            }
-            return resolver.resolve(alias);
-        } catch (Exception e) {
-            log.error("Error resolving ICP shared secret from Secure Vault. Using configured value as-is.", e);
-            return value;
-        }
-    }
-
-    /**
-     * Gets or creates the SecretResolver instance for resolving Secure Vault aliases.
-     *
-     * @return the SecretResolver instance
-     */
-    private static SecretResolver getSecretResolver() {
-        if (secretResolver == null) {
-            synchronized (ICPHeartBeatComponent.class) {
-                if (secretResolver == null) {
-                    secretResolver = SecretResolverFactory.create((OMElement) null, false);
-                }
-            }
-        }
-        return secretResolver;
+        return SecretResolverUtil.resolveSecret(value);
     }
 
     /**

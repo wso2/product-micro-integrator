@@ -260,4 +260,13 @@ public class AppDeployerServiceComponent {
         log.debug("SecretCallbackHandlerService unbound from the ESB environment");
         this.secretCallbackHandlerService = null;
     }
+
+    /**
+     * Returns the SecretCallbackHandlerService instance bound by OSGi.
+     *
+     * @return the SecretCallbackHandlerService instance, or null if not bound yet
+     */
+    public static SecretCallbackHandlerService getSecretCallbackHandlerService() {
+        return secretCallbackHandlerService;
+    }
 }

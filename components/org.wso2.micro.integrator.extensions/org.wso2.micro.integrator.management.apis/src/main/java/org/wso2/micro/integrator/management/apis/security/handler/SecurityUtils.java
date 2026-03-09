@@ -25,7 +25,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.crypto.CryptoConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.wso2.carbon.securevault.SecretCallbackHandlerService;
 import org.wso2.config.mapper.ConfigParser;
+import org.wso2.micro.integrator.initializer.utils.SecretResolverUtil;
 import org.wso2.micro.integrator.management.apis.Constants;
 import org.wso2.micro.integrator.security.MicroIntegratorSecurityUtils;
 import org.wso2.micro.integrator.security.user.api.UserStoreException;
@@ -34,6 +36,7 @@ import org.wso2.securevault.SecretResolver;
 import org.wso2.securevault.SecureVaultException;
 
 import java.util.Map;
+import java.util.function.Supplier;
 import javax.xml.namespace.QName;
 
 public class SecurityUtils {
@@ -226,5 +229,52 @@ public class SecurityUtils {
         }
         // Return true if non-admin users can edit, or if user is admin (short-circuits to avoid unnecessary lookup)
         return !isNonAdminUsersReadOnly() || isAdmin(messageContext, userName);
+    }
+
+    /**
+     * Resolves a Secure Vault alias to its actual secret value.
+     * Uses the default SecretCallbackHandlerService from AppDeployerServiceComponent.
+     *
+     * If the value is not a Secure Vault alias (doesn't match the $secret{...} pattern),
+     * it returns the value as-is.
+     *
+     * This method delegates to SecretResolverUtil for the actual resolution.
+     *
+     * Usage example:
+     * <pre>
+     * String secret = SecurityUtils.resolveSecret(configuredValue);
+     * </pre>
+     *
+     * @param value the value to resolve (may be a plain value or a Secure Vault alias like $secret{alias})
+     * @return the resolved secret value, or the original value if not an alias or if resolution fails
+     */
+    public static String resolveSecret(String value) {
+        return SecretResolverUtil.resolveSecret(value);
+    }
+
+    /**
+     * Resolves a Secure Vault alias to its actual secret value.
+     * Allows providing a custom SecretCallbackHandlerService supplier.
+     *
+     * If the value is not a Secure Vault alias (doesn't match the $secret{...} pattern),
+     * it returns the value as-is.
+     *
+     * This method delegates to SecretResolverUtil for the actual resolution.
+     *
+     * Usage example:
+     * <pre>
+     * String secret = SecurityUtils.resolveSecret(
+     *     configuredValue,
+     *     () -> ICPApiServiceComponent.getSecretCallbackHandlerService()
+     * );
+     * </pre>
+     *
+     * @param value the value to resolve (may be a plain value or a Secure Vault alias like $secret{alias})
+     * @param secretCallbackHandlerServiceSupplier supplier that provides the SecretCallbackHandlerService
+     *                                             (e.g., () -> ICPApiServiceComponent.getSecretCallbackHandlerService())
+     * @return the resolved secret value, or the original value if not an alias or if resolution fails
+     */
+    public static String resolveSecret(String value, Supplier<SecretCallbackHandlerService> secretCallbackHandlerServiceSupplier) {
+        return SecretResolverUtil.resolveSecret(value, secretCallbackHandlerServiceSupplier);
     }
 }
