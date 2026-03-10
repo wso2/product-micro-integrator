@@ -79,8 +79,8 @@ public class SecretResolverUtil {
      * it returns the value as-is.
      *
      * If the value is a Secure Vault alias but resolution fails (e.g., Secure Vault not initialized,
-     * or alias not found), this method throws an IllegalStateException to prevent using unresolved
-     * secret placeholders.
+     * alias not found, or resolution returns null), this method throws an IllegalStateException
+     * to prevent using unresolved secret placeholders in downstream operations.
      *
      * This method creates and initializes a fresh SecretResolver for each call using the provided
      * SecretCallbackHandlerService supplier, ensuring the resolver uses the correct service instance.
@@ -102,6 +102,7 @@ public class SecretResolverUtil {
      *                                             (e.g., () -> AppDeployerServiceComponent.getSecretCallbackHandlerService())
      * @return the resolved secret value, or the original value if not an alias
      * @throws IllegalStateException if the value is a secret placeholder but resolution fails
+     *         (including if the resolver returns null, indicating the alias was not found)
      */
     public static String resolveSecret(String value, Supplier<SecretCallbackHandlerService> secretCallbackHandlerServiceSupplier) {
         String alias = MiscellaneousUtil.getProtectedToken(value);
@@ -118,8 +119,15 @@ public class SecretResolverUtil {
                 throw new IllegalStateException(errorMsg);
             }
             String resolved = resolver.resolve(alias);
-            // Verify that resolution succeeded (resolved value should not contain $secret{)
-            if (resolved != null && resolved.startsWith("$secret{")) {
+            // Verify that resolution succeeded
+            // (resolved must not be null, indicating alias was found and resolved)
+            if (resolved == null) {
+                String errorMsg = "Secret alias not found or resolution returned null for placeholder: " + value;
+                LOG.error(errorMsg);
+                throw new IllegalStateException(errorMsg);
+            }
+            // Also check if resolution failed and returned the placeholder pattern
+            if (resolved.startsWith("$secret{")) {
                 String errorMsg = "Failed to resolve secret placeholder: " + value;
                 LOG.error(errorMsg);
                 throw new IllegalStateException(errorMsg);

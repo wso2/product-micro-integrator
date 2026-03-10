@@ -109,10 +109,10 @@ public class ICPStartupUtils {
         }
     }
 
-    private static void persistAndSetRuntimeId(Path runtimeIdPath, String idTopersist) throws IOException {
-        Files.writeString(runtimeIdPath, idTopersist);
-        runtimeId = idTopersist;
-        setRuntimeIdSystemProperty(idTopersist);
+    private static void persistAndSetRuntimeId(Path runtimeIdPath, String idToPersist) throws IOException {
+        Files.writeString(runtimeIdPath, idToPersist);
+        runtimeId = idToPersist;
+        setRuntimeIdSystemProperty(idToPersist);
     }
 
     /**

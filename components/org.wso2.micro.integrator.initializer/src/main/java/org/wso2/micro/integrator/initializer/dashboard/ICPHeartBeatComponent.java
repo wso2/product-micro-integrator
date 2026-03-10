@@ -736,12 +736,6 @@ public class ICPHeartBeatComponent {
             }
             // Resolve Secure Vault alias if present (e.g., $secret{icp_config.secret})
             String jwtHmacSecret = resolveSecret(jwtHmacSecretRaw);
-            if (StringUtils.isEmpty(jwtHmacSecret) || jwtHmacSecret.trim().isEmpty()) {
-                throw new Exception("Failed to resolve ICP shared secret. The resolved value is empty.");
-            }
-            if (StringUtils.isEmpty(jwtHmacSecret) || jwtHmacSecret.trim().isEmpty()) {
-                throw new Exception("Failed to resolve ICP shared secret. The resolved value is empty.");
-            }
             HMACJWTTokenGenerator hmacJWTTokenGenerator = new HMACJWTTokenGenerator(jwtHmacSecret);
             String issuer = getConfigValue(ICP_JWT_ISSUER, DEFAULT_JWT_ISSUER);
             String audience = getConfigValue(ICP_JWT_AUDIENCE, DEFAULT_JWT_AUDIENCE);

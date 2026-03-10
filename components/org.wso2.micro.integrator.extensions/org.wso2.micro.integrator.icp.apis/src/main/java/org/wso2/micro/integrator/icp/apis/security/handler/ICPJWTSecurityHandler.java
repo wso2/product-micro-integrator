@@ -192,7 +192,7 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
      * Sets the JWT HMAC secret. Called by the handler configuration parser.
      * Can be configured in internal-apis.xml as:
      * <handler class="..." name="ICPJWTSecurityHandler">
-     *     <JwtHmacSecret>$secret{icp.jwt.hmac.secret}</JwtHmacSecret>
+     *     <JwtHmacSecret>$secret{icp_config.secret}</JwtHmacSecret>
      * </handler>
      */
     public void setJwtHmacSecret(String secret) {
@@ -202,6 +202,11 @@ public class ICPJWTSecurityHandler extends AuthenticationHandlerAdapter {
                         secret,
                         ICPApiServiceComponent::getSecretCallbackHandlerService
                 );
+                if (resolvedSecret == null || resolvedSecret.trim().isEmpty()) {
+                    LOG.warn("JWT HMAC secret resolution returned null or empty value. "
+                            + "Secret will need to be provided at runtime.");
+                    return;
+                }
                 if (resolvedSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
                     LOG.warn("JWT HMAC secret should be at least 32 bytes. Using provided secret anyway.");
                 }
