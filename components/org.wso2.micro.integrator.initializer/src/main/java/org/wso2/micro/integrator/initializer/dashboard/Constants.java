@@ -48,7 +48,6 @@ public class Constants {
     public static final String DEFAULT_JWT_SCOPE = "runtime_agent";
     public static final long DEFAULT_JWT_EXPIRY_SECONDS = 3600;
 
-    public static final String DEFAULT_JWT_HMAC_SECRET = "default-secret-key-at-least-32-characters-long-for-hs256";
     public static final long DEFAULT_JWT_CLOCK_SKEW_TOLERANCE_MS = 60_000L;
     public static final String RUNTIME_TYPE_MI = "MI";
     public static final String RUNTIME_STATUS_RUNNING = "RUNNING";

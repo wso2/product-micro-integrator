@@ -53,6 +53,7 @@ public class HMACJWTTokenGenerator {
     /**
      * Retrieves the clock skew tolerance configuration from deployment.toml.
      * Falls back to the default value if not configured.
+     * Clamps the value to >= 0 to prevent unexpected token rejection behavior.
      *
      * @return clock skew tolerance in milliseconds
      */
@@ -60,7 +61,14 @@ public class HMACJWTTokenGenerator {
         Object configuredClockSkew = configs.get(Constants.ICP_JWT_CLOCK_SKEW_TOLERANCE_MS);
         if (configuredClockSkew != null) {
             try {
-                return Long.parseLong(configuredClockSkew.toString());
+                long tolerance = Long.parseLong(configuredClockSkew.toString());
+                if (tolerance < 0) {
+                    log.warn("Invalid clock skew tolerance configured: " + tolerance
+                            + "ms (negative values not allowed). Using default: "
+                            + Constants.DEFAULT_JWT_CLOCK_SKEW_TOLERANCE_MS + "ms");
+                    return Constants.DEFAULT_JWT_CLOCK_SKEW_TOLERANCE_MS;
+                }
+                return tolerance;
             } catch (NumberFormatException e) {
                 log.warn("Invalid clock skew tolerance configured: " + configuredClockSkew
                         + ". Using default: " + Constants.DEFAULT_JWT_CLOCK_SKEW_TOLERANCE_MS + "ms", e);
@@ -125,13 +133,17 @@ public class HMACJWTTokenGenerator {
 
             // Verify signature
             if (!signedJWT.verify(verifier)) {
-                log.warn("JWT signature verification failed");
+                if (log.isDebugEnabled()) {
+                    log.debug("JWT signature verification failed");
+                }
                 return null;
             }
 
             JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
             if (claims == null) {
-                log.warn("JWT token has no claims");
+                if (log.isDebugEnabled()) {
+                    log.debug("JWT token has no claims");
+                }
                 return null;
             }
 
@@ -146,7 +158,9 @@ public class HMACJWTTokenGenerator {
             // Apply clock skew tolerance: allow tokens that expired within the last 60 seconds
             Date now = new Date(System.currentTimeMillis() - CLOCK_SKEW_TOLERANCE_MS);
             if (!now.before(expiry)) {
-                log.warn("JWT token has expired (with " + CLOCK_SKEW_TOLERANCE_MS + "ms clock skew tolerance)");
+                if (log.isDebugEnabled()) {
+                    log.debug("JWT token has expired (with " + CLOCK_SKEW_TOLERANCE_MS + "ms clock skew tolerance)");
+                }
                 return null;
             }
 
