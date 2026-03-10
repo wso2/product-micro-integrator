@@ -59,6 +59,7 @@ import org.wso2.micro.application.deployer.config.Artifact;
 import org.wso2.micro.core.util.StringUtils;
 import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 import org.wso2.micro.integrator.initializer.deployment.application.deployer.CappDeployer;
+import org.wso2.micro.integrator.initializer.utils.SecretResolverUtil;
 import org.wso2.micro.integrator.registry.MicroIntegratorRegistry;
 
 import java.io.File;
@@ -728,11 +729,13 @@ public class ICPHeartBeatComponent {
                 return cachedJwtToken;
             }
 
-            String jwtHmacSecret = getConfigValue(ICP_JWT_HMAC_SECRET);
-            if (StringUtils.isEmpty(jwtHmacSecret) || jwtHmacSecret.trim().isEmpty()) {
-                throw new Exception("Missing required configuration: '" + ICP_JWT_HMAC_SECRET
-                        + "'. Configure a secure HMAC secret to enable ICP heartbeat authentication.");
+            String jwtHmacSecretRaw = getConfigValue(ICP_SHARED_SECRET);
+            if (StringUtils.isEmpty(jwtHmacSecretRaw) || jwtHmacSecretRaw.trim().isEmpty()) {
+                throw new Exception("Missing required configuration: '" + ICP_SHARED_SECRET
+                        + "'. Configure a secure shared secret (HMAC key) to enable ICP heartbeat authentication.");
             }
+            // Resolve Secure Vault alias if present (e.g., $secret{icp_config.secret})
+            String jwtHmacSecret = resolveSecret(jwtHmacSecretRaw);
             HMACJWTTokenGenerator hmacJWTTokenGenerator = new HMACJWTTokenGenerator(jwtHmacSecret);
             String issuer = getConfigValue(ICP_JWT_ISSUER, DEFAULT_JWT_ISSUER);
             String audience = getConfigValue(ICP_JWT_AUDIENCE, DEFAULT_JWT_AUDIENCE);
@@ -847,6 +850,18 @@ public class ICPHeartBeatComponent {
     private static String getConfigValue(String key) {
         Object value = configs.get(key);
         return (value != null) ? value.toString() : null;
+    }
+
+    /**
+     * Resolves a secret value, handling Secure Vault aliases (e.g., $secret{icp_config.secret}).
+     * If the value contains a Secure Vault alias, it will be resolved using the SecretResolver.
+     * Otherwise, the value is returned as-is.
+     *
+     * @param value the value to resolve (may be a plain value or a Secure Vault alias)
+     * @return the resolved secret value
+     */
+    private static String resolveSecret(String value) {
+        return SecretResolverUtil.resolveSecret(value);
     }
 
     /**

@@ -48,7 +48,7 @@ import org.wso2.micro.integrator.ndatasource.capp.deployer.DataSourceCappDeploye
 @Component(name = "org.wso2.micro.integrator.initializer.deployment.AppDeployerServiceComponent", immediate = true)
 public class AppDeployerServiceComponent {
 
-    private static SecretCallbackHandlerService secretCallbackHandlerService;
+    private static volatile SecretCallbackHandlerService secretCallbackHandlerService;
     private static UserStoreTemporaryService userStoreTemporaryService;
     private static final Log log = LogFactory.getLog(AppDeployerServiceComponent.class);
 
@@ -259,5 +259,14 @@ public class AppDeployerServiceComponent {
     protected void unsetSecretCallbackHandlerService(SecretCallbackHandlerService secretCallbackHandlerService) {
         log.debug("SecretCallbackHandlerService unbound from the ESB environment");
         this.secretCallbackHandlerService = null;
+    }
+
+    /**
+     * Returns the SecretCallbackHandlerService instance bound by OSGi.
+     *
+     * @return the SecretCallbackHandlerService instance, or null if not bound yet
+     */
+    public static SecretCallbackHandlerService getSecretCallbackHandlerService() {
+        return secretCallbackHandlerService;
     }
 }

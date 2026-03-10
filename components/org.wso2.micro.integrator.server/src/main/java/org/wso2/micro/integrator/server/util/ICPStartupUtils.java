@@ -82,24 +82,37 @@ public class ICPStartupUtils {
             }
         }
 
-        // Generate new ID as: <configured-runtime-id>-<uuid> if configured; else <uuid>
-        String configuredPrefix = null;
+        // Use configured runtime ID if available
         Object configuredRuntimeId = getConfigs().get(ICP_CONFIG_RUNTIME);
         if (configuredRuntimeId != null) {
             String cfgId = configuredRuntimeId.toString().trim();
             if (!cfgId.isEmpty()) {
-                configuredPrefix = cfgId;
+                if (log.isDebugEnabled()) {
+                    log.debug("Using configured runtime ID: " + cfgId);
+                    log.debug("No existing ICP runtime ID found. Using configured runtime ID: " + cfgId
+                            + " and persisting it for future use.");
+                }
+                persistAndSetRuntimeId(runtimeIdPath, cfgId);
+                return;
             }
         }
-
-        String newRuntimeId = (configuredPrefix != null ? configuredPrefix + "-" : "")
-                + UUID.randomUUID();
-        Files.writeString(runtimeIdPath, newRuntimeId);
-        runtimeId = newRuntimeId;
-        setRuntimeIdSystemProperty(newRuntimeId);
         if (log.isDebugEnabled()) {
-            log.debug("Generated new runtime ID: " + newRuntimeId);
+            log.debug("No configured runtime ID found, generating a new one.");
         }
+        String generatedId = UUID.randomUUID().toString();
+        if (log.isDebugEnabled()) {
+            log.debug("Generated new runtime ID: " + generatedId);
+        }
+        persistAndSetRuntimeId(runtimeIdPath, generatedId);
+        if (log.isDebugEnabled()) {
+            log.debug("Persisted the generated runtime ID: " + generatedId);
+        }
+    }
+
+    private static void persistAndSetRuntimeId(Path runtimeIdPath, String idToPersist) throws IOException {
+        Files.writeString(runtimeIdPath, idToPersist);
+        runtimeId = idToPersist;
+        setRuntimeIdSystemProperty(idToPersist);
     }
 
     /**
