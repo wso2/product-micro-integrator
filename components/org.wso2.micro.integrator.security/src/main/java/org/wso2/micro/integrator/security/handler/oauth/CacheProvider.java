@@ -32,9 +32,13 @@ public class CacheProvider {
     public static final String TOKEN_CACHE_NAME = "TOKEN_CACHE";
     public static final String JWKS_CACHE_NAME = "JWKS_CACHE";
     public static final String INVALID_TOKEN_CACHE_NAME = "INVALID_TOKEN_CACHE";
-    public static final long DEFAULT_TIMEOUT = 900;
+    private static long cacheExpiry = 900;
 
     static {
+        Object tokenCacheTimeoutConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.CACHE_EXPIRY);
+        if (tokenCacheTimeoutConfig != null) {
+            cacheExpiry = ((Number) tokenCacheTimeoutConfig).intValue();
+        }
         createParsedSignJWTCache();
         createTokenCache();
         createJwksCache();
@@ -74,7 +78,6 @@ public class CacheProvider {
     }
 
     private static Cache createCache(String cacheName) {
-        long cacheExpiry = DEFAULT_TIMEOUT;
         Object cacheExpiryConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.CACHE_EXPIRY);
         if (cacheExpiryConfig != null) {
             cacheExpiry = ((Number) cacheExpiryConfig).longValue();
@@ -105,7 +108,7 @@ public class CacheProvider {
         Iterable<Cache<?, ?>> availableCaches = Caching.getCacheManager(cacheManagerName).getCaches();
         for (Cache cache : availableCaches) {
             if (cache.getName().equalsIgnoreCase(cacheName)) {
-                return Caching.getCacheManager(cacheManagerName).getCache(cacheName);
+                return cache;
             }
         }
 
