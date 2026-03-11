@@ -143,6 +143,7 @@ public class Constants {
 
     public static final String USERNAME_PROPERTY = "USERNAME";
     public static final String IS_ADMIN_USER_PROPERTY = "IS_ADMIN_USER";
+    public static final String ICP_AUTHENTICATED_PROPERTY = "ICP_AUTHENTICATED";
 
     // Constant QNames used in the internal-apis.xml
     public static final QName NAME_ATTR = new QName("name");

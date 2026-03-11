@@ -35,6 +35,7 @@ public class Constants {
     public static final String ICP_JWT_SCOPE = "icp_config.jwt_scope";
     public static final String ICP_JWT_EXPIRY_SECONDS = "icp_config.jwt_expiry_seconds";
     public static final String ICP_SHARED_SECRET = "icp_config.secret";
+    public static final String ICP_JWT_CLOCK_SKEW_TOLERANCE_MS = "icp_config.jwt_clock_skew_tolerance_ms";
     
     // Default ICP Configuration
     public static final String DEFAULT_ENVIRONMENT = "production";
@@ -46,6 +47,8 @@ public class Constants {
     public static final String DEFAULT_JWT_AUDIENCE = "icp-server";
     public static final String DEFAULT_JWT_SCOPE = "runtime_agent";
     public static final long DEFAULT_JWT_EXPIRY_SECONDS = 3600;
+
+    public static final long DEFAULT_JWT_CLOCK_SKEW_TOLERANCE_MS = 60_000L;
     public static final String RUNTIME_TYPE_MI = "MI";
     public static final String RUNTIME_STATUS_RUNNING = "RUNNING";
 
