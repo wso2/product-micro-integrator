@@ -1332,6 +1332,9 @@ public class ICPHeartBeatComponent {
                         }
                     }
                 } catch (Exception ignored) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Error retrieving task details for task: " + name, ignored);
+                    }
                     // If repository lookup fails, leave taskGroup and taskClass null
                 }
 
