@@ -1331,9 +1331,9 @@ public class ICPHeartBeatComponent {
                             taskClass = desc.getTaskImplClassName();
                         }
                     }
-                } catch (Exception ignored) {
+                } catch (Exception ex) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Error retrieving task details for task: " + name, ignored);
+                        log.debug("Error retrieving task details for task: " + name, ex);
                     }
                     // If repository lookup fails, leave taskGroup and taskClass null
                 }
