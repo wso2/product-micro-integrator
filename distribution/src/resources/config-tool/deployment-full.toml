@@ -888,7 +888,7 @@ enable = false
 host="localhost"
 port="14250"
 service_name="WSO2-SYNAPSE"
-class="org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.JaegerTelemetryManager"
+class="org.apache.synapse.aspects.flow.statistics.tracing.opentelemetry.management.OTLPTelemetryManager"
 
 ###################################   Database configurations   ###################################
 [[datasource]]
