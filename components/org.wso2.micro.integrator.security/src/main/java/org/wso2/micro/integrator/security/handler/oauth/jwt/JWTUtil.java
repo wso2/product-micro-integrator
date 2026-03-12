@@ -191,10 +191,13 @@ public class JWTUtil {
             if (JWSAlgorithm.RS256.equals(algorithm) || JWSAlgorithm.RS512.equals(algorithm) ||
                     JWSAlgorithm.RS384.equals(algorithm) || JWSAlgorithm.PS256.equals(algorithm)
                     || JWSAlgorithm.PS384.equals(algorithm) || JWSAlgorithm.PS512.equals(algorithm)) {
+                if (!(publicCert.getPublicKey() instanceof RSAPublicKey)) {
+                    throw new OAuthSecurityException("Public key is not RSA");
+                }
                 return verifyTokenSignature(jwt, (RSAPublicKey) publicCert.getPublicKey());
             } else {
-                log.error("Public key is not RSA");
-                throw new OAuthSecurityException("Public key is not RSA");
+                log.error("Unsupported JWT signature algorithm: " + algorithm);
+                throw new OAuthSecurityException("Unsupported JWT signature algorithm: " + algorithm);
             }
         } else {
             log.error("Couldn't find a public certificate with alias " + alias + " to verify the signature");
@@ -205,19 +208,14 @@ public class JWTUtil {
 
     public static long getTimeStampSkewInSeconds() {
 
-        Object maxIssuedAtAgeSeconds = ConfigParser.getParsedConfigs().get(OAuthConstants.MAX_ISSUED_AT_AGE_SECONDS);
-        if (maxIssuedAtAgeSeconds != null) {
-            return ((Number) maxIssuedAtAgeSeconds).intValue();
+        Object clockSkewSeconds = ConfigParser.getParsedConfigs().get(OAuthConstants.CLOCK_SKEW_SECONDS);
+        if (clockSkewSeconds instanceof Number) {
+            return ((Number) clockSkewSeconds).longValue();
+        } else if (clockSkewSeconds != null) {
+            log.warn("Invalid clock skew configuration value: " + clockSkewSeconds
+                    + ". Falling back to default: " + OAuthConstants.DEFAULT_TIMESTAMP_SKEW_IN_SECONDS + " seconds.");
         }
         return OAuthConstants.DEFAULT_TIMESTAMP_SKEW_IN_SECONDS;
-    }
-
-    public static Long getMaxTokenAgeInSeconds() {
-        Object maxIssuedAtAgeSeconds = ConfigParser.getParsedConfigs().get(OAuthConstants.MAX_ISSUED_AT_AGE_SECONDS);
-        if (maxIssuedAtAgeSeconds != null) {
-            return ((Number) maxIssuedAtAgeSeconds).longValue();
-        }
-        return null;
     }
 
     /**

@@ -48,6 +48,7 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.wso2.config.mapper.ConfigParser;
 import org.wso2.micro.integrator.security.handler.oauth.jwt.JWTValidator;
 
+import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,6 +71,7 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
     private TokenRevocationHandler tokenRevocationHandler;
     private ArrayList<String> audience;
     private ArrayList<String> allowedAlgorithms;
+    private Long maxIssuedAtAgeSeconds;
 
     // HTTP client related properties
     private int connectionTimeout;
@@ -91,7 +93,6 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
     // Global properties
     private int cacheExpiry;
-    private int maxIssuedAtAgeSeconds;
     private HttpClientConfiguration httpClientConfiguration;
 
 
@@ -103,6 +104,19 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
             if (trustedIssuersConfig != null) {
                 this.trustedIssuers = new ArrayList<>(Arrays.asList(((String) trustedIssuersConfig).split("\\s*,\\s*")));
             }
+        }
+
+        if (audience == null) {
+            Object audienceConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.EXPECTED_AUDIENCE);
+            if (audienceConfig != null) {
+                this.audience = new ArrayList<>(Arrays.asList(((String) audienceConfig).split("\\s*,\\s*")));
+            }
+        }
+
+        Object maxIssuedAtAgeSecondsConfig = ConfigParser.getParsedConfigs()
+                .get(OAuthConstants.MAX_ISSUED_AT_AGE_SECONDS);
+        if (maxIssuedAtAgeSeconds == null && maxIssuedAtAgeSecondsConfig != null) {
+            maxIssuedAtAgeSeconds = ((Number) maxIssuedAtAgeSecondsConfig).longValue();
         }
 
         mTLSConfiguration = new MTLSConfiguration(disableCNFValidation,
@@ -224,8 +238,8 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
                 log.debug("Authentication started for JWT tokens");
             }
 
-            JWTValidator jwtValidator = new JWTValidator(jwksEndpoint, trustedIssuers, tokenRevocationHandler,
-                    httpClientConfiguration, mTLSConfiguration);
+            JWTValidator jwtValidator = new JWTValidator(jwksEndpoint, trustedIssuers, audience, maxIssuedAtAgeSeconds,
+                    tokenRevocationHandler, httpClientConfiguration, mTLSConfiguration);
             jwtValidator.authenticate(signedJWTInfo, messageContext);
 
         } catch (OAuthSecurityException e) {
@@ -267,8 +281,9 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
             Class clazz = null;
             try {
                 clazz = JWTValidator.class.getClassLoader().loadClass(revocationChecker);
-                this.tokenRevocationHandler = (TokenRevocationHandler) clazz.newInstance();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                this.tokenRevocationHandler = (TokenRevocationHandler) clazz.getDeclaredConstructor().newInstance();
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException
+                     | InvocationTargetException e) {
                 log.error("Failed to instantiate TokenRevocationHandler: " + revocationChecker, e);
                 throw new IllegalStateException("Failed to initialize TokenRevocationHandler: " + revocationChecker, e);
             }
@@ -330,6 +345,11 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
         if (audience != null && !audience.isEmpty()) {
             this.audience = new ArrayList<>(Arrays.asList(audience.split("\\s*,\\s*")));
         }
+    }
+
+    public void setMaxIssuedAtAgeSeconds(String maxIssuedAtAgeSeconds) {
+
+        this.maxIssuedAtAgeSeconds = Long.parseLong(maxIssuedAtAgeSeconds);
     }
 
     /**
@@ -419,7 +439,7 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
         // 2. Check 'alg' (Algorithm) - Protects against 'alg: none' and Key Confusion
         JWSAlgorithm alg = header.getAlgorithm();
         if (!isSupportedAlgorithm(alg)) {
-            log.error("Unsupported or weak algorithm: " + alg.getName());
+            log.error("Unsupported or weak algorithm: " + alg);
             throw new OAuthSecurityException("Unsuitable cryptographic algorithm");
         }
 
@@ -452,22 +472,28 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
         // 1. Check for Existence (The "Presence" Check)
         if (StringUtils.isEmpty(claims.getIssuer())) {
-            throw new OAuthSecurityException("Missing mandatory 'iss' claim");
+            throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
+                    "Missing mandatory 'iss' claim");
         }
         if (claims.getExpirationTime() == null) {
-            throw new OAuthSecurityException("Missing mandatory 'exp' claim");
+            throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
+                    "Missing mandatory 'exp' claim");
         }
         if (claims.getAudience() == null || claims.getAudience().isEmpty()) {
-            throw new OAuthSecurityException("Missing mandatory 'aud' claim");
+            throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
+                    "Missing mandatory 'aud' claim");
         }
         if (StringUtils.isEmpty(claims.getSubject())) {
-            throw new OAuthSecurityException("Missing mandatory 'sub' claim");
+            throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
+                    "Missing mandatory 'sub' claim");
         }
         if (StringUtils.isEmpty(claims.getJWTID())) {
-            throw new OAuthSecurityException("Missing mandatory 'jti' claim");
+            throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
+                    "Missing mandatory 'jti' claim");
         }
         if (claims.getIssueTime() == null) {
-            throw new OAuthSecurityException("Missing mandatory 'iat' claim");
+            throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
+                    "Missing mandatory 'iat' claim");
         }
         log.debug("Mandatory claims validation passed.");
     }
@@ -493,13 +519,13 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
                 // If not, parse the token and populate the cache.
                 Object cachedEntry = signedJWTParseCache.get(signature);
                 if (cachedEntry != null) {
-                    signedJWTInfo = (SignedJWTInfo) cachedEntry;
+                    SignedJWTInfo cached = (SignedJWTInfo) cachedEntry;
+                    signedJWTInfo = new SignedJWTInfo(accessToken, cached.getSignedJWT(), cached.getJwtClaimsSet());
                 }
                 if (signedJWTInfo == null || !signedJWTInfo.getToken().equals(accessToken)) {
                     SignedJWT signedJWT = SignedJWT.parse(accessToken);
                     JWTClaimsSet jwtClaimsSet = signedJWT.getJWTClaimsSet();
-                    signedJWTInfo = new SignedJWTInfo(accessToken, signedJWT, jwtClaimsSet);
-                    signedJWTParseCache.put(signature, signedJWTInfo);
+                    signedJWTParseCache.put(signature, new SignedJWTInfo(accessToken, signedJWT, jwtClaimsSet));
                 }
             } else {
                 SignedJWT signedJWT = SignedJWT.parse(accessToken);

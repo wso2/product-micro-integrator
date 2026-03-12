@@ -19,10 +19,8 @@
 package org.wso2.micro.integrator.security.handler.oauth.jwt;
 
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -59,17 +57,21 @@ public class JWTValidator {
     private static final Log log = LogFactory.getLog(JWTValidator.class);
 
     private final String jwksEndpoint;
-    private ArrayList<String> trustedIssuers;
+    private final ArrayList<String> trustedIssuers;
+    private final ArrayList<String> audience;
+    private final Long maxIssuedAtAgeSeconds;
     private final TokenRevocationHandler tokenRevocationHandler;
     private final HttpClientConfiguration httpClientConfiguration;
     private final MTLSConfiguration mtlsConfiguration;
 
-    public JWTValidator(String jwksEndpoint, ArrayList<String> trustedIssuers,
-                        TokenRevocationHandler tokenRevocationHandler, HttpClientConfiguration httpClientConfiguration,
-                        MTLSConfiguration mtlsConfiguration) {
+    public JWTValidator(String jwksEndpoint, ArrayList<String> trustedIssuers, ArrayList<String> audience,
+                        Long maxIssuedAtAgeSeconds, TokenRevocationHandler tokenRevocationHandler,
+                        HttpClientConfiguration httpClientConfiguration, MTLSConfiguration mtlsConfiguration) {
 
         this.jwksEndpoint = jwksEndpoint;
         this.trustedIssuers = trustedIssuers;
+        this.audience = audience;
+        this.maxIssuedAtAgeSeconds = maxIssuedAtAgeSeconds;
         this.tokenRevocationHandler = tokenRevocationHandler;
         this.httpClientConfiguration = httpClientConfiguration;
         this.mtlsConfiguration = mtlsConfiguration;
@@ -210,7 +212,9 @@ public class JWTValidator {
                  CacheProvider.getTokenCache().put(jti, jwtValidationInfo);
              } else {
                  signedJWTInfo.setValidationStatus(SignedJWTInfo.ValidationStatus.INVALID);
-                 CacheProvider.getInvalidTokenCache().put(jti, Boolean.TRUE);
+                 if (!jwtValidationInfo.isCnfFailed()) {
+                     CacheProvider.getInvalidTokenCache().put(jti, Boolean.TRUE);
+                 }
              }
          }
          return jwtValidationInfo;
@@ -294,6 +298,11 @@ public class JWTValidator {
             return false;
         }
 
+        if (validateAudience(jwtClaimsSet, audience)) {
+            log.error("The token audience does not match the expected audience.");
+            return false;
+        }
+
         // 1. Expiry Check (Fastest & most common failure)
         if (!JWTUtil.validateTokenExpiry(jwtClaimsSet)) {
             log.error("JWT token is expired.");
@@ -305,6 +314,7 @@ public class JWTValidator {
         try {
             if (!JWTUtil.validateCNFClaim(signedJWTInfo, mtlsConfiguration)) {
                 log.error("JWT token CNF claim validation failed.");
+                jwtValidationInfo.setCnfFailed(true);
                 return false;
             }
         } catch (ParseException e) {
@@ -313,14 +323,45 @@ public class JWTValidator {
         }
 
         // 3. Issued At (iat) Policy Check (Replay & Clock Skew)
-        if (!validateIssuedAtPolicy(jwtClaimsSet,
-                JWTUtil.getTimeStampSkewInSeconds(),
-                JWTUtil.getMaxTokenAgeInSeconds())) {
+        if (!validateIssuedAtPolicy(jwtClaimsSet, JWTUtil.getTimeStampSkewInSeconds(), maxIssuedAtAgeSeconds)) {
             log.error("JWT iat policy validation failed.");
             return false;
         }
 
         return true; // Everything passed
+    }
+
+    /**
+     * Validates that the 'aud' (Audience) claim contains this Resource Server's identifier.
+     *
+     * @param jwtClaimsSet   The claims extracted from the token.
+     * @param expectedAudience The unique identifier for your API (e.g., "<a href="https://api.myapp.com">...</a>").
+     * @return true if the expected audience is present in the token's 'aud' claim.
+     */
+    public boolean validateAudience(JWTClaimsSet jwtClaimsSet, ArrayList<String> expectedAudience) {
+
+        if (expectedAudience == null || expectedAudience.isEmpty()
+                || expectedAudience.contains(OAuthConstants.ALL_AUDIENCES)) {
+            return true;
+        }
+
+        List<String> tokenAudiences = jwtClaimsSet.getAudience();
+
+        // 1. Presence Check
+        if (tokenAudiences == null || tokenAudiences.isEmpty()) {
+            log.error("Missing mandatory 'aud' (Audience) claim.");
+            return false;
+        }
+
+        // 2. Membership Check
+        // Per RFC 9068, the RS MUST verify that it is identified by one of the audiences.
+        for (String aud : expectedAudience) {
+            if (tokenAudiences.contains(aud)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

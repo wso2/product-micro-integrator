@@ -27,10 +27,10 @@ public class MTLSConfiguration {
 
     public MTLSConfiguration(boolean disableCNFValidation, boolean enableClientCertificateValidation,
                              String clientCertificateHeader, boolean clientCertificateEncode) {
-        this.disableCNFValidation = disableCNFValidation;
-        this.enableClientCertificateValidation = enableClientCertificateValidation;
-        this.clientCertificateHeader = clientCertificateHeader;
-        this.clientCertificateEncode = clientCertificateEncode;
+        setDisableCNFValidation(disableCNFValidation);
+        setEnableClientCertificateValidation(enableClientCertificateValidation);
+        setClientCertificateHeader(clientCertificateHeader);
+        setClientCertificateEncode(clientCertificateEncode);
 
     }
 

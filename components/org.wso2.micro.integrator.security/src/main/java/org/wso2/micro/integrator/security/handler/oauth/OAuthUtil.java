@@ -120,8 +120,8 @@ public class OAuthUtil {
     }
 
     public static Certificate getClientCertificateFromHeader(
-            org.apache.axis2.context.MessageContext axis2MessageContext, String clientCertificateHeader)
-            throws OAuthSecurityException {
+            org.apache.axis2.context.MessageContext axis2MessageContext, String clientCertificateHeader,
+            boolean isEncoded) throws OAuthSecurityException {
 
         Map headers =
                 (Map) axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
@@ -129,14 +129,18 @@ public class OAuthUtil {
         String certificate = (String) headers.get(clientCertificateHeader);
         byte[] bytes;
         if (certificate != null) {
-            try {
-                certificate = URLDecoder.decode(certificate, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                String msg = "Error while URL decoding certificate";
-                throw new OAuthSecurityException(msg, e);
+            if (isEncoded) {
+                try {
+                    certificate = URLDecoder.decode(certificate, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    String msg = "Error while URL decoding certificate";
+                    throw new OAuthSecurityException(msg, e);
+                }
+                certificate = getX509certificateContent(certificate);
+                bytes = Base64.decodeBase64(certificate);
+            } else {
+                bytes = certificate.getBytes();
             }
-            certificate = getX509certificateContent(certificate);
-            bytes = Base64.decodeBase64(certificate);
 
             try (InputStream inputStream = new ByteArrayInputStream(bytes)) {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -178,20 +182,34 @@ public class OAuthUtil {
         Certificate[] certs = null;
         Object sslCertObject = axis2MessageContext.getProperty(NhttpConstants.SSL_CLIENT_AUTH_CERT);
         Certificate certificateFromMessageContext = null;
-        if (sslCertObject != null) {
+
+        if (sslCertObject instanceof Certificate[] && ((Certificate[]) sslCertObject).length > 0) {
             certs = (Certificate[]) sslCertObject;
             certificateFromMessageContext = certs[0];
+        } else if (sslCertObject instanceof Certificate[]) {
+            certs = (Certificate[]) sslCertObject;
         }
 
         Map headers = (Map) axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
         if (headers != null && headers.containsKey(mtlsConfiguration.getClientCertificateHeader())) {
             try {
-                if (!mtlsConfiguration.isClientCertificateValidationEnabled() ||
-                        OAuthUtil.isCertificateExistsInListenerTrustStore(certificateFromMessageContext)) {
-                    Certificate certificate = getClientCertificateFromHeader(axis2MessageContext,
-                            mtlsConfiguration.getClientCertificateHeader());
-                    return new Certificate[] { certificate };
+                Certificate headerCertificate = getClientCertificateFromHeader(
+                        axis2MessageContext,
+                        mtlsConfiguration.getClientCertificateHeader(),
+                        mtlsConfiguration.isClientCertificateEncode());
+                if (headerCertificate == null) {
+                    return certs;
                 }
+
+                if (mtlsConfiguration.isClientCertificateValidationEnabled()) {
+                    if (certificateFromMessageContext == null ||
+                            !headerCertificate.equals(certificateFromMessageContext) ||
+                            !OAuthUtil.isCertificateExistsInListenerTrustStore(headerCertificate)) {
+                        throw new OAuthSecurityException(
+                                "Client certificate header does not match a trusted transport certificate");
+                        }
+                }
+                return new Certificate[] { headerCertificate };
             } catch (OAuthSecurityException e) {
                 String msg = "Error while validating into Certificate Existence";
                 log.error(msg, e);

@@ -40,6 +40,7 @@ public class JWTValidationInfo implements Serializable {
     private int validationCode;
     private String rawPayload;
     private boolean isExpired = false;
+    private boolean cnfFailed = false;
 
     public JWTValidationInfo() {
 
@@ -58,6 +59,7 @@ public class JWTValidationInfo implements Serializable {
         this.validationCode = jwtValidationInfo.getValidationCode();
         this.rawPayload = jwtValidationInfo.getRawPayload();
         this.isExpired = jwtValidationInfo.isExpired();
+        this.cnfFailed = jwtValidationInfo.isCnfFailed();
     }
 
     public String getUser() {
@@ -166,5 +168,15 @@ public class JWTValidationInfo implements Serializable {
 
     public void setExpired(boolean expired) {
         isExpired = expired;
+    }
+
+    public boolean isCnfFailed() {
+
+        return cnfFailed;
+    }
+
+    public void setCnfFailed(boolean cnfFailed) {
+
+        this.cnfFailed = cnfFailed;
     }
 }

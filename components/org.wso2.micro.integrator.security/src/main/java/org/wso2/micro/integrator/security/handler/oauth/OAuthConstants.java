@@ -27,6 +27,7 @@ public class OAuthConstants {
     public static final String REMOVE_OAUTH_HEADERS_FROM_OUT_MESSAGE = JWT_OAUTH_CONFIG
             + "remove_oauth_headers_from_out_message";
     public static final String TRUSTED_ISSUERS = JWT_OAUTH_CONFIG + "trusted_issuers";
+    public static final String EXPECTED_AUDIENCE = JWT_OAUTH_CONFIG + "audience";
 
     public static final String BEARER = "Bearer";
     public static final String DOT = ".";
@@ -37,6 +38,7 @@ public class OAuthConstants {
     public static final String OAUTH2_DEFAULT_SCOPE = "default";
     public static final String MEDIA_TYPE_JWT_ACCESS_TOKEN = "application/at+jwt";
     public static final String JWT_TYPE_AT_JWT = "at+jwt";
+    public static final String ALL_AUDIENCES = "all";
 
     public static final String SCOPES = "Scopes";
     public static final String JWT_CLAIMS = "jwt_token_claims";
