@@ -25,7 +25,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.automation.engine.FrameworkConstants;
 import org.wso2.carbon.automation.engine.context.AutomationContext;
-import org.wso2.carbon.automation.engine.context.beans.User;
 import org.wso2.carbon.automation.engine.exceptions.AutomationFrameworkException;
 import org.wso2.carbon.automation.engine.frameworkutils.CodeCoverageUtils;
 import org.wso2.carbon.automation.engine.frameworkutils.FrameworkPathUtil;
@@ -33,9 +32,7 @@ import org.wso2.carbon.automation.engine.frameworkutils.ReportGenerator;
 import org.wso2.carbon.automation.engine.frameworkutils.TestFrameworkUtils;
 import org.wso2.carbon.automation.extensions.ExtensionConstants;
 import org.wso2.carbon.automation.extensions.servers.utils.ArchiveExtractor;
-import org.wso2.carbon.automation.extensions.servers.utils.ClientConnectionUtil;
 import org.wso2.carbon.automation.extensions.servers.utils.FileManipulator;
-import org.wso2.carbon.automation.extensions.servers.utils.ServerLogReader;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,8 +56,6 @@ public class CarbonServerManager {
     private Process process;
     private String carbonHome;
     private AutomationContext automationContext;
-    private ServerLogReader inputStreamHandler;
-    private ServerLogReader errorStreamHandler;
     private boolean isCoverageEnable = false;
     private String coverageDumpFilePath;
     private int portOffset = 0;
@@ -141,11 +136,7 @@ public class CarbonServerManager {
                 process = Runtime.getRuntime().exec(cmdArray, null, commandDir);
             }
 
-            errorStreamHandler = new ServerLogReader("errorStream", process.getErrorStream());
-            inputStreamHandler = new ServerLogReader("inputStream", process.getInputStream());
             // start the stream readers
-            inputStreamHandler.start();
-            errorStreamHandler.start();
 
             //register shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -285,8 +276,6 @@ public class CarbonServerManager {
                 throw new AutomationFrameworkException("Failed to stop server ", e);
             }
 
-            inputStreamHandler.stop();
-            errorStreamHandler.stop();
             process.destroy();
             process = null;
 
@@ -369,42 +358,6 @@ public class CarbonServerManager {
         log.info("Jacoco class file path : " + classesDir);
         log.info("Jacoco coverage HTML report path : " + CodeCoverageUtils.getJacocoReportDirectory() + File.separator
                 + "index.html");
-    }
-
-    public synchronized void restartGracefully() throws AutomationFrameworkException {
-
-        try {
-            int httpsPort = defaultHttpsPort + portOffset;
-            //considering the port offset
-            String backendURL = automationContext.getContextUrls().getSecureServiceUrl()
-                    .replaceAll("(:\\d+)", ":" + httpsPort);
-            User superUser = automationContext.getSuperTenant().getTenantAdmin();
-            ClientConnectionUtil
-                    .sendGraceFullRestartRequest(backendURL, superUser.getUserName(), superUser.getPassword());
-        } catch (XPathExpressionException e) {
-            throw new AutomationFrameworkException("restart failed", e);
-        }
-
-        long time = System.currentTimeMillis() + DEFAULT_START_STOP_WAIT_MS;
-        while (!inputStreamHandler.getOutput().contains(SERVER_SHUTDOWN_MESSAGE) && System.currentTimeMillis() < time) {
-            // wait until server shutdown is completed
-        }
-
-        time = System.currentTimeMillis();
-
-        while (System.currentTimeMillis() < time + 5000) {
-            //wait for port to close
-        }
-
-        try {
-            ClientConnectionUtil.waitForPort(Integer.parseInt(automationContext.getInstance().getPorts().get("https")),
-                    automationContext.getInstance().getHosts().get("default"));
-
-            ClientConnectionUtil.waitForLogin(automationContext);
-
-        } catch (XPathExpressionException e) {
-            throw new AutomationFrameworkException("Connection attempt to carbon server failed", e);
-        }
     }
 
     private String[] expandServerStartupCommandList(Map<String, String> commandMap) {

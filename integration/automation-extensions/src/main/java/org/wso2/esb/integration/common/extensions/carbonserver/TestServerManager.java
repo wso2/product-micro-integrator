@@ -124,17 +124,6 @@ public class TestServerManager {
     }
 
     /**
-     * Restarting server already started by the method startServer.
-     */
-    public void restartGracefully() throws AutomationFrameworkException {
-        if (carbonHome == null) {
-            throw new AutomationFrameworkException(
-                    "No Running Server found to restart. " + "Please make sure whether server is started");
-        }
-        carbonServer.restartGracefully();
-    }
-
-    /**
      * This method is called for stopping a Carbon server
      * <p/>
      * Add the @AfterSuite annotation in the method overriding this method
