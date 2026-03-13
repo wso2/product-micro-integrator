@@ -1318,6 +1318,7 @@ public class ICPHeartBeatComponent {
             for (org.apache.synapse.Startup startup : startups) {
                 String name = startup.getName();
                 String taskGroup = null;
+                String taskClass = null;
                 String state = "enabled"; // default state
 
                 try {
@@ -1327,10 +1328,14 @@ public class ICPHeartBeatComponent {
                                 .getTaskDescriptionRepository().getTaskDescription(name);
                         if (desc != null) {
                             taskGroup = desc.getTaskGroup();
+                            taskClass = desc.getTaskImplClassName();
                         }
                     }
-                } catch (Exception ignored) {
-                    // If repository lookup fails, leave taskGroup null
+                } catch (Exception ex) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Error retrieving task details for task: " + name, ex);
+                    }
+                    // If repository lookup fails, leave taskGroup and taskClass null
                 }
 
                 // Check task state
@@ -1355,10 +1360,11 @@ public class ICPHeartBeatComponent {
                 }
 
                 if (taskGroup != null) {
-                    taskObj.addProperty("taskGroup", taskGroup);
+                    taskObj.addProperty("group", taskGroup);
                 } else {
-                    taskObj.addProperty("taskGroup", "");
+                    taskObj.addProperty("group", "");
                 }
+                taskObj.addProperty("class", taskClass != null ? taskClass : "");
                 tasks.add(taskObj);
             }
         } catch (Exception e) {
