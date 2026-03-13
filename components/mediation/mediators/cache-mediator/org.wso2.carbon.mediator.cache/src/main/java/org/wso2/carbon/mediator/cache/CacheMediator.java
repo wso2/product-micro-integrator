@@ -41,12 +41,17 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.unittest.CoverageUtils;
 import org.apache.synapse.util.FixedByteArrayOutputStream;
 import org.apache.synapse.util.MessageHelper;
 import org.wso2.carbon.mediator.cache.digest.DigestGenerator;
 import org.wso2.carbon.mediator.cache.util.HttpCachingFilter;
+import org.apache.synapse.mediators.MediatorWithChildren;
+import org.apache.synapse.mediators.ChildSequence;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.text.ParseException;
 import java.util.Collections;
 import java.util.Comparator;
@@ -73,7 +78,7 @@ import javax.xml.stream.XMLStreamException;
  * with it the mediator will return the response without going to the backend. Otherwise it will pass on the request to
  * the next mediator.
  */
-public class CacheMediator extends AbstractMediator implements ManagedLifecycle, EnclosedInlinedSequence {
+public class CacheMediator extends AbstractMediator implements ManagedLifecycle, EnclosedInlinedSequence, MediatorWithChildren {
 
     /**
      * The value of json content type as it appears in HTTP Content-Type header.
@@ -194,6 +199,19 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
      * To differentiate between the new and previous cache implementations, which will be used for EI Tooling
      */
     private boolean isPreviousCacheImplementation = false;
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<ChildSequence> getChildren() {
+        if (onCacheHitSequence == null && (onCacheHitRef == null || onCacheHitRef.isEmpty())) {
+            return Collections.emptyList();
+        }
+        List<ChildSequence> children = new ArrayList<>();
+        children.add(new ChildSequence("on-cache-hit", onCacheHitSequence, onCacheHitRef));
+        return children;
+    }
 
     public CacheMediator(CacheManager cacheManager) {
         this.id = UUID.randomUUID().toString();
@@ -399,7 +417,18 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
                         + "sequence : " + onCacheHitRef);
             }
             ContinuationStackManager.updateSeqContinuationState(synCtx, getMediatorPosition());
-            synCtx.getSequence(onCacheHitRef).mediate(synCtx);
+            SequenceMediator onCacheHitSeq = (SequenceMediator) synCtx.getSequence(onCacheHitRef);
+
+            // Handle coverage tracking for referenced sequence in unit tests mode
+            String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(
+                    synCtx, onCacheHitSeq, onCacheHitRef);
+
+            try {
+                onCacheHitSeq.mediate(synCtx);
+            } finally {
+                // Restore original artifact key for unit test coverage
+                CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+            }
 
         } else {
 
