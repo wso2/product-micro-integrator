@@ -147,6 +147,9 @@ public class JWTValidator {
             } catch (RevocationCheckException e) {
                 log.error("Error while checking token revocation status for token.", e);
                 throw new OAuthSecurityException("Error while checking token revocation status", e);
+            } catch (RuntimeException e) {
+                log.error("Unexpected error while checking token revocation status for token.", e);
+                throw new OAuthSecurityException("Error while checking token revocation status", e);
             }
         }
         return false;
@@ -298,7 +301,7 @@ public class JWTValidator {
             return false;
         }
 
-        if (validateAudience(jwtClaimsSet, audience)) {
+        if (!validateAudience(jwtClaimsSet, audience)) {
             log.error("The token audience does not match the expected audience.");
             return false;
         }
@@ -547,7 +550,10 @@ public class JWTValidator {
                 signedJWTInfo.setValidationStatus(SignedJWTInfo.ValidationStatus.NOT_VALIDATED);
             }
         } catch (OAuthSecurityException e) {
-            log.error("Error while obtaining client certificate. ");
+            log.error("Error while obtaining client certificate. Marking token as not validated.", e);
+            // Clear any potentially stale certificate information from cached SignedJWTInfo
+            signedJWTInfo.setClientCertificate(null);
+            signedJWTInfo.setValidationStatus(SignedJWTInfo.ValidationStatus.NOT_VALIDATED);
         }
     }
 

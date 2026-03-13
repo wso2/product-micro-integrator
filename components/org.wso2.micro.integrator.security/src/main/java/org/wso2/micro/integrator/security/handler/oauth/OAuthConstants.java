@@ -24,8 +24,6 @@ public class OAuthConstants {
     public static final String CACHE_EXPIRY = JWT_OAUTH_CONFIG + "cache_expiry";
     public static final String MAX_ISSUED_AT_AGE_SECONDS = JWT_OAUTH_CONFIG + "max_issued_at_age_seconds";
     public static final String CLOCK_SKEW_SECONDS = JWT_OAUTH_CONFIG + "clock_skew_seconds";
-    public static final String REMOVE_OAUTH_HEADERS_FROM_OUT_MESSAGE = JWT_OAUTH_CONFIG
-            + "remove_oauth_headers_from_out_message";
     public static final String TRUSTED_ISSUERS = JWT_OAUTH_CONFIG + "trusted_issuers";
     public static final String EXPECTED_AUDIENCE = JWT_OAUTH_CONFIG + "audience";
 

@@ -116,7 +116,11 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
         Object maxIssuedAtAgeSecondsConfig = ConfigParser.getParsedConfigs()
                 .get(OAuthConstants.MAX_ISSUED_AT_AGE_SECONDS);
         if (maxIssuedAtAgeSeconds == null && maxIssuedAtAgeSecondsConfig != null) {
-            maxIssuedAtAgeSeconds = ((Number) maxIssuedAtAgeSecondsConfig).longValue();
+            long parsed = ((Number) maxIssuedAtAgeSecondsConfig).longValue();
+            if (parsed < 0) {
+                throw new IllegalArgumentException("maxIssuedAtAgeSeconds must be >= 0");
+            }
+            maxIssuedAtAgeSeconds = parsed;
         }
 
         mTLSConfiguration = new MTLSConfiguration(disableCNFValidation,
@@ -167,48 +171,49 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
             } else {
                 enableProxy = false;
             }
+        }
 
-            if (enableProxy) {
-                if (proxyHost == null) {
-                    Object proxyHostConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.OAUTH_GLOBAL_PROXY_HOST);
-                    if (proxyHostConfig != null) {
-                        proxyHost = (String) proxyHostConfig;
-                    }
+        if (Boolean.TRUE.equals(enableProxy)) {
+            if (proxyHost == null) {
+                Object proxyHostConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.OAUTH_GLOBAL_PROXY_HOST);
+                if (proxyHostConfig != null) {
+                    proxyHost = (String) proxyHostConfig;
                 }
-
-                if (proxyPort == 0) {
-                    Object proxyPortConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.OAUTH_GLOBAL_PROXY_PORT);
-                    if (proxyPortConfig != null) {
-                        proxyPort = ((Number) proxyPortConfig).intValue();
-                    }
-                }
-
-                if (proxyUsername == null) {
-                    Object proxyUsernameConfig = ConfigParser.getParsedConfigs()
-                            .get(OAuthConstants.OAUTH_GLOBAL_PROXY_USERNAME);
-                    if (proxyUsernameConfig != null) {
-                        proxyUsername = (String) proxyUsernameConfig;
-                    }
-                }
-
-                if (proxyPassword == null) {
-                    Object proxyPasswordConfig = ConfigParser.getParsedConfigs()
-                            .get(OAuthConstants.OAUTH_GLOBAL_PROXY_PASSWORD);
-                    if (proxyPasswordConfig != null) {
-                        proxyPassword = (String) proxyPasswordConfig;
-                    }
-                }
-
-                if (proxyProtocol == null) {
-                    Object proxyProtocolConfig = ConfigParser.getParsedConfigs()
-                            .get(OAuthConstants.OAUTH_GLOBAL_PROXY_PROTOCOL);
-                    if (proxyProtocolConfig != null) {
-                        proxyProtocol = (String) proxyProtocolConfig;
-                    }
-                }
-
-                builder.withProxy(proxyHost, proxyPort, proxyUsername, proxyPassword, proxyProtocol);
             }
+
+            if (proxyPort == 0) {
+                Object proxyPortConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.OAUTH_GLOBAL_PROXY_PORT);
+                if (proxyPortConfig != null) {
+                    proxyPort = ((Number) proxyPortConfig).intValue();
+                }
+            }
+
+            if (proxyUsername == null) {
+                Object proxyUsernameConfig = ConfigParser.getParsedConfigs()
+                        .get(OAuthConstants.OAUTH_GLOBAL_PROXY_USERNAME);
+                if (proxyUsernameConfig != null) {
+                    proxyUsername = (String) proxyUsernameConfig;
+                }
+            }
+
+            if (proxyPassword == null) {
+                Object proxyPasswordConfig = ConfigParser.getParsedConfigs()
+                        .get(OAuthConstants.OAUTH_GLOBAL_PROXY_PASSWORD);
+                if (proxyPasswordConfig != null) {
+                    proxyPassword = (String) proxyPasswordConfig;
+                }
+            }
+
+            if (proxyProtocol == null) {
+                Object proxyProtocolConfig = ConfigParser.getParsedConfigs()
+                        .get(OAuthConstants.OAUTH_GLOBAL_PROXY_PROTOCOL);
+                if (proxyProtocolConfig != null) {
+                    proxyProtocol = (String) proxyProtocolConfig;
+                }
+            }
+
+            builder.withProxy(proxyHost, proxyPort, proxyUsername, proxyPassword, proxyProtocol);
+
         }
 
         this.httpClientConfiguration = builder.build();
@@ -276,16 +281,21 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
         }
     }
 
-    public void setTokenRevocationHandler(String revocationChecker) {
-        if (revocationChecker != null) {
-            Class clazz = null;
+    public void setTokenRevocationHandler(String tokenRevocationHandler) {
+        if (tokenRevocationHandler != null) {
+            Class<?> clazz;
             try {
-                clazz = JWTValidator.class.getClassLoader().loadClass(revocationChecker);
+                clazz = JWTValidator.class.getClassLoader().loadClass(tokenRevocationHandler);
+                if (!TokenRevocationHandler.class.isAssignableFrom(clazz)) {
+                    throw new IllegalStateException("Configured class does not implement TokenRevocationHandler: "
+                            + tokenRevocationHandler);
+                }
                 this.tokenRevocationHandler = (TokenRevocationHandler) clazz.getDeclaredConstructor().newInstance();
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException
                      | InvocationTargetException e) {
-                log.error("Failed to instantiate TokenRevocationHandler: " + revocationChecker, e);
-                throw new IllegalStateException("Failed to initialize TokenRevocationHandler: " + revocationChecker, e);
+                log.error("Failed to instantiate TokenRevocationHandler: " + tokenRevocationHandler, e);
+                throw new IllegalStateException("Failed to initialize TokenRevocationHandler: "
+                        + tokenRevocationHandler, e);
             }
         }
     }
@@ -349,7 +359,15 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
     public void setMaxIssuedAtAgeSeconds(String maxIssuedAtAgeSeconds) {
 
-        this.maxIssuedAtAgeSeconds = Long.parseLong(maxIssuedAtAgeSeconds);
+        try {
+            long parsed = Long.parseLong(maxIssuedAtAgeSeconds);
+            if (parsed < 0) {
+                throw new IllegalArgumentException("maxIssuedAtAgeSeconds must be >= 0");
+            }
+            this.maxIssuedAtAgeSeconds = parsed;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid maxIssuedAtAgeSeconds: " + maxIssuedAtAgeSeconds, e);
+        }
     }
 
     /**
@@ -433,14 +451,16 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
         if (typ == null || !(OAuthConstants.JWT_TYPE_AT_JWT.equals(typ.getType())
                 || OAuthConstants.MEDIA_TYPE_JWT_ACCESS_TOKEN.equals(typ.getType()))) {
             log.error("Invalid JWT type. Expected 'at+jwt' or 'application/at+jwt', found: " + typ);
-            throw new OAuthSecurityException("Invalid token type");
+            throw new OAuthSecurityException(OAuthConstants.API_AUTH_INCORRECT_ACCESS_TOKEN_TYPE,
+                    "Invalid token type");
         }
 
         // 2. Check 'alg' (Algorithm) - Protects against 'alg: none' and Key Confusion
         JWSAlgorithm alg = header.getAlgorithm();
         if (!isSupportedAlgorithm(alg)) {
             log.error("Unsupported or weak algorithm: " + alg);
-            throw new OAuthSecurityException("Unsuitable cryptographic algorithm");
+            throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
+                    "Unsuitable cryptographic algorithm");
         }
 
         log.debug("Header metadata validation successful.");
@@ -456,8 +476,8 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
             log.error("Algorithm " + alg.getName() + " is not in the list of allowed algorithms.");
             return false;
         }
-        // By default, only allow strong asymmetric algorithms (RS256, ES256, etc.)
-        return JWSAlgorithm.Family.RSA.contains(alg) || JWSAlgorithm.Family.EC.contains(alg);
+        // By default, only allow strong asymmetric algorithms (RS256, etc.)
+        return JWSAlgorithm.Family.RSA.contains(alg);
     }
 
     /**
@@ -520,12 +540,15 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
                 Object cachedEntry = signedJWTParseCache.get(signature);
                 if (cachedEntry != null) {
                     SignedJWTInfo cached = (SignedJWTInfo) cachedEntry;
-                    signedJWTInfo = new SignedJWTInfo(accessToken, cached.getSignedJWT(), cached.getJwtClaimsSet());
+                    signedJWTInfo = new SignedJWTInfo(accessToken, cached.getSignedJWT(), cached.getJwtClaimsSet(),
+                            cached.getValidationStatus(), cached.getClientCertificate(),
+                            cached.getClientCertificateHash());
                 }
                 if (signedJWTInfo == null || !signedJWTInfo.getToken().equals(accessToken)) {
                     SignedJWT signedJWT = SignedJWT.parse(accessToken);
                     JWTClaimsSet jwtClaimsSet = signedJWT.getJWTClaimsSet();
-                    signedJWTParseCache.put(signature, new SignedJWTInfo(accessToken, signedJWT, jwtClaimsSet));
+                    signedJWTInfo = new SignedJWTInfo(accessToken, signedJWT, jwtClaimsSet);
+                    signedJWTParseCache.put(signature, signedJWTInfo);
                 }
             } else {
                 SignedJWT signedJWT = SignedJWT.parse(accessToken);
@@ -640,7 +663,9 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
         if (!acceptableResources.isEmpty()) {
             for (RESTDispatcher dispatcher : ApiUtils.getDispatchers()) {
                 Resource resource = dispatcher.findResource(messageContext, acceptableResources);
-                if (resource != null && Arrays.asList(resource.getMethods()).contains(httpMethod)) {
+                String[] resourceMethods = resource != null ? resource.getMethods() : null;
+                if (resource != null && (resourceMethods == null
+                        || Arrays.asList(resourceMethods).contains(httpMethod))) {
                     selectedResource = resource;
                     String dispatcherStr = selectedResource.getDispatcherHelper() != null
                             ? selectedResource.getDispatcherHelper().getString() : null;
@@ -659,6 +684,10 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
                     OAuthConstants.API_AUTH_INCORRECT_API_RESOURCE_MESSAGE);
         }
 
+        if (selectedResource.getDispatcherHelper() == null) {
+            throw new OAuthSecurityException(OAuthConstants.API_AUTH_INCORRECT_API_RESOURCE,
+                    OAuthConstants.API_AUTH_INCORRECT_API_RESOURCE_MESSAGE);
+        }
         resourceString = selectedResource.getDispatcherHelper().getString();
         messageContext.setProperty(RESTConstants.SELECTED_RESOURCE, resourceString);
     }

@@ -41,18 +41,18 @@ public class CacheProvider {
 
     static {
         Object tokenCacheTimeoutConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.CACHE_EXPIRY);
-        if (tokenCacheTimeoutConfig instanceof Integer) {
-            int configuredCacheExpiry = (Integer) tokenCacheTimeoutConfig;
-            if (configuredCacheExpiry > 0) {
-                cacheExpiry = configuredCacheExpiry;
-            } else {
-                log.warn("Invalid cache expiry value configured: " + configuredCacheExpiry +
-                        ". Cache expiry should be a positive integer. Defaulting to "
+        if (tokenCacheTimeoutConfig instanceof Number) {
+            long configuredCacheExpiry = ((Number) tokenCacheTimeoutConfig).longValue();
+            if (configuredCacheExpiry <= 0) {
+                log.warn("Invalid cache expiry value configured: " + configuredCacheExpiry
+                        + ". Cache expiry should be a positive integer. Defaulting to "
                         + DEFAULT_CACHE_EXPIRY + " seconds.");
+            } else {
+                cacheExpiry = configuredCacheExpiry;
             }
         } else if (tokenCacheTimeoutConfig != null) {
-            log.warn("Invalid cache expiry configuration type: " + tokenCacheTimeoutConfig.getClass().getName() +
-                    ". Cache expiry should be configured as a positive integer. Defaulting to "
+            log.warn("Invalid cache expiry configuration type: " + tokenCacheTimeoutConfig.getClass().getName()
+                    + ". Cache expiry should be configured as a positive integer. Defaulting to "
                     + DEFAULT_CACHE_EXPIRY + " seconds.");
         }
         createParsedSignJWTCache();
@@ -94,10 +94,7 @@ public class CacheProvider {
     }
 
     private static Cache createCache(String cacheName) {
-        Object cacheExpiryConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.CACHE_EXPIRY);
-        if (cacheExpiryConfig != null) {
-            cacheExpiry = ((Number) cacheExpiryConfig).longValue();
-        }
+
         return getCache(CACHE_MANAGER_NAME, cacheName, cacheExpiry, cacheExpiry);
     }
 

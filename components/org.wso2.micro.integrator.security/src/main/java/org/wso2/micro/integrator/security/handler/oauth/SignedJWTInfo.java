@@ -60,6 +60,18 @@ public class SignedJWTInfo implements Serializable {
         this.jwtClaimsSet = jwtClaimsSet;
     }
 
+    public SignedJWTInfo(String token, SignedJWT signedJWT, JWTClaimsSet jwtClaimsSet,
+                         ValidationStatus validationStatus, Certificate clientCertificate,
+                         String clientCertificateHash) {
+
+        this.token = token;
+        this.signedJWT = signedJWT;
+        this.jwtClaimsSet = jwtClaimsSet;
+        this.validationStatus = validationStatus;
+        this.clientCertificate = clientCertificate;
+        this.clientCertificateHash = clientCertificateHash;
+    }
+
     public SignedJWTInfo() {
 
     }
