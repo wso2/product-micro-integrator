@@ -110,6 +110,16 @@
   "mediation.internal_http_api_port": "synapse_properties.'internal.http.api.port'",
   "mediation.internal_https_api_port": "synapse_properties.'internal.https.api.port'",
 
+  "mediation.http_client.global_connection_timeout": "synapse_properties.'http.client.global.connection.timeout'",
+  "mediation.http_client.global_connection_request_timeout": "synapse_properties.'http.client.global.connection.request.timeout'",
+  "mediation.http_client.global_socket_timeout": "synapse_properties.'http.client.global.socket.timeout'",
+  "mediation.http_client.global_proxy_enabled": "synapse_properties.'http.client.global.proxy.enabled'",
+  "mediation.http_client.global_proxy_host": "synapse_properties.'http.client.global.proxy.host'",
+  "mediation.http_client.global_proxy_port": "synapse_properties.'http.client.global.proxy.port'",
+  "mediation.http_client.global_proxy_username": "synapse_properties.'http.client.global.proxy.username'",
+  "mediation.http_client.global_proxy_password": "synapse_properties.'http.client.global.proxy.password'",
+  "mediation.http_client.global_proxy_protocol": "synapse_properties.'http.client.global.proxy.protocol'",
+
   "opentelemetry.enable": "synapse_properties.'opentelemetry.enable'",
   "opentelemetry.host": "synapse_properties.'opentelemetry.host'",
   "opentelemetry.port": "synapse_properties.'opentelemetry.port'",

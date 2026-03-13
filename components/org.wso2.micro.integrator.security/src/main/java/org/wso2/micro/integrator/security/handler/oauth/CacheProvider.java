@@ -18,6 +18,8 @@
 
 package org.wso2.micro.integrator.security.handler.oauth;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.config.mapper.ConfigParser;
 
 import java.util.concurrent.TimeUnit;
@@ -27,14 +29,32 @@ import javax.cache.Caching;
 
 public class CacheProvider {
 
+    private static final Log log = LogFactory.getLog(CacheProvider.class);
+
     public static final String CACHE_MANAGER_NAME = "MICRO_INTEGRATOR_CACHE_MANAGER";
     public static final String SIGNED_JWT_CACHE = "SIGNED_JWT_CACHE";
     public static final String TOKEN_CACHE_NAME = "TOKEN_CACHE";
     public static final String JWKS_CACHE_NAME = "JWKS_CACHE";
     public static final String INVALID_TOKEN_CACHE_NAME = "INVALID_TOKEN_CACHE";
-    public static final long DEFAULT_TIMEOUT = 900;
+    public static final long DEFAULT_CACHE_EXPIRY = 900;
+    private static long cacheExpiry = DEFAULT_CACHE_EXPIRY;
 
     static {
+        Object tokenCacheTimeoutConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.CACHE_EXPIRY);
+        if (tokenCacheTimeoutConfig instanceof Number) {
+            long configuredCacheExpiry = ((Number) tokenCacheTimeoutConfig).longValue();
+            if (configuredCacheExpiry <= 0) {
+                log.warn("Invalid cache expiry value configured: " + configuredCacheExpiry
+                        + ". Cache expiry should be a positive integer. Defaulting to "
+                        + DEFAULT_CACHE_EXPIRY + " seconds.");
+            } else {
+                cacheExpiry = configuredCacheExpiry;
+            }
+        } else if (tokenCacheTimeoutConfig != null) {
+            log.warn("Invalid cache expiry configuration type: " + tokenCacheTimeoutConfig.getClass().getName()
+                    + ". Cache expiry should be configured as a positive integer. Defaulting to "
+                    + DEFAULT_CACHE_EXPIRY + " seconds.");
+        }
         createParsedSignJWTCache();
         createTokenCache();
         createJwksCache();
@@ -74,11 +94,7 @@ public class CacheProvider {
     }
 
     private static Cache createCache(String cacheName) {
-        long cacheExpiry = DEFAULT_TIMEOUT;
-        Object cacheExpiryConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.CACHE_EXPIRY);
-        if (cacheExpiryConfig != null) {
-            cacheExpiry = ((Number) cacheExpiryConfig).longValue();
-        }
+
         return getCache(CACHE_MANAGER_NAME, cacheName, cacheExpiry, cacheExpiry);
     }
 
@@ -105,7 +121,7 @@ public class CacheProvider {
         Iterable<Cache<?, ?>> availableCaches = Caching.getCacheManager(cacheManagerName).getCaches();
         for (Cache cache : availableCaches) {
             if (cache.getName().equalsIgnoreCase(cacheName)) {
-                return Caching.getCacheManager(cacheManagerName).getCache(cacheName);
+                return cache;
             }
         }
 

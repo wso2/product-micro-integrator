@@ -33,16 +33,14 @@ public class JWTValidationInfo implements Serializable {
     private String issuer;
     private long expiryTime;
     private long issuedTime;
-    private String consumerKey;
     private boolean valid;
     private List<String> scopes = new ArrayList<>();
     private Map<String, Object> claims = new HashMap<>();
     private String jti;
     private int validationCode;
     private String rawPayload;
-    private String keyManager;
-    private Boolean isAppToken;
     private boolean isExpired = false;
+    private boolean cnfFailed = false;
 
     public JWTValidationInfo() {
 
@@ -54,26 +52,14 @@ public class JWTValidationInfo implements Serializable {
         this.issuer = jwtValidationInfo.getIssuer();
         this.expiryTime = jwtValidationInfo.getExpiryTime();
         this.issuedTime = jwtValidationInfo.getIssuedTime();
-        this.consumerKey = jwtValidationInfo.getConsumerKey();
         this.valid = jwtValidationInfo.isValid();
         this.scopes = new ArrayList<>(jwtValidationInfo.getScopes());
         this.claims = new HashMap<>(jwtValidationInfo.getClaims());
         this.jti = jwtValidationInfo.getJti();
         this.validationCode = jwtValidationInfo.getValidationCode();
         this.rawPayload = jwtValidationInfo.getRawPayload();
-        this.keyManager = jwtValidationInfo.getKeyManager();
-        this.isAppToken = jwtValidationInfo.getAppToken();
         this.isExpired = jwtValidationInfo.isExpired();
-    }
-
-    public Boolean getAppToken() {
-
-        return isAppToken;
-    }
-
-    public void setAppToken(Boolean appToken) {
-
-        isAppToken = appToken;
+        this.cnfFailed = jwtValidationInfo.isCnfFailed();
     }
 
     public String getUser() {
@@ -156,16 +142,6 @@ public class JWTValidationInfo implements Serializable {
         this.jti = jti;
     }
 
-    public String getConsumerKey() {
-
-        return consumerKey;
-    }
-
-    public void setConsumerKey(String consumerKey) {
-
-        this.consumerKey = consumerKey;
-    }
-
     public int getValidationCode() {
 
         return validationCode;
@@ -186,21 +162,21 @@ public class JWTValidationInfo implements Serializable {
         this.rawPayload = rawPayload;
     }
 
-    public String getKeyManager() {
-
-        return keyManager;
-    }
-
-    public void setKeyManager(String keyManager) {
-
-        this.keyManager = keyManager;
-    }
-
     public boolean isExpired() {
         return isExpired;
     }
 
     public void setExpired(boolean expired) {
         isExpired = expired;
+    }
+
+    public boolean isCnfFailed() {
+
+        return cnfFailed;
+    }
+
+    public void setCnfFailed(boolean cnfFailed) {
+
+        this.cnfFailed = cnfFailed;
     }
 }
