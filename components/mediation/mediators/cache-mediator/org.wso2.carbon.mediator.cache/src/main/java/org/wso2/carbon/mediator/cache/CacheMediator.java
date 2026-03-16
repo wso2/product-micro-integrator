@@ -419,17 +419,25 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
                         + "sequence : " + onCacheHitRef);
             }
             ContinuationStackManager.updateSeqContinuationState(synCtx, getMediatorPosition());
-            SequenceMediator onCacheHitSeq = (SequenceMediator) synCtx.getSequence(onCacheHitRef);
+            Mediator onCacheHitMediator = synCtx.getSequence(onCacheHitRef);
+            if (onCacheHitMediator == null) {
+                handleException("Sequence named '" + onCacheHitRef + "' does not exist", synCtx);
+            }
 
-            // Handle coverage tracking for referenced sequence in unit tests mode
-            String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(
-                    synCtx, onCacheHitSeq, onCacheHitRef);
+            // Handle coverage tracking for referenced sequence in unit tests mode,
+            if (onCacheHitMediator instanceof SequenceMediator) {
+                SequenceMediator onCacheHitSeq = (SequenceMediator) onCacheHitMediator;
+                String originalArtifactKey = CoverageUtils.handleCoverageForReferencedSequence(
+                        synCtx, onCacheHitSeq, onCacheHitRef);
 
-            try {
-                onCacheHitSeq.mediate(synCtx);
-            } finally {
-                // Restore original artifact key for unit test coverage
-                CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+                try {
+                    onCacheHitMediator.mediate(synCtx);
+                } finally {
+                    // Restore original artifact key for unit test coverage
+                    CoverageUtils.restoreCoverageArtifactKey(synCtx, originalArtifactKey);
+                }
+            } else {
+                onCacheHitMediator.mediate(synCtx);
             }
 
         } else {
