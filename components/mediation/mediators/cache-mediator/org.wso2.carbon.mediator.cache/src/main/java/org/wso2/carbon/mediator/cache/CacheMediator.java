@@ -38,6 +38,8 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.debug.constructs.EnclosedInlinedSequence;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.mediators.ChildSequence;
+import org.apache.synapse.mediators.MediatorWithChildren;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -46,16 +48,14 @@ import org.apache.synapse.util.FixedByteArrayOutputStream;
 import org.apache.synapse.util.MessageHelper;
 import org.wso2.carbon.mediator.cache.digest.DigestGenerator;
 import org.wso2.carbon.mediator.cache.util.HttpCachingFilter;
-import org.apache.synapse.mediators.MediatorWithChildren;
-import org.apache.synapse.mediators.ChildSequence;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -200,6 +200,8 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
      */
     private boolean isPreviousCacheImplementation = false;
 
+    private static final String ON_CACHE_HIT_CHILD_SEQUENCE_NAME = "on-cache-hit";
+
     /**
      * {@inheritDoc}
      */
@@ -209,7 +211,7 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
             return Collections.emptyList();
         }
         List<ChildSequence> children = new ArrayList<>();
-        children.add(new ChildSequence("on-cache-hit", onCacheHitSequence, onCacheHitRef));
+        children.add(new ChildSequence(ON_CACHE_HIT_CHILD_SEQUENCE_NAME, onCacheHitSequence, onCacheHitRef));
         return children;
     }
 
