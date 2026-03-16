@@ -95,6 +95,7 @@
   "mediation.synapse.maximum_failover_retries":"synapse_properties.'maximum.failover.retries'",
   "mediation.synapse.suspend_duration_on_maximum_failover":"synapse_properties.'suspend.duration.on.maximum.failover'",
   "mediation.synapse.freemarker_templates_base_path": "synapse_properties.'freemarker.template.base.path'",
+  "mediation.synapse.disable_thread_switch_on_blocking_call": "synapse_properties.'synapse.blocking.call.disable.thread.switch'",
 
   "mediation.flow.statistics.enable": "synapse_properties.'mediation.flow.statistics.enable'",
   "mediation.flow.statistics.capture_all": "synapse_properties.'mediation.flow.statistics.collect.all'",
