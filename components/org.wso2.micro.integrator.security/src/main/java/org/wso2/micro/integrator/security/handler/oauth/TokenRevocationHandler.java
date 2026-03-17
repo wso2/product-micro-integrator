@@ -20,7 +20,7 @@ package org.wso2.micro.integrator.security.handler.oauth;
 
 import java.util.Map;
 
-public interface TokenRevocationChecker {
+public interface TokenRevocationHandler {
 
     /**
      * Checks if the given token has been revoked or invalidated.

@@ -22,9 +22,10 @@ public class OAuthConstants {
 
     public static final String JWT_OAUTH_CONFIG = "rest_api.jwt_security_handler.";
     public static final String CACHE_EXPIRY = JWT_OAUTH_CONFIG + "cache_expiry";
-    public static final String REMOVE_OAUTH_HEADERS_FROM_OUT_MESSAGE = JWT_OAUTH_CONFIG
-            + "remove_oauth_headers_from_out_message";
+    public static final String MAX_ISSUED_AT_AGE_SECONDS = JWT_OAUTH_CONFIG + "max_issued_at_age_seconds";
+    public static final String CLOCK_SKEW_SECONDS = JWT_OAUTH_CONFIG + "clock_skew_seconds";
     public static final String TRUSTED_ISSUERS = JWT_OAUTH_CONFIG + "trusted_issuers";
+    public static final String EXPECTED_AUDIENCE = JWT_OAUTH_CONFIG + "audience";
 
     public static final String BEARER = "Bearer";
     public static final String DOT = ".";
@@ -33,9 +34,27 @@ public class OAuthConstants {
     public static final String SCOPE = "scope";
     public static final String SCOPE_DELIMITER = " ";
     public static final String OAUTH2_DEFAULT_SCOPE = "default";
+    public static final String MEDIA_TYPE_JWT_ACCESS_TOKEN = "application/at+jwt";
+    public static final String JWT_TYPE_AT_JWT = "at+jwt";
+    public static final String ALL_AUDIENCES = "all";
 
     public static final String SCOPES = "Scopes";
     public static final String JWT_CLAIMS = "jwt_token_claims";
+
+    public static final String DIGEST = "x5t#S256";
+    public static final String CNF = "cnf";
+
+    public static final String OAUTH_GLOBAL_CONNECTION_TIMEOUT = "http.client.global.connection.timeout";
+    public static final String OAUTH_GLOBAL_CONNECTION_REQUEST_TIMEOUT = "http.client.global.connection.request.timeout";
+    public static final String OAUTH_GLOBAL_SOCKET_TIMEOUT = "http.client.global.socket.timeout";
+    public static final String OAUTH_GLOBAL_PROXY_ENABLED = "http.client.global.proxy.enabled";
+    public static final String OAUTH_GLOBAL_PROXY_HOST = "http.client.global.proxy.host";
+    public static final String OAUTH_GLOBAL_PROXY_PORT = "http.client.global.proxy.port";
+    public static final String OAUTH_GLOBAL_PROXY_USERNAME = "http.client.global.proxy.username";
+    public static final String OAUTH_GLOBAL_PROXY_PASSWORD = "http.client.global.proxy.password";
+    public static final String OAUTH_GLOBAL_PROXY_PROTOCOL = "http.client.global.proxy.protocol";
+
+    public static final String BASE64_ENCODED_CLIENT_CERTIFICATE_HEADER = "X-WSO2-CLIENT-CERTIFICATE";
 
     public static final long DEFAULT_TIMESTAMP_SKEW_IN_SECONDS = 300L;
 
@@ -203,5 +222,14 @@ public class OAuthConstants {
         }
         return errorDescription;
     }
+
+    public static final String BEGIN_CERTIFICATE_STRING = "-----BEGIN CERTIFICATE-----";
+    public static final String END_CERTIFICATE_STRING = "-----END CERTIFICATE-----";
+
+    //constants for getting masked token
+    public static final int MAX_LEN = 36;
+    public static final int MAX_VISIBLE_LEN = 8;
+    public static final int MIN_VISIBLE_LEN_RATIO = 5;
+    public static final String MASK_CHAR = "X";
 
 }

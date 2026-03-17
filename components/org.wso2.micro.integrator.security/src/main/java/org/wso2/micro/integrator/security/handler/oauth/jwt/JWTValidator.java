@@ -19,35 +19,36 @@
 package org.wso2.micro.integrator.security.handler.oauth.jwt;
 
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import com.nimbusds.jwt.util.DateUtils;
 import org.apache.axis2.Constants;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.api.ApiUtils;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.auth.AuthException;
 import org.apache.synapse.rest.RESTConstants;
 import org.wso2.micro.integrator.security.handler.oauth.CacheProvider;
 import org.wso2.micro.integrator.security.handler.oauth.HttpClientConfiguration;
+import org.wso2.micro.integrator.security.handler.oauth.MTLSConfiguration;
 import org.wso2.micro.integrator.security.handler.oauth.OAuthConstants;
 import org.wso2.micro.integrator.security.handler.oauth.OAuthSecurityException;
 import org.wso2.micro.integrator.security.handler.oauth.OAuthUtil;
 import org.wso2.micro.integrator.security.handler.oauth.RevocationCheckException;
 import org.wso2.micro.integrator.security.handler.oauth.SignedJWTInfo;
-import org.wso2.micro.integrator.security.handler.oauth.TokenRevocationChecker;
+import org.wso2.micro.integrator.security.handler.oauth.TokenRevocationHandler;
 
 import java.io.IOException;
+import java.security.cert.Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -55,16 +56,25 @@ public class JWTValidator {
 
     private static final Log log = LogFactory.getLog(JWTValidator.class);
 
-    private final TokenRevocationChecker tokenRevocationChecker;
     private final String jwksEndpoint;
+    private final ArrayList<String> trustedIssuers;
+    private final ArrayList<String> audience;
+    private final Long maxIssuedAtAgeSeconds;
+    private final TokenRevocationHandler tokenRevocationHandler;
     private final HttpClientConfiguration httpClientConfiguration;
+    private final MTLSConfiguration mtlsConfiguration;
 
-    public JWTValidator(TokenRevocationChecker tokenRevocationChecker,
-                        String jwksEndpoint, HttpClientConfiguration httpClientConfiguration) {
+    public JWTValidator(String jwksEndpoint, ArrayList<String> trustedIssuers, ArrayList<String> audience,
+                        Long maxIssuedAtAgeSeconds, TokenRevocationHandler tokenRevocationHandler,
+                        HttpClientConfiguration httpClientConfiguration, MTLSConfiguration mtlsConfiguration) {
 
-        this.tokenRevocationChecker = tokenRevocationChecker;
         this.jwksEndpoint = jwksEndpoint;
+        this.trustedIssuers = trustedIssuers;
+        this.audience = audience;
+        this.maxIssuedAtAgeSeconds = maxIssuedAtAgeSeconds;
+        this.tokenRevocationHandler = tokenRevocationHandler;
         this.httpClientConfiguration = httpClientConfiguration;
+        this.mtlsConfiguration = mtlsConfiguration;
     }
 
     /**
@@ -73,8 +83,8 @@ public class JWTValidator {
      * <p>This method performs the high-level JWT authentication flow:
      * <ol>
      *   <li>Compute a token identifier ("jti" claim or signature) for cache/revocation checks.</li>
-     *   <li>If a {@link TokenRevocationChecker} is configured, invoke it to short-circuit revoked tokens.</li>
-     *   <li>Obtain a {@link JWTValidationInfo} via {@link #getJwtValidationInfo} (which may
+     *   <li>If a {@link TokenRevocationHandler} is configured, invoke it to short-circuit revoked tokens.</li>
+     *   <li>Obtain a {@link JWTValidationInfo} via {@link #validateJWT} (which may
      *       use in-memory caches or validate the token signature/expiry).</li>
      *   <li>If the token is valid, validate resource scopes (via {@link #validateScopes}),
      *       store scope and claim information into the message context, and return successfully.</li>
@@ -94,37 +104,24 @@ public class JWTValidator {
         org.apache.axis2.context.MessageContext axis2MsgContext =
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         String httpMethod = (String) axis2MsgContext.getProperty(Constants.Configuration.HTTP_METHOD);
-        String matchingResource = (String) synCtx.getProperty(RESTConstants.SELECTED_RESOURCE);
-        String jwtTokenIdentifier = getJWTTokenIdentifier(signedJWTInfo);
+        String jwtTokenIdentifier = JWTUtil.getJWTTokenIdentifier(signedJWTInfo);
         String jwtHeader = signedJWTInfo.getSignedJWT().getHeader().toString();
 
-        //TODO: handle cnf validation
-
-        if (StringUtils.isNotEmpty(jwtTokenIdentifier) && tokenRevocationChecker != null) {
-            // Check whether the token is revoked or not by invoking the plugged in token revocation checker
-            // implementation. If the token is revoked, we can directly return without validating the signature.
-            try {
-                if (tokenRevocationChecker.isRevoked(signedJWTInfo.getToken(),
-                        signedJWTInfo.getJwtClaimsSet().getClaims())) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Token retrieved from the revoked jwt token map.");
-                    }
-                    log.error("Invalid JWT token.");
-                    throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
-                            "Invalid JWT token");
-                }
-            } catch (RevocationCheckException e) {
-                log.error("Error while checking token revocation status for token.", e);
-                throw new OAuthSecurityException("Error while checking token revocation status", e);
+        if (isTokenRevoked(signedJWTInfo)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Token retrieved from the revoked jwt token map.");
             }
+            log.error("Invalid JWT token.");
+            throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
+                    "Invalid JWT token");
         }
 
-        JWTValidationInfo jwtValidationInfo = getJwtValidationInfo(signedJWTInfo, jwtTokenIdentifier, synCtx);
+        JWTValidationInfo jwtValidationInfo = validateJWT(signedJWTInfo, jwtTokenIdentifier, synCtx);
 
         if (jwtValidationInfo.isValid()) {
             // Validate scopes
-            JWTClaimsSet jwtClaimsSet = signedJWTInfo.getJwtClaimsSet();
-            if (!validateScopes(matchingResource, httpMethod, synCtx, jwtClaimsSet)) {
+            String matchingResource = (String) synCtx.getProperty(RESTConstants.SELECTED_RESOURCE);
+            if (!validateScopes(matchingResource, httpMethod, synCtx, jwtValidationInfo)) {
                 throw new OAuthSecurityException(OAuthConstants.INVALID_SCOPE,
                         OAuthConstants.INVALID_SCOPE_MESSAGE);
             }
@@ -141,28 +138,21 @@ public class JWTValidator {
         }
     }
 
-    /**
-     * Returns an identifier for the provided Signed JWT.
-     *
-     * <p>The method first attempts to read the standard JWT ID ("jti") claim from the
-     * JWT claims set. If the "jti" claim is present and not empty, it is returned.
-     * Otherwise the method falls back to returning the JWT signature string to
-     * uniquely identify the token.</p>
-     *
-     * @param signedJWTInfo SignedJWTInfo containing the parsed SignedJWT and claims
-     * @return the JWT identifier (the "jti" claim if present and non-empty, otherwise
-     *         the JWT signature string)
-     */
-    private String getJWTTokenIdentifier(SignedJWTInfo signedJWTInfo) {
+    public boolean isTokenRevoked(SignedJWTInfo signedJWTInfo) throws OAuthSecurityException {
 
-        JWTClaimsSet jwtClaimsSet = signedJWTInfo.getJwtClaimsSet();
-        if (jwtClaimsSet != null) {
-            String jti = jwtClaimsSet.getJWTID();
-            if (StringUtils.isNotEmpty(jti)) {
-                return jti;
+        if (tokenRevocationHandler != null) {
+            try {
+                return tokenRevocationHandler.isRevoked(signedJWTInfo.getToken(),
+                        signedJWTInfo.getJwtClaimsSet().getClaims());
+            } catch (RevocationCheckException e) {
+                log.error("Error while checking token revocation status for token.", e);
+                throw new OAuthSecurityException("Error while checking token revocation status", e);
+            } catch (RuntimeException e) {
+                log.error("Unexpected error while checking token revocation status for token.", e);
+                throw new OAuthSecurityException("Error while checking token revocation status", e);
             }
         }
-        return signedJWTInfo.getSignedJWT().getSignature().toString();
+        return false;
     }
 
     /**
@@ -172,13 +162,13 @@ public class JWTValidator {
      * <ul>
      *   <li>If the provided {@code signedJWTInfo} already has validation status {@code VALID}
      *       and an entry exists in the token key cache, the cached {@link JWTValidationInfo}
-     *       is returned after calling {@link #checkTokenExpiration} to ensure it is not expired.</li>
+     *       is returned after calling {@link JWTUtil#isTokenExpired} to ensure it is not expired.</li>
      *   <li>If the token is present in the invalid-token cache, a {@link JWTValidationInfo}
      *       with {@code valid=false} and {@link OAuthConstants#API_AUTH_INVALID_CREDENTIALS}
      *       as the validation code is returned.</li>
      * </ul>
      * If no cached result exists, the method performs a full validation by invoking
-     * {@link #validateJwtToken}, updates the {@code signedJWTInfo} validation status, and
+     * {@link #validateToken}, updates the {@code signedJWTInfo} validation status, and
      * populates the appropriate caches based on the validation outcome.</p>
      *
      * <p>Side effects:
@@ -194,77 +184,44 @@ public class JWTValidator {
      * @return a populated {@link JWTValidationInfo} describing whether the token is valid and containing extracted claims and scopes
      * @throws OAuthSecurityException if an error occurs while performing full token validation (for example parsing/JWKS retrieval/signature verification errors)
      */
-    private JWTValidationInfo getJwtValidationInfo(SignedJWTInfo signedJWTInfo, String jti,
-                                                   MessageContext messageContext) throws OAuthSecurityException {
+     private JWTValidationInfo validateJWT(SignedJWTInfo signedJWTInfo, String jti,
+                                           MessageContext messageContext) throws OAuthSecurityException {
 
-        String jwtHeader = signedJWTInfo.getSignedJWT().getHeader().toString();
-        JWTValidationInfo jwtValidationInfo = null;
+         // Check for CNF validation
+         if (mtlsConfiguration.isCNFValidationEnabled()) {
+             validateCertificateBinding(signedJWTInfo, messageContext);
+         }
 
-        // The "KEY_CACHE" contains traces of the already validated access tokens. Check the token cache
-        // to find whether the token is already validated. If the token is present in the cache and the validation
-        // status is valid, we can directly return from the cache without validating the signature again.
-        // If the token is present in the invalid token cache, we can directly return without validating the signature.
-        Object keyCache = CacheProvider.getTokenCache().get(jti);
-        if (SignedJWTInfo.ValidationStatus.VALID.equals(signedJWTInfo.getValidationStatus()) && keyCache != null) {
-            JWTValidationInfo tempJWTValidationInfo = (JWTValidationInfo) keyCache;
-            checkTokenExpiration(jti, tempJWTValidationInfo);
-            jwtValidationInfo = tempJWTValidationInfo;
-        } else if (CacheProvider.getInvalidTokenCache().get(jti) != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Token retrieved from the invalid token cache.");
-            }
-            log.error("Invalid JWT token.");
+         JWTValidationInfo jwtValidationInfo = null;
+         // The validation status can be set to NOT_VALIDATED from the previous step where the certificate binding
+         // is validated. If the validation status is NOT_VALIDATED, it means the JWT token needs to be validated
+         // again as the certificate binding validation can change the validation status of the signedJWTInfo object.
+         // Hence, the token cache will not be checked in such a scenario.
+         if (!SignedJWTInfo.ValidationStatus.NOT_VALIDATED.equals(signedJWTInfo.getValidationStatus())) {
+             // The "KEY_CACHE" contains traces of the already validated access tokens. Check the token cache to find
+             // whether the token is already validated. If the token is present in the cache and the validation status
+             // is valid, we can directly return from the cache without validating the signature again. If the token is
+             // present in the invalid token cache, we can directly return without validating the signature.
+             jwtValidationInfo = JWTUtil.getJWTValidationInfoFromCache(jti, signedJWTInfo, mtlsConfiguration);
+         }
 
-            jwtValidationInfo = new JWTValidationInfo();
-            jwtValidationInfo.setValidationCode(OAuthConstants.API_AUTH_INVALID_CREDENTIALS);
-            jwtValidationInfo.setValid(false);
-        }
+         if (jwtValidationInfo == null) {
+             // No cached validation info exists, perform full validation including signature validation, expiry check,
+             // and CNF validation.
+             jwtValidationInfo = validateToken(signedJWTInfo, messageContext);
 
-        if (jwtValidationInfo == null) {
-            jwtValidationInfo = validateJwtToken(signedJWTInfo, messageContext);
-            signedJWTInfo.setValidationStatus(jwtValidationInfo.isValid() ?
-                    SignedJWTInfo.ValidationStatus.VALID : SignedJWTInfo.ValidationStatus.INVALID);
-
-            if (jwtValidationInfo.isValid()) {
-                CacheProvider.getTokenCache().put(jti, jwtValidationInfo);
-            } else {
-                CacheProvider.getInvalidTokenCache().put(jti, Boolean.TRUE);
-            }
-        }
-        return jwtValidationInfo;
-    }
-
-    /**
-     * Check whether the jwt token is expired or not.
-     *
-     * @param tokenIdentifier The token Identifier of JWT.
-     * @param payload         The payload of the JWT token.
-     * @return the {@link JWTValidationInfo} containing the updated validation and expiration status of the token
-     */
-    private JWTValidationInfo checkTokenExpiration(String tokenIdentifier, JWTValidationInfo payload) {
-
-        long timestampSkew = getTimeStampSkewInSeconds();
-
-        Date now = new Date();
-        Date exp = new Date(payload.getExpiryTime());
-        if (!DateUtils.isAfter(exp, now, timestampSkew)) {
-            CacheProvider.getTokenCache().remove(tokenIdentifier);
-            CacheProvider.getInvalidTokenCache().put(tokenIdentifier, Boolean.TRUE);
-            payload.setValid(false);
-            payload.setValidationCode(OAuthConstants.API_AUTH_ACCESS_TOKEN_EXPIRED);
-            payload.setExpired(true);
-            return payload;
-        }
-        return payload;
-    }
-
-    protected boolean validateTokenExpiry(JWTClaimsSet jwtClaimsSet) {
-
-        long timestampSkew = getTimeStampSkewInSeconds();
-        Date now = new Date();
-        Date exp = jwtClaimsSet.getExpirationTime();
-        return exp == null || DateUtils.isAfter(exp, now, timestampSkew);
-    }
+             if (jwtValidationInfo.isValid()) {
+                 signedJWTInfo.setValidationStatus(SignedJWTInfo.ValidationStatus.VALID);
+                 CacheProvider.getTokenCache().put(jti, jwtValidationInfo);
+             } else {
+                 signedJWTInfo.setValidationStatus(SignedJWTInfo.ValidationStatus.INVALID);
+                 if (!jwtValidationInfo.isCnfFailed()) {
+                     CacheProvider.getInvalidTokenCache().put(jti, Boolean.TRUE);
+                 }
+             }
+         }
+         return jwtValidationInfo;
+     }
 
     /**
      * Validate the provided Signed JWT and produce a {@link JWTValidationInfo} describing
@@ -274,8 +231,8 @@ public class JWTValidator {
      * <ul>
      *   <li>Verify the JWT signature (via {@link #validateSignature}).</li>
      *   <li>Check token expiry against the current time allowing for configured timestamp skew
-     *       (via {@link #validateTokenExpiry}).</li>
-     *   <li>If validation succeeds, populate scopes (via {@link #getTransformedScopes}), issuer,
+     *       (via {@link JWTUtil#validateTokenExpiry}).</li>
+     *   <li>If validation succeeds, populate scopes (via {@link JWTUtil#getTransformedScopes}), issuer,
      *       expiry/issue times, subject and jti into the returned {@link JWTValidationInfo} and
      *       set the raw token payload.</li>
      * </ul>
@@ -291,42 +248,175 @@ public class JWTValidator {
      * @return a {@link JWTValidationInfo} populated with validation outcome and token details
      * @throws OAuthSecurityException if an error occurs while parsing the JWT, retrieving
      *                                JWKS information, or verifying the signature. Underlying
-     *                                causes (for example {@link java.text.ParseException},
-     *                                {@link com.nimbusds.jose.JOSEException}, {@link java.io.IOException})
+     *                                causes (for example {@link ParseException},
+     *                                {@link JOSEException}, {@link IOException})
      *                                are wrapped in this exception.
      */
-    private JWTValidationInfo validateJwtToken(SignedJWTInfo signedJWTInfo, MessageContext messageContext)
+    private JWTValidationInfo validateToken(SignedJWTInfo signedJWTInfo, MessageContext messageContext)
             throws OAuthSecurityException {
 
         JWTValidationInfo jwtValidationInfo = new JWTValidationInfo();
         boolean state;
-        String errorMessage;
         try {
+            // 1. First we need to validate the signature of the JWT token. If the signature validation is failed,
+            // we can directly return without validating the claims payload.
             state = validateSignature(signedJWTInfo.getSignedJWT(), messageContext);
-            if (state) {
-                JWTClaimsSet jwtClaimsSet = signedJWTInfo.getJwtClaimsSet();
-                state = validateTokenExpiry(jwtClaimsSet);
-                if (state) {
-                    jwtValidationInfo.setScopes(getTransformedScopes(jwtClaimsSet));
-                    createJWTValidationInfoFromJWT(jwtValidationInfo, jwtClaimsSet);
-                    jwtValidationInfo.setRawPayload(signedJWTInfo.getToken());
-                    return jwtValidationInfo;
-                } else {
-                    errorMessage = "JWT token is expired. Token";
-                }
-            } else {
-                errorMessage = "JWT signature validation failed.";
-
+            if (!state) {
+                log.error("JWT signature validation failed.");
+                jwtValidationInfo.setValid(false);
+                jwtValidationInfo.setValidationCode(OAuthConstants.API_AUTH_INVALID_CREDENTIALS);
+                return jwtValidationInfo;
             }
-            log.error(errorMessage);
-            jwtValidationInfo.setValid(false);
-            jwtValidationInfo.setValidationCode(OAuthConstants.API_AUTH_INVALID_CREDENTIALS);
+
+            // 2. Validate the claims payload of the token after validating the signature of the token.
+            state = validateClaimsPayload(signedJWTInfo, jwtValidationInfo);
+            if (state) {
+                JWTUtil.populateValidationInfoFromClaims(jwtValidationInfo, signedJWTInfo.getJwtClaimsSet());
+                jwtValidationInfo.setRawPayload(signedJWTInfo.getToken());
+            } else {
+                jwtValidationInfo.setValid(false);
+                jwtValidationInfo.setValidationCode(OAuthConstants.API_AUTH_INVALID_CREDENTIALS);
+            }
             return jwtValidationInfo;
         } catch (ParseException e) {
             throw new OAuthSecurityException("Error while parsing JWT Token", e);
         }
     }
 
+    /**
+     * Validates the logical claims (exp, cnf, iat) of the JWT.
+     *
+     * @param signedJWTInfo   The parsed JWT and its claims.
+     * @param jwtValidationInfo Object to capture specific validation failure details.
+     * @return true if all security claims are valid.
+     * @throws OAuthSecurityException if a terminal security policy is violated.
+     */
+    public boolean validateClaimsPayload(SignedJWTInfo signedJWTInfo, JWTValidationInfo jwtValidationInfo)
+            throws OAuthSecurityException {
+
+        JWTClaimsSet jwtClaimsSet = signedJWTInfo.getJwtClaimsSet();
+
+        if (!isIssuerTrusted(signedJWTInfo)) {
+            log.error("The token issuer is not in the list of trusted issuers.");
+            return false;
+        }
+
+        if (!validateAudience(jwtClaimsSet, audience)) {
+            log.error("The token audience does not match the expected audience.");
+            return false;
+        }
+
+        // 1. Expiry Check (Fastest & most common failure)
+        if (!JWTUtil.validateTokenExpiry(jwtClaimsSet)) {
+            log.error("JWT token is expired.");
+            jwtValidationInfo.setExpired(true);
+            return false;
+        }
+
+        // 2. CNF (Confirmation) Claim Check (For mTLS/Sender-Constrained tokens)
+        try {
+            if (!JWTUtil.validateCNFClaim(signedJWTInfo, mtlsConfiguration)) {
+                log.error("JWT token CNF claim validation failed.");
+                jwtValidationInfo.setCnfFailed(true);
+                return false;
+            }
+        } catch (ParseException e) {
+            log.error("Error while parsing 'cnf' claim in JWT Token", e);
+            return false;
+        }
+
+        // 3. Issued At (iat) Policy Check (Replay & Clock Skew)
+        if (!validateIssuedAtPolicy(jwtClaimsSet, JWTUtil.getTimeStampSkewInSeconds(), maxIssuedAtAgeSeconds)) {
+            log.error("JWT iat policy validation failed.");
+            return false;
+        }
+
+        return true; // Everything passed
+    }
+
+    /**
+     * Validates that the 'aud' (Audience) claim contains this Resource Server's identifier.
+     *
+     * @param jwtClaimsSet   The claims extracted from the token.
+     * @param expectedAudience The unique identifier for your API (e.g., "<a href="https://api.myapp.com">...</a>").
+     * @return true if the expected audience is present in the token's 'aud' claim.
+     */
+    public boolean validateAudience(JWTClaimsSet jwtClaimsSet, ArrayList<String> expectedAudience) {
+
+        if (expectedAudience == null || expectedAudience.isEmpty()
+                || expectedAudience.contains(OAuthConstants.ALL_AUDIENCES)) {
+            return true;
+        }
+
+        List<String> tokenAudiences = jwtClaimsSet.getAudience();
+
+        // 1. Presence Check
+        if (tokenAudiences == null || tokenAudiences.isEmpty()) {
+            log.error("Missing mandatory 'aud' (Audience) claim.");
+            return false;
+        }
+
+        // 2. Membership Check
+        // Per RFC 9068, the RS MUST verify that it is identified by one of the audiences.
+        for (String aud : expectedAudience) {
+            if (tokenAudiences.contains(aud)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Validate the cryptographic signature of a parsed {@link SignedJWT}.
+     *
+     * <p>High-level behavior:
+     * <ol>
+     *   <li>Extracts the Key ID ("kid") from the JWT header. If no kid is present, the method
+     *       returns {@code false} (signature cannot be validated without a key identifier).</li>
+     *   <li>If a JWKS endpoint was configured for the validator (the {@code jwksEndpoint} field):
+     *     <ul>
+     *       <li>Try to retrieve a cached {@link com.nimbusds.jose.jwk.JWK} for the endpoint/key id via
+     *           {@link JWTUtil#getJWKFromCache}.</li>
+     *       <li>If none is cached, fetch the JWKS from the remote endpoint using
+     *           {@link JWTUtil#fetchRemoteJWKS} (this may populate the JWKS cache) and then look up the key.</li>
+     *       <li>If the located key is an RSA key the method extracts an {@link RSAPublicKey} and delegates to
+     *           {@link JWTUtil#verifyTokenSignature(SignedJWT, RSAPublicKey)} for signature verification.</li>
+     *       <li>If the key is absent or the key type is not supported the method returns {@code false}.
+     *     </ul>
+     *   </li>
+     *   <li>If no JWKS endpoint is configured, the method delegates to
+     *       {@link JWTUtil#verifyTokenSignature(SignedJWT, String)} which resolves a public key by alias
+     *       (the method passes the kid as the alias in this mode) and verifies the signature.</li>
+     * </ol>
+     *
+     * <p>Return and error behavior:
+     * <ul>
+     *   <li>Returns {@code true} when a supported key is found and the signature verification succeeds.</li>
+     *   <li>Returns {@code false} when verification cannot be performed (missing kid, key not found, unsupported key type,
+     *       signature algorithm mismatch or verification failure) — callers should treat {@code false} as an
+     *       authentication failure.</li>
+     *   <li>Throws {@link OAuthSecurityException} when an unexpected error occurs while retrieving or parsing remote
+     *       JWKS or during network/proxy/certificate operations; such errors are logged and wrapped to provide a
+     *       consistent exception type to callers.</li>
+     * </ul>
+     *
+     * <p>Side-effects:
+     * <ul>
+     *   <li>May call {@link JWTUtil#fetchRemoteJWKS} which will fetch and parse a remote JWKS and populate the
+     *       JWKS cache via {@link org.wso2.micro.integrator.security.handler.oauth.CacheProvider}.</li>
+     *   <li>The method itself does not mutate the incoming {@link SignedJWT}.</li>
+     * </ul>
+     *
+     * <p>Thread-safety: the method is stateless and safe to call concurrently; any cache or network operations
+     * rely on the thread-safety of underlying utilities and the configured {@link CacheProvider}.
+     *
+     * @param signedJWT the parsed JWT whose signature should be validated (must not be null)
+     * @param messageContext optional Synapse {@link MessageContext} used for JWKS fetch (may be null)
+     * @return {@code true} if the signature was successfully verified against a supported key; {@code false} otherwise
+     * @throws OAuthSecurityException if an error occurs while retrieving or parsing JWKS or when network/auth
+     *                                errors occur during JWKS retrieval
+     */
     protected boolean validateSignature(SignedJWT signedJWT, MessageContext messageContext)
             throws OAuthSecurityException {
 
@@ -339,35 +429,20 @@ public class JWTValidator {
                 return false;
             }
             if (jwksEndpoint != null) {
-                JWKSet jwkSet;
-                // Check JWKSet Available in Cache
-                Object jwksCache = CacheProvider.getJwksCache().get(jwksEndpoint);
-                if (jwksCache != null) {
-                    jwkSet = (JWKSet) jwksCache;
-                } else {
-                    jwkSet = retrieveJWKSet(jwksEndpoint, messageContext);
+                // 1. Get JWKSet from Cache
+                JWK key = JWTUtil.getJWKFromCache(jwksEndpoint, keyID);
+
+                if (key == null) {
+                    JWKSet publicKeys = JWTUtil.fetchRemoteJWKS(jwksEndpoint, httpClientConfiguration, messageContext);
+                    key = publicKeys.getKeyByKeyId(keyID);
                 }
 
-                if (jwkSet != null) {
-                    CacheProvider.getJwksCache().put(jwksEndpoint, jwkSet);
-                } else {
-                    return false;
-                }
-
-                if (jwkSet.getKeyByKeyId(keyID) == null) {
-                    jwkSet = retrieveJWKSet(jwksEndpoint, messageContext);
-                    if (jwkSet != null) {
-                        CacheProvider.getJwksCache().put(jwksEndpoint, jwkSet);
-                    }
-                }
-
-                if (jwkSet.getKeyByKeyId(keyID) == null) {
+                if (key == null) {
                     if (log.isDebugEnabled()) {
                         log.debug("Key with ID " + keyID + " not found in JWKS endpoint");
                     }
                     return false;
-                } else if (jwkSet.getKeyByKeyId(keyID) instanceof RSAKey) {
-                    RSAKey keyByKeyId = (RSAKey) jwkSet.getKeyByKeyId(keyID);
+                } else if (key instanceof RSAKey keyByKeyId) {
                     RSAPublicKey rsaPublicKey = keyByKeyId.toRSAPublicKey();
                     if (rsaPublicKey != null) {
                         return JWTUtil.verifyTokenSignature(signedJWT, rsaPublicKey);
@@ -378,6 +453,8 @@ public class JWTValidator {
                     }
                     return false; // return false to produce 401 unauthenticated response
                 }
+            } else {
+                return JWTUtil.verifyTokenSignature(signedJWT, keyID);
             }
             return false;
         } catch (ParseException e) {
@@ -395,41 +472,6 @@ public class JWTValidator {
         }
     }
 
-    private JWKSet retrieveJWKSet(String jwksEndpoint, MessageContext messageContext)
-            throws IOException, ParseException, OAuthSecurityException, AuthException {
-
-        JWKSet jwkSet;
-        String jwksInfo = JWTUtil.retrieveJWKSConfiguration(jwksEndpoint, httpClientConfiguration, messageContext);
-        if (jwksInfo != null) {
-            jwkSet = JWKSet.parse(jwksInfo);
-        } else {
-            throw new OAuthSecurityException("Invalid JWKS endpoint.");
-        }
-        return jwkSet;
-    }
-
-    protected long getTimeStampSkewInSeconds() {
-
-        return OAuthConstants.DEFAULT_TIMESTAMP_SKEW_IN_SECONDS;
-    }
-
-    private void createJWTValidationInfoFromJWT(JWTValidationInfo jwtValidationInfo,
-                                                JWTClaimsSet jwtClaimsSet)
-            throws ParseException {
-
-        jwtValidationInfo.setIssuer(jwtClaimsSet.getIssuer());
-        jwtValidationInfo.setValid(true);
-        jwtValidationInfo.setClaims(new HashMap<>(jwtClaimsSet.getClaims()));
-        if (jwtClaimsSet.getExpirationTime() != null){
-            jwtValidationInfo.setExpiryTime(jwtClaimsSet.getExpirationTime().getTime());
-        }
-        if (jwtClaimsSet.getIssueTime() != null){
-            jwtValidationInfo.setIssuedTime(jwtClaimsSet.getIssueTime().getTime());
-        }
-        jwtValidationInfo.setUser(jwtClaimsSet.getSubject());
-        jwtValidationInfo.setJti(jwtClaimsSet.getJWTID());
-    }
-
     /**
      * Validate scopes bound to the resource of the API being invoked against the scopes specified
      * in the JWT token payload.
@@ -440,10 +482,10 @@ public class JWTValidator {
      * @throws OAuthSecurityException in case of scope validation failure
      */
     private boolean validateScopes(String matchingResource, String httpMethod, MessageContext synCtx,
-                                   JWTClaimsSet jwtClaimsSet) throws OAuthSecurityException {
+                                   JWTValidationInfo jwtValidationInfo) throws OAuthSecurityException {
 
         // Format the lookup key
-        String lookupKey = httpMethod + ":" + matchingResource;
+        String lookupKey = ApiUtils.getResourceScopeKey(httpMethod, matchingResource);
 
         // Get the required scopes from our pre-processed map
         Map<String, List<String>> resourceScopeMap =
@@ -454,13 +496,14 @@ public class JWTValidator {
             }
             return true;
         }
-        List<String> requiredScopes = resourceScopeMap.get(lookupKey);
 
+        List<String> requiredScopes = resourceScopeMap.get(lookupKey);
         if (requiredScopes == null || requiredScopes.isEmpty()) {
             return true; // No scopes required = Open Access
         }
 
-        List<String> tokenScopesClaims = getTransformedScopes(jwtClaimsSet);
+        // Get scopes from the token claims
+        List<String> tokenScopesClaims = jwtValidationInfo.getScopes();
 
         // Intersection Check (Does the user have ANY of the required scopes?)
         for (String required : requiredScopes) {
@@ -473,19 +516,104 @@ public class JWTValidator {
         return false;
     }
 
-    public List<String> getTransformedScopes(JWTClaimsSet jwtClaimsSet) throws OAuthSecurityException {
+    private void validateCertificateBinding(SignedJWTInfo signedJWTInfo, MessageContext messageContext) {
 
         try {
-            String scopeClaim = OAuthConstants.SCOPE;
-            if (jwtClaimsSet.getClaim(scopeClaim) instanceof String) {
-                return Arrays.asList(jwtClaimsSet.getStringClaim(scopeClaim)
-                        .split(OAuthConstants.SCOPE_DELIMITER));
-            } else if (jwtClaimsSet.getClaim(scopeClaim) instanceof List) {
-                return jwtClaimsSet.getStringListClaim(scopeClaim);
+            org.apache.axis2.context.MessageContext axis2MsgContext =
+                    ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+            Certificate clientCertificate = OAuthUtil.getClientCertificate(axis2MsgContext, mtlsConfiguration);
+            String cachedClientCertHash = signedJWTInfo.getClientCertificateHash();
+            signedJWTInfo.setClientCertificate(clientCertificate);
+            String newClientCertHash = signedJWTInfo.getClientCertificateHash();
+            if (cachedClientCertHash != null) {
+                // If cachedClientCertHash is not null, the signedJWTInfo object is obtained from the cache.
+                // This means a request has been sent previously and the signedJWTInfo resultant object has
+                // been stored in the cache.
+                if (!cachedClientCertHash.equals(newClientCertHash)) {
+                    // This scenario can happen when the previous request and the current request contains two
+                    // different certificates. In such a scenario, we cannot guarantee the validationStatus
+                    // signedJWTInfo object obtained from the cache to be correct. Hence, the validationStatus of
+                    // the signedJWTInfo is set to NOT_VALIDATED so that the JWT token will be validated again.
+                    signedJWTInfo.setValidationStatus(SignedJWTInfo.ValidationStatus.NOT_VALIDATED);
+                }
+            } else if (newClientCertHash != null) {
+                // This scenario can happen in two different instances.
+                // 1. When the signedJWTInfo object is not obtained from the cache and the current request contains
+                //    a certificate in the request header. This scenario depicts a situation where the JWT has not
+                //    been validated yet. Hence, the validationStatus of the signedJWTInfo is set to NOT_VALIDATED.
+                // 2. When the signedJWTInfo object is obtained from the cache (cachedClientCertHash becomes null
+                //    when the previous request do not contain a certificate in the request header) and the current
+                //    request contains a certificate in the request header. In such a scenario, we cannot guarantee
+                //    the validationStatus signedJWTInfo object as the certificate has not been validated. Hence,
+                //    the validationStatus of the signedJWTInfo is set to NOT_VALIDATED so that the JWT token will
+                //    be validated again.
+                signedJWTInfo.setValidationStatus(SignedJWTInfo.ValidationStatus.NOT_VALIDATED);
             }
-        } catch (ParseException e) {
-            throw new OAuthSecurityException("Error while parsing JWT claims", e);
+        } catch (OAuthSecurityException e) {
+            log.error("Error while obtaining client certificate. Marking token as not validated.", e);
+            // Clear any potentially stale certificate information from cached SignedJWTInfo
+            signedJWTInfo.setClientCertificate(null);
+            signedJWTInfo.setValidationStatus(SignedJWTInfo.ValidationStatus.NOT_VALIDATED);
         }
-        return List.of(OAuthConstants.OAUTH2_DEFAULT_SCOPE);
+    }
+
+    /**
+     * Validates the 'iat' (Issued At) claim against a configured policy.
+     * Ensures the token wasn't issued in the future (allowing for clock skew)
+     * and isn't older than the maximum allowed age.
+     *
+     * @param claims The JWT claims set.
+     * @param clockSkew Seconds allowed for clock drift.
+     * @param maxAge Seconds allowed since issuance.
+     * @throws OAuthSecurityException if the iat is outside the allowed period.
+     */
+    public boolean validateIssuedAtPolicy(JWTClaimsSet claims, long clockSkew, Long maxAge)
+            throws OAuthSecurityException {
+
+        Date iat = claims.getIssueTime();
+        if (iat == null) {
+            throw new OAuthSecurityException("Missing mandatory 'iat' claim");
+        }
+
+        long currentTimeMillis = System.currentTimeMillis();
+        long iatTimeMillis = iat.getTime();
+
+        // 1. Check for "Future" tokens (Clock Skew)
+        // If IAT is > Current Time + Skew, someone's clock is wrong or it's a forgery.
+        if (iatTimeMillis > (currentTimeMillis + (clockSkew * 1000))) {
+            log.error("Token issued in the future. iat: " + iat);
+            return false;
+        }
+
+        // 2. Check for "Stale" tokens (Max Age Policy)
+        // If Current Time - IAT > Max Age, the token is too old for our security policy.
+        if (maxAge != null && (currentTimeMillis - iatTimeMillis) > (maxAge * 1000)) {
+            log.error("Token exceeds maximum allowed age. Issued at: " + iat);
+            return false;
+        }
+
+        log.debug("Issued-at policy validation passed.");
+        return true;
+    }
+
+    private boolean isIssuerTrusted(SignedJWTInfo signedJWTInfo) throws OAuthSecurityException {
+
+        JWTClaimsSet jwtClaimsSet = signedJWTInfo.getJwtClaimsSet();
+        if (jwtClaimsSet == null) {
+            log.error("JWT claim set is null for token.");
+            throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
+                    OAuthConstants.API_AUTH_INVALID_CREDENTIALS_MESSAGE);
+        }
+        String issuer = jwtClaimsSet.getIssuer();
+
+        if (StringUtils.isNotEmpty(issuer) && trustedIssuers != null
+                && trustedIssuers.contains(issuer)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Issuer: " + issuer + " found for authentication token. "
+                        + "Proceeding with authentication.");
+            }
+            return true;
+        }
+        return false;
     }
 }
