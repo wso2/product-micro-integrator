@@ -78,22 +78,31 @@ public class HMACJWTTokenGenerator {
     }
 
     public HMACJWTTokenGenerator(String hmacSecret) {
-        if (hmacSecret == null || hmacSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
-            log.error("Invalid HMAC secret provided - must be at least 256 bits (32 bytes)");
-            throw new IllegalArgumentException("HMAC secret must be at least 256 bits (32 bytes)");
+        if (hmacSecret == null) {
+            log.error("Invalid HMAC secret provided - cannot be null");
+            throw new IllegalArgumentException("HMAC secret cannot be null");
         }
         this.hmacSecret = hmacSecret;
+
+        // Validate the actual secret length (the part used for HMAC operations)
+        String actualSecret = getActualSecret();
+        if (actualSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            log.error("Invalid HMAC secret provided - actual secret must be at least 256 bits (32 bytes). "
+                    + "Actual secret length: " + actualSecret.getBytes(StandardCharsets.UTF_8).length + " bytes");
+            throw new IllegalArgumentException("HMAC secret must be at least 256 bits (32 bytes)");
+        }
     }
 
     /**
      * Extracts the secretId from the composite hmacSecret format.
-     * Returns the part before the first '.' if present, otherwise returns null.
+     * Returns the part before the first '.' if present and valid, otherwise returns null.
+     * A valid composite format requires the '.' separator to be present and not at the first or last character.
      *
      * @return secretId or null if not present
      */
     private String getSecretId() {
         int dotIndex = hmacSecret.indexOf('.');
-        if (dotIndex > 0) {
+        if (dotIndex > 0 && dotIndex < hmacSecret.length() - 1) {
             String secretId = hmacSecret.substring(0, dotIndex);
             if (log.isDebugEnabled()) {
                 log.debug("Extracted secretId from composite secret format: " + secretId);
@@ -101,7 +110,7 @@ public class HMACJWTTokenGenerator {
             return secretId;
         }
         if (log.isDebugEnabled()) {
-            log.debug("No secretId found - using simple secret format (no '.' separator)");
+            log.debug("No secretId found - using simple secret format (no valid '.' separator)");
         }
         return null;
     }
