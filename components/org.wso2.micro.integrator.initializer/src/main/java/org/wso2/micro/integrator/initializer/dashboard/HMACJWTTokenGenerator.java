@@ -86,6 +86,48 @@ public class HMACJWTTokenGenerator {
     }
 
     /**
+     * Extracts the secretId from the composite hmacSecret format.
+     * Returns the part before the first '.' if present, otherwise returns null.
+     *
+     * @return secretId or null if not present
+     */
+    private String getSecretId() {
+        int dotIndex = hmacSecret.indexOf('.');
+        if (dotIndex > 0) {
+            String secretId = hmacSecret.substring(0, dotIndex);
+            if (log.isDebugEnabled()) {
+                log.debug("Extracted secretId from composite secret format: " + secretId);
+            }
+            return secretId;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("No secretId found - using simple secret format (no '.' separator)");
+        }
+        return null;
+    }
+
+    /**
+     * Extracts the actual secret used for signing/verification.
+     * Returns the part after the first '.' if present, otherwise returns the entire hmacSecret.
+     *
+     * @return the actual secret to use for HMAC operations
+     */
+    private String getActualSecret() {
+        int dotIndex = hmacSecret.indexOf('.');
+        if (dotIndex > 0 && dotIndex < hmacSecret.length() - 1) {
+            String actualSecret = hmacSecret.substring(dotIndex + 1);
+            if (log.isDebugEnabled()) {
+                log.debug("Using actual secret from composite format (length: " + actualSecret.length() + " bytes)");
+            }
+            return actualSecret;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Using entire hmacSecret for signing/verification (length: " + hmacSecret.length() + " bytes)");
+        }
+        return hmacSecret;
+    }
+
+    /**
      * Generate JWT Token with HMAC SHA256
      */
     public String generateToken(String issuer, String audience, String scope, long expiryTimeSeconds)
@@ -98,16 +140,35 @@ public class HMACJWTTokenGenerator {
         long expiryMillis = System.currentTimeMillis() + (expiryTimeSeconds * 1000);
 
         // Build claims
-        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+        JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
                 .issuer(issuer)
                 .audience(audience)
                 .expirationTime(new Date(expiryMillis))
                 .issueTime(new Date())
-                .claim("scope", scope)
-                .build();
+                .claim("scope", scope);
 
-        // Create HMAC signer
-        JWSSigner signer = new MACSigner(hmacSecret.getBytes(StandardCharsets.UTF_8));
+        // Add secretId claim if present in the composite secret format
+        String secretId = getSecretId();
+        if (secretId != null) {
+            claimsBuilder.claim("secretId", secretId);
+            if (log.isDebugEnabled()) {
+                log.debug("Adding secretId claim to JWT token: " + secretId);
+            }
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("No secretId claim added - using simple secret format");
+            }
+        }
+
+        JWTClaimsSet claimsSet = claimsBuilder.build();
+
+        // Use the actual secret (part after '.') for signing
+        String actualSecret = getActualSecret();
+        JWSSigner signer = new MACSigner(actualSecret.getBytes(StandardCharsets.UTF_8));
+
+        if (log.isDebugEnabled()) {
+            log.debug("Signing JWT token with HMAC-SHA256");
+        }
 
         // Create and sign JWT
         SignedJWT signedJWT = new SignedJWT(
@@ -129,7 +190,10 @@ public class HMACJWTTokenGenerator {
     private JWTClaimsSet verifyAndGetClaims(String token) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
-            JWSVerifier verifier = new MACVerifier(hmacSecret.getBytes(StandardCharsets.UTF_8));
+
+            // Use the actual secret (part after '.') for verification
+            String actualSecret = getActualSecret();
+            JWSVerifier verifier = new MACVerifier(actualSecret.getBytes(StandardCharsets.UTF_8));
 
             // Verify signature
             if (!signedJWT.verify(verifier)) {
@@ -145,6 +209,37 @@ public class HMACJWTTokenGenerator {
                     log.debug("JWT token has no claims");
                 }
                 return null;
+            }
+
+            // Verify secretId claim if present in the composite secret format
+            String expectedSecretId = getSecretId();
+            if (expectedSecretId != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Composite secret format detected - verifying secretId claim");
+                }
+                String tokenSecretId = claims.getStringClaim("secretId");
+                if (tokenSecretId == null) {
+                    log.warn("JWT token is missing required secretId claim. Expected: " + expectedSecretId);
+                    if (log.isDebugEnabled()) {
+                        log.debug("JWT validation failed - missing secretId claim");
+                    }
+                    return null;
+                }
+                if (!expectedSecretId.equals(tokenSecretId)) {
+                    log.warn("JWT token secretId claim mismatch. Expected: " + expectedSecretId
+                            + ", Received: " + tokenSecretId);
+                    if (log.isDebugEnabled()) {
+                        log.debug("JWT validation failed - secretId claim does not match");
+                    }
+                    return null;
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("SecretId claim validated successfully: " + tokenSecretId);
+                }
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Simple secret format - skipping secretId claim validation");
+                }
             }
 
             Date expiry = claims.getExpirationTime();
