@@ -50,7 +50,7 @@ public class ESBJAVA4394 extends ESBIntegrationTest {
              * since we are making a soap fault in the configuration axis2 client receives axis fault.
              */
             String axisFaultMessage = axisFault.getMessage();
-            assertTrue(axisFaultMessage.contains("101508"));
+            assertTrue(axisFaultMessage.contains("101503"));
         }
     }
 
