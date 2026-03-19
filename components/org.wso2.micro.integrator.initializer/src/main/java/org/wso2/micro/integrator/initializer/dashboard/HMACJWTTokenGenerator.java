@@ -79,59 +79,32 @@ public class HMACJWTTokenGenerator {
 
     public HMACJWTTokenGenerator(String hmacSecret) {
         if (hmacSecret == null) {
-            log.error("Invalid HMAC secret provided - cannot be null");
             throw new IllegalArgumentException("HMAC secret cannot be null");
         }
         this.hmacSecret = hmacSecret;
 
-        // Validate the actual secret length (the part used for HMAC operations)
-        String actualSecret = getActualSecret();
-        if (actualSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
-            log.error("Invalid HMAC secret provided - actual secret must be at least 256 bits (32 bytes). "
-                    + "Actual secret length: " + actualSecret.getBytes(StandardCharsets.UTF_8).length + " bytes");
-            throw new IllegalArgumentException("HMAC secret must be at least 256 bits (32 bytes)");
+        byte[] keyMaterialBytes = getKeyMaterial().getBytes(StandardCharsets.UTF_8);
+        if (keyMaterialBytes.length < 32) {
+            log.error("Key material insufficient for HS256: " + keyMaterialBytes.length
+                    + " bytes (requires 32 bytes)");
+            throw new IllegalArgumentException("HS256 requires 32-byte key, found "
+                    + keyMaterialBytes.length + " bytes");
         }
     }
 
-    /**
-     * Extracts the secretId from the composite hmacSecret format.
-     * Returns the part before the first '.' if present and valid, otherwise returns null.
-     * A valid composite format requires the '.' separator to be present and not at the first or last character.
-     *
-     * @return secretId or null if not present
-     */
-    private String getSecretId() {
+    private String getKeyId() {
         int dotIndex = hmacSecret.indexOf('.');
         if (dotIndex > 0 && dotIndex < hmacSecret.length() - 1) {
-            String secretId = hmacSecret.substring(0, dotIndex);
-            if (log.isDebugEnabled()) {
-                log.debug("Extracted secretId from composite secret format: " + secretId);
-            }
-            return secretId;
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("No secretId found - using simple secret format (no valid '.' separator)");
+            String kid = hmacSecret.substring(0, dotIndex);
+            return kid;
         }
         return null;
     }
 
-    /**
-     * Extracts the actual secret used for signing/verification.
-     * Returns the part after the first '.' if present, otherwise returns the entire hmacSecret.
-     *
-     * @return the actual secret to use for HMAC operations
-     */
-    private String getActualSecret() {
+    private String getKeyMaterial() {
         int dotIndex = hmacSecret.indexOf('.');
         if (dotIndex > 0 && dotIndex < hmacSecret.length() - 1) {
-            String actualSecret = hmacSecret.substring(dotIndex + 1);
-            if (log.isDebugEnabled()) {
-                log.debug("Using actual secret from composite format (length: " + actualSecret.length() + " bytes)");
-            }
-            return actualSecret;
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("Using entire hmacSecret for signing/verification (length: " + hmacSecret.length() + " bytes)");
+            return hmacSecret.substring(dotIndex + 1);
         }
         return hmacSecret;
     }
@@ -149,39 +122,29 @@ public class HMACJWTTokenGenerator {
         long expiryMillis = System.currentTimeMillis() + (expiryTimeSeconds * 1000);
 
         // Build claims
-        JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .issuer(issuer)
                 .audience(audience)
                 .expirationTime(new Date(expiryMillis))
                 .issueTime(new Date())
-                .claim("scope", scope);
+                .claim("scope", scope)
+                .build();
 
-        // Add secretId claim if present in the composite secret format
-        String secretId = getSecretId();
-        if (secretId != null) {
-            claimsBuilder.claim("secretId", secretId);
+        JWSHeader.Builder headerBuilder = new JWSHeader.Builder(JWSAlgorithm.HS256);
+        String kid = getKeyId();
+        if (kid != null) {
+            headerBuilder.keyID(kid);
             if (log.isDebugEnabled()) {
-                log.debug("Adding secretId claim to JWT token: " + secretId);
-            }
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("No secretId claim added - using simple secret format");
+                log.debug("Adding kid (Key ID) to JWT header: " + kid);
             }
         }
+        String keyMaterial = getKeyMaterial();
+        JWSSigner signer = new MACSigner(keyMaterial.getBytes(StandardCharsets.UTF_8));
 
-        JWTClaimsSet claimsSet = claimsBuilder.build();
-
-        // Use the actual secret (part after '.') for signing
-        String actualSecret = getActualSecret();
-        JWSSigner signer = new MACSigner(actualSecret.getBytes(StandardCharsets.UTF_8));
-
-        if (log.isDebugEnabled()) {
-            log.debug("Signing JWT token with HMAC-SHA256");
-        }
 
         // Create and sign JWT
         SignedJWT signedJWT = new SignedJWT(
-                new JWSHeader.Builder(JWSAlgorithm.HS256).build(),
+                headerBuilder.build(),
                 claimsSet
         );
 
@@ -199,10 +162,8 @@ public class HMACJWTTokenGenerator {
     private JWTClaimsSet verifyAndGetClaims(String token) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
-
-            // Use the actual secret (part after '.') for verification
-            String actualSecret = getActualSecret();
-            JWSVerifier verifier = new MACVerifier(actualSecret.getBytes(StandardCharsets.UTF_8));
+            String keyMaterial = getKeyMaterial();
+            JWSVerifier verifier = new MACVerifier(keyMaterial.getBytes(StandardCharsets.UTF_8));
 
             // Verify signature
             if (!signedJWT.verify(verifier)) {
@@ -220,34 +181,16 @@ public class HMACJWTTokenGenerator {
                 return null;
             }
 
-            // Verify secretId claim if present in the composite secret format
-            String expectedSecretId = getSecretId();
-            if (expectedSecretId != null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Composite secret format detected - verifying secretId claim");
-                }
-                String tokenSecretId = claims.getStringClaim("secretId");
-                if (tokenSecretId == null) {
-                    log.warn("JWT token is missing required secretId claim. Expected: " + expectedSecretId);
-                    if (log.isDebugEnabled()) {
-                        log.debug("JWT validation failed - missing secretId claim");
-                    }
+            String expectedKid = getKeyId();
+            if (expectedKid != null) {
+                String tokenKid = signedJWT.getHeader().getKeyID();
+                if (tokenKid == null) {
+                    log.warn("JWT missing kid. Expected: " + expectedKid);
                     return null;
                 }
-                if (!expectedSecretId.equals(tokenSecretId)) {
-                    log.warn("JWT token secretId claim mismatch. Expected: " + expectedSecretId
-                            + ", Received: " + tokenSecretId);
-                    if (log.isDebugEnabled()) {
-                        log.debug("JWT validation failed - secretId claim does not match");
-                    }
+                if (!expectedKid.equals(tokenKid)) {
+                    log.warn("JWT kid mismatch. Expected: " + expectedKid + ", Actual: " + tokenKid);
                     return null;
-                }
-                if (log.isDebugEnabled()) {
-                    log.debug("SecretId claim validated successfully: " + tokenSecretId);
-                }
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Simple secret format - skipping secretId claim validation");
                 }
             }
 
