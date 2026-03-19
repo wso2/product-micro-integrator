@@ -95,10 +95,9 @@ public class HMACJWTTokenGenerator {
     private String getKeyId() {
         int dotIndex = hmacSecret.indexOf('.');
         if (dotIndex > 0 && dotIndex < hmacSecret.length() - 1) {
-            String kid = hmacSecret.substring(0, dotIndex);
-            return kid;
+            return hmacSecret.substring(0, dotIndex);
         }
-        return null;
+        return "";
     }
 
     private String getKeyMaterial() {
@@ -130,13 +129,10 @@ public class HMACJWTTokenGenerator {
                 .claim("scope", scope)
                 .build();
 
-        JWSHeader.Builder headerBuilder = new JWSHeader.Builder(JWSAlgorithm.HS256);
-        String kid = getKeyId();
-        if (kid != null) {
-            headerBuilder.keyID(kid);
-            if (log.isDebugEnabled()) {
-                log.debug("Adding kid (Key ID) to JWT header: " + kid);
-            }
+        String keyId = getKeyId();
+        JWSHeader.Builder headerBuilder = new JWSHeader.Builder(JWSAlgorithm.HS256).keyID(keyId);
+        if (log.isDebugEnabled()) {
+            log.debug("Adding keyId to JWT header: " + keyId);
         }
         String keyMaterial = getKeyMaterial();
         JWSSigner signer = new MACSigner(keyMaterial.getBytes(StandardCharsets.UTF_8));
@@ -181,17 +177,14 @@ public class HMACJWTTokenGenerator {
                 return null;
             }
 
-            String expectedKid = getKeyId();
-            if (expectedKid != null) {
-                String tokenKid = signedJWT.getHeader().getKeyID();
-                if (tokenKid == null) {
-                    log.warn("JWT missing kid. Expected: " + expectedKid);
-                    return null;
-                }
-                if (!expectedKid.equals(tokenKid)) {
-                    log.warn("JWT kid mismatch. Expected: " + expectedKid + ", Actual: " + tokenKid);
-                    return null;
-                }
+            String expectedKeyId = getKeyId();
+            String tokenKeyId = signedJWT.getHeader().getKeyID();
+            if (tokenKeyId == null) {
+                tokenKeyId = "";
+            }
+            if (!expectedKeyId.equals(tokenKeyId)) {
+                log.warn("JWT keyId mismatch. Expected: '" + expectedKeyId + "', Actual: '" + tokenKeyId + "'");
+                return null;
             }
 
             Date expiry = claims.getExpirationTime();
