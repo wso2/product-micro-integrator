@@ -28,6 +28,8 @@ import org.wso2.esb.integration.common.utils.ESBTestConstant;
 import org.wso2.esb.integration.common.utils.common.TestConfigurationProvider;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
 
 /**
  * Test case to verify the hot deployment of log4j2 configs.
@@ -80,14 +82,18 @@ public class Log4j2ConfigsHotDeploymentTestCase extends ESBIntegrationTest {
 
     private void deployLog4j2ConfigWithWireLogs() throws Exception {
         String log4jFile = SOURCE_DIR + "log4j2withWire.properties";
-        FileUtils.copyFile(new File(log4jFile),
-                new File(SERVER_CONF_DIR + File.separator + "log4j2.properties"),false);
+        File destFile = new File(SERVER_CONF_DIR + "log4j2.properties");
+        FileUtils.copyFile(new File(log4jFile), destFile, false);
+        // Explicitly update the modification time so that the change get detected on Windows.
+        Files.setLastModifiedTime(destFile.toPath(), FileTime.fromMillis(System.currentTimeMillis()));
     }
 
     private void undeployLog4j2ConfigWithWireLogs() throws Exception {
         String log4jFile = SOURCE_DIR + "log4j2.properties";
-        FileUtils.copyFile(new File(log4jFile),
-                new File(SERVER_CONF_DIR + File.separator + "log4j2.properties"),false);
+        File destFile = new File(SERVER_CONF_DIR + "log4j2.properties");
+        FileUtils.copyFile(new File(log4jFile), destFile, false);
+        // Explicitly update the modification time so that the change get detected on Windows.
+        Files.setLastModifiedTime(destFile.toPath(), FileTime.fromMillis(System.currentTimeMillis()));
     }
 
     @AfterClass(alwaysRun = true)
