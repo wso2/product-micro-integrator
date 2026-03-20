@@ -228,7 +228,9 @@ public class DeployerUtil {
     public static List<CAppDescriptor> getCAppDescriptors(File[] cAppFiles) throws DeploymentException {
         List<CAppDescriptor> cAppDescriptors = new ArrayList<>();
         for (File cAppFile : cAppFiles) {
-            if (cAppFile.getPath().contains(AppDeployerUtils.DEPENDENCIES_DIR)) {
+            // Skip virtual paths for nested CARs inside a FAT CAR archive
+            // (e.g. "outerApp.car/dependencies/innerApp.car" on Unix or "outerApp.car\dependencies\innerApp.car" on Windows)
+            if (cAppFile.getPath().contains(AppDeployerUtils.DEPENDENCIES_DIR_NAME + File.separator)) {
                 continue;
             }
             CAppDescriptor descriptor = new CAppDescriptor(cAppFile);

@@ -84,6 +84,7 @@ public final class AppDeployerUtils {
 	private static final String LOCAL_REGISTRY_PREFIX = "local:";
 	private static final String RESOURCES_PREFIX = "resources:";
 	public static final String DEPENDENCIES_DIR = "dependencies/";
+	public static final String DEPENDENCIES_DIR_NAME = "dependencies";
 
 	private AppDeployerUtils() {
 		// hide utility class
