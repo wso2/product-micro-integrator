@@ -63,7 +63,7 @@ public class EndpointErrorTest extends ESBIntegrationTest {
         deployProxyService("WSDLEndpointErrorTestProxy", SOURCE_DIR);
         Thread.sleep(15000);
 
-        assertTrue(logReader.assertIfLogExists("proxy-services/WSDLEndpointErrorTestProxy.xml : Failed"),
+        assertTrue(logReader.assertIfLogExists("proxy-services" + File.separator + "WSDLEndpointErrorTestProxy.xml : Failed"),
                 "Faulty WSDL endpoint deployment was not failed!");
         logReader.stop();
     }
