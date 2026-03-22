@@ -501,9 +501,6 @@ public class CarbonServerManager {
                 "-javaagent:" + jacocoAgentFile + "=destfile=" + coverageDumpFilePath + "" + ",append=true,includes="
                         + CodeCoverageUtils.getInclusionJarsPattern(":") + ",excludes=" + CodeCoverageUtils
                         .getExclusionJarsPattern(":"));
-        // print the content of the modified startup script for debugging purpose
-        Path batfile = Paths.get(carbonHome, "tmp", scriptName + ".bat");
-        log.info("Modified startup script content : " + Files.readString(batfile));
     }
 
     /**
