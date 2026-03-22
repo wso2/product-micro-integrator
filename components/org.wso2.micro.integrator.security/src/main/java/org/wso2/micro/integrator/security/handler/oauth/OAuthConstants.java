@@ -26,6 +26,7 @@ public class OAuthConstants {
     public static final String CLOCK_SKEW_SECONDS = JWT_OAUTH_CONFIG + "clock_skew_seconds";
     public static final String TRUSTED_ISSUERS = JWT_OAUTH_CONFIG + "trusted_issuers";
     public static final String EXPECTED_AUDIENCE = JWT_OAUTH_CONFIG + "audience";
+    public static final String ALLOWED_ALGORITHMS = JWT_OAUTH_CONFIG + "allowed_algorithms";
     public static final String TOKEN_MAX_LEN = JWT_OAUTH_CONFIG + "log_masking.token_max_len";
     public static final String TOKEN_MAX_VISIBLE_LEN = JWT_OAUTH_CONFIG + "log_masking.token_max_visible_len";
     public static final String TOKEN_MIN_VISIBLE_LEN_RATIO = JWT_OAUTH_CONFIG + "log_masking.token_min_visible_len_ratio";

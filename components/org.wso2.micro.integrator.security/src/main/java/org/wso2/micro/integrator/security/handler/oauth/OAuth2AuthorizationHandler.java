@@ -101,26 +101,52 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
         if (trustedIssuers == null) {
             Object trustedIssuersConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.TRUSTED_ISSUERS);
-            if (trustedIssuersConfig != null) {
-                this.trustedIssuers = new ArrayList<>(Arrays.asList(((String) trustedIssuersConfig).split("\\s*,\\s*")));
+            if (trustedIssuersConfig instanceof ArrayList<?>) {
+                this.trustedIssuers = new ArrayList<>((ArrayList<String>) trustedIssuersConfig);
+            } else if (trustedIssuersConfig != null) {
+                throw new IllegalArgumentException("Invalid configuration for trusted issuers. Expected a list of "
+                        + "strings in the format [\"https://idp1.com\", \"https://idp2.com\"] but found: "
+                        + trustedIssuersConfig.getClass().getName());
             }
         }
 
         if (audience == null) {
             Object audienceConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.EXPECTED_AUDIENCE);
-            if (audienceConfig != null) {
-                this.audience = new ArrayList<>(Arrays.asList(((String) audienceConfig).split("\\s*,\\s*")));
+            if (audienceConfig instanceof ArrayList<?>) {
+                this.audience = new ArrayList<>((ArrayList<String>) audienceConfig);
+            } else if (audienceConfig != null) {
+                throw new IllegalArgumentException("Invalid configuration for expected audience. Expected a list of "
+                        + "strings in the format [\"audience1\", \"audience2\"] but found: "
+                        + audienceConfig.getClass().getName());
+            }
+        }
+
+        if (allowedAlgorithms == null) {
+            Object allowedAlgorithmsConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.ALLOWED_ALGORITHMS);
+            if (allowedAlgorithmsConfig instanceof ArrayList<?>) {
+                this.allowedAlgorithms = new ArrayList<>((ArrayList<String>) allowedAlgorithmsConfig);
+            } else if (allowedAlgorithmsConfig != null) {
+                throw new IllegalArgumentException("Invalid configuration for allowed algorithms. Expected a list of "
+                        + "strings in the format [\"RS256\", \"RS512\"] but found: "
+                        + allowedAlgorithmsConfig.getClass().getName());
+
             }
         }
 
         Object maxIssuedAtAgeSecondsConfig = ConfigParser.getParsedConfigs()
                 .get(OAuthConstants.MAX_ISSUED_AT_AGE_SECONDS);
-        if (maxIssuedAtAgeSeconds == null && maxIssuedAtAgeSecondsConfig != null) {
-            long parsed = ((Number) maxIssuedAtAgeSecondsConfig).longValue();
-            if (parsed < 0) {
-                throw new IllegalArgumentException("maxIssuedAtAgeSeconds must be >= 0");
+        if (maxIssuedAtAgeSeconds == null) {
+            if (maxIssuedAtAgeSecondsConfig instanceof Number) {
+                long parsed = ((Number) maxIssuedAtAgeSecondsConfig).longValue();
+                if (parsed < 0) {
+                    throw new IllegalArgumentException("maxIssuedAtAgeSeconds must be >= 0");
+                }
+                maxIssuedAtAgeSeconds = parsed;
+            } else if (maxIssuedAtAgeSecondsConfig != null) {
+                throw new IllegalArgumentException("Invalid configuration for maxIssuedAtAgeSeconds. Expected "
+                        + "a non-negative integer but found: " + maxIssuedAtAgeSecondsConfig.getClass().getName());
             }
-            maxIssuedAtAgeSeconds = parsed;
+
         }
 
         mTLSConfiguration = new MTLSConfiguration(disableCNFValidation,
@@ -135,18 +161,26 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
         if (connectionTimeout == 0) {
             Object connectionTimeoutConfig = ConfigParser.getParsedConfigs()
                     .get(OAuthConstants.OAUTH_GLOBAL_CONNECTION_TIMEOUT);
-            if (connectionTimeoutConfig != null) {
+            if (connectionTimeoutConfig instanceof Number) {
                 connectionTimeout = ((Number) connectionTimeoutConfig).intValue();
             } else {
+                if (connectionTimeoutConfig != null) {
+                    log.warn("Invalid configuration for http client connection timeout. Expected a positive integer "
+                            + "but found: " + connectionTimeoutConfig.getClass().getName() + ". Defaulting to 3000 ms.");
+                }
                 connectionTimeout = 3000;
             }
         }
 
         if (socketTimeout == 0) {
             Object socketTimeoutConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.OAUTH_GLOBAL_SOCKET_TIMEOUT);
-            if (socketTimeoutConfig != null) {
+            if (socketTimeoutConfig instanceof Number) {
                 socketTimeout = ((Number) socketTimeoutConfig).intValue();
             } else {
+                if (socketTimeoutConfig != null) {
+                    log.warn("Invalid configuration for http client socket timeout. Expected a positive integer but "
+                            + "found: " + socketTimeoutConfig.getClass().getName() + ". Defaulting to 3000 ms.");
+                }
                 socketTimeout = 3000;
             }
         }
@@ -154,9 +188,13 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
         if (connectionRequestTimeout == 0) {
             Object requestTimeoutConfig = ConfigParser.getParsedConfigs()
                     .get(OAuthConstants.OAUTH_GLOBAL_CONNECTION_REQUEST_TIMEOUT);
-            if (requestTimeoutConfig != null) {
+            if (requestTimeoutConfig instanceof Number) {
                 connectionRequestTimeout = ((Number) requestTimeoutConfig).intValue();
             } else {
+                if (requestTimeoutConfig != null) {
+                    log.warn("Invalid configuration for http client connection request timeout. Expected a positive "
+                            + "integer but found: " + requestTimeoutConfig.getClass().getName() + ". Defaulting to 3000 ms.");
+                }
                 connectionRequestTimeout = 3000;
             }
         }
