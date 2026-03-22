@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2026, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
  *
@@ -24,7 +23,7 @@ import org.wso2.config.mapper.ConfigParser;
 public class TokenMaskingDataHolder {
 
     private static int tokenMaxLength = 36;
-    private static int tokenMaxVisibleLength = 8;
+    private static int tokenMaxVisibleLength = 0;
     private static int tokenMinVisibleLengthRatio = 5;
     private static String tokenMaskChar = "X";
 
@@ -33,6 +32,18 @@ public class TokenMaskingDataHolder {
 
     private static volatile TokenMaskingDataHolder instance;
 
+    /**
+     * Returns the singleton instance of {@code TokenMaskingDataHolder}.
+     * <p>
+     * This method lazily initializes the singleton using double-checked locking to
+     * ensure thread-safe creation. When the instance is first created it reads
+     * token masking-related configuration values from {@link org.wso2.config.mapper.ConfigParser}
+     * (via {@link OAuthConstants}) and populates internal defaults accordingly.
+     * Subsequent calls return the already-initialized instance.
+     * <p>
+     *
+     * @return the singleton {@code TokenMaskingDataHolder} instance
+     */
     public static TokenMaskingDataHolder getInstance() {
         if (instance == null) {
             synchronized (TokenMaskingDataHolder.class) {

@@ -56,10 +56,10 @@ public class OAuthUtil {
         if (token != null) {
             int allowedVisibleLen;
             if (tokenMaskingDataHolder.getTokenMinVisibleLengthRatio() > 0) {
-                allowedVisibleLen = tokenMaskingDataHolder.getTokenMaxVisibleLength();
-            } else {
                 allowedVisibleLen = Math.min(token.length() / tokenMaskingDataHolder.getTokenMinVisibleLengthRatio(),
                         tokenMaskingDataHolder.getTokenMaxVisibleLength());
+            } else {
+                allowedVisibleLen = tokenMaskingDataHolder.getTokenMaxVisibleLength();
             }
 
             if (token.length() > tokenMaskingDataHolder.getTokenMaxLength()) {
