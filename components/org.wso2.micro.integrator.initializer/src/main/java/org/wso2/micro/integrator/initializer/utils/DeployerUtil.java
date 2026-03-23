@@ -226,11 +226,17 @@ public class DeployerUtil {
      * @return A list of `CAppDescriptor` objects corresponding to the provided CApp files.
      */
     public static List<CAppDescriptor> getCAppDescriptors(File[] cAppFiles) throws DeploymentException {
+        if (log.isDebugEnabled()) {
+            log.debug("Processing " + cAppFiles.length + " CApp files for descriptors");
+        }
         List<CAppDescriptor> cAppDescriptors = new ArrayList<>();
         for (File cAppFile : cAppFiles) {
             // Skip virtual paths for nested CARs inside a FAT CAR archive
             // (e.g. "outerApp.car/dependencies/innerApp.car" on Unix or "outerApp.car\dependencies\innerApp.car" on Windows)
             if (cAppFile.getPath().contains(AppDeployerUtils.DEPENDENCIES_DIR_NAME + File.separator)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Skipping nested CAR file: " + cAppFile.getPath());
+                }
                 continue;
             }
             CAppDescriptor descriptor = new CAppDescriptor(cAppFile);

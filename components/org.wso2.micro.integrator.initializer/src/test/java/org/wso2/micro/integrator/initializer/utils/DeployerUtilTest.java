@@ -19,6 +19,8 @@
 package org.wso2.micro.integrator.initializer.utils;
 
 import org.apache.axis2.deployment.DeploymentException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +46,7 @@ import static org.wso2.micro.integrator.initializer.utils.Constants.DOUBLE_UNDER
 
 public class DeployerUtilTest {
 
+    private static final Log log = LogFactory.getLog(DeployerUtilTest.class);
     private File tempDir;
 
     public static File createCarFile(File dir, String carFileName) throws IOException {
@@ -73,6 +76,7 @@ public class DeployerUtilTest {
                                         String groupId, String artifactId, String version,
                                         String depGroupId, String depArtifactId, String depVersion) throws Exception {
 
+        log.info("Creating FAT CAR file: " + fatCarName + "  with dependency: " + depCarName);
         // Build the nested dependency CAR bytes in memory
         byte[] depCarBytes;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -88,6 +92,7 @@ public class DeployerUtilTest {
             depZos.closeEntry();
             depZos.finish();
             depCarBytes = baos.toByteArray();
+            log.debug("Created dependency CAR in memory, size: " + depCarBytes.length + " bytes");
         }
 
         // Build the outer FAT CAR
