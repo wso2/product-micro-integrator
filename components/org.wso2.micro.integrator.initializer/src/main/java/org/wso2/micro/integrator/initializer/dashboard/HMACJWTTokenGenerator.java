@@ -78,11 +78,34 @@ public class HMACJWTTokenGenerator {
     }
 
     public HMACJWTTokenGenerator(String hmacSecret) {
-        if (hmacSecret == null || hmacSecret.getBytes(StandardCharsets.UTF_8).length < 32) {
-            log.error("Invalid HMAC secret provided - must be at least 256 bits (32 bytes)");
-            throw new IllegalArgumentException("HMAC secret must be at least 256 bits (32 bytes)");
+        if (hmacSecret == null) {
+            throw new IllegalArgumentException("HMAC secret cannot be null");
         }
         this.hmacSecret = hmacSecret;
+
+        byte[] keyMaterialBytes = getKeyMaterial().getBytes(StandardCharsets.UTF_8);
+        if (keyMaterialBytes.length < 32) {
+            log.error("Key material insufficient for HS256: " + keyMaterialBytes.length
+                    + " bytes (requires 32 bytes)");
+            throw new IllegalArgumentException("HS256 requires 32-byte key, found "
+                    + keyMaterialBytes.length + " bytes");
+        }
+    }
+
+    private String getKeyId() {
+        int dotIndex = hmacSecret.indexOf('.');
+        if (dotIndex > 0 && dotIndex < hmacSecret.length() - 1) {
+            return hmacSecret.substring(0, dotIndex);
+        }
+        return "";
+    }
+
+    private String getKeyMaterial() {
+        int dotIndex = hmacSecret.indexOf('.');
+        if (dotIndex > 0 && dotIndex < hmacSecret.length() - 1) {
+            return hmacSecret.substring(dotIndex + 1);
+        }
+        return hmacSecret;
     }
 
     /**
@@ -106,12 +129,18 @@ public class HMACJWTTokenGenerator {
                 .claim("scope", scope)
                 .build();
 
-        // Create HMAC signer
-        JWSSigner signer = new MACSigner(hmacSecret.getBytes(StandardCharsets.UTF_8));
+        String keyId = getKeyId();
+        JWSHeader.Builder headerBuilder = new JWSHeader.Builder(JWSAlgorithm.HS256).keyID(keyId);
+        if (log.isDebugEnabled()) {
+            log.debug("Adding keyId to JWT header: " + keyId);
+        }
+        String keyMaterial = getKeyMaterial();
+        JWSSigner signer = new MACSigner(keyMaterial.getBytes(StandardCharsets.UTF_8));
+
 
         // Create and sign JWT
         SignedJWT signedJWT = new SignedJWT(
-                new JWSHeader.Builder(JWSAlgorithm.HS256).build(),
+                headerBuilder.build(),
                 claimsSet
         );
 
@@ -129,7 +158,8 @@ public class HMACJWTTokenGenerator {
     private JWTClaimsSet verifyAndGetClaims(String token) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
-            JWSVerifier verifier = new MACVerifier(hmacSecret.getBytes(StandardCharsets.UTF_8));
+            String keyMaterial = getKeyMaterial();
+            JWSVerifier verifier = new MACVerifier(keyMaterial.getBytes(StandardCharsets.UTF_8));
 
             // Verify signature
             if (!signedJWT.verify(verifier)) {
@@ -144,6 +174,16 @@ public class HMACJWTTokenGenerator {
                 if (log.isDebugEnabled()) {
                     log.debug("JWT token has no claims");
                 }
+                return null;
+            }
+
+            String expectedKeyId = getKeyId();
+            String tokenKeyId = signedJWT.getHeader().getKeyID();
+            if (tokenKeyId == null) {
+                tokenKeyId = "";
+            }
+            if (!expectedKeyId.equals(tokenKeyId)) {
+                log.warn("JWT keyId mismatch. Expected: '" + expectedKeyId + "', Actual: '" + tokenKeyId + "'");
                 return null;
             }
 
