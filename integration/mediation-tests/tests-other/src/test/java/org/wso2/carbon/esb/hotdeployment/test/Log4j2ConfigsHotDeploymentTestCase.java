@@ -81,6 +81,7 @@ public class Log4j2ConfigsHotDeploymentTestCase extends ESBIntegrationTest {
     }
 
     private void deployLog4j2ConfigWithWireLogs() throws Exception {
+        log.info("Deploying log4j2 configuration with wire logs enabled");
         String log4jFile = SOURCE_DIR + "log4j2withWire.properties";
         File destFile = new File(SERVER_CONF_DIR + "log4j2.properties");
         FileUtils.copyFile(new File(log4jFile), destFile, false);
@@ -89,6 +90,7 @@ public class Log4j2ConfigsHotDeploymentTestCase extends ESBIntegrationTest {
     }
 
     private void undeployLog4j2ConfigWithWireLogs() throws Exception {
+        log.info("Reverting log4j2 configuration to default (wire logs disabled)");
         String log4jFile = SOURCE_DIR + "log4j2.properties";
         File destFile = new File(SERVER_CONF_DIR + "log4j2.properties");
         FileUtils.copyFile(new File(log4jFile), destFile, false);

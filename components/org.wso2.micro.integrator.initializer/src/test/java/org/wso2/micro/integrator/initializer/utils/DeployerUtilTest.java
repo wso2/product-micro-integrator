@@ -19,10 +19,13 @@
 package org.wso2.micro.integrator.initializer.utils;
 
 import org.apache.axis2.deployment.DeploymentException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -43,6 +46,7 @@ import static org.wso2.micro.integrator.initializer.utils.Constants.DOUBLE_UNDER
 
 public class DeployerUtilTest {
 
+    private static final Log log = LogFactory.getLog(DeployerUtilTest.class);
     private File tempDir;
 
     public static File createCarFile(File dir, String carFileName) throws IOException {
@@ -62,6 +66,59 @@ public class DeployerUtilTest {
             }
         }
         return carFile;
+    }
+
+    /**
+     * Creates a FAT CAR file containing a nested dependency CAR under dependencies dir.
+     * The outer FAT CAR has fatCarEnabled=true in its descriptor.xml.
+     */
+    public static File createFatCarFile(File dir, String fatCarName, String depCarName,
+                                        String groupId, String artifactId, String version,
+                                        String depGroupId, String depArtifactId, String depVersion) throws Exception {
+
+        log.info("Creating FAT CAR file: " + fatCarName + "  with dependency: " + depCarName);
+        // Build the nested dependency CAR bytes in memory
+        byte[] depCarBytes;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ZipOutputStream depZos = new ZipOutputStream(baos)) {
+            depZos.putNextEntry(new ZipEntry("descriptor.xml"));
+            String depDescriptor = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project>\n<id>"
+                    + depGroupId + DOUBLE_UNDERSCORE + depArtifactId + DOUBLE_UNDERSCORE + depVersion
+                    + "</id>\n<dependencies>\n</dependencies>\n</project>";
+            depZos.write(depDescriptor.getBytes());
+            depZos.closeEntry();
+            depZos.putNextEntry(new ZipEntry("artifacts.xml"));
+            depZos.write(new byte[0]);
+            depZos.closeEntry();
+            depZos.finish();
+            depCarBytes = baos.toByteArray();
+            log.debug("Created dependency CAR in memory, size: " + depCarBytes.length + " bytes");
+        }
+
+        // Build the outer FAT CAR
+        File fatCarFile = new File(dir, fatCarName);
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(fatCarFile))) {
+            // descriptor.xml with fatCarEnabled=true and one dependency
+            zos.putNextEntry(new ZipEntry("descriptor.xml"));
+            String depRef = "<dependency groupId=\"" + depGroupId + "\" artifactId=\"" + depArtifactId
+                    + "\" version=\"" + depVersion + "\" type=\"car\"/>";
+            String descriptor = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project>\n<id>"
+                    + groupId + DOUBLE_UNDERSCORE + artifactId + DOUBLE_UNDERSCORE + version
+                    + "</id>\n<fatCarEnabled>true</fatCarEnabled>\n<dependencies>\n"
+                    + depRef + "\n</dependencies>\n</project>";
+            zos.write(descriptor.getBytes());
+            zos.closeEntry();
+
+            // Embed the dependency CAR under dependencies/
+            zos.putNextEntry(new ZipEntry("dependencies/" + depCarName));
+            zos.write(depCarBytes);
+            zos.closeEntry();
+
+            zos.putNextEntry(new ZipEntry("artifacts.xml"));
+            zos.write(new byte[0]);
+            zos.closeEntry();
+        }
+        return fatCarFile;
     }
 
     public static void writeDescriptorToExistingCarFile(File carFile, String groupId, String artifactId, String version,
@@ -98,6 +155,45 @@ public class DeployerUtilTest {
             file.delete();
         }
         tempDir.delete();
+    }
+
+    @Test
+    public void testGetCAppDescriptorsWithFatCar() throws Exception {
+
+        File fatCarFile = createFatCarFile(tempDir, "beta1_1.0.0.car", "beta2-1.0.0.car",
+                "com.example", "beta1", "1.0.0",
+                "com.example", "beta2", "1.0.0");
+
+        List<CAppDescriptor> descriptors = DeployerUtil.getCAppDescriptors(new File[]{fatCarFile});
+
+        assertEquals("Should have 2 descriptors: outer FAT CAR and its nested dependency", 2, descriptors.size());
+        assertTrue(descriptors.stream().anyMatch(d -> "com.example__beta1__1.0.0".equals(d.getCAppId())));
+        assertTrue(descriptors.stream().anyMatch(d -> "com.example__beta2__1.0.0".equals(d.getCAppId())));
+    }
+
+    @Test
+    public void testGetCAppDescriptorsSkipsNestedCARPathsInsideFatCAR() throws Exception {
+        // This test simulates what CappDeployer.sort() does: it creates a synthetic File path
+        // for the nested CAR (path traverses through the outer .car file as if it were a directory).
+        // getCAppDescriptors must skip such synthetic paths to avoid duplicate processing.
+
+        File fatCarFile = createFatCarFile(tempDir, "beta1_1.0.0.car", "beta2-1.0.0.car",
+                "com.example", "beta1", "1.0.0",
+                "com.example", "beta2", "1.0.0");
+
+        // Simulate the synthetic dependency path that sort() creates
+        // (e.g., /tmp/.../beta1_1.0.0.car/dependencies/beta2-1.0.0.car on Unix,
+        //        C:\...\beta1_1.0.0.car\dependencies\beta2-1.0.0.car on Windows)
+        File syntheticDependencyPath = new File(fatCarFile.getAbsolutePath()
+                + File.separator + "dependencies" + File.separator + "beta2-1.0.0.car");
+
+        List<CAppDescriptor> descriptors = DeployerUtil.getCAppDescriptors(
+                new File[]{fatCarFile, syntheticDependencyPath});
+
+        // Should still be 2 descriptors (the synthetic path must be skipped, not processed again)
+        assertEquals("Synthetic nested CAR path must be skipped; expected 2 descriptors", 2, descriptors.size());
+        assertTrue(descriptors.stream().anyMatch(d -> "com.example__beta1__1.0.0".equals(d.getCAppId())));
+        assertTrue(descriptors.stream().anyMatch(d -> "com.example__beta2__1.0.0".equals(d.getCAppId())));
     }
 
     @Test
