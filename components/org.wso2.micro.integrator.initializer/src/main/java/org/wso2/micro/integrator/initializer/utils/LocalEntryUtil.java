@@ -71,7 +71,8 @@ public class LocalEntryUtil {
 		XMLInputFactory xmlInFac = XMLInputFactory.newInstance();
 		// Non-Coalescing parsing
 		xmlInFac.setProperty("javax.xml.stream.isCoalescing", false);
-
+        xmlInFac.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
+        xmlInFac.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
 		XMLStreamReader parser = xmlInFac.createXMLStreamReader(strReader);
 		StAXOMBuilder builder = new StAXOMBuilder(parser);
 
