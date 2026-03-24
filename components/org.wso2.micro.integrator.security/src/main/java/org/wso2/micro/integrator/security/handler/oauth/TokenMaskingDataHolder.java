@@ -18,10 +18,13 @@
 
 package org.wso2.micro.integrator.security.handler.oauth;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.config.mapper.ConfigParser;
 
 public class TokenMaskingDataHolder {
 
+    private static final Log log = LogFactory.getLog(TokenMaskingDataHolder.class);
     private static int tokenMaxLength = 36;
     private static int tokenMaxVisibleLength = 0;
     private static int tokenMinVisibleLengthRatio = 5;
@@ -50,28 +53,48 @@ public class TokenMaskingDataHolder {
                 if (instance == null) {
                     instance = new TokenMaskingDataHolder();
 
-                    Object tokenMaxLen = ConfigParser.getParsedConfigs()
-                            .get(OAuthConstants.TOKEN_MAX_LEN);
+                    Object tokenMaxLen = ConfigParser.getParsedConfigs().get(OAuthConstants.TOKEN_MAX_LEN);
                     if (tokenMaxLen != null) {
-                        tokenMaxLength = Integer.parseInt(tokenMaxLen.toString());
+                        if (tokenMaxLen instanceof Number) {
+                            tokenMaxLength = ((Number) tokenMaxLen).intValue();
+                        } else {
+                            log.warn("Invalid configuration for token_max_len. Expected a number but found: "
+                                    + tokenMaxLen.getClass().getName() + ". Using default value: " + tokenMaxLength);
+                        }
                     }
 
-                    Object tokenMaxVisibleLen = ConfigParser.getParsedConfigs()
-                            .get(OAuthConstants.TOKEN_MAX_VISIBLE_LEN);
+                    Object tokenMaxVisibleLen = ConfigParser.getParsedConfigs().get(OAuthConstants.TOKEN_MAX_VISIBLE_LEN);
                     if (tokenMaxVisibleLen != null) {
-                        tokenMaxVisibleLength = Integer.parseInt(tokenMaxVisibleLen.toString());
+                        if (tokenMaxVisibleLen instanceof Number) {
+                            tokenMaxVisibleLength = ((Number) tokenMaxVisibleLen).intValue();
+                        } else {
+                            log.warn("Invalid configuration for token_max_visible_len. Expected a number but found: "
+                                    + tokenMaxVisibleLen.getClass().getName() + ". Using default value: "
+                                    + tokenMaxVisibleLength);
+                        }
                     }
 
                     Object tokenMinVisibleLenRatio = ConfigParser.getParsedConfigs()
                             .get(OAuthConstants.TOKEN_MIN_VISIBLE_LEN_RATIO);
                     if (tokenMinVisibleLenRatio != null) {
-                        tokenMinVisibleLengthRatio = Integer.parseInt(tokenMinVisibleLenRatio.toString());
+                        if (tokenMinVisibleLenRatio instanceof Number) {
+                            tokenMinVisibleLengthRatio = ((Number) tokenMinVisibleLenRatio).intValue();
+                        } else {
+                            log.warn("Invalid configuration for token_min_visible_len_ratio. Expected a number "
+                                    + "but found: " + tokenMinVisibleLenRatio.getClass().getName()
+                                    + ". Using default value: " + tokenMinVisibleLengthRatio);
+                        }
                     }
 
-                    Object tokenMaskCharObj = ConfigParser.getParsedConfigs()
-                            .get(OAuthConstants.TOKEN_MASK_CHAR);
+                    Object tokenMaskCharObj = ConfigParser.getParsedConfigs().get(OAuthConstants.TOKEN_MASK_CHAR);
                     if (tokenMaskCharObj != null) {
-                        tokenMaskChar = tokenMaskCharObj.toString();
+                        String tmpTokenMaskChar = tokenMaskCharObj.toString();
+                        if (tmpTokenMaskChar.isEmpty()) {
+                            log.warn("Invalid configuration for token_mask_char. Expected a single character but found: "
+                                    + tokenMaskChar + ". Using default value: " + tokenMaskChar);
+                        } else {
+                            tokenMaskChar = tmpTokenMaskChar;
+                        }
                     }
                 }
             }
