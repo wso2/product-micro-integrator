@@ -54,13 +54,7 @@ public class OAuthUtil {
         StringBuilder maskedTokenBuilder = new StringBuilder();
 
         if (token != null) {
-            int allowedVisibleLen;
-            if (tokenMaskingDataHolder.getTokenMinVisibleLengthRatio() > 0) {
-                allowedVisibleLen = Math.min(token.length() / tokenMaskingDataHolder.getTokenMinVisibleLengthRatio(),
-                        tokenMaskingDataHolder.getTokenMaxVisibleLength());
-            } else {
-                allowedVisibleLen = tokenMaskingDataHolder.getTokenMaxVisibleLength();
-            }
+            int allowedVisibleLen = getAllowedVisibleLen(token, tokenMaskingDataHolder);
 
             if (token.length() > tokenMaskingDataHolder.getTokenMaxLength()) {
                 maskedTokenBuilder.append("...");
@@ -75,6 +69,21 @@ public class OAuthUtil {
             maskedTokenBuilder.append(token.substring(token.length() - allowedVisibleLen));
         }
         return maskedTokenBuilder.toString();
+    }
+
+    private static int getAllowedVisibleLen(String token, TokenMaskingDataHolder tokenMaskingDataHolder) {
+
+        int allowedVisibleLen;
+        if (tokenMaskingDataHolder.getTokenMinVisibleLengthRatio() > 0) {
+            allowedVisibleLen = Math.min(token.length() / tokenMaskingDataHolder.getTokenMinVisibleLengthRatio(),
+                    tokenMaskingDataHolder.getTokenMaxVisibleLength());
+        } else {
+            allowedVisibleLen = tokenMaskingDataHolder.getTokenMaxVisibleLength();
+        }
+
+        // Ensure allowedVisibleLen does not exceed token length
+        allowedVisibleLen = Math.min(allowedVisibleLen, token.length());
+        return allowedVisibleLen;
     }
 
     /**

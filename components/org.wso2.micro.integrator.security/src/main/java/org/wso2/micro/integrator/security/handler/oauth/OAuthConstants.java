@@ -231,10 +231,4 @@ public class OAuthConstants {
     public static final String BEGIN_CERTIFICATE_STRING = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERTIFICATE_STRING = "-----END CERTIFICATE-----";
 
-    //constants for getting masked token
-    public static final int MAX_LEN = 36;
-    public static final int MAX_VISIBLE_LEN = 8;
-    public static final int MIN_VISIBLE_LEN_RATIO = 5;
-    public static final String MASK_CHAR = "X";
-
 }
