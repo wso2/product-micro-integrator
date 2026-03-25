@@ -311,12 +311,12 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
             SignedJWTInfo signedJWTInfo = getSignedJwtInfo(accessToken);
 
-            validateJWTHeaderMetadata(signedJWTInfo.getSignedJWT());
+            validateJWTHeaderMetadata(signedJWTInfo);
 
             validateMandatoryClaimsPresence(signedJWTInfo.getJwtClaimsSet());
 
             if (log.isDebugEnabled()) {
-                log.debug("Authentication started for JWT tokens");
+                log.debug("Authentication started for JWT token");
             }
 
             JWTValidator jwtValidator = new JWTValidator(jwksEndpoint, trustedIssuers, audience, maxIssuedAtAgeSeconds,
@@ -593,18 +593,19 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
      * Validates the JWT header claims (typ and alg) before signature verification.
      * Per RFC 9068, the typ MUST be 'at+jwt' and the alg MUST be a strong asymmetric one.
      *
-     * @param jwt The parsed SignedJWT object.
+     * @param signedJWTInfo The parsed SignedJWT object.
      * @throws OAuthSecurityException If the header is invalid or uses a forbidden algorithm.
      */
-    public void validateJWTHeaderMetadata(SignedJWT jwt) throws OAuthSecurityException {
-        JWSHeader header = jwt.getHeader();
+    public void validateJWTHeaderMetadata(SignedJWTInfo signedJWTInfo) throws OAuthSecurityException {
+        JWSHeader header = signedJWTInfo.getSignedJWT().getHeader();
 
         // 1. Check 'typ' (Type) - REQUIRED by RFC 9068
         // Note: Some servers send 'application/at+jwt', some send 'at+jwt'
         JOSEObjectType typ = header.getType();
         if (typ == null || !(OAuthConstants.JWT_TYPE_AT_JWT.equals(typ.getType())
                 || OAuthConstants.MEDIA_TYPE_JWT_ACCESS_TOKEN.equals(typ.getType()))) {
-            log.error("Invalid JWT type. Expected 'at+jwt' or 'application/at+jwt', found: " + typ);
+            log.error("Invalid JWT type. Expected 'at+jwt' or 'application/at+jwt', found: " + typ + ". Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INCORRECT_ACCESS_TOKEN_TYPE,
                     "Invalid token type");
         }
@@ -612,23 +613,31 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
         // 2. Check 'alg' (Algorithm) - Protects against 'alg: none' and Key Confusion
         JWSAlgorithm alg = header.getAlgorithm();
         if (!isSupportedAlgorithm(alg)) {
-            log.error("Unsupported or weak algorithm: " + alg);
+            String errorMessage;
+            if (alg == null) {
+                errorMessage = "Missing algorithm (alg) in JWT header.";
+            } else {
+                errorMessage = "Unsupported or weak algorithm: " + alg.getName() + ". Expected: "
+                        + (allowedAlgorithms != null && !allowedAlgorithms.isEmpty()
+                        ? allowedAlgorithms : JWSAlgorithm.Family.RSA.toString());
+            }
+            log.error(errorMessage + ". Token: " + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Unsuitable cryptographic algorithm");
         }
 
-        log.debug("Header metadata validation successful.");
+        if (log.isDebugEnabled()) {
+            log.debug("Header metadata validation successful.");
+        }
     }
 
     private boolean isSupportedAlgorithm(JWSAlgorithm alg) {
 
         if (alg == null) {
-            log.error("Missing 'alg' in JWT header.");
             return false;
         }
-        if (allowedAlgorithms != null && !allowedAlgorithms.isEmpty() && !allowedAlgorithms.contains(alg.getName())) {
-            log.error("Algorithm " + alg.getName() + " is not in the list of allowed algorithms.");
-            return false;
+        if (allowedAlgorithms != null && !allowedAlgorithms.isEmpty()) {
+            return allowedAlgorithms.contains(alg.getName());
         }
         // By default, only allow strong asymmetric algorithms (RS256, etc.)
         return JWSAlgorithm.Family.RSA.contains(alg);
@@ -646,30 +655,38 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
         // 1. Check for Existence (The "Presence" Check)
         if (StringUtils.isEmpty(claims.getIssuer())) {
+            log.error("Missing mandatory 'iss' claim in JWT. Token: " + OAuthUtil.getMaskedToken(claims.toString()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'iss' claim");
         }
         if (claims.getExpirationTime() == null) {
+            log.error("Missing mandatory 'exp' claim in JWT. Token: " + OAuthUtil.getMaskedToken(claims.toString()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'exp' claim");
         }
         if (claims.getAudience() == null || claims.getAudience().isEmpty()) {
+            log.error("Missing mandatory 'aud' claim in JWT. Token: " + OAuthUtil.getMaskedToken(claims.toString()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'aud' claim");
         }
         if (StringUtils.isEmpty(claims.getSubject())) {
+            log.error("Missing mandatory 'sub' claim in JWT. Token: " + OAuthUtil.getMaskedToken(claims.toString()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'sub' claim");
         }
         if (StringUtils.isEmpty(claims.getJWTID())) {
+            log.error("Missing mandatory 'jti' claim in JWT. Token: " + OAuthUtil.getMaskedToken(claims.toString()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'jti' claim");
         }
         if (claims.getIssueTime() == null) {
+            log.error("Missing mandatory 'iat' claim in JWT. Token: " + OAuthUtil.getMaskedToken(claims.toString()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'iat' claim");
         }
-        log.debug("Mandatory claims validation passed.");
+        if (log.isDebugEnabled()) {
+            log.debug("Mandatory claims validation passed.");
+        }
     }
 
     /**
@@ -710,7 +727,7 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
                 signedJWTInfo = new SignedJWTInfo(accessToken, signedJWT, jwtClaimsSet);
             }
         } catch (ParseException e) {
-            log.error("Error while parsing the access token.", e);
+            log.error("Error while parsing the access token: " + OAuthUtil.getMaskedToken(accessToken), e);
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     OAuthConstants.API_AUTH_INVALID_CREDENTIALS_MESSAGE, e);
         }

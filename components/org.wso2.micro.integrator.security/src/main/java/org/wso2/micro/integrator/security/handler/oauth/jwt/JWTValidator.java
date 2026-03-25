@@ -105,7 +105,6 @@ public class JWTValidator {
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         String httpMethod = (String) axis2MsgContext.getProperty(Constants.Configuration.HTTP_METHOD);
         String jwtTokenIdentifier = JWTUtil.getJWTTokenIdentifier(signedJWTInfo);
-        String jwtHeader = signedJWTInfo.getSignedJWT().getHeader().toString();
 
         if (isTokenRevoked(signedJWTInfo)) {
             if (log.isDebugEnabled()) {
@@ -297,18 +296,21 @@ public class JWTValidator {
         JWTClaimsSet jwtClaimsSet = signedJWTInfo.getJwtClaimsSet();
 
         if (!isIssuerTrusted(signedJWTInfo)) {
-            log.error("The token issuer is not in the list of trusted issuers.");
+            log.error("Token validation failed for the token: " + OAuthUtil.getMaskedToken(signedJWTInfo.getToken())
+                    + ". The token issuer is not in the list of trusted issuers.");
             return false;
         }
 
         if (!validateAudience(jwtClaimsSet, audience)) {
-            log.error("The token audience does not match the expected audience.");
+            log.error("Token validation failed for the token: " + OAuthUtil.getMaskedToken(signedJWTInfo.getToken())
+                    + ". The token audience does not match the expected audience.");
             return false;
         }
 
         // 1. Expiry Check (Fastest & most common failure)
         if (!JWTUtil.validateTokenExpiry(jwtClaimsSet)) {
-            log.error("JWT token is expired.");
+            log.error("Token validation failed for the token: " + OAuthUtil.getMaskedToken(signedJWTInfo.getToken())
+                    + ". JWT token is expired.");
             jwtValidationInfo.setExpired(true);
             return false;
         }
@@ -316,18 +318,21 @@ public class JWTValidator {
         // 2. CNF (Confirmation) Claim Check (For mTLS/Sender-Constrained tokens)
         try {
             if (!JWTUtil.validateCNFClaim(signedJWTInfo, mtlsConfiguration)) {
-                log.error("JWT token CNF claim validation failed.");
+                log.error("Token validation failed for the token: " + OAuthUtil.getMaskedToken(signedJWTInfo.getToken())
+                        + ". CNF (confirmation) claim validation failed.");
                 jwtValidationInfo.setCnfFailed(true);
                 return false;
             }
         } catch (ParseException e) {
-            log.error("Error while parsing 'cnf' claim in JWT Token", e);
+            log.error("Error while parsing 'cnf' claim in JWT token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()), e);
             return false;
         }
 
         // 3. Issued At (iat) Policy Check (Replay & Clock Skew)
         if (!validateIssuedAtPolicy(jwtClaimsSet, JWTUtil.getTimeStampSkewInSeconds(), maxIssuedAtAgeSeconds)) {
-            log.error("JWT iat policy validation failed.");
+            log.error("Token validation failed for the token: " + OAuthUtil.getMaskedToken(signedJWTInfo.getToken())
+                    + ". JWT `iat` (issued at) policy validation failed.");
             return false;
         }
 
@@ -581,7 +586,7 @@ public class JWTValidator {
         // 1. Check for "Future" tokens (Clock Skew)
         // If IAT is > Current Time + Skew, someone's clock is wrong or it's a forgery.
         if (iatTimeMillis > (currentTimeMillis + (clockSkew * 1000))) {
-            log.error("Token issued in the future. iat: " + iat);
+            log.error("Token issued in the future. Issued at: " + iat);
             return false;
         }
 
@@ -592,7 +597,9 @@ public class JWTValidator {
             return false;
         }
 
-        log.debug("Issued-at policy validation passed.");
+        if (log.isDebugEnabled()) {
+            log.debug("Issued-at policy validation passed.");
+        }
         return true;
     }
 
@@ -609,8 +616,7 @@ public class JWTValidator {
         if (StringUtils.isNotEmpty(issuer) && trustedIssuers != null
                 && trustedIssuers.contains(issuer)) {
             if (log.isDebugEnabled()) {
-                log.debug("Issuer: " + issuer + " found for authentication token. "
-                        + "Proceeding with authentication.");
+                log.debug("Issuer validation passed for the JWT token.");
             }
             return true;
         }
