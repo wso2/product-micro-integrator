@@ -2148,7 +2148,7 @@
         <version.jaxb.api>2.4.0-b180830.0359</version.jaxb.api>
         <com.sun.jaxb.version>2.3.0</com.sun.jaxb.version>
         <com.sun.jaxb.impl.version>2.3.1</com.sun.jaxb.impl.version>
-        <synapse.version>4.1.0-wso2v32</synapse.version>
+        <synapse.version>4.1.0-wso2v33</synapse.version>
         <imp.pkg.version.synapse>[4.1.0, 4.2.0)</imp.pkg.version.synapse>
         <carbon.crypto.version>1.1.3</carbon.crypto.version>
         <carbon.crypto.api.imp.pkg.version.range>[1.1.0,1.2.0)</carbon.crypto.api.imp.pkg.version.range>
