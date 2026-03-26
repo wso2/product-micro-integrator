@@ -49,21 +49,41 @@ public class OAuthUtil {
      * @return masked token.
      */
     public static String getMaskedToken(String token) {
+
+        TokenMaskingDataHolder tokenMaskingDataHolder = TokenMaskingDataHolder.getInstance();
         StringBuilder maskedTokenBuilder = new StringBuilder();
+
         if (token != null) {
-            int allowedVisibleLen = Math.min(token.length() / OAuthConstants.MIN_VISIBLE_LEN_RATIO,
-                    OAuthConstants.MAX_VISIBLE_LEN);
-            if (token.length() > OAuthConstants.MAX_LEN) {
+            int allowedVisibleLen = getAllowedVisibleLen(token, tokenMaskingDataHolder);
+
+            if (token.length() > tokenMaskingDataHolder.getTokenMaxLength()) {
                 maskedTokenBuilder.append("...");
-                maskedTokenBuilder.append(String.join("", Collections.nCopies(OAuthConstants.MAX_LEN,
-                        OAuthConstants.MASK_CHAR)));
+                maskedTokenBuilder.append(String.join("",
+                        Collections.nCopies(tokenMaskingDataHolder.getTokenMaxLength(),
+                                tokenMaskingDataHolder.getTokenMaskChar())));
             } else {
-                maskedTokenBuilder.append(String.join("", Collections.nCopies(token.length()
-                        - allowedVisibleLen, OAuthConstants.MASK_CHAR)));
+                maskedTokenBuilder.append(String.join("",
+                        Collections.nCopies(token.length()
+                                - allowedVisibleLen, tokenMaskingDataHolder.getTokenMaskChar())));
             }
             maskedTokenBuilder.append(token.substring(token.length() - allowedVisibleLen));
         }
         return maskedTokenBuilder.toString();
+    }
+
+    private static int getAllowedVisibleLen(String token, TokenMaskingDataHolder tokenMaskingDataHolder) {
+
+        int allowedVisibleLen;
+        if (tokenMaskingDataHolder.getTokenMinVisibleLengthRatio() > 0) {
+            allowedVisibleLen = Math.min(token.length() / tokenMaskingDataHolder.getTokenMinVisibleLengthRatio(),
+                    tokenMaskingDataHolder.getTokenMaxVisibleLength());
+        } else {
+            allowedVisibleLen = tokenMaskingDataHolder.getTokenMaxVisibleLength();
+        }
+
+        // Ensure allowedVisibleLen does not exceed token length
+        allowedVisibleLen = Math.min(allowedVisibleLen, token.length());
+        return allowedVisibleLen;
     }
 
     /**
