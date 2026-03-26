@@ -394,7 +394,6 @@ do
     -DenableReadinessProbe=true \
     -DenableLivenessProbe=true \
     -DenableManagementApi=true \
-    -DenableICPApi=true \
     -DskipStartupExtensions=false \
     -Dautomation.mode.seq.car.name="$CAR_NAME" \
     -Dpolyglot.engine.WarnInterpreterOnly=false \

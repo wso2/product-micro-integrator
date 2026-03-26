@@ -373,7 +373,6 @@ do
     -DenableLivenessProbe=true \
     -DenableCorrelationLogs=true \
     -DenableManagementApi=true \
-    -DenableICPApi=true \
     -DskipStartupExtensions=false \
     -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector \
     -Dorg.ops4j.pax.logging.logReaderEnabled=false \
