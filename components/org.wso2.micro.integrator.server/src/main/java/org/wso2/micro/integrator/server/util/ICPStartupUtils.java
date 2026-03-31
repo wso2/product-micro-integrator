@@ -75,29 +75,23 @@ public class ICPStartupUtils {
         // Read from persisted file if present
         if (Files.exists(runtimeIdPath)) {
             String existingId = Files.readString(runtimeIdPath).trim();
-            if (!existingId.isEmpty()) {
+            if (!existingId.isEmpty() && isValidUUID(existingId)) {
                 runtimeId = existingId;
                 setRuntimeIdSystemProperty(existingId);
+                if (log.isDebugEnabled()) {
+                    log.debug("Using existing runtime ID from file: " + existingId);
+                }
                 return;
+            } else if (!existingId.isEmpty()) {
+                String sanitizedExistingId = sanitizeForLog(existingId);
+                log.warn("Existing runtime ID file contains non-UUID value: " + sanitizedExistingId
+                        + ". Generating new UUID and overwriting file.");
             }
         }
 
-        // Use configured runtime ID if available
-        Object configuredRuntimeId = getConfigs().get(ICP_CONFIG_RUNTIME);
-        if (configuredRuntimeId != null) {
-            String cfgId = configuredRuntimeId.toString().trim();
-            if (!cfgId.isEmpty()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Using configured runtime ID: " + cfgId);
-                    log.debug("No existing ICP runtime ID found. Using configured runtime ID: " + cfgId
-                            + " and persisting it for future use.");
-                }
-                persistAndSetRuntimeId(runtimeIdPath, cfgId);
-                return;
-            }
-        }
+        // Generate a new UUID for runtime ID (not using configured runtime name)
         if (log.isDebugEnabled()) {
-            log.debug("No configured runtime ID found, generating a new one.");
+            log.debug("No existing ICP runtime ID found, generating a new UUID.");
         }
         String generatedId = UUID.randomUUID().toString();
         if (log.isDebugEnabled()) {
@@ -163,5 +157,28 @@ public class ICPStartupUtils {
         if (System.getProperty(ICP_RUNTIME_LOG_SUFFIX) == null) {
             System.setProperty(ICP_RUNTIME_LOG_SUFFIX, "[icp.runtimeId=" + id + "]");
         }
+    }
+
+    private static boolean isValidUUID(String value) {
+        try {
+            UUID.fromString(value);
+            return true;
+        } catch (IllegalArgumentException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Invalid UUID format: " + sanitizeForLog(value));
+            }
+            return false;
+        }
+    }
+
+    private static String sanitizeForLog(String value) {
+        if (value == null) {
+            return "<null>";
+        }
+        String sanitized = value.replaceAll("[\\r\\n\\t\\x00-\\x1F\\x7F]", "");
+        if (sanitized.length() > 50) {
+            return sanitized.substring(0, 50) + "...";
+        }
+        return sanitized;
     }
 }

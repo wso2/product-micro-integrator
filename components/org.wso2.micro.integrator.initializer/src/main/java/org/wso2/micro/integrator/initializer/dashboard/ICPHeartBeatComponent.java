@@ -61,6 +61,7 @@ import org.wso2.micro.integrator.core.util.MicroIntegratorBaseUtils;
 import org.wso2.micro.integrator.initializer.deployment.application.deployer.CappDeployer;
 import org.wso2.micro.integrator.initializer.utils.SecretResolverUtil;
 import org.wso2.micro.integrator.registry.MicroIntegratorRegistry;
+import org.wso2.micro.integrator.server.util.ICPStartupUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -100,46 +101,24 @@ public class ICPHeartBeatComponent {
     private static final Map<String, Object> configs = ConfigParser.getParsedConfigs();
     private static volatile String cachedJwtToken = null;
     private static volatile long jwtTokenExpiry = 0;
-    private static final String RUNTIME_ID_FILENAME = ".icp_runtime_id";
-    private static String runtimeId = null;
     private static volatile ScheduledExecutorService heartbeatExecutor = null;
     private static volatile boolean shutdownHookRegistered = false;
     private static volatile boolean sslWarnLogged = false;
 
     /**
-     * Returns the runtime ID from cache or file.
-     * The runtime ID is generated at the server startup.
+     * Returns the runtime ID, which is initialized at server startup.
+     * Attempts to load from ICPStartupUtils if available (OSGi runtime), 
+     * otherwise generates a new UUID as fallback.
      *
-     * @return the runtime ID
-     * @throws IOException if there's an error reading the runtime ID file or if the
-     *                     runtime ID does not exist
+     * @return the runtime ID (always a valid UUID)
+     * @throws IOException if runtime ID cannot be determined
      */
-    private static synchronized String getRuntimeId() throws IOException {
-        // Prefer cached value if initialized
-        if (runtimeId != null && !runtimeId.trim().isEmpty()) {
-            return runtimeId;
+    private static String getRuntimeId() throws IOException {
+        String id = ICPStartupUtils.getRuntimeId();
+        if (id == null || id.trim().isEmpty()) {
+            throw new IOException("Runtime ID is not initialized");
         }
-
-        // Resolve from carbon.home to stay consistent with ICP startup runtime ID
-        // creation
-        Path runtimeIdPath = Paths.get(System.getProperty("carbon.home", "."),
-                RUNTIME_ID_FILENAME).toAbsolutePath();
-
-        // Read from persisted file if present
-        if (Files.exists(runtimeIdPath)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Reading runtime ID from file: " + runtimeIdPath);
-            }
-            String existingId = Files.readString(runtimeIdPath).trim();
-            if (!existingId.isEmpty()) {
-                runtimeId = existingId;
-                return runtimeId;
-            }
-        }
-
-        // Runtime ID should have been generated at startup - throw error if not found
-        log.error("Runtime ID file not found at: " + runtimeIdPath);
-        throw new IOException("Error retrieving runtime ID as it was not properly generated during MI startup.");
+        return id;
     }
 
     /**
@@ -242,7 +221,8 @@ public class ICPHeartBeatComponent {
 
             // Build delta payload
             JsonObject deltaPayload = new JsonObject();
-            deltaPayload.addProperty("runtime", getRuntimeId());
+            deltaPayload.addProperty("heartbeatVersion", HEARTBEAT_VERSION);
+            deltaPayload.addProperty("runtimeId", getRuntimeId());
             deltaPayload.addProperty("runtimeHash", currentHash);
 
             // Create timestamp in Ballerina time:Utc format [seconds, nanoseconds_fraction]
@@ -277,6 +257,9 @@ public class ICPHeartBeatComponent {
             JsonObject response = sendHeartbeatRequest(fullEndpoint, fullPayload);
 
             if (response == null) {
+                if (heartbeatExecutor == null || heartbeatExecutor.isShutdown()) {
+                    return;
+                }
                 log.error("Unexpected null response from ICP full heartbeat.");
             } else if (response.has("acknowledged")
                     && response.get("acknowledged").getAsBoolean()) {
@@ -320,8 +303,18 @@ public class ICPHeartBeatComponent {
 
             try (CloseableHttpResponse response = client.execute(httpPost)) {
                 // Response is auto-closed by try-with-resources to prevent resource leaks.
-                JsonObject jsonResponse = getJsonResponse(response);
-                return jsonResponse;
+                int statusCode = response.getStatusLine().getStatusCode();
+                if (statusCode == 409) {
+                    JsonObject jsonResponse = getJsonResponse(response);
+                    String detail = (jsonResponse != null && jsonResponse.has("body"))
+                            ? jsonResponse.get("body").getAsString() : "no details";
+                    log.error("ICP rejected heartbeat due to environment mismatch (HTTP 409): " + detail
+                            + ". Stopping heartbeat service — reconfigure the ICP JWT key.");
+                    new Thread(ICPHeartBeatComponent::stopICPHeartbeatExecutorService,
+                            "ICP-Heartbeat-Stopper").start();
+                    return null;
+                }
+                return getJsonResponse(response);
             }
         } catch (Exception e) {
             log.error("Error sending heartbeat request to ICP at: " + endpoint, e);
@@ -334,7 +327,12 @@ public class ICPHeartBeatComponent {
      */
     private static JsonObject buildFullHeartbeatPayload(boolean includeTimestamp) throws IOException {
         JsonObject payload = new JsonObject();
-        payload.addProperty("runtime", getRuntimeId());
+        payload.addProperty("heartbeatVersion", HEARTBEAT_VERSION);
+        payload.addProperty("runtimeId", getRuntimeId());
+        String runtimeName = getRuntimeName();
+        if (runtimeName != null) {
+            payload.addProperty("runtime", runtimeName);
+        }
         payload.addProperty("runtimeType", RUNTIME_TYPE_MI);
         payload.addProperty("status", RUNTIME_STATUS_RUNNING);
         payload.addProperty("environment", getEnvironment());
@@ -556,9 +554,9 @@ public class ICPHeartBeatComponent {
             }
 
             // Ensure all required root-level properties exist and have correct types
-            if (!payload.has("runtime") || payload.get("runtime").isJsonNull()) {
-                payload.addProperty("runtime", UUID.randomUUID().toString());
-                log.warn("Missing runtime, added default UUID");
+            if (!payload.has("runtimeId") || payload.get("runtimeId").isJsonNull()) {
+                payload.addProperty("runtimeId", UUID.randomUUID().toString());
+                log.warn("Missing runtimeId, added default UUID");
             }
 
             if (!payload.has("runtimeType") || payload.get("runtimeType").isJsonNull()) {
@@ -642,19 +640,25 @@ public class ICPHeartBeatComponent {
 
             // Create minimal valid payload
             JsonObject minimalPayload = new JsonObject();
-            String runtimeValue = "";
+            String runtimeIdValue = "";
             try {
-                if (payload != null && payload.has("runtime") && !payload.get("runtime").isJsonNull()) {
-                    runtimeValue = payload.get("runtime").getAsString();
-                } else if (payload != null && payload.has("runtimeHash") && !payload.get("runtimeHash").isJsonNull()) {
-                    runtimeValue = payload.get("runtimeHash").getAsString();
-                } else if (!StringUtils.isEmpty(runtimeId)) {
-                    runtimeValue = runtimeId;
+                if (payload != null && payload.has("runtimeId") && !payload.get("runtimeId").isJsonNull()) {
+                    runtimeIdValue = payload.get("runtimeId").getAsString();
+                } else {
+                    String fallbackId = ICPStartupUtils.getRuntimeId();
+                    if (!StringUtils.isEmpty(fallbackId)) {
+                        runtimeIdValue = fallbackId;
+                    }
                 }
             } catch (Exception ignored) {
-                runtimeValue = !StringUtils.isEmpty(runtimeId) ? runtimeId : "";
+                try {
+                    String fallbackId = ICPStartupUtils.getRuntimeId();
+                    runtimeIdValue = !StringUtils.isEmpty(fallbackId) ? fallbackId : "";
+                } catch (Exception e2) {
+                    runtimeIdValue = "";
+                }
             }
-            minimalPayload.addProperty("runtime", runtimeValue);
+            minimalPayload.addProperty("runtimeId", runtimeIdValue);
             minimalPayload.addProperty("runtimeType", "MI");
             minimalPayload.addProperty("status", "RUNNING");
             minimalPayload.addProperty("environment", "dev");
@@ -794,6 +798,14 @@ public class ICPHeartBeatComponent {
      */
     private static String getComponent() {
         return getConfigValue(ICP_CONFIG_COMPONENT, DEFAULT_COMPONENT);
+    }
+
+    /**
+     * Gets the runtime name from configuration.
+     * Returns the configured runtime name or null if not configured.
+     */
+    private static String getRuntimeName() {
+        return getConfigValue(ICP_CONFIG_RUNTIME);
     }
 
     /**
