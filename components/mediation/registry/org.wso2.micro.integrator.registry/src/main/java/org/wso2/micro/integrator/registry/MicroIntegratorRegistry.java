@@ -50,6 +50,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,6 +66,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import static org.wso2.micro.integrator.registry.MicroIntegratorRegistryConstants.APPLICATION_JSON_MEDIA_TYPE;
 import static org.wso2.micro.integrator.registry.MicroIntegratorRegistryConstants.CHILD_FILES_LIST_KEY;
 import static org.wso2.micro.integrator.registry.MicroIntegratorRegistryConstants.COLLECTION_PROPERTY_EXTENTION;
 import static org.wso2.micro.integrator.registry.MicroIntegratorRegistryConstants.CONFIGURATION_REGISTRY_PATH;
@@ -1129,6 +1131,9 @@ public class MicroIntegratorRegistry extends AbstractRegistry {
                     }
                 }
                 return OMAbstractFactory.getOMFactory().createOMText(strBuilder.toString());
+            } else if (APPLICATION_JSON_MEDIA_TYPE.equals(mediaType)) {
+                String json = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+                return OMAbstractFactory.getOMFactory().createOMText(json);
             } else {
                 return OMAbstractFactory.getOMFactory()
                         .createOMText(new DataHandler(new SynapseBinaryDataSource(inputStream, mediaType)), true);
