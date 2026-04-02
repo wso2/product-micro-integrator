@@ -106,12 +106,10 @@ public class ICPHeartBeatComponent {
     private static volatile boolean sslWarnLogged = false;
 
     /**
-     * Returns the runtime ID, which is initialized at server startup.
-     * Attempts to load from ICPStartupUtils if available (OSGi runtime), 
-     * otherwise generates a new UUID as fallback.
+     * Returns the runtime ID initialized at server startup via {@link ICPStartupUtils#getRuntimeId()}.
      *
      * @return the runtime ID (always a valid UUID)
-     * @throws IOException if runtime ID cannot be determined
+     * @throws IOException if the runtime ID has not been initialized
      */
     private static String getRuntimeId() throws IOException {
         String id = ICPStartupUtils.getRuntimeId();
