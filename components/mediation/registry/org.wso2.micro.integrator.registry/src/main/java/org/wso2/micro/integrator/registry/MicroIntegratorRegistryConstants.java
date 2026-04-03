@@ -61,6 +61,7 @@ public class MicroIntegratorRegistryConstants {
     public static final String COLLECTION_PROPERTY_EXTENTION = ".collections" + PROPERTY_EXTENTION;
 
     public static final String DEFAULT_MEDIA_TYPE = "text/plain";
+    public static final String APPLICATION_JSON_MEDIA_TYPE = "application/json";
 
     public static final String CONNECTOR_SECURE_VAULT_CONFIG_REPOSITORY = "conf:/repository/components/secure-vault";
     public static final String TYPE_KEY = "type";
