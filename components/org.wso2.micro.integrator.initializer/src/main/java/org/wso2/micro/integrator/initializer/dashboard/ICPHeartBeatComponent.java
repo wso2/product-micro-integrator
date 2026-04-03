@@ -220,7 +220,7 @@ public class ICPHeartBeatComponent {
             // Build delta payload
             JsonObject deltaPayload = new JsonObject();
             deltaPayload.addProperty("heartbeatVersion", HEARTBEAT_VERSION);
-            deltaPayload.addProperty("runtimeId", getRuntimeId());
+            deltaPayload.addProperty(Constants.RUNTIME_ID, getRuntimeId());
             deltaPayload.addProperty("runtimeHash", currentHash);
 
             // Create timestamp in Ballerina time:Utc format [seconds, nanoseconds_fraction]
@@ -326,7 +326,7 @@ public class ICPHeartBeatComponent {
     private static JsonObject buildFullHeartbeatPayload(boolean includeTimestamp) throws IOException {
         JsonObject payload = new JsonObject();
         payload.addProperty("heartbeatVersion", HEARTBEAT_VERSION);
-        payload.addProperty("runtimeId", getRuntimeId());
+        payload.addProperty(Constants.RUNTIME_ID, getRuntimeId());
         String runtimeName = getRuntimeName();
         if (runtimeName != null) {
             payload.addProperty("runtime", runtimeName);
@@ -546,14 +546,18 @@ public class ICPHeartBeatComponent {
      * compatibility
      */
     private static JsonObject validateHeartbeatPayload(JsonObject payload) {
+        if (payload == null) {
+            log.warn("Heartbeat payload is null, returning minimal payload");
+            return new JsonObject();
+        }
         try {
             if (log.isDebugEnabled()) {
                 log.debug("Validating heartbeat payload structure for ICP GraphQL API compatibility");
             }
 
             // Ensure all required root-level properties exist and have correct types
-            if (!payload.has("runtimeId") || payload.get("runtimeId").isJsonNull()) {
-                payload.addProperty("runtimeId", UUID.randomUUID().toString());
+            if (!payload.has(Constants.RUNTIME_ID) || payload.get(Constants.RUNTIME_ID).isJsonNull()) {
+                payload.addProperty(Constants.RUNTIME_ID, UUID.randomUUID().toString());
                 log.warn("Missing runtimeId, added default UUID");
             }
 
@@ -640,23 +644,20 @@ public class ICPHeartBeatComponent {
             JsonObject minimalPayload = new JsonObject();
             String runtimeIdValue = "";
             try {
-                if (payload != null && payload.has("runtimeId") && !payload.get("runtimeId").isJsonNull()) {
-                    runtimeIdValue = payload.get("runtimeId").getAsString();
+                if (payload.has(Constants.RUNTIME_ID) && !payload.get(Constants.RUNTIME_ID).isJsonNull()) {
+                    runtimeIdValue = payload.get(Constants.RUNTIME_ID).getAsString();
                 } else {
                     String fallbackId = ICPStartupUtils.getRuntimeId();
                     if (!StringUtils.isEmpty(fallbackId)) {
                         runtimeIdValue = fallbackId;
                     }
                 }
-            } catch (Exception ignored) {
-                try {
-                    String fallbackId = ICPStartupUtils.getRuntimeId();
-                    runtimeIdValue = !StringUtils.isEmpty(fallbackId) ? fallbackId : "";
-                } catch (Exception e2) {
-                    runtimeIdValue = "";
-                }
+            } catch (UnsupportedOperationException ex) {
+                log.debug("Failed to extract runtimeId from payload, attempting fallback", ex);
+                String fallbackId = ICPStartupUtils.getRuntimeId();
+                runtimeIdValue = !StringUtils.isEmpty(fallbackId) ? fallbackId : "";
             }
-            minimalPayload.addProperty("runtimeId", runtimeIdValue);
+            minimalPayload.addProperty(Constants.RUNTIME_ID, runtimeIdValue);
             minimalPayload.addProperty("runtimeType", "MI");
             minimalPayload.addProperty("status", "RUNNING");
             minimalPayload.addProperty("environment", "dev");
@@ -1748,7 +1749,7 @@ public class ICPHeartBeatComponent {
 
         // Main structure
         appObj.addProperty("name", appName);
-        appObj.addProperty("runtimeId", runtimeId);
+        appObj.addProperty(Constants.RUNTIME_ID, runtimeId);
         appObj.addProperty("version", carbonApp.getAppVersion());
         appObj.addProperty("status", status);
 

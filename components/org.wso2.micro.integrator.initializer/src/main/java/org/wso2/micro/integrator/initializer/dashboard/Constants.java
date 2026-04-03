@@ -49,6 +49,7 @@ public class Constants {
     public static final long DEFAULT_JWT_EXPIRY_SECONDS = 3600;
 
     public static final long DEFAULT_JWT_CLOCK_SKEW_TOLERANCE_MS = 60_000L;
+    public static final String RUNTIME_ID = "runtimeId";
     public static final String RUNTIME_TYPE_MI = "MI";
     public static final String RUNTIME_STATUS_RUNNING = "RUNNING";
     public static final String HEARTBEAT_VERSION = "v1.0";
