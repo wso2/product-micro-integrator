@@ -83,6 +83,10 @@
         </dependency>
         <dependency>
             <groupId>org.wso2.ei</groupId>
+            <artifactId>org.wso2.micro.integrator.server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.ei</groupId>
             <artifactId>org.wso2.micro.integrator.ntask.core</artifactId>
         </dependency>
         <dependency>
