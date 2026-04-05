@@ -98,6 +98,26 @@
         <faultSequence>
         </faultSequence>
     </resource>
+    <!-- Issue #4623: variables whose runtime value contains $ followed by a digit -->
+    <resource methods="GET" uri-template="/dollar-in-vars">
+        <inSequence>
+            <variable name="ERR_CLASS" value="java.util.concurrent.ThreadPoolExecutor"/>
+            <variable name="ERR_CODE" value="500"/>
+            <variable name="ERR_MESSAGE" value="Internal Server Error"/>
+            <variable name="ERR_DETAIL" value="ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)"/>
+            <variable name="ERR_EXCEPTION" value="NativeWorkerPool$1.run(NativeWorkerPool.java:206)"/>
+            <payloadFactory media-type="json">
+                <format><![CDATA[{
+                    "errorClass": "${vars.ERR_CLASS}",
+                    "errorCode": "${vars.ERR_CODE}",
+                    "message": "${vars.ERR_MESSAGE}",
+                    "detail": "${vars.ERR_DETAIL}",
+                    "exception": "${vars.ERR_EXCEPTION}"
+                }]]></format>
+            </payloadFactory>
+            <respond/>
+        </inSequence>
+    </resource>
     <resource methods="POST GET" uri-template="/payload-freemarker">
         <inSequence>
             <variable name="user_name" value="123" type="INTEGER"/>
