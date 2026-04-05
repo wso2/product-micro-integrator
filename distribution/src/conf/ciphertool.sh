@@ -123,4 +123,14 @@ if $cygwin; then
 fi
 
 # ----- Execute The Requested Command -----------------------------------------
-$JAVA_HOME/bin/java -Dcarbon.home="$CARBON_HOME" -Dcarbon.config.dir.path="$CARBON_HOME"/conf -Dorg.wso2.CipherTransformation="RSA/ECB/OAEPwithSHA1andMGF1Padding" -classpath "$CARBON_CLASSPATH" org.wso2.ciphertool.CipherTool $*
+
+# Set CipherTransformation only when -Dsymmetric is passed as an argument
+CIPHER_TRANSFORMATION=""
+for arg in "$@"; do
+  if [ "$arg" = "-Dsymmetric" ]; then
+    CIPHER_TRANSFORMATION="-Dorg.wso2.CipherTransformation=RSA/ECB/OAEPwithSHA1andMGF1Padding"
+    break
+  fi
+done
+
+$JAVA_HOME/bin/java -Dcarbon.home="$CARBON_HOME" -Dcarbon.config.dir.path="$CARBON_HOME"/conf $CIPHER_TRANSFORMATION -classpath "$CARBON_CLASSPATH" org.wso2.ciphertool.CipherTool "$@"

@@ -82,6 +82,16 @@ echo Using CARBON_HOME:   %CARBON_HOME%
 echo Using JAVA_HOME:    %JAVA_HOME%
 set _RUNJAVA="%JAVA_HOME%\bin\java"
 
-%_RUNJAVA% %JAVA_OPTS% -Dcarbon.home="%CARBON_HOME%" -Dcarbon.config.dir.path="%CARBON_HOME%\conf" -Dorg.wso2.CipherTransformation="RSA/ECB/OAEPwithSHA1andMGF1Padding" -cp "%CARBON_CLASSPATH%" org.wso2.ciphertool.CipherTool %*
+rem Set CipherTransformation only when -Dsymmetric is passed as an argument
+set CIPHER_TRANSFORMATION=
+set CMD_ARGS=
+for %%a in (%*) do (
+    if "%%a"=="-Dsymmetric" (
+        set CIPHER_TRANSFORMATION=-Dorg.wso2.CipherTransformation="RSA/ECB/OAEPwithSHA1andMGF1Padding"
+    )
+    set "CMD_ARGS=!CMD_ARGS! "%%~a""
+)
+
+%_RUNJAVA% %JAVA_OPTS% -Dcarbon.home="%CARBON_HOME%" -Dcarbon.config.dir.path="%CARBON_HOME%\conf" %CIPHER_TRANSFORMATION% -cp "%CARBON_CLASSPATH%" org.wso2.ciphertool.CipherTool !CMD_ARGS!
 endlocal
 :end

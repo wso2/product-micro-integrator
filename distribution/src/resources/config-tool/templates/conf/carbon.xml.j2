@@ -614,7 +614,13 @@
     </Analytics>
 
     <!-- Configure JCE provider -->
-    {% if jce_provider.provider_name is defined %}
+    {% if jce_provider is defined and jce_provider.provider_name is defined %}
         <JCEProvider>{{jce_provider.provider_name}}</JCEProvider>
+    {% endif %}
+    <!-- Configure JSSE provider -->
+    {% if jsse_provider is defined and jsse_provider.provider_name is defined %}
+        <JSSEProvider>
+            <ProviderName>{{jsse_provider.provider_name}}</ProviderName>
+        </JSSEProvider>
     {% endif %}
 </Server>
