@@ -128,6 +128,7 @@
   "opentelemetry.class": "synapse_properties.'opentelemetry.class'",
   "opentelemetry.protocol": "synapse_properties.'opentelemetry.protocol'",
   "opentelemetry.metric.push.interval.seconds": "synapse_properties.'opentelemetry.metric.push.interval.seconds'",
+  "opentelemetry.service_name": "synapse_properties.'opentelemetry.service.name'",
 
   "opentelemetry.filtered.mediator.names": "synapse_properties.'oltp.filtered.mediator.names'",
   "opentelemetry.custom.span.header.tags": "synapse_properties.'oltp.custom.span.header.tags'",
