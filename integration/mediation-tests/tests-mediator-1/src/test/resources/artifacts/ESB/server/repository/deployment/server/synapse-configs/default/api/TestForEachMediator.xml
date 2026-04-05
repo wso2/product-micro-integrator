@@ -205,6 +205,27 @@
         <faultSequence>
         </faultSequence>
     </resource>
+    <!-- Issue 4165: variable collection + parallel-execution=true + update-original=true -->
+    <resource methods="GET" uri-template="/json-var-parallel-update">
+        <inSequence>
+            <variable name="arrayVar" type="JSON"
+                      value="{&quot;array&quot;:[{&quot;id&quot;:&quot;011&quot;},{&quot;id&quot;:&quot;012&quot;}]}"/>
+            <foreach collection="${vars.arrayVar.array}" parallel-execution="true" update-original="true"
+                     continue-without-aggregation="false">
+                <sequence>
+                    <payloadFactory media-type="json">
+                        <format><![CDATA[{"id": ${payload.id}, "processed": true}]]></format>
+                    </payloadFactory>
+                </sequence>
+            </foreach>
+            <log category="INFO">
+                <message>Updated array : ${vars.arrayVar}</message>
+            </log>
+            <respond/>
+        </inSequence>
+        <faultSequence>
+        </faultSequence>
+    </resource>
     <resource methods="POST GET" uri-template="/transform-json">
         <inSequence>
             <variable name="status" expression="${payload.type == 'fruit' ? true : false}"/>

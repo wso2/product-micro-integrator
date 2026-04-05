@@ -259,6 +259,33 @@ public class ForEachMediatorTestCase extends ESBIntegrationTest {
         }
     }
 
+    /**
+     * Regression test for issue #4165.
+     * ForEach with a variable-based collection, parallel-execution=true, and update-original=true
+     * must complete and return HTTP 200. Before the fix, the aggregation step applied a JSONPath
+     * expression against the message payload instead of the variable, causing a PathNotFoundException
+     * in the MediatorWorker thread and leaving the HTTP client permanently hung.
+     */
+    @Test(groups = {"wso2.esb"}, description = "Issue 4165: ForEach with variable collection, parallel-execution=true, update-original=true must complete with HTTP 200")
+    public void testForEachVariableCollection_ParallelUpdate() throws IOException, InterruptedException {
+
+        CarbonLogReader carbonLogReader = new CarbonLogReader();
+        carbonLogReader.start();
+
+        String serviceURL = getMainSequenceURL() + "foreach/json-var-parallel-update";
+        HttpResponse httpResponse = httpClient.doGet(serviceURL, null);
+        Assert.assertEquals(httpResponse.getStatusLine().getStatusCode(), 200,
+                "Response code mismatched - foreach with parallel-execution=true and variable collection should return HTTP 200 (issue 4165)");
+        EntityUtils.consumeQuietly(httpResponse.getEntity());
+
+        // Verify the foreach completed and the variable was updated (log is emitted after foreach)
+        boolean logFound = carbonLogReader.checkForLog("Updated array :", DEFAULT_TIMEOUT);
+        Assert.assertTrue(logFound,
+                "Expected log 'Updated array :' not found - foreach did not complete or variable was not updated (issue 4165)");
+
+        carbonLogReader.stop();
+    }
+
     private static Document parseXML(String xml) throws IOException, ParserConfigurationException, SAXException {
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
