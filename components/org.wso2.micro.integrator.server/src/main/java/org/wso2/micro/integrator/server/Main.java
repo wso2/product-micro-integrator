@@ -426,10 +426,12 @@ public class Main {
         }
         String cryptoProviderClass = getPreferredJceProviderClass(jceProviderIdentifier);
         try {
-            Security.insertProviderAt((Provider) Class.forName(cryptoProviderClass).getDeclaredConstructor().newInstance(),
-                    1);
-            if (logger.isDebugEnabled()) {
-                logger.debug(cryptoProviderClass + " security provider is successfully registered in JVM.");
+            int jcePos = Security.insertProviderAt(
+                    (Provider) Class.forName(cryptoProviderClass).getDeclaredConstructor().newInstance(), 1);
+            if (jcePos == -1) {
+                logger.warn("JCE provider already registered; provider order was not changed: " + cryptoProviderClass);
+            } else if (logger.isDebugEnabled()) {
+                logger.debug(cryptoProviderClass + " security provider registered at position " + jcePos + ".");
             }
             // Install JSSE alongside JCE when configured via system property (backward compatibility),
             // or when explicitly configured via jsse_provider.provider_name in deployment.toml.
@@ -437,10 +439,13 @@ public class Main {
             String jsseProviderIdentifier = Utils.getConfig(JSSE_PROVIDER_NAME);
             if (configuredViaSysProp || jsseProviderIdentifier != null) {
                 if (jsseProviderIdentifier == null || BOUNCY_CASTLE_PROVIDER.equalsIgnoreCase(jsseProviderIdentifier)) {
-                    Security.insertProviderAt((Provider) Class.forName(JSSE_CLASS_NAME).getConstructor(String.class)
-                            .newInstance(jceProviderIdentifier), 2);
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("JSSE provider: " + JSSE_CLASS_NAME + " is set properly");
+                    int jssePos = Security.insertProviderAt(
+                            (Provider) Class.forName(JSSE_CLASS_NAME).getConstructor(String.class)
+                                    .newInstance(jsseProviderIdentifier), 2);
+                    if (jssePos == -1) {
+                        logger.warn("JSSE provider already registered; provider order was not changed.");
+                    } else if (logger.isDebugEnabled()) {
+                        logger.debug("JSSE provider registered at position " + jssePos + ": " + JSSE_CLASS_NAME);
                     }
                 } else {
                     logger.warn("Unsupported JSSE provider specified: " + jsseProviderIdentifier +
@@ -448,6 +453,7 @@ public class Main {
                 }
             }
         } catch (InstantiationException e) {
+            logger.error("Failed to instantiate security provider class: " + cryptoProviderClass, e);
             throw new RuntimeException("Failed to instantiate the class. Ensure it has " +
                     "a public no-argument constructor.", e);
         } catch (IllegalAccessException e) {
