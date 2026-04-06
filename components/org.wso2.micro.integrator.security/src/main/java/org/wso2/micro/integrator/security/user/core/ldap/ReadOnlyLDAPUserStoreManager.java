@@ -289,10 +289,11 @@ public class ReadOnlyLDAPUserStoreManager extends AbstractUserStoreManager {
         } catch (Exception ex) {
             // datasource is not configured
             if (log.isDebugEnabled()) {
-                log.debug("Datasource is not configured for LDAP user store");
+                log.debug("Datasource is not configured for LDAP user store", ex);
             }
             if (dataSource == null) {
-                log.error("Datasource is not configured for LDAP user store", ex);
+                log.warn("Datasource is not configured for LDAP user store. " +
+                        "Hybrid role support will not be available.");
             }
         }
         hybridRoleManager =
