@@ -34,6 +34,9 @@ import org.wso2.esb.integration.common.utils.common.ServerConfigurationManager;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -110,6 +113,30 @@ public class ApiWithConfigurablePropertyTestCase extends ESBIntegrationTest {
         Assert.assertEquals(StringUtils.normalizeSpace(httpResponse.getData()),
                 StringUtils.normalizeSpace("{ \"name\": \"env\", \"msg\": \"Hello\" }"),
                 StringUtils.normalizeSpace(httpResponse.getData()));
+    }
+
+    @Test(groups = {"wso2.esb"}, description = "Configurable property with env file missing trailing newline", priority = 5)
+    public void testConfigurablePropertyWithEnvFileNoTrailingNewline() throws IOException, AutomationUtilException {
+        // Create a temp .env file whose last line has NO trailing newline — this is the bug scenario from issue #4234.
+        // The POSIX `read` builtin returns non-zero on EOF even when it has read partial content, which caused the
+        // last variable to be silently dropped before the fix.
+        Path tempEnvFile = Files.createTempFile("test-no-newline", ".env");
+        // Deliberately omit the trailing '\n' after "Hello"
+        Files.write(tempEnvFile, "name=env\nmsg=Hello".getBytes(StandardCharsets.UTF_8));
+        try {
+            Map<String, String> commands = new HashMap<>();
+            commands.put("--env-file", tempEnvFile.toAbsolutePath().toString());
+            serverConfigurationManager.restartMicroIntegrator(commands);
+            Map<String, String> headers = new HashMap<>();
+            URL endpoint = new URL(getApiInvocationURL("apiConfig/test_api"));
+            HttpResponse httpResponse = HttpRequestUtil.doGet(endpoint.toString(), headers);
+            Assert.assertEquals(httpResponse.getResponseCode(), 200);
+            Assert.assertEquals(StringUtils.normalizeSpace(httpResponse.getData()),
+                    StringUtils.normalizeSpace("{ \"name\": \"env\", \"msg\": \"Hello\" }"),
+                    StringUtils.normalizeSpace(httpResponse.getData()));
+        } finally {
+            Files.deleteIfExists(tempEnvFile);
+        }
     }
 
     @AfterClass(alwaysRun = true)
