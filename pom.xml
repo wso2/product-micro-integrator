@@ -2054,7 +2054,7 @@
         <version.equinox.osgi.services>3.12.300</version.equinox.osgi.services>
         <version.equinox.platform.osgi>3.19.0</version.equinox.platform.osgi>
         <version.equinox.http.helper>1.1.0.wso2v1</version.equinox.http.helper>
-        <version.equinox.p2.metadata>2.9.0</version.equinox.p2.metadata>
+        <version.equinox.p2.metadata>2.4.0</version.equinox.p2.metadata>
         <felix.scr.version>2.2.14</felix.scr.version>
 
         <!-- Equinox dependency versions -->
@@ -2084,30 +2084,30 @@
         <version.sat4j.core>2.3.5.v201308161310</version.sat4j.core>
         <version.sat4j.pb>2.3.5.v201308161310</version.sat4j.pb>
 
-        <version.equinox.p2.artifact.repository>1.5.300</version.equinox.p2.artifact.repository>
-        <version.equinox.p2.core>2.11.0</version.equinox.p2.core>
-        <version.equinox.p2.director>2.6.300</version.equinox.p2.director>
-        <version.equinox.p2.director.app>1.3.300</version.equinox.p2.director.app>
-        <version.equinox.p2.directorywatcher>1.4.300</version.equinox.p2.directorywatcher>
-        <version.equinox.p2.engine>2.10.0</version.equinox.p2.engine>
-        <version.equinox.p2.console>1.3.300</version.equinox.p2.console>
-        <version.equinox.p2.extensionlocation>1.5.300</version.equinox.p2.extensionlocation>
-        <version.equinox.p2.garbagecollector>1.3.200</version.equinox.p2.garbagecollector>
-        <version.equinox.p2.jarprocessor>1.3.300</version.equinox.p2.jarprocessor>
-        <version.equinox.p2.metadata.repository>1.5.300</version.equinox.p2.metadata.repository>
-        <version.equinox.p2.reconciler.dropins>1.5.300</version.equinox.p2.reconciler.dropins>
-        <version.equinox.p2.repository.tools>2.4.300</version.equinox.p2.repository.tools>
-        <version.equinox.p2.repository>2.8.100</version.equinox.p2.repository>
-        <version.equinox.p2.touchpoint.eclipse>2.4.200</version.equinox.p2.touchpoint.eclipse>
-        <version.equinox.p2.touchpoint.natives>1.5.200</version.equinox.p2.touchpoint.natives>
-        <version.equinox.p2.updatechecker>1.4.200</version.equinox.p2.updatechecker>
-        <version.equinox.p2.updatesite>1.3.200</version.equinox.p2.updatesite>
+        <version.equinox.p2.artifact.repository>1.4.0</version.equinox.p2.artifact.repository>
+        <version.equinox.p2.core>2.8.0</version.equinox.p2.core>
+        <version.equinox.p2.director>2.5.0</version.equinox.p2.director>
+        <version.equinox.p2.director.app>1.2.0</version.equinox.p2.director.app>
+        <version.equinox.p2.directorywatcher>1.3.0</version.equinox.p2.directorywatcher>
+        <version.equinox.p2.engine>2.7.0</version.equinox.p2.engine>
+        <version.equinox.p2.console>1.2.0</version.equinox.p2.console>
+        <version.equinox.p2.extensionlocation>1.4.0</version.equinox.p2.extensionlocation>
+        <version.equinox.p2.garbagecollector>1.2.0</version.equinox.p2.garbagecollector>
+        <version.equinox.p2.jarprocessor>1.2.0</version.equinox.p2.jarprocessor>
+        <version.equinox.p2.metadata.repository>1.4.0</version.equinox.p2.metadata.repository>
+        <version.equinox.p2.reconciler.dropins>1.4.0</version.equinox.p2.reconciler.dropins>
+        <version.equinox.p2.repository.tools>2.3.0</version.equinox.p2.repository.tools>
+        <version.equinox.p2.repository>2.5.0</version.equinox.p2.repository>
+        <version.equinox.p2.touchpoint.eclipse>2.3.0</version.equinox.p2.touchpoint.eclipse>
+        <version.equinox.p2.touchpoint.natives>1.4.0</version.equinox.p2.touchpoint.natives>
+        <version.equinox.p2.updatechecker>1.3.0</version.equinox.p2.updatechecker>
+        <version.equinox.p2.updatesite>1.2.0</version.equinox.p2.updatesite>
         <version.apache.felix.gogo.shell>1.1.4</version.apache.felix.gogo.shell>
         <version.apache.felix.gogo.runtime>1.1.6</version.apache.felix.gogo.runtime>
         <version.apache.felix.gogo.command>1.1.2</version.apache.felix.gogo.command>
-        <version.equinox.p2.publisher.eclipse>1.6.0</version.equinox.p2.publisher.eclipse>
-        <version.equinox.p2.publisher>1.9.100</version.equinox.p2.publisher>
-        <version.equinox.p2.transport.ecf>1.4.600</version.equinox.p2.transport.ecf>
+        <version.equinox.p2.publisher.eclipse>1.5.0</version.equinox.p2.publisher.eclipse>
+        <version.equinox.p2.publisher>1.6.0</version.equinox.p2.publisher>
+        <version.equinox.p2.transport.ecf>1.2.0</version.equinox.p2.transport.ecf>
 
         <!-- javax.xml.soap version -->
         <javax.xml.soap-api.version>1.4.0</javax.xml.soap-api.version>
