@@ -82,6 +82,20 @@ echo Using CARBON_HOME:   %CARBON_HOME%
 echo Using JAVA_HOME:    %JAVA_HOME%
 set _RUNJAVA="%JAVA_HOME%\bin\java"
 
-%_RUNJAVA% %JAVA_OPTS% -Dcarbon.home="%CARBON_HOME%" -Dcarbon.config.dir.path="%CARBON_HOME%\conf" -Dorg.wso2.CipherTransformation="RSA/ECB/OAEPwithSHA1andMGF1Padding" -cp "%CARBON_CLASSPATH%" org.wso2.ciphertool.CipherTool %*
+rem Set CipherTransformation only when -Dsymmetric is passed as an argument
+rem Preserve original args in CMD_ARGS before SHIFT loop modifies %1
+set "CMD_ARGS=%*"
+set CIPHER_TRANSFORMATION=
+
+:scanArgs
+if "%~1"=="" goto runCipherTool
+if "%~1"=="-Dsymmetric" (
+    set CIPHER_TRANSFORMATION=-Dorg.wso2.CipherTransformation="RSA/ECB/OAEPwithSHA1andMGF1Padding"
+)
+shift
+goto scanArgs
+
+:runCipherTool
+%_RUNJAVA% %JAVA_OPTS% -Dcarbon.home="%CARBON_HOME%" -Dcarbon.config.dir.path="%CARBON_HOME%\conf" %CIPHER_TRANSFORMATION% -cp "%CARBON_CLASSPATH%" org.wso2.ciphertool.CipherTool %CMD_ARGS%
 endlocal
 :end

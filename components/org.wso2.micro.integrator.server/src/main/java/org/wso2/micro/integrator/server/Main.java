@@ -79,6 +79,9 @@ public class Main {
     private static final String JSSE_CLASS_NAME = "org.bouncycastle.jsse.provider.BouncyCastleJsseProvider";
     private static final String SECURITY_JCE_PROVIDER = "security.jce.provider";
     private static final String FIPS_APPROVED_ONLY = "org.bouncycastle.fips.approved_only";
+    private static final String JCE_PROVIDER_NAME = "jce_provider.provider_name";
+    private static final String JCE_PROVIDER_ENABLED = "jce_provider.enabled";
+    private static final String JSSE_PROVIDER_NAME = "jsse_provider.provider_name";
 
     public static void main(String[] args) {
 
@@ -417,29 +420,40 @@ public class Main {
     }
 
     private static void addBcProviders() {
-        String jceProvider = System.getProperty(SECURITY_JCE_PROVIDER);
-        if (jceProvider != null) {
-            if (BOUNCY_CASTLE_FIPS_PROVIDER.equals(jceProvider)) {
-                System.setProperty(FIPS_APPROVED_ONLY, "true");
-                System.setProperty("org.bouncycastle.rsa.allow_multi_use", "true");
-                setBcProviders(BC_FIPS_CLASS_NAME, jceProvider);
-            } else if (BOUNCY_CASTLE_PROVIDER.equals(jceProvider)) {
-                setBcProviders(BC_CLASS_NAME, jceProvider);
-            } else {
-                throw new RuntimeException("Unsupported JCE provider: " + jceProvider);
-            }
+        String jceProviderIdentifier = getPreferredJceProviderIdentifier();
+        if (jceProviderIdentifier == null) {
+            return;
         }
-    }
-
-    private static void setBcProviders(String className, String jceProvider) {
+        String cryptoProviderClass = getPreferredJceProviderClass(jceProviderIdentifier);
         try {
-            Security.insertProviderAt((Provider) Class.forName(className).getDeclaredConstructor().newInstance(),
-                    1);
-            Security.insertProviderAt((Provider) Class.forName(JSSE_CLASS_NAME).getConstructor(String.class)
-                    .newInstance(jceProvider), 2);
-            logger.info("JCE provider: " + className + " is set properly");
-            logger.info("JSSE provider: " + JSSE_CLASS_NAME + " is set properly");
+            int jcePos = Security.insertProviderAt(
+                    (Provider) Class.forName(cryptoProviderClass).getDeclaredConstructor().newInstance(), 1);
+            if (jcePos == -1) {
+                logger.warn("JCE provider already registered; provider order was not changed: " + cryptoProviderClass);
+            } else if (logger.isDebugEnabled()) {
+                logger.debug(cryptoProviderClass + " security provider registered at position " + jcePos + ".");
+            }
+            // Install JSSE alongside JCE when configured via system property (backward compatibility),
+            // or when explicitly configured via jsse_provider.provider_name in deployment.toml.
+            boolean configuredViaSysProp = System.getProperty(SECURITY_JCE_PROVIDER) != null;
+            String jsseProviderIdentifier = Utils.getConfig(JSSE_PROVIDER_NAME);
+            if (configuredViaSysProp || jsseProviderIdentifier != null) {
+                if (jsseProviderIdentifier == null || BOUNCY_CASTLE_PROVIDER.equalsIgnoreCase(jsseProviderIdentifier)) {
+                    int jssePos = Security.insertProviderAt(
+                            (Provider) Class.forName(JSSE_CLASS_NAME).getConstructor(String.class)
+                                    .newInstance(jsseProviderIdentifier), 2);
+                    if (jssePos == -1) {
+                        logger.warn("JSSE provider already registered; provider order was not changed.");
+                    } else if (logger.isDebugEnabled()) {
+                        logger.debug("JSSE provider registered at position " + jssePos + ": " + JSSE_CLASS_NAME);
+                    }
+                } else {
+                    logger.warn("Unsupported JSSE provider specified: " + jsseProviderIdentifier +
+                            ". JSSE provider will not be set.");
+                }
+            }
         } catch (InstantiationException e) {
+            logger.error("Failed to instantiate security provider class: " + cryptoProviderClass, e);
             throw new RuntimeException("Failed to instantiate the class. Ensure it has " +
                     "a public no-argument constructor.", e);
         } catch (IllegalAccessException e) {
@@ -453,6 +467,58 @@ public class Main {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("The specified class could not be found. Check the " +
                     "fully qualified class name.", e);
+        }
+    }
+
+    /**
+     * Returns the preferred JCE provider identifier. BouncyCastle ("BC") is used by default
+     * unless explicitly disabled via {@code jce_provider.enabled = false} in deployment.toml.
+     * The provider can be overridden to "BCFIPS" via the system property
+     * {@code -Dsecurity.jce.provider=BCFIPS} or {@code jce_provider.provider_name = "BCFIPS"}
+     * in deployment.toml. Returns null only when BC installation is explicitly disabled.
+     *
+     * @return the normalized provider identifier ("BC" or "BCFIPS"), or null if disabled
+     */
+    private static String getPreferredJceProviderIdentifier() {
+        // Explicit opt-out: jce_provider.enabled = false in deployment.toml
+        if ("false".equalsIgnoreCase(Utils.getConfig(JCE_PROVIDER_ENABLED))) {
+            return null;
+        }
+        String jceProviderIdentifier = System.getProperty(SECURITY_JCE_PROVIDER);
+        if (jceProviderIdentifier == null) {
+            jceProviderIdentifier = Utils.getConfig(JCE_PROVIDER_NAME);
+        }
+        if (jceProviderIdentifier == null) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("No JCE provider specified via system property or configuration. " +
+                        "Defaulting to " + BOUNCY_CASTLE_PROVIDER);
+            }
+            return BOUNCY_CASTLE_PROVIDER;
+        }
+        if (BOUNCY_CASTLE_FIPS_PROVIDER.equalsIgnoreCase(jceProviderIdentifier)) {
+            return BOUNCY_CASTLE_FIPS_PROVIDER;
+        }
+        if (BOUNCY_CASTLE_PROVIDER.equalsIgnoreCase(jceProviderIdentifier)) {
+            return BOUNCY_CASTLE_PROVIDER;
+        }
+        throw new RuntimeException("Unsupported JCE provider identifier: " + jceProviderIdentifier);
+    }
+
+    /**
+     * Returns the fully qualified class name of the JCE provider for the given identifier.
+     *
+     * @param providerIdentifier the normalized provider identifier ("BC" or "BCFIPS")
+     * @return the fully qualified class name of the JCE provider
+     */
+    private static String getPreferredJceProviderClass(String providerIdentifier) {
+        if (BOUNCY_CASTLE_FIPS_PROVIDER.equals(providerIdentifier)) {
+            System.setProperty(FIPS_APPROVED_ONLY, "true");
+            System.setProperty("org.bouncycastle.rsa.allow_multi_use", "true");
+            return BC_FIPS_CLASS_NAME;
+        } else if (BOUNCY_CASTLE_PROVIDER.equals(providerIdentifier)) {
+            return BC_CLASS_NAME;
+        } else {
+            throw new RuntimeException("Unsupported JCE provider identifier: " + providerIdentifier);
         }
     }
 }

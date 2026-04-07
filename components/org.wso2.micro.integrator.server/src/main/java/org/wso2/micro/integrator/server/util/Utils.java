@@ -17,6 +17,8 @@
  */
 package org.wso2.micro.integrator.server.util;
 
+import org.apache.commons.lang.StringUtils;
+import org.wso2.config.mapper.ConfigParser;
 import org.wso2.micro.integrator.server.LauncherConstants;
 
 import java.io.BufferedInputStream;
@@ -755,6 +757,28 @@ public class Utils {
             }
         }
         return properties;
+    }
+
+    /**
+     * Retrieves a configuration value from the parsed deployment.toml configs.
+     * Trims the value and returns null if not found, null, or blank.
+     *
+     * @param configName the configuration key to look up
+     * @return the trimmed config value as a String, or null if not found or blank
+     */
+    public static String getConfig(String configName) {
+        java.util.Map<String, Object> parsedConfigs = ConfigParser.getParsedConfigs();
+        if (parsedConfigs == null) {
+            return null;
+        }
+        Object configValue = parsedConfigs.get(configName);
+        if (configValue != null) {
+            String trimmedValue = configValue.toString().trim();
+            if (StringUtils.isNotBlank(trimmedValue)) {
+                return trimmedValue;
+            }
+        }
+        return null;
     }
 
 }
