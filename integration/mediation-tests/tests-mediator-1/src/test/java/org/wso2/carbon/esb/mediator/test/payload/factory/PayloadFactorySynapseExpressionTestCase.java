@@ -176,6 +176,32 @@ public class PayloadFactorySynapseExpressionTestCase extends ESBIntegrationTest 
         assertEquals(responseJSON, expectedJSON, "Response payload mismatched");
     }
 
+    /**
+     * Issue #4623: PayloadFactory default template must not throw IllegalArgumentException when a
+     * variable value contains $ followed by a digit (e.g. Java stack traces such as
+     * NativeWorkerPool$1.run or ThreadPoolExecutor$Worker).
+     */
+    @Test(groups = {"wso2.esb"}, description =
+            "Testing PayloadFactory with dollar sign followed by digit in variable values (Issue 4623)")
+    public void testPayloadFactoryWithDollarSignInVariableValues() throws IOException {
+
+        String expectedResponse = "{" +
+                "\"errorClass\":\"java.util.concurrent.ThreadPoolExecutor\"," +
+                "\"errorCode\":\"500\"," +
+                "\"message\":\"Internal Server Error\"," +
+                "\"detail\":\"ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)\"," +
+                "\"exception\":\"NativeWorkerPool$1.run(NativeWorkerPool.java:206)\"" +
+                "}";
+
+        String serviceURL = getMainSequenceURL() + "synapseExpressionPayload/dollar-in-vars";
+        HttpResponse httpResponse = httpClient.doGet(serviceURL, null);
+        String responsePayload = httpClient.getResponsePayload(httpResponse);
+        Assert.assertNotNull(responsePayload, "Response payload must not be null — server likely threw IllegalArgumentException");
+        JsonElement responseJSON = JsonParser.parseString(responsePayload);
+        JsonElement expectedJSON = JsonParser.parseString(expectedResponse);
+        assertEquals(responseJSON, expectedJSON, "Variable values containing $ were not preserved correctly");
+    }
+
     @Test(groups = {"wso2.esb"}, description = "Testing Payload factory mediator with Freemarker template")
     public void testPayloadFactoryFreemarker() throws IOException {
 
