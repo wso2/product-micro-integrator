@@ -51,12 +51,19 @@ public class TokenMaskingDataHolder {
         if (instance == null) {
             synchronized (TokenMaskingDataHolder.class) {
                 if (instance == null) {
-                    instance = new TokenMaskingDataHolder();
+                    TokenMaskingDataHolder initialized = new TokenMaskingDataHolder();
 
                     Object tokenMaxLen = ConfigParser.getParsedConfigs().get(OAuthConstants.TOKEN_MAX_LEN);
                     if (tokenMaxLen != null) {
                         if (tokenMaxLen instanceof Number) {
-                            tokenMaxLength = ((Number) tokenMaxLen).intValue();
+                            int configuredTokenMaxLength = ((Number) tokenMaxLen).intValue();
+                            if (configuredTokenMaxLength < 0) {
+                                log.warn("Invalid configuration for token_max_len. Expected a non-negative number "
+                                        + "but found: " + configuredTokenMaxLength
+                                        + ". Using default value: " + tokenMaxLength);
+                            } else {
+                                tokenMaxLength = configuredTokenMaxLength;
+                            }
                         } else {
                             log.warn("Invalid configuration for token_max_len. Expected a number but found: "
                                     + tokenMaxLen.getClass().getName() + ". Using default value: " + tokenMaxLength);
@@ -66,7 +73,14 @@ public class TokenMaskingDataHolder {
                     Object tokenMaxVisibleLen = ConfigParser.getParsedConfigs().get(OAuthConstants.TOKEN_MAX_VISIBLE_LEN);
                     if (tokenMaxVisibleLen != null) {
                         if (tokenMaxVisibleLen instanceof Number) {
-                            tokenMaxVisibleLength = ((Number) tokenMaxVisibleLen).intValue();
+                            int configuredTokenMaxVisibleLength = ((Number) tokenMaxVisibleLen).intValue();
+                            if (configuredTokenMaxVisibleLength < 0) {
+                                log.warn("Invalid configuration for token_max_visible_len. Expected a non-negative number "
+                                        + "but found: " + configuredTokenMaxVisibleLength
+                                        + ". Using default value: " + tokenMaxVisibleLength);
+                            } else {
+                                tokenMaxVisibleLength = configuredTokenMaxVisibleLength;
+                            }
                         } else {
                             log.warn("Invalid configuration for token_max_visible_len. Expected a number but found: "
                                     + tokenMaxVisibleLen.getClass().getName() + ". Using default value: "
@@ -78,7 +92,14 @@ public class TokenMaskingDataHolder {
                             .get(OAuthConstants.TOKEN_MIN_VISIBLE_LEN_RATIO);
                     if (tokenMinVisibleLenRatio != null) {
                         if (tokenMinVisibleLenRatio instanceof Number) {
-                            tokenMinVisibleLengthRatio = ((Number) tokenMinVisibleLenRatio).intValue();
+                            int configuredTokenMinVisibleLenRatio = ((Number) tokenMinVisibleLenRatio).intValue();
+                            if (configuredTokenMinVisibleLenRatio < 0) {
+                                log.warn("Invalid configuration for token_min_visible_len_ratio. Expected a non-negative number "
+                                        + "but found: " + configuredTokenMinVisibleLenRatio
+                                        + ". Using default value: " + tokenMinVisibleLengthRatio);
+                            } else {
+                                tokenMinVisibleLengthRatio = configuredTokenMinVisibleLenRatio;
+                            }
                         } else {
                             log.warn("Invalid configuration for token_min_visible_len_ratio. Expected a number "
                                     + "but found: " + tokenMinVisibleLenRatio.getClass().getName()
@@ -91,11 +112,12 @@ public class TokenMaskingDataHolder {
                         String tmpTokenMaskChar = tokenMaskCharObj.toString();
                         if (tmpTokenMaskChar.isEmpty()) {
                             log.warn("Invalid configuration for token_mask_char. Expected a single character but found: "
-                                    + tokenMaskChar + ". Using default value: " + tokenMaskChar);
+                                    + tmpTokenMaskChar + ". Using default value: " + tokenMaskChar);
                         } else {
                             tokenMaskChar = tmpTokenMaskChar;
                         }
                     }
+                    instance = initialized;
                 }
             }
         }

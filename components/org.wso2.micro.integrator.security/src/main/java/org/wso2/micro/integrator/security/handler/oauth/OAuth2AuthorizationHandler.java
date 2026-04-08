@@ -103,7 +103,7 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
         if (trustedIssuers == null) {
             Object trustedIssuersConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.TRUSTED_ISSUERS);
-            if (trustedIssuersConfig instanceof ArrayList<?> rawList) {
+            if (trustedIssuersConfig instanceof List<?> rawList) {
                 this.trustedIssuers = new ArrayList<>();
                 for (Object item : rawList) {
                     if (item instanceof String) {
@@ -122,7 +122,7 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
         if (audience == null) {
             Object audienceConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.EXPECTED_AUDIENCE);
-            if (audienceConfig instanceof ArrayList<?> rawList) {
+            if (audienceConfig instanceof List<?> rawList) {
                 this.audience = new ArrayList<>();
                 for (Object item : rawList) {
                     if (item instanceof String) {
@@ -141,7 +141,7 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
         if (allowedAlgorithms == null) {
             Object allowedAlgorithmsConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.ALLOWED_ALGORITHMS);
-            if (allowedAlgorithmsConfig instanceof ArrayList<?> rawList) {
+            if (allowedAlgorithmsConfig instanceof List<?> rawList) {
                 this.allowedAlgorithms = new ArrayList<>();
                 for (Object item : rawList) {
                     if (item instanceof String) {
@@ -313,7 +313,7 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
             validateJWTHeaderMetadata(signedJWTInfo);
 
-            validateMandatoryClaimsPresence(signedJWTInfo.getJwtClaimsSet());
+            validateMandatoryClaimsPresence(signedJWTInfo);
 
             if (log.isDebugEnabled()) {
                 log.debug("Authentication started for JWT token");
@@ -650,37 +650,45 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
      * @param claims The JWTClaimsSet extracted from the validated signed JWT.
      * @throws OAuthSecurityException If any mandatory claim is missing or invalid.
      */
-    public void validateMandatoryClaimsPresence(JWTClaimsSet claims)
+    public void validateMandatoryClaimsPresence(SignedJWTInfo signedJWTInfo)
             throws OAuthSecurityException {
+
+        JWTClaimsSet claims = signedJWTInfo.getJwtClaimsSet();
 
         // 1. Check for Existence (The "Presence" Check)
         if (StringUtils.isEmpty(claims.getIssuer())) {
-            log.error("Missing mandatory 'iss' claim in JWT. Token: " + OAuthUtil.getMaskedToken(claims.toString()));
+            log.error("Missing mandatory 'iss' claim in JWT. Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'iss' claim");
         }
         if (claims.getExpirationTime() == null) {
-            log.error("Missing mandatory 'exp' claim in JWT. Token: " + OAuthUtil.getMaskedToken(claims.toString()));
+            log.error("Missing mandatory 'exp' claim in JWT. Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'exp' claim");
         }
         if (claims.getAudience() == null || claims.getAudience().isEmpty()) {
-            log.error("Missing mandatory 'aud' claim in JWT. Token: " + OAuthUtil.getMaskedToken(claims.toString()));
+            log.error("Missing mandatory 'aud' claim in JWT. Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'aud' claim");
         }
         if (StringUtils.isEmpty(claims.getSubject())) {
-            log.error("Missing mandatory 'sub' claim in JWT. Token: " + OAuthUtil.getMaskedToken(claims.toString()));
+            log.error("Missing mandatory 'sub' claim in JWT. Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'sub' claim");
         }
         if (StringUtils.isEmpty(claims.getJWTID())) {
-            log.error("Missing mandatory 'jti' claim in JWT. Token: " + OAuthUtil.getMaskedToken(claims.toString()));
+            log.error("Missing mandatory 'jti' claim in JWT. Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'jti' claim");
         }
         if (claims.getIssueTime() == null) {
-            log.error("Missing mandatory 'iat' claim in JWT. Token: " + OAuthUtil.getMaskedToken(claims.toString()));
+            log.error("Missing mandatory 'iat' claim in JWT. Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'iat' claim");
         }

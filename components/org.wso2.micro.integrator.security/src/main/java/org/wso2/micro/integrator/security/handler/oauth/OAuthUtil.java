@@ -73,16 +73,26 @@ public class OAuthUtil {
 
     private static int getAllowedVisibleLen(String token, TokenMaskingDataHolder tokenMaskingDataHolder) {
 
+        int tokenMaxVisibleLength = tokenMaskingDataHolder.getTokenMaxVisibleLength();
+
+        // Reject negative max visible length from configuration by treating it as 0
+        if (tokenMaxVisibleLength < 0) {
+            if (log.isWarnEnabled()) {
+                log.warn("Configured tokenMaxVisibleLength is negative (" + tokenMaxVisibleLength
+                        + "); treating it as 0.");
+            }
+            tokenMaxVisibleLength = 0;
+        }
+
         int allowedVisibleLen;
         if (tokenMaskingDataHolder.getTokenMinVisibleLengthRatio() > 0) {
             allowedVisibleLen = Math.min(token.length() / tokenMaskingDataHolder.getTokenMinVisibleLengthRatio(),
-                    tokenMaskingDataHolder.getTokenMaxVisibleLength());
+                    tokenMaxVisibleLength);
         } else {
-            allowedVisibleLen = tokenMaskingDataHolder.getTokenMaxVisibleLength();
+            allowedVisibleLen = tokenMaxVisibleLength;
         }
-
-        // Ensure allowedVisibleLen does not exceed token length
-        allowedVisibleLen = Math.min(allowedVisibleLen, token.length());
+        // Ensure allowedVisibleLen is within [0, token.length()]
+        allowedVisibleLen = Math.max(0, Math.min(allowedVisibleLen, token.length()));
         return allowedVisibleLen;
     }
 
