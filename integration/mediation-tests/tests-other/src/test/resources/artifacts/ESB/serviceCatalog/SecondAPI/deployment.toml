@@ -2,6 +2,9 @@
 hostname = "localhost"
 # offset  = 10
 
+[jce_provider]
+enabled = false
+
 [user_store]
 type = "read_only_ldap"
 
