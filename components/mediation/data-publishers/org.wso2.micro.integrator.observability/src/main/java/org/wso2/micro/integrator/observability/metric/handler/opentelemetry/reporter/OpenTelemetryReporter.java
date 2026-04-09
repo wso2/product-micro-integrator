@@ -244,8 +244,7 @@ public class OpenTelemetryReporter implements MetricReporter {
         if (gauge instanceof DoubleGauge) {
             Attributes attributes = buildAttributes(MetricConstants.SERVER_UP,
                     new String[]{host, port, javaHome, javaVersion});
-            double epochSeconds = System.currentTimeMillis() / 1000.0;
-            ((DoubleGauge) gauge).set(epochSeconds, attributes);
+            ((DoubleGauge) gauge).set(1, attributes);
         } else {
             log.warn("Gauge metric not found: " + MetricConstants.SERVER_UP);
         }
@@ -257,8 +256,7 @@ public class OpenTelemetryReporter implements MetricReporter {
         if (gauge instanceof DoubleGauge) {
             Attributes attributes = buildAttributes(MetricConstants.SERVER_VERSION,
                     new String[]{version, updateLevel});
-            double epochSeconds = System.currentTimeMillis() / 1000.0;
-            ((DoubleGauge) gauge).set(epochSeconds, attributes);
+            ((DoubleGauge) gauge).set(1, attributes);
         } else {
             log.warn("Gauge metric not found: " + MetricConstants.SERVER_VERSION);
         }
@@ -280,10 +278,9 @@ public class OpenTelemetryReporter implements MetricReporter {
     public void serviceUp(String serviceName, String serviceType) {
         Object gauge = metricMap.get(MetricConstants.SERVICE_UP);
         if (gauge instanceof  DoubleGauge) {
-            double epochSeconds = System.currentTimeMillis() / 1000.0;
             Attributes attributes = buildAttributes(MetricConstants.SERVICE_UP,
                     new String[]{serviceName, serviceType});
-            ((DoubleGauge) gauge).set(epochSeconds, attributes);
+            ((DoubleGauge) gauge).set(1, attributes);
 
             if (serviceType.equals(SynapseConstants.PROXY_SERVICE_TYPE)) {
                 setCounterValue(TOTAL_REQUESTS_RECEIVED_PROXY_SERVICE, serviceName, serviceType);
