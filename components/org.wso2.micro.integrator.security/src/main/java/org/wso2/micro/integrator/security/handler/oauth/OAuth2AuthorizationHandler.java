@@ -276,7 +276,10 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
                 String proxyPasswordConfig = SynapsePropertiesLoader
                         .getPropertyValue(OAuthConstants.OAUTH_GLOBAL_PROXY_PASSWORD, null);
                 if (proxyPasswordConfig != null) {
-                    proxyPassword = proxyPasswordConfig;
+                    SecretResolver secretResolver = SecretResolverFactory.create(new Properties() {{
+                        setProperty(AuthConstants.PROXY_PASSWORD, proxyPasswordConfig);
+                    }});
+                    proxyPassword = MiscellaneousUtil.resolve(proxyPasswordConfig, secretResolver);
                 }
             }
 
@@ -482,45 +485,33 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
     public void setProxyHost(String proxyHost) {
 
-        if (Boolean.TRUE.equals(this.enableProxy) && (proxyHost == null || proxyHost.isEmpty())) {
-           throw new IllegalArgumentException("Proxy host cannot be empty if proxy is enabled.");
-        }
         this.proxyHost = proxyHost;
     }
 
     public void setProxyPort(String proxyPort) {
 
-        if (Boolean.TRUE.equals(this.enableProxy)) {
-            try {
-                this.proxyPort = Integer.parseInt(proxyPort);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid proxy port: " + proxyPort, e);
-            }
+        try {
+            this.proxyPort = Integer.parseInt(proxyPort);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid proxy port: " + proxyPort, e);
         }
     }
 
     public void setProxyUsername(String proxyUsername) {
 
-        if (Boolean.TRUE.equals(this.enableProxy)) {
-            this.proxyUsername = proxyUsername;
-        }
+        this.proxyUsername = proxyUsername;
     }
 
     public void setProxyPassword(String proxyPassword) {
 
-        if (Boolean.TRUE.equals(this.enableProxy) && !proxyPassword.isEmpty()) {
-            SecretResolver secretResolver = SecretResolverFactory.create(new Properties() {{
-                setProperty(AuthConstants.PROXY_PASSWORD, proxyPassword);
-            }});
-            this.proxyPassword = MiscellaneousUtil.resolve(proxyPassword, secretResolver);
-        }
+        SecretResolver secretResolver = SecretResolverFactory.create(new Properties() {{
+            setProperty(AuthConstants.PROXY_PASSWORD, proxyPassword);
+        }});
+        this.proxyPassword = MiscellaneousUtil.resolve(proxyPassword, secretResolver);
     }
 
     public void setProxyProtocol(String proxyProtocol) {
 
-        if (Boolean.TRUE.equals(this.enableProxy) && (proxyProtocol == null || proxyProtocol.isEmpty())) {
-            throw new IllegalArgumentException("Proxy protocol cannot be empty if proxy is enabled.");
-        }
         this.proxyProtocol = proxyProtocol;
     }
 
@@ -647,7 +638,7 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
      * Validates that all mandatory claims required by RFC 9068 are present
      * and logically valid.
      *
-     * @param claims The JWTClaimsSet extracted from the validated signed JWT.
+     * @param signedJWTInfo The signed JWT.
      * @throws OAuthSecurityException If any mandatory claim is missing or invalid.
      */
     public void validateMandatoryClaimsPresence(SignedJWTInfo signedJWTInfo)
