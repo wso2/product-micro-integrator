@@ -160,6 +160,12 @@
         </packages>
     </test>
 
+    <test name="Deployment TOML Override Tests" preserve-order="true" verbose="2">
+        <classes>
+            <class name="org.wso2.carbon.esb.config.DeploymentTomlOverrideTestCase"/>
+        </classes>
+    </test>
+
 </suite>
 
 
