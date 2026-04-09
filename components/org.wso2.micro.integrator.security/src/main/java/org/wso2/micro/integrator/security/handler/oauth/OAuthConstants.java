@@ -26,6 +26,11 @@ public class OAuthConstants {
     public static final String CLOCK_SKEW_SECONDS = JWT_OAUTH_CONFIG + "clock_skew_seconds";
     public static final String TRUSTED_ISSUERS = JWT_OAUTH_CONFIG + "trusted_issuers";
     public static final String EXPECTED_AUDIENCE = JWT_OAUTH_CONFIG + "audience";
+    public static final String ALLOWED_ALGORITHMS = JWT_OAUTH_CONFIG + "allowed_algorithms";
+    public static final String TOKEN_MAX_LEN = JWT_OAUTH_CONFIG + "log_masking.token_max_len";
+    public static final String TOKEN_MAX_VISIBLE_LEN = JWT_OAUTH_CONFIG + "log_masking.token_max_visible_len";
+    public static final String TOKEN_MIN_VISIBLE_LEN_RATIO = JWT_OAUTH_CONFIG + "log_masking.token_min_visible_len_ratio";
+    public static final String TOKEN_MASK_CHAR = JWT_OAUTH_CONFIG + "log_masking.token_mask_char";
 
     public static final String BEARER = "Bearer";
     public static final String DOT = ".";
@@ -225,11 +230,5 @@ public class OAuthConstants {
 
     public static final String BEGIN_CERTIFICATE_STRING = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERTIFICATE_STRING = "-----END CERTIFICATE-----";
-
-    //constants for getting masked token
-    public static final int MAX_LEN = 36;
-    public static final int MAX_VISIBLE_LEN = 8;
-    public static final int MIN_VISIBLE_LEN_RATIO = 5;
-    public static final String MASK_CHAR = "X";
 
 }

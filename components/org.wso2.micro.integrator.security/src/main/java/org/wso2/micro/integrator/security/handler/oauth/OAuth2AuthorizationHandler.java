@@ -38,15 +38,20 @@ import org.apache.synapse.api.ApiUtils;
 import org.apache.synapse.api.Resource;
 import org.apache.synapse.api.dispatch.RESTDispatcher;
 import org.apache.synapse.api.version.VersionStrategy;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
+import org.apache.synapse.endpoints.auth.AuthConstants;
 import org.apache.synapse.rest.AbstractHandler;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.wso2.config.mapper.ConfigParser;
 import org.wso2.micro.integrator.security.handler.oauth.jwt.JWTValidator;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.commons.MiscellaneousUtil;
 
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
@@ -56,6 +61,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import javax.cache.Cache;
 
@@ -74,15 +80,16 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
     private Long maxIssuedAtAgeSeconds;
 
     // HTTP client related properties
-    private int connectionTimeout;
-    private int socketTimeout;
-    private int connectionRequestTimeout;
+    private Integer connectionTimeout;
+    private Integer socketTimeout;
+    private Integer connectionRequestTimeout;
     private Boolean enableProxy;
     private String proxyHost;
-    private int proxyPort;
+    private Integer proxyPort;
     private String proxyUsername;
     private String proxyPassword;
     private String proxyProtocol;
+    private HttpClientConfiguration httpClientConfiguration;
 
     // mTLS related properties
     private boolean disableCNFValidation = false;
@@ -91,36 +98,81 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
     private boolean clientCertificateEncode = true;
     private MTLSConfiguration mTLSConfiguration;
 
-    // Global properties
-    private int cacheExpiry;
-    private HttpClientConfiguration httpClientConfiguration;
-
-
     @Override
     public void init(SynapseEnvironment synapseEnvironment) {
 
         if (trustedIssuers == null) {
             Object trustedIssuersConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.TRUSTED_ISSUERS);
-            if (trustedIssuersConfig != null) {
-                this.trustedIssuers = new ArrayList<>(Arrays.asList(((String) trustedIssuersConfig).split("\\s*,\\s*")));
+            if (trustedIssuersConfig instanceof List<?> rawList) {
+                this.trustedIssuers = new ArrayList<>();
+                for (Object item : rawList) {
+                    if (item instanceof String) {
+                        this.trustedIssuers.add((String) item);
+                    } else {
+                        throw new IllegalArgumentException("Invalid configuration for trusted issuers. "
+                                + "Expected list of strings but found element of type: " + item.getClass().getName());
+                    }
+                }
+            } else if (trustedIssuersConfig != null) {
+                throw new IllegalArgumentException("Invalid configuration for trusted issuers. Expected a list of "
+                        + "strings in the format [\"https://idp1.com\", \"https://idp2.com\"] but found: "
+                        + trustedIssuersConfig.getClass().getName());
             }
         }
 
         if (audience == null) {
             Object audienceConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.EXPECTED_AUDIENCE);
-            if (audienceConfig != null) {
-                this.audience = new ArrayList<>(Arrays.asList(((String) audienceConfig).split("\\s*,\\s*")));
+            if (audienceConfig instanceof List<?> rawList) {
+                this.audience = new ArrayList<>();
+                for (Object item : rawList) {
+                    if (item instanceof String) {
+                        this.audience.add((String) item);
+                    } else {
+                        throw new IllegalArgumentException("Invalid configuration for expected audience. "
+                                + "Expected list of strings but found element of type: " + item.getClass().getName());
+                    }
+                }
+            } else if (audienceConfig != null) {
+                throw new IllegalArgumentException("Invalid configuration for expected audience. Expected a list of "
+                        + "strings in the format [\"audience1\", \"audience2\"] but found: "
+                        + audienceConfig.getClass().getName());
+            }
+        }
+
+        if (allowedAlgorithms == null) {
+            Object allowedAlgorithmsConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.ALLOWED_ALGORITHMS);
+            if (allowedAlgorithmsConfig instanceof List<?> rawList) {
+                this.allowedAlgorithms = new ArrayList<>();
+                for (Object item : rawList) {
+                    if (item instanceof String) {
+                        this.allowedAlgorithms.add((String) item);
+                    } else {
+                        throw new IllegalArgumentException("Invalid configuration for allowed algorithms. "
+                                + "Expected list of strings but found element of type: " + item.getClass().getName());
+                    }
+                }
+            } else if (allowedAlgorithmsConfig != null) {
+                throw new IllegalArgumentException("Invalid configuration for allowed algorithms. Expected a list of "
+                        + "strings in the format [\"RS256\", \"RS512\"] but found: "
+                        + allowedAlgorithmsConfig.getClass().getName());
+
             }
         }
 
         Object maxIssuedAtAgeSecondsConfig = ConfigParser.getParsedConfigs()
                 .get(OAuthConstants.MAX_ISSUED_AT_AGE_SECONDS);
-        if (maxIssuedAtAgeSeconds == null && maxIssuedAtAgeSecondsConfig != null) {
-            long parsed = ((Number) maxIssuedAtAgeSecondsConfig).longValue();
-            if (parsed < 0) {
-                throw new IllegalArgumentException("maxIssuedAtAgeSeconds must be >= 0");
+        if (maxIssuedAtAgeSeconds == null) {
+            if (maxIssuedAtAgeSecondsConfig instanceof Number) {
+                long parsed = ((Number) maxIssuedAtAgeSecondsConfig).longValue();
+                if (parsed < 0) {
+                    throw new IllegalArgumentException("maxIssuedAtAgeSeconds must be >= 0");
+                }
+                maxIssuedAtAgeSeconds = parsed;
+            } else if (maxIssuedAtAgeSecondsConfig != null) {
+                throw new IllegalArgumentException("Invalid configuration for maxIssuedAtAgeSeconds. Expected "
+                        + "a non-negative integer but found: " + maxIssuedAtAgeSecondsConfig.getClass().getName());
             }
-            maxIssuedAtAgeSeconds = parsed;
+
         }
 
         mTLSConfiguration = new MTLSConfiguration(disableCNFValidation,
@@ -132,32 +184,48 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
     private void initializeHttpClientConfiguration() {
 
-        if (connectionTimeout == 0) {
-            Object connectionTimeoutConfig = ConfigParser.getParsedConfigs()
-                    .get(OAuthConstants.OAUTH_GLOBAL_CONNECTION_TIMEOUT);
-            if (connectionTimeoutConfig != null) {
-                connectionTimeout = ((Number) connectionTimeoutConfig).intValue();
-            } else {
-                connectionTimeout = 3000;
+        if (connectionTimeout == null) {
+            String connectionTimeoutConfig = SynapsePropertiesLoader.getPropertyValue(
+                    OAuthConstants.OAUTH_GLOBAL_CONNECTION_TIMEOUT, null);
+            connectionTimeout = 3000;
+
+            if (connectionTimeoutConfig != null && !connectionTimeoutConfig.isEmpty()) {
+                try {
+                    connectionTimeout = Integer.parseInt(connectionTimeoutConfig);
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid configuration for http client connection timeout. Expected an integer "
+                            + "but found: " + connectionTimeoutConfig + ". Defaulting to 3000 ms.");
+                }
             }
         }
 
-        if (socketTimeout == 0) {
-            Object socketTimeoutConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.OAUTH_GLOBAL_SOCKET_TIMEOUT);
-            if (socketTimeoutConfig != null) {
-                socketTimeout = ((Number) socketTimeoutConfig).intValue();
-            } else {
-                socketTimeout = 3000;
+        if (socketTimeout == null) {
+            String socketTimeoutConfig = SynapsePropertiesLoader.getPropertyValue(
+                    OAuthConstants.OAUTH_GLOBAL_SOCKET_TIMEOUT, null);
+            socketTimeout = 3000;
+
+            if (socketTimeoutConfig != null && !socketTimeoutConfig.isEmpty()) {
+                try {
+                    socketTimeout = Integer.parseInt(socketTimeoutConfig);
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid configuration for http client socket timeout. Expected an integer but found: "
+                            + socketTimeoutConfig + ". Defaulting to 3000 ms.");
+                }
             }
         }
 
-        if (connectionRequestTimeout == 0) {
-            Object requestTimeoutConfig = ConfigParser.getParsedConfigs()
-                    .get(OAuthConstants.OAUTH_GLOBAL_CONNECTION_REQUEST_TIMEOUT);
-            if (requestTimeoutConfig != null) {
-                connectionRequestTimeout = ((Number) requestTimeoutConfig).intValue();
-            } else {
-                connectionRequestTimeout = 3000;
+        if (connectionRequestTimeout == null) {
+            String requestTimeoutConfig = SynapsePropertiesLoader.getPropertyValue(
+                    OAuthConstants.OAUTH_GLOBAL_CONNECTION_REQUEST_TIMEOUT, null);
+            connectionRequestTimeout = 3000;
+
+            if (requestTimeoutConfig != null && !requestTimeoutConfig.isEmpty()) {
+                try {
+                    connectionRequestTimeout = Integer.parseInt(requestTimeoutConfig);
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid configuration for http client connection request timeout. Expected an integer "
+                            + "but found: " + requestTimeoutConfig + ". Defaulting to 3000 ms.");
+                }
             }
         }
 
@@ -165,9 +233,10 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
                 .withConnectionParams(connectionTimeout, connectionRequestTimeout, socketTimeout);
 
         if (enableProxy == null) {
-            Object enableProxyConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.OAUTH_GLOBAL_PROXY_ENABLED);
+            String enableProxyConfig = SynapsePropertiesLoader.getPropertyValue(OAuthConstants.OAUTH_GLOBAL_PROXY_ENABLED,
+                    "false");
             if (enableProxyConfig != null) {
-                enableProxy = (Boolean) enableProxyConfig;
+                enableProxy = Boolean.parseBoolean(enableProxyConfig);
             } else {
                 enableProxy = false;
             }
@@ -175,40 +244,50 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
         if (Boolean.TRUE.equals(enableProxy)) {
             if (proxyHost == null) {
-                Object proxyHostConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.OAUTH_GLOBAL_PROXY_HOST);
+                String proxyHostConfig = SynapsePropertiesLoader.getPropertyValue(OAuthConstants.OAUTH_GLOBAL_PROXY_HOST,
+                        null);
                 if (proxyHostConfig != null) {
-                    proxyHost = (String) proxyHostConfig;
+                    proxyHost = proxyHostConfig;
                 }
             }
 
-            if (proxyPort == 0) {
-                Object proxyPortConfig = ConfigParser.getParsedConfigs().get(OAuthConstants.OAUTH_GLOBAL_PROXY_PORT);
+            if (proxyPort == null) {
+                String proxyPortConfig = SynapsePropertiesLoader.getPropertyValue(OAuthConstants.OAUTH_GLOBAL_PROXY_PORT,
+                        null);
                 if (proxyPortConfig != null) {
-                    proxyPort = ((Number) proxyPortConfig).intValue();
+                    try {
+                        proxyPort = Integer.parseInt(proxyPortConfig);
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException("Invalid configuration for proxy port. Expected an integer "
+                                + "but found: " + proxyPortConfig + ".", e);
+                    }
                 }
             }
 
             if (proxyUsername == null) {
-                Object proxyUsernameConfig = ConfigParser.getParsedConfigs()
-                        .get(OAuthConstants.OAUTH_GLOBAL_PROXY_USERNAME);
+                String proxyUsernameConfig = SynapsePropertiesLoader
+                        .getPropertyValue(OAuthConstants.OAUTH_GLOBAL_PROXY_USERNAME, null);
                 if (proxyUsernameConfig != null) {
-                    proxyUsername = (String) proxyUsernameConfig;
+                    proxyUsername = proxyUsernameConfig;
                 }
             }
 
             if (proxyPassword == null) {
-                Object proxyPasswordConfig = ConfigParser.getParsedConfigs()
-                        .get(OAuthConstants.OAUTH_GLOBAL_PROXY_PASSWORD);
+                String proxyPasswordConfig = SynapsePropertiesLoader
+                        .getPropertyValue(OAuthConstants.OAUTH_GLOBAL_PROXY_PASSWORD, null);
                 if (proxyPasswordConfig != null) {
-                    proxyPassword = (String) proxyPasswordConfig;
+                    SecretResolver secretResolver = SecretResolverFactory.create(new Properties() {{
+                        setProperty(AuthConstants.PROXY_PASSWORD, proxyPasswordConfig);
+                    }});
+                    proxyPassword = MiscellaneousUtil.resolve(proxyPasswordConfig, secretResolver);
                 }
             }
 
             if (proxyProtocol == null) {
-                Object proxyProtocolConfig = ConfigParser.getParsedConfigs()
-                        .get(OAuthConstants.OAUTH_GLOBAL_PROXY_PROTOCOL);
+                String proxyProtocolConfig = SynapsePropertiesLoader
+                        .getPropertyValue(OAuthConstants.OAUTH_GLOBAL_PROXY_PROTOCOL, null);
                 if (proxyProtocolConfig != null) {
-                    proxyProtocol = (String) proxyProtocolConfig;
+                    proxyProtocol = proxyProtocolConfig;
                 }
             }
 
@@ -235,12 +314,12 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
 
             SignedJWTInfo signedJWTInfo = getSignedJwtInfo(accessToken);
 
-            validateJWTHeaderMetadata(signedJWTInfo.getSignedJWT());
+            validateJWTHeaderMetadata(signedJWTInfo);
 
-            validateMandatoryClaimsPresence(signedJWTInfo.getJwtClaimsSet());
+            validateMandatoryClaimsPresence(signedJWTInfo);
 
             if (log.isDebugEnabled()) {
-                log.debug("Authentication started for JWT tokens");
+                log.debug("Authentication started for JWT token");
             }
 
             JWTValidator jwtValidator = new JWTValidator(jwksEndpoint, trustedIssuers, audience, maxIssuedAtAgeSeconds,
@@ -370,6 +449,72 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
         }
     }
 
+    public void setConnectionTimeout(String connectionTimeout) {
+
+        try {
+            this.connectionTimeout = Integer.parseInt(connectionTimeout);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid connection timeout: " + connectionTimeout, e);
+        }
+    }
+
+    public void setSocketTimeout(String socketTimeout) {
+
+        try {
+            this.socketTimeout = Integer.parseInt(socketTimeout);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid socket timeout: " + socketTimeout, e);
+        }
+    }
+
+    public void setConnectionRequestTimeout(String connectionRequestTimeout) {
+
+        try {
+            this.connectionRequestTimeout = Integer.parseInt(connectionRequestTimeout);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid connection request timeout: " + connectionRequestTimeout, e);
+        }
+    }
+
+    public void setEnableProxy(String enableProxy) {
+
+        if (enableProxy != null && !enableProxy.isEmpty()) {
+            this.enableProxy = Boolean.parseBoolean(enableProxy);
+        }
+    }
+
+    public void setProxyHost(String proxyHost) {
+
+        this.proxyHost = proxyHost;
+    }
+
+    public void setProxyPort(String proxyPort) {
+
+        try {
+            this.proxyPort = Integer.parseInt(proxyPort);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid proxy port: " + proxyPort, e);
+        }
+    }
+
+    public void setProxyUsername(String proxyUsername) {
+
+        this.proxyUsername = proxyUsername;
+    }
+
+    public void setProxyPassword(String proxyPassword) {
+
+        SecretResolver secretResolver = SecretResolverFactory.create(new Properties() {{
+            setProperty(AuthConstants.PROXY_PASSWORD, proxyPassword);
+        }});
+        this.proxyPassword = MiscellaneousUtil.resolve(proxyPassword, secretResolver);
+    }
+
+    public void setProxyProtocol(String proxyProtocol) {
+
+        this.proxyProtocol = proxyProtocol;
+    }
+
     /**
      * Performs a basic sanity check on the authorization header and extracts the JWT.
      * This ensures the header is present, uses the Bearer scheme, and has the
@@ -439,18 +584,19 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
      * Validates the JWT header claims (typ and alg) before signature verification.
      * Per RFC 9068, the typ MUST be 'at+jwt' and the alg MUST be a strong asymmetric one.
      *
-     * @param jwt The parsed SignedJWT object.
+     * @param signedJWTInfo The parsed SignedJWT object.
      * @throws OAuthSecurityException If the header is invalid or uses a forbidden algorithm.
      */
-    public void validateJWTHeaderMetadata(SignedJWT jwt) throws OAuthSecurityException {
-        JWSHeader header = jwt.getHeader();
+    public void validateJWTHeaderMetadata(SignedJWTInfo signedJWTInfo) throws OAuthSecurityException {
+        JWSHeader header = signedJWTInfo.getSignedJWT().getHeader();
 
         // 1. Check 'typ' (Type) - REQUIRED by RFC 9068
         // Note: Some servers send 'application/at+jwt', some send 'at+jwt'
         JOSEObjectType typ = header.getType();
         if (typ == null || !(OAuthConstants.JWT_TYPE_AT_JWT.equals(typ.getType())
                 || OAuthConstants.MEDIA_TYPE_JWT_ACCESS_TOKEN.equals(typ.getType()))) {
-            log.error("Invalid JWT type. Expected 'at+jwt' or 'application/at+jwt', found: " + typ);
+            log.error("Invalid JWT type. Expected 'at+jwt' or 'application/at+jwt', found: " + typ + ". Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INCORRECT_ACCESS_TOKEN_TYPE,
                     "Invalid token type");
         }
@@ -458,23 +604,31 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
         // 2. Check 'alg' (Algorithm) - Protects against 'alg: none' and Key Confusion
         JWSAlgorithm alg = header.getAlgorithm();
         if (!isSupportedAlgorithm(alg)) {
-            log.error("Unsupported or weak algorithm: " + alg);
+            String errorMessage;
+            if (alg == null) {
+                errorMessage = "Missing algorithm (alg) in JWT header.";
+            } else {
+                errorMessage = "Unsupported or weak algorithm: " + alg.getName() + ". Expected: "
+                        + (allowedAlgorithms != null && !allowedAlgorithms.isEmpty()
+                        ? allowedAlgorithms : JWSAlgorithm.Family.RSA.toString());
+            }
+            log.error(errorMessage + ". Token: " + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Unsuitable cryptographic algorithm");
         }
 
-        log.debug("Header metadata validation successful.");
+        if (log.isDebugEnabled()) {
+            log.debug("Header metadata validation successful.");
+        }
     }
 
     private boolean isSupportedAlgorithm(JWSAlgorithm alg) {
 
         if (alg == null) {
-            log.error("Missing 'alg' in JWT header.");
             return false;
         }
-        if (allowedAlgorithms != null && !allowedAlgorithms.isEmpty() && !allowedAlgorithms.contains(alg.getName())) {
-            log.error("Algorithm " + alg.getName() + " is not in the list of allowed algorithms.");
-            return false;
+        if (allowedAlgorithms != null && !allowedAlgorithms.isEmpty()) {
+            return allowedAlgorithms.contains(alg.getName());
         }
         // By default, only allow strong asymmetric algorithms (RS256, etc.)
         return JWSAlgorithm.Family.RSA.contains(alg);
@@ -484,38 +638,54 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
      * Validates that all mandatory claims required by RFC 9068 are present
      * and logically valid.
      *
-     * @param claims The JWTClaimsSet extracted from the validated signed JWT.
+     * @param signedJWTInfo The signed JWT.
      * @throws OAuthSecurityException If any mandatory claim is missing or invalid.
      */
-    public void validateMandatoryClaimsPresence(JWTClaimsSet claims)
+    public void validateMandatoryClaimsPresence(SignedJWTInfo signedJWTInfo)
             throws OAuthSecurityException {
+
+        JWTClaimsSet claims = signedJWTInfo.getJwtClaimsSet();
 
         // 1. Check for Existence (The "Presence" Check)
         if (StringUtils.isEmpty(claims.getIssuer())) {
+            log.error("Missing mandatory 'iss' claim in JWT. Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'iss' claim");
         }
         if (claims.getExpirationTime() == null) {
+            log.error("Missing mandatory 'exp' claim in JWT. Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'exp' claim");
         }
         if (claims.getAudience() == null || claims.getAudience().isEmpty()) {
+            log.error("Missing mandatory 'aud' claim in JWT. Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'aud' claim");
         }
         if (StringUtils.isEmpty(claims.getSubject())) {
+            log.error("Missing mandatory 'sub' claim in JWT. Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'sub' claim");
         }
         if (StringUtils.isEmpty(claims.getJWTID())) {
+            log.error("Missing mandatory 'jti' claim in JWT. Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'jti' claim");
         }
         if (claims.getIssueTime() == null) {
+            log.error("Missing mandatory 'iat' claim in JWT. Token: "
+                    + OAuthUtil.getMaskedToken(signedJWTInfo.getToken()));
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     "Missing mandatory 'iat' claim");
         }
-        log.debug("Mandatory claims validation passed.");
+        if (log.isDebugEnabled()) {
+            log.debug("Mandatory claims validation passed.");
+        }
     }
 
     /**
@@ -556,7 +726,7 @@ public class OAuth2AuthorizationHandler extends AbstractHandler implements Manag
                 signedJWTInfo = new SignedJWTInfo(accessToken, signedJWT, jwtClaimsSet);
             }
         } catch (ParseException e) {
-            log.error("Error while parsing the access token.", e);
+            log.error("Error while parsing the access token: " + OAuthUtil.getMaskedToken(accessToken), e);
             throw new OAuthSecurityException(OAuthConstants.API_AUTH_INVALID_CREDENTIALS,
                     OAuthConstants.API_AUTH_INVALID_CREDENTIALS_MESSAGE, e);
         }
