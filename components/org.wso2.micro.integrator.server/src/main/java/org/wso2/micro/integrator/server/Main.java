@@ -471,29 +471,19 @@ public class Main {
     }
 
     /**
-     * Returns the preferred JCE provider identifier. BouncyCastle ("BC") is used by default
-     * unless explicitly disabled via {@code jce_provider.enabled = false} in deployment.toml.
-     * The provider can be overridden to "BCFIPS" via the system property
-     * {@code -Dsecurity.jce.provider=BCFIPS} or {@code jce_provider.provider_name = "BCFIPS"}
-     * in deployment.toml. Returns null only when BC installation is explicitly disabled.
+     * Returns the preferred JCE provider identifier. Returns null (Sun JCE) by default.
+     * BC can be opted in via {@code -Dsecurity.jce.provider=BC} system property or
+     * {@code jce_provider.provider_name = "BC"} in deployment.toml.
      *
-     * @return the normalized provider identifier ("BC" or "BCFIPS"), or null if disabled
+     * @return the normalized provider identifier ("BC" or "BCFIPS"), or null to use the default Sun JCE
      */
     private static String getPreferredJceProviderIdentifier() {
-        // Explicit opt-out: jce_provider.enabled = false in deployment.toml
-        if ("false".equalsIgnoreCase(Utils.getConfig(JCE_PROVIDER_ENABLED))) {
-            return null;
-        }
         String jceProviderIdentifier = System.getProperty(SECURITY_JCE_PROVIDER);
         if (jceProviderIdentifier == null) {
             jceProviderIdentifier = Utils.getConfig(JCE_PROVIDER_NAME);
         }
         if (jceProviderIdentifier == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("No JCE provider specified via system property or configuration. " +
-                        "Defaulting to " + BOUNCY_CASTLE_PROVIDER);
-            }
-            return BOUNCY_CASTLE_PROVIDER;
+            return null;
         }
         if (BOUNCY_CASTLE_FIPS_PROVIDER.equalsIgnoreCase(jceProviderIdentifier)) {
             return BOUNCY_CASTLE_FIPS_PROVIDER;

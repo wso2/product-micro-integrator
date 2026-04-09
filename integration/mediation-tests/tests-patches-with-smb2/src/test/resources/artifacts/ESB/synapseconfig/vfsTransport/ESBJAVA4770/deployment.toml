@@ -1,9 +1,6 @@
 [server]
 hostname = "localhost"
 
-[jce_provider]
-enabled = false
-
 [transport.passthru.http.listener]
 port=8280
 
