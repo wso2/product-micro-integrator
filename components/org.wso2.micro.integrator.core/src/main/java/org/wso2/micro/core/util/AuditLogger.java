@@ -35,6 +35,13 @@ public class AuditLogger {
         logMessage.put("info", info.toString());
         AUDIT_LOG.info(logMessage);
     }
+    public static void logAuditMessage(String performedBy, String action, JSONObject info) {
+        JSONObject logMessage = new JSONObject();
+        logMessage.put("performedBy", performedBy);
+        logMessage.put("action", action);
+        logMessage.put("info", info.toString());
+        AUDIT_LOG.info(logMessage);
+    }
     public static void logAuditMessage(String log) {
         AUDIT_LOG.info(log);
     }

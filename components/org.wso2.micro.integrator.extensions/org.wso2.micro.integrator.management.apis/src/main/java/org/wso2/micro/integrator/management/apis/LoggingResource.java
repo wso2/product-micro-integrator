@@ -32,6 +32,7 @@ import org.json.JSONObject;
 import org.wso2.carbon.inbound.endpoint.internal.http.api.APIResource;
 import org.wso2.micro.integrator.utils.utils.ServerConstants;
 import org.wso2.micro.core.util.AuditLogger;
+import org.wso2.micro.core.util.StringUtils;
 import org.wso2.micro.integrator.management.apis.security.handler.SecurityUtils;
 import org.wso2.micro.integrator.security.user.api.UserStoreException;
 
@@ -45,6 +46,7 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -86,6 +88,7 @@ public class LoggingResource extends APIResource {
         Set<String> methods = new HashSet<>();
         methods.add(Constants.HTTP_GET);
         methods.add(Constants.HTTP_METHOD_PATCH);
+        methods.add(Constants.HTTP_DELETE);
         return methods;
     }
 
@@ -128,6 +131,47 @@ public class LoggingResource extends APIResource {
                     Utils.setJsonPayLoad(axis2MessageContext, jsonBody);
                 }
                 return true;
+            }
+        } else if (httpMethod.equals(Constants.HTTP_DELETE)) {
+            String userName = (String) messageContext.getProperty(USERNAME_PROPERTY);
+            String loggerName = Utils.getQueryParameter(messageContext, Constants.LOGGER_NAME);
+            try {
+                if (SecurityUtils.canUserEdit(messageContext, userName)) {
+                    if (!StringUtils.isEmpty(loggerName)) {
+                        if (Constants.ROOT_LOGGER.equals(loggerName)) {
+                            this.jsonBody = this.createJsonError("Root logger cannot be deleted", "",
+                                    axis2MessageContext);
+                        } else {
+                            try {
+                                String performedBy = Constants.ANONYMOUS_USER;
+                                if (messageContext.getProperty(Constants.USERNAME_PROPERTY) != null) {
+                                    performedBy = messageContext.getProperty(Constants.USERNAME_PROPERTY).toString();
+                                }
+
+                                if (this.isLoggerExist(loggerName)) {
+                                    this.jsonBody = this.deleteLoggerData(performedBy, axis2MessageContext, loggerName);
+                                } else {
+                                    this.jsonBody = this.createJsonError("Specified logger name ('"
+                                            + loggerName + "') not found", "", axis2MessageContext);
+                                }
+                            } catch (IOException exception) {
+                                this.jsonBody = this.createJsonError("Exception while getting logger data ",
+                                        exception, axis2MessageContext);
+                            }
+                        }
+                    } else {
+                        this.jsonBody = this.createJsonError("Logger name is missing for delete action", "",
+                                axis2MessageContext);
+                    }
+                } else {
+                    Utils.sendForbiddenFaultResponse(axis2MessageContext);
+                    jsonBody = createJsonError("User is not Authorized to delete log configs", "",
+                            Constants.FORBIDDEN, axis2MessageContext);
+                }
+            } catch (UserStoreException e) {
+                log.error("Error occurred while retrieving the user data", e);
+                jsonBody = createJsonError("Error occurred while retrieving the user data", e,
+                        axis2MessageContext);
             }
         } else {
             String userName = (String) messageContext.getProperty(USERNAME_PROPERTY);
@@ -188,6 +232,91 @@ public class LoggingResource extends APIResource {
         }
         Utils.setJsonPayLoad(axis2MessageContext, jsonBody);
         return true;
+    }
+
+    private JSONObject deleteLoggerData(String userName, org.apache.axis2.context.MessageContext axis2MessageContext, String loggerName) {
+        try {
+            this.loadConfigs();
+
+            List<String> keysToDelete = getLogConfigEntriesToDelete(loggerName);
+
+            // 2. Now perform the bulk delete safely
+            for (String key : keysToDelete) {
+                this.config.clearProperty(key);
+            }
+
+            String currentLoggers = (String) this.config.getProperty(LOGGERS_PROPERTY);
+            if (currentLoggers != null) {
+                StringBuilder formatted = getFormattedLoggersString(loggerName, currentLoggers);
+                this.config.setProperty(LOGGERS_PROPERTY, formatted.toString());
+            }
+
+            // 4. Persist and Audit
+            this.applyConfigs();
+            this.jsonBody.put(Constants.MESSAGE, "Successfully deleted logger for ('" + loggerName + "')");
+
+            JSONObject info = new JSONObject();
+            info.put(Constants.LOGGER_NAME, loggerName);
+            AuditLogger.logAuditMessage(userName, Constants.AUDIT_LOG_ACTION_DELETED, info);
+
+        } catch (IOException | ConfigurationException exception) {
+            this.jsonBody = this.createJsonError("Exception while deleting logger data ", exception, axis2MessageContext);
+        }
+
+        return this.jsonBody;
+    }
+
+    private static StringBuilder getFormattedLoggersString(String loggerName, String currentLoggers) {
+
+        // 1. Split into a List, trimming and ignoring empty spaces/backslashes
+        // This regex [\\s,\\\\]+ breaks it down by commas, spaces, or backslashes
+        List<String> loggerList = new ArrayList<>(
+                Arrays.asList(currentLoggers.split("[\\s,\\\\]+"))
+        );
+
+        // 2. Remove the specific logger (Case-Insensitive)
+        // iterator.remove() is the safe way to remove while looping
+        Iterator<String> iterator = loggerList.iterator();
+        while (iterator.hasNext()) {
+            String name = iterator.next().trim();
+            if (name.isEmpty() || name.equalsIgnoreCase(loggerName)) {
+                iterator.remove();
+            }
+        }
+
+        // 3. Rebuild the string with commas as separators, ensuring no trailing commas or extra spaces
+        StringBuilder formatted = new StringBuilder();
+
+        for (int i = 0; i < loggerList.size(); i++) {
+            String logger = loggerList.get(i);
+
+            // Add comma separator for everyone except the first item
+            if (i > 0) {
+                formatted.append(", ");
+            }
+
+            formatted.append(logger);
+        }
+        return formatted;
+    }
+
+    private List<String> getLogConfigEntriesToDelete(String loggerName) {
+
+        // 1. Identify the prefix (e.g., "logger.opentelemetry-trace.")
+        String loggerPrefix = LOGGER_PREFIX + loggerName + ".";
+
+        // 2. Dynamically clear ALL properties starting with this prefix
+        // This handles .name, .level, .appenderRef, .additivity, etc.
+        List<String> keysToDelete = new ArrayList<>();
+        Iterator<String> keys = this.config.getKeys();
+
+        while (keys.hasNext()) {
+            String key = keys.next();
+            if (key.startsWith(loggerPrefix)) {
+                keysToDelete.add(key);
+            }
+        }
+        return keysToDelete;
     }
 
     private JSONObject updateLoggerData(String performedBy, JSONObject info,
@@ -352,9 +481,14 @@ public class LoggingResource extends APIResource {
 
     private JSONObject createJsonError(String message, Object exception,
                                        org.apache.axis2.context.MessageContext axis2MessageContext) {
+        return this.createJsonError(message, exception, Constants.BAD_REQUEST, axis2MessageContext);
+    }
+
+    private JSONObject createJsonError(String message, Object exception, String statusCode,
+                                       org.apache.axis2.context.MessageContext axis2MessageContext) {
         log.error(message + exception);
         JSONObject jsonBody = Utils.createJsonErrorObject(message);
-        axis2MessageContext.setProperty(Constants.HTTP_STATUS_CODE, Constants.BAD_REQUEST);
+        axis2MessageContext.setProperty(Constants.HTTP_STATUS_CODE, statusCode);
         return jsonBody;
     }
 
