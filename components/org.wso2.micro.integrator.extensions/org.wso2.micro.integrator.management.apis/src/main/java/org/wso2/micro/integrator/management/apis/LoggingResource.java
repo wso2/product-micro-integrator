@@ -136,7 +136,7 @@ public class LoggingResource extends APIResource {
             String userName = (String) messageContext.getProperty(USERNAME_PROPERTY);
             String loggerName = Utils.getQueryParameter(messageContext, Constants.LOGGER_NAME);
             try {
-                if (SecurityUtils.canUserEdit(userName)) {
+                if (SecurityUtils.canUserEdit(messageContext, userName)) {
                     if (!StringUtils.isEmpty(loggerName)) {
                         if (Constants.ROOT_LOGGER.equals(loggerName)) {
                             this.jsonBody = this.createJsonError("Root logger cannot be deleted", "",
@@ -166,7 +166,7 @@ public class LoggingResource extends APIResource {
                 } else {
                     Utils.sendForbiddenFaultResponse(axis2MessageContext);
                     jsonBody = createJsonError("User is not Authorized to delete log configs", "",
-                            axis2MessageContext);
+                            Constants.FORBIDDEN, axis2MessageContext);
                 }
             } catch (UserStoreException e) {
                 log.error("Error occurred while retrieving the user data", e);
@@ -248,13 +248,7 @@ public class LoggingResource extends APIResource {
             String currentLoggers = (String) this.config.getProperty(LOGGERS_PROPERTY);
             if (currentLoggers != null) {
                 StringBuilder formatted = getFormattedLoggersString(loggerName, currentLoggers);
-
-                // 4. Update the config
-                if (formatted.length() == 0) {
-                    this.config.clearProperty(LOGGERS_PROPERTY);
-                } else {
-                    this.config.setProperty(LOGGERS_PROPERTY, formatted.toString());
-                }
+                this.config.setProperty(LOGGERS_PROPERTY, formatted.toString());
             }
 
             // 4. Persist and Audit
@@ -487,9 +481,14 @@ public class LoggingResource extends APIResource {
 
     private JSONObject createJsonError(String message, Object exception,
                                        org.apache.axis2.context.MessageContext axis2MessageContext) {
+        return this.createJsonError(message, exception, Constants.BAD_REQUEST, axis2MessageContext);
+    }
+
+    private JSONObject createJsonError(String message, Object exception, String statusCode,
+                                       org.apache.axis2.context.MessageContext axis2MessageContext) {
         log.error(message + exception);
         JSONObject jsonBody = Utils.createJsonErrorObject(message);
-        axis2MessageContext.setProperty(Constants.HTTP_STATUS_CODE, Constants.BAD_REQUEST);
+        axis2MessageContext.setProperty(Constants.HTTP_STATUS_CODE, statusCode);
         return jsonBody;
     }
 
