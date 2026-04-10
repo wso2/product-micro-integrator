@@ -18,6 +18,7 @@
 package org.wso2.carbon.esb.car.deployment.test;
 
 import org.awaitility.Awaitility;
+import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -77,6 +78,13 @@ public class FaultyCAppSwaggerRemovalTestCase extends ESBIntegrationTest {
         deployCarbonApplication(file);
         Awaitility.await().pollInterval(500, TimeUnit.MILLISECONDS).atMost(SERVICE_DEPLOYMENT_DELAY,
                 TimeUnit.MILLISECONDS).until(isCAPPDeploymentLogWritten());
+
+        // Assert that no "Duplicate swagger definition" error was logged during re-deployment.
+        // Before the fix, addSwaggerDefinition() would throw SynapseException here because the
+        // orphaned swagger from the failed first deployment was never cleaned up.
+        Assert.assertFalse(carbonLogReader.assertIfLogExists("Duplicate swagger definition"),
+                "Redeployment of a CApp with the same swagger name after a faulty deploy "
+                        + "must not produce a 'Duplicate swagger definition' error");
 
         // Undeploy the CApp
         unDeployCarbonApplication(CAPP_NAME);
